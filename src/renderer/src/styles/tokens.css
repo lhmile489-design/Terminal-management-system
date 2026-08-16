@@ -1,0 +1,577 @@
+@import 'tailwindcss';
+@import '@xterm/xterm/css/xterm.css';
+
+/* 主题由 <html data-theme> 驱动，不跟随 prefers-color-scheme —— 跟随系统由主进程 nativeTheme 解析后写入该属性 */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/*
+  语义令牌指向可翻转的原始变量。@theme inline 让生成的工具类直接引用
+  var(--surface-canvas) 而非拷贝其值，因此切换 data-theme 时无需重建样式。
+*/
+@theme inline {
+  --color-canvas: var(--surface-canvas);
+  --color-panel: var(--surface-panel);
+  --color-card: var(--surface-card);
+  --color-raised: var(--surface-raised);
+
+  --color-line: var(--stroke-base);
+  --color-line-strong: var(--stroke-strong);
+
+  --color-ink: var(--text-primary);
+  --color-ink-strong: var(--text-strong);
+  --color-ink-muted: var(--text-muted);
+  --color-ink-faint: var(--text-faint);
+  --color-ink-inverse: var(--text-inverse);
+  /* ink-strong 作底时的前景。不能用 ink-inverse —— 那个是「相对页面底色」反转的，
+     而 ink-strong 本身已经反转过一次，两次抵消会让字和底同色 */
+  --color-on-ink: var(--text-on-ink);
+
+  --color-live: var(--signal-live);
+  --color-warn: var(--signal-warn);
+  --color-fault: var(--signal-fault);
+  --color-info: var(--signal-info);
+  --color-idle: var(--signal-idle);
+
+  --color-live-soft: var(--signal-live-soft);
+  --color-warn-soft: var(--signal-warn-soft);
+  --color-fault-soft: var(--signal-fault-soft);
+  --color-info-soft: var(--signal-info-soft);
+
+  /* 强调色：区块标签、端口、选中态。与 info 分开 —— info 只表状态，accent 是品牌线 */
+  --color-accent: var(--signal-accent);
+  --color-accent-soft: var(--signal-accent-soft);
+  --color-on-accent: var(--signal-on-accent);
+
+  --font-sans: 'Segoe UI Variable Display', 'Segoe UI', 'Microsoft YaHei UI', system-ui, sans-serif;
+  --font-mono: 'Cascadia Code', 'JetBrains Mono', Consolas, ui-monospace, monospace;
+
+  --radius-card: 12px;
+  --radius-control: 6px;
+}
+
+/* 雾灰 —— 浅色 */
+:root,
+[data-theme='light'] {
+  --surface-canvas: #f6f7f9;
+  --surface-panel: #ffffff;
+  --surface-card: #ffffff;
+  --surface-raised: #eef1f5;
+
+  --stroke-base: #e8ebef;
+  --stroke-strong: #d5dae1;
+
+  --text-primary: #3d4653;
+  --text-strong: #161b22;
+  --text-muted: #6b7684;
+  /* faint 承载 KPI 标签与区块标题，需满足 AA 4.5:1 —— 不能再浅 */
+  --text-faint: #6b7583;
+  --text-inverse: #ffffff;
+  /* 浅色下主按钮是深墨底，字要亮 */
+  --text-on-ink: #ffffff;
+
+  /* 浅底上加深以满足 4.5:1 */
+  --signal-live: #1a7f37;
+  --signal-warn: #8a6100;
+  --signal-fault: #c93c37;
+  --signal-info: #0a5aa8;
+  --signal-idle: #6e7681;
+
+  --signal-live-soft: #e7f4ea;
+  --signal-warn-soft: #fdf5e2;
+  --signal-fault-soft: #fdeceb;
+  --signal-info-soft: #e6f0fb;
+
+  --signal-accent: #2f6fde;
+  --signal-accent-soft: #e8f0fd;
+  --signal-on-accent: #ffffff;
+
+  --shadow-lift: 0 1px 3px rgb(16 22 31 / 0.04);
+  /* hover 抬升用的大投影。minimalist-ui 要求不透明度 < 0.05，这里贴上限取 0.048 */
+  --shadow-lift-lg: 0 10px 26px rgb(16 22 31 / 0.048);
+  --terminal-bg: #ffffff;
+  --scroll-thumb: #c9d1d9;
+  color-scheme: light;
+}
+
+/* 深空蓝黑 —— 深色 */
+[data-theme='dark'] {
+  --surface-canvas: #0b0f14;
+  --surface-panel: #111720;
+  --surface-card: #18202b;
+  --surface-raised: #222c3a;
+
+  --stroke-base: #222c3a;
+  --stroke-strong: #303c4d;
+
+  --text-primary: #c9d3e0;
+  --text-strong: #f0f4f9;
+  --text-muted: #8b97a8;
+  /* 深色卡片 #18202b 上需 ≥4.5:1 */
+  --text-faint: #8390a1;
+  --text-inverse: #0b0f14;
+  /* 深色下主按钮是近白底，字要暗 */
+  --text-on-ink: #0b0f14;
+
+  --signal-live: #3fb950;
+  --signal-warn: #d29922;
+  --signal-fault: #f85149;
+  --signal-info: #58a6ff;
+  --signal-idle: #6e7681;
+
+  --signal-live-soft: #12261a;
+  --signal-warn-soft: #2a2113;
+  --signal-fault-soft: #2d1618;
+  --signal-info-soft: #12243d;
+
+  --signal-accent: #5b9dff;
+  --signal-accent-soft: #12243d;
+  --signal-on-accent: #0b1220;
+
+  --shadow-lift: 0 1px 3px rgb(0 0 0 / 0.04);
+  /* 深色底上投影需更实才看得见轮廓，但仍守住 < 0.05 的不透明度纪律 */
+  --shadow-lift-lg: 0 12px 30px rgb(0 0 0 / 0.048);
+  --terminal-bg: #0f1419;
+  --scroll-thumb: #303c4d;
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--surface-canvas);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.6;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: default;
+}
+
+*:focus-visible {
+  outline: 2px solid var(--signal-info);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scroll-thumb);
+  border: 3px solid transparent;
+  border-radius: 8px;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/*
+  卡片：统一 12px 圆角与 1px 边框。--glow 由状态决定，同时驱动图标瓦片底色与
+  边框着色 —— 用 color-mix 混入而非写死色值，深浅两模式自动成立。
+*/
+.surface-card {
+  --glow: var(--signal-accent);
+  border-radius: 12px;
+  border: 1px solid var(--stroke-base);
+  background: var(--surface-card);
+  transition:
+    transform 150ms ease-out,
+    border-color 150ms ease-out,
+    box-shadow 150ms ease-out;
+}
+
+/* 状态只染边框，不改底色 —— 大面积语义色会盖过内容 */
+.surface-card[data-tone='live'] {
+  border-color: color-mix(in srgb, var(--signal-live) 42%, var(--stroke-base));
+}
+.surface-card[data-tone='fault'] {
+  border-color: color-mix(in srgb, var(--signal-fault) 55%, var(--stroke-base));
+}
+.surface-card[data-tone='warn'] {
+  border-color: color-mix(in srgb, var(--signal-warn) 42%, var(--stroke-base));
+}
+
+.surface-card[data-interactive='true']:hover {
+  transform: translateY(-2px);
+  border-color: var(--stroke-strong);
+  box-shadow: var(--shadow-lift-lg);
+}
+
+/* 拖拽中的原位占位：虚线 + 压低，不要再抬升 */
+.surface-card[data-dragging='true'] {
+  transform: none;
+  border-style: dashed;
+  opacity: 0.4;
+}
+
+/* KPI 使用固定最小列宽：宽屏自然形成 3×2，窄屏先降列而不是压缩读数和上下文。 */
+section[aria-labelledby='kpi-heading'] {
+  container-type: inline-size;
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@container (max-width: 56rem) {
+  .kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container (max-width: 38rem) {
+  .kpi-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .surface-card,
+  .surface-card[data-interactive='true']:hover {
+    transform: none;
+    transition: none;
+  }
+}
+
+/* 图标瓦片：圆角方块 + 同色系淡底，卡片 44px，KPI 34px */
+.icon-tile {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--stroke-base);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--glow) 16%, var(--surface-card));
+  color: var(--glow);
+}
+
+.icon-tile-sm {
+  border-radius: 9px;
+  border-color: transparent;
+  background: color-mix(in srgb, var(--glow) 15%, transparent);
+}
+
+/*
+  状态胶囊：同色系的底、边、字。三者同源才不会像是随便描了个框。
+*/
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 99px;
+  border: 1px solid color-mix(in srgb, var(--glow) 45%, transparent);
+  background: color-mix(in srgb, var(--glow) 10%, transparent);
+  color: var(--glow);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+/* 状态圆点：外圈光环用 box-shadow 实心扩散，不用 blur —— blur 在深底上会发灰 */
+.status-dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 99px;
+  background: var(--glow);
+}
+
+.status-dot[data-halo='true'] {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--glow) 22%, transparent);
+}
+
+/* 迷你负载条：3px 轨道 + 实心填充，表格与 TOP5 共用 */
+.load-track {
+  overflow: hidden;
+  height: 3px;
+  border-radius: 99px;
+  background: var(--stroke-base);
+}
+
+.load-fill {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: var(--glow, var(--signal-accent));
+}
+
+/*
+  分段控件：凹槽底 + 选中项浮起。参考项目里那种「按进去」的观感靠的是
+  外层暗一档、选中项用卡片色顶起来，而不是给选中项描边。
+  不做顶部视图切换器 —— 左导航轨已经是唯一的视图入口，两套导航会让人
+  以为它们切的是不同东西。这里只服务于同一视图内的口径切换。
+*/
+.segmented {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--stroke-base);
+  border-radius: 8px;
+  background: var(--surface-raised);
+}
+
+.segmented-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  /* 未选中项坐在 raised 底上（比卡片更暗/更亮一档），faint 在这里量到 4.12:1 与
+     3.02:1，都不到 AA。这一档要用 primary —— 未选中不等于读不出来 */
+  color: var(--text-primary);
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition:
+    background 120ms ease-out,
+    color 120ms ease-out,
+    transform 150ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.segmented-item:hover:not([aria-checked='true']):not([aria-selected='true']) {
+  color: var(--text-primary);
+}
+
+/* 分段项挤在凹槽里，缩放会跟邻项产生视觉重叠，只下沉 */
+.segmented-item:active:not(:disabled) {
+  transform: translateY(1px);
+  transition-duration: 60ms;
+}
+
+.segmented-item[aria-checked='true'],
+.segmented-item[aria-selected='true'] {
+  border-color: var(--stroke-base);
+  background: var(--surface-card);
+  color: var(--text-strong);
+  box-shadow: var(--shadow-lift);
+}
+
+/*
+  按压反馈。此前所有按钮只有 transition-colors，按下去没有任何位移，手感很硬。
+
+  形状：按下缩 0.96 并下沉 1px，松开弹回。按下用 60ms、回弹用 150ms ——
+  两段不等时长才像「碰到底了再松开」；等时长会像橡皮筋。这也是为什么
+  press 的 transition 写在 :active 上，而不是只在基态写一个。
+
+  只动 transform，不动 opacity 也不动色值：
+  - 压 opacity 会把文字一起拖淡，禁用态踩过这个坑（见下方 .btn-primary:disabled）。
+  - 色值归各组件自己的 hover/active 规则管，这个类只负责位移，才能铺到所有按钮上
+    而不跟任何配色打架。
+  禁用态不给反馈 —— 按下去有动静会让人以为点成了。
+
+  这两个类的 transition 必须把配色也一起写上，不能只写 transform：本文件是无 layer 的，
+  会盖过 Tailwind `transition-colors`（在 @layer utilities 里）。只写 transform 的话，
+  凡是挂了 .pressable 的按钮 hover 变色就变成硬切了。同理，本文件里自带 transition
+  简写的 .btn-primary 与 .segmented-item 排在这两个类之后、会盖回来，所以它们各自的
+  简写里也补了 transform。
+*/
+.pressable {
+  transition:
+    transform 150ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 120ms ease-out,
+    border-color 120ms ease-out,
+    color 120ms ease-out,
+    box-shadow 120ms ease-out;
+}
+
+.pressable:active:not(:disabled):not([aria-disabled='true']) {
+  transform: scale(0.96) translateY(1px);
+  transition-duration: 60ms;
+}
+
+/*
+  宽条目（命令面板的结果行、会话列表、脚本选择项）用这一档。
+  整行缩放看着像橡皮，只下沉 1px 就够 —— 位移量要跟控件尺寸成反比。
+*/
+.pressable-flat {
+  transition:
+    transform 150ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 120ms ease-out,
+    border-color 120ms ease-out,
+    color 120ms ease-out,
+    box-shadow 120ms ease-out;
+}
+
+.pressable-flat:active:not(:disabled):not([aria-disabled='true']) {
+  transform: translateY(1px);
+  transition-duration: 60ms;
+}
+
+/*
+  主按钮：ink-strong 作底，前景必须用 --text-on-ink。
+  用 --text-inverse 是错的 —— 它是「相对页面底色」反转的，而 ink-strong 本身
+  已经反转过一次，两次抵消会让字和底几乎同色（曾实测浅色 1.81:1、深色 1.37:1）。
+
+  禁用态不整块压 opacity：那会把文字一起拖到 1.26:1，用户连按钮写的是什么都读不出。
+  改为换一套弱化的底色与边框，文字仍守住 AA。
+*/
+.btn-primary {
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: var(--text-strong);
+  color: var(--text-on-ink);
+  transition:
+    background 120ms ease-out,
+    color 120ms ease-out,
+    border-color 120ms ease-out,
+    transform 150ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.btn-primary:hover:not(:disabled) {
+  /* 混入 canvas 而不是压 opacity —— 压 opacity 会连字一起变淡 */
+  background: color-mix(in srgb, var(--text-strong) 88%, var(--surface-canvas));
+}
+
+/*
+  必须排在 :hover 之后：按下时元素同时命中 hover 与 active，两条选择器特异性相等，
+  后写的才生效。反过来写的话按下去底色不会变。
+*/
+.btn-primary:active:not(:disabled) {
+  /* 位移写在这里而不是让调用方再挂一个 .pressable —— 主按钮有专属类，
+     按压反馈就该收在类里，否则六处调用点漏一处就少一处手感 */
+  transform: scale(0.96) translateY(1px);
+  /* 主按钮是唯一带实底的按钮，只靠位移不够明显，再压一档底色 */
+  background: color-mix(in srgb, var(--text-strong) 78%, var(--surface-canvas));
+  transition-duration: 60ms;
+}
+
+.btn-primary:disabled {
+  cursor: not-allowed;
+  border-color: var(--stroke-strong);
+  background: var(--surface-raised);
+  /* muted 在 raised 底上只有 4.07:1，差一点到 AA。禁用态靠底色和光标表达，
+     不靠把字压灰 —— 用 primary 这一档 */
+  color: var(--text-primary);
+}
+
+/*
+  reduced-motion 下退掉位移，只留配色反馈。
+
+  两件事都不能省，第一版各踩了一次：
+  1. **必须排在所有 :active 规则之后。** 媒体查询不加特异性，@media 里的
+     `.pressable:active` 与外面的 `.pressable:active:not(...)` 特异性并不相等 ——
+     后者还多两个 :not()，写在前面就被反压回去。实测开着 reduce 按下去仍是
+     matrix(0.96,…,0.96)。
+  2. **选择器要跟被覆盖的那条一样长。** 只写 `.pressable:active` 盖不住
+     `.pressable:active:not(:disabled):not([aria-disabled='true'])`。
+  transition-duration 一并压到 0：位移没了，配色还留一点时长也没意义，直接同步切。
+*/
+@media (prefers-reduced-motion: reduce) {
+  .pressable:active:not(:disabled):not([aria-disabled='true']),
+  .pressable-flat:active:not(:disabled):not([aria-disabled='true']),
+  .btn-primary:active:not(:disabled),
+  .segmented-item:active:not(:disabled) {
+    transform: none;
+  }
+}
+
+/* 只给读屏：aria-live 播报区不能用 display:none，那样不会被朗读 */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/*
+  区块标签：等宽小号大写 + 前置实心方块 + 尾随发丝线。
+  方块用 accent 而非 currentColor —— 标签文字本身要弱，方块要是那一点强调。
+*/
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.eyebrow::before {
+  content: '';
+  flex: none;
+  width: 6px;
+  height: 6px;
+  background: var(--signal-accent);
+}
+
+/* 尾随发丝线填满剩余宽度，把区块标题横向锚住 */
+.eyebrow::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  min-width: 12px;
+  background: var(--stroke-base);
+}
+
+/* 行内使用（侧栏窄栏、卡片内）不要那条线 */
+.eyebrow-tight::after {
+  display: none;
+}
+
+/*
+  展示型标题：大字 + 等宽副标。参考项目的核心视觉签名 ——
+  副标用 em 单位跟随主标缩放，窗口变窄时两者比例不变。
+*/
+.display-title {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6em;
+  font-size: clamp(28px, 3.2vw, 38px);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1.15;
+  color: var(--text-strong);
+}
+
+.display-title > .romanized {
+  font-family: var(--font-mono);
+  font-size: 0.32em;
+  font-weight: 400;
+  letter-spacing: 0.26em;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+.drag-region {
+  -webkit-app-region: drag;
+}
+
+.no-drag {
+  -webkit-app-region: no-drag;
+}
+
+/* 主题切换时抑制过渡，避免整屏闪烁 */
+.theme-switching * {
+  transition: none !important;
+}

@@ -1,0 +1,15 @@
+{
+  "name": "mile-fixture-mono",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "pnpm@9.0.0",
+  "workspaces": ["packages/*"],
+  "scripts": {
+    "lint": "echo lint",
+    "test": "echo test"
+  },
+  "devDependencies": {
+    "vue": "^3.5.0",
+    "vite": "^7.0.0"
+  }
+}

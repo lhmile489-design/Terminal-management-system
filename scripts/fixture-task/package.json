@@ -1,0 +1,11 @@
+{
+  "name": "mile-fixture-task",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "build": "node make.cjs",
+    "lint": "node -e \"0\"",
+    "cancel": "node cancel.cjs",
+    "boom": "node -e \"process.exit(2)\""
+  }
+}

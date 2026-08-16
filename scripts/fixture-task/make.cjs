@@ -1,0 +1,5 @@
+const { mkdirSync, writeFileSync } = require('node:fs')
+const { join } = require('node:path')
+mkdirSync(join(__dirname, 'dist'), { recursive: true })
+writeFileSync(join(__dirname, 'dist', 'out.txt'), 'built', 'utf8')
+console.log('build done')

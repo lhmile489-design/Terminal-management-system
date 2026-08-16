@@ -1,0 +1,12 @@
+{
+  "name": "mile-fixture",
+  "version": "0.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=99.0.0"
+  },
+  "scripts": {
+    "dev": "node server.cjs",
+    "build & calc.exe": "echo pwned"
+  }
+}

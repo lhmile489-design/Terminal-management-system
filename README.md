@@ -1,70 +1,127 @@
-# Getting Started with Create React App
+# Mile Terminal
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Windows 本地终端与前端项目管理工作台。个人自用工具，把「本机现在跑着什么」和「我常跑的那几个项目」放在同一个界面里。
 
-## Available Scripts
+不是终端模拟器的替代品，也不是运维平台。它解决的是一类具体的日常摩擦：想知道 5173 端口是谁占的、想一键起停几个常用服务、想在跑完 build 之后收到一声提醒、想在一个地方回看刚才几个会话的输出。
 
-In the project directory, you can run:
+技术栈 Electron 43 + React 19 + TypeScript + Vite + Tailwind 4，原生终端用 node-pty。目标平台 Windows 11。
 
-### `npm start`
+---
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## 六个视图
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+| 视图 | 做什么 |
+| --- | --- |
+| **工作台** | 每 2 秒刷新当前用户的监听端口、CPU、内存、运行时长。分「我的服务」与「应用后台」两组，后者默认折叠。 |
+| **启动台** | 保存常用服务与批处理任务，集中启动、停止、重启、看日志、诊断。服务卡片可选预设图标，并支持鼠标拖拽与键盘排序。 |
+| **终端** | 会话输出、输入与历史回看，xterm + WebGL。 |
+| **日志** | 跨会话汇总输出，按级别与关键字检索。筛选在主进程完成。 |
+| **诊断** | 启动前预检、端口占用、会话回顾。失效项直接给修复入口。 |
+| **设置** | 采集周期、主题、终端偏好、通知开关。 |
 
-### `npm test`
+全局命令面板（`Ctrl+K`）可以直接搜服务、搜端口、跑脚本、添加条目、切主题、跳视图。
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+服务卡片可在编辑面板选择自动框架字标或预设图标。图标选择只改变展示，配置会持久化；服务运行时也能切换，不会重启进程、更改命令、端口或环境变量。任务条目没有图标选择器。
 
-### `npm run build`
+---
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## 四个设计立场
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+这个工具的大部分设计取舍来自四条自我约束。它们不是实现细节，会直接影响你能期待它做什么、不做什么。
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### 1. 不安装依赖，不执行项目代码
 
-### `npm run eject`
+识别项目类型只读 `package.json`、锁文件和标记文件（`go.mod`、`manage.py`、`Cargo.toml` 等），连 `hugo version`、`pip show`、`go list` 这类看起来无害的版本查询都不跑。
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+代价是明确的：**缺 `node_modules` 时不会自动装。** 预检会把它报成 `fail` 并给出一个「创建安装会话」的按钮，由你自己点。因为 `npm install` 会执行 postinstall 脚本，那就等于替你运行任意代码。
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+同理，识别出 Go / Rust / Hugo / Django 这类生态时只给它一个准确的名字并标为「仅登记」—— 启动路径写死为 `<包管理器> run <脚本>`，这些生态推不出那个命令形状，硬猜等于替你构造命令。
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+### 2. 不会因为端口相同就杀死外部进程
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+能不能终止一个进程，只由三重凭据决定：启动时下发的运行 token、进程组、当前用户 UID。
 
-## Learn More
+界面上的「启动来源」徽标（VS Code / Windows Terminal / 本应用…）是沿父链按进程名推断的，而进程名是进程自己可以随便写的 —— 所以它**只用于显示，绝不参与终止授权**。一个把自己改名叫 `code.exe` 的进程不会因此变得可杀。手动分组同理，只影响它显示在哪一组。
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+kill 之前还会重新验证一次归属，因为 PID 会被复用。
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### 3. 明确失效的东西，不让你先失败一次
 
-### Code Splitting
+启动前静态检查工作目录、脚本声明、运行时可用性、端口冲突。查出问题直接给修复入口，而不是让你点了启动、等它跑挂、再去读报错。预检本身只读文件系统，不写、不装、不执行。
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+### 4. 日志只留在内存
 
-### Analyzing the Bundle Size
+跨会话日志是环形缓冲 5000 行，不落盘。落盘就要连带处理保留期、体积上限，以及「输出里可能有密钥」这些问题 —— 而这个工具的用途是看当下这轮跑得怎么样，不是审计。
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+---
 
-### Making a Progressive Web App
+## 界面风格
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+单一主题 **Ops 指挥台**：深空蓝黑与雾灰双色，浅色 / 深色 / 跟随系统三模式。左侧导航轨、KPI 概览卡、右侧实时动态侧栏。
 
-### Advanced Configuration
+工程约束：无渐变、无重阴影、边框统一 1px、等宽字体做区块标签、Phosphor 图标。状态色只染边框、图标瓦片与状态胶囊，不染卡片底 —— 否则六张卡片同屏就成了色块拼贴，运行中反而更难扫读。
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+文字对比度全部 ≥ 4.5:1，深浅两套主题分别校验，包含按钮的启用与禁用两态。
 
-### Deployment
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+## 开发
 
-### `npm run build` fails to minify
+需要 Windows 和 Node 20+；发布构建推荐使用 Node 22 LTS。
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+```bash
+npm install
+npm run dev        # 开发模式
+npm run typecheck  # node + web 两套 tsconfig
+npm run build      # 构建到 out/
+npm run build:win  # NSIS 安装包 → release/
+```
+
+## Windows 发布
+
+生成 Windows x64 安装包：
+
+```bash
+npm run build:win
+```
+
+构建完成后，`release/` 中会生成 `Mile Terminal Setup <version>.exe` NSIS 安装器及其 `.blockmap` 文件；`release/win-unpacked/` 用于本机检查已打包的应用。项目随 `node-pty` 分发的 Windows x64 预编译模块打包，避免在发布阶段重复编译该原生依赖。
+
+代码分布：
+
+```
+src/main/       主进程。所有特权操作、命令构造与参数校验都在这里
+src/preload/    contextBridge 白名单，向渲染层暴露 window.mile.*
+src/renderer/   React + zustand + Tailwind。只做展示与交互，没有任何特权
+src/shared/     两侧共用的类型与 IPC 频道名
+scripts/        验证脚本与夹具项目
+```
+
+渲染层拿不到运行 token、拿不到环境变量的值、不能构造命令、不能指定要执行的可执行文件。
+
+---
+
+## 验证方式
+
+没有单元测试，用的是 17 个端到端验证脚本：启动真实主进程、加载真实构建产物、用 `executeJavaScript` 驱动真实渲染层，逐条断言并打印量到的数值。
+
+```bash
+npm run build
+npx electron scripts/verify-m10.cjs
+npx electron scripts/verify-m12-port-config.cjs
+npx electron scripts/verify-m13-icon.cjs
+```
+
+选择这种方式而不是单元测试，是因为这个项目里最容易出错的地方都在真实环境的接缝上：ConPTY 的输出形状、Windows 进程表、CSS 变量在两套主题下的实际计算值、IPC 的结构化克隆行为。这些用 mock 验证不了 —— 而一个基于错误 mock 的通过断言，比没有断言更危险。
+
+界面断言读 `getComputedStyle` 与 `getBoundingClientRect`，不看截图：截图能证明「没崩」，证明不了圆角是 12px、对比度是 4.62:1。
+
+`docs/PRD.md`（仓库父目录）逐个里程碑记录了实测结果，以及过程中被逮到的每一处真实缺陷与每一处「测试写错了、代码是对的」。
+
+---
+
+## 相关文档
+
+- `docs/PROJECT-INTRODUCTION.md` —— 面向使用者的功能介绍与操作指南。
+- `../docs/PRD.md` —— 需求、决策理由、每个里程碑的实测数据。产品行为的权威来源。
+- `CLAUDE.md` —— 在这个仓库里干活的约定：安全红线、验证纪律、平台坑位。
