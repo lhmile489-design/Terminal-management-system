@@ -212,10 +212,12 @@ export interface Settings {
   closeToTray: boolean
   /** 任务跑完弹系统通知，PRD §4.7，v3 起 */
   notifyOnTaskDone: boolean
+  /** 从 Windows 任务栏隐藏，只保留系统托盘图标，v6 起 */
+  hideFromTaskbar: boolean
 }
 
 /** 当前配置结构版本。加字段就要加迁移，见 ConfigStore.migrate */
-export const CONFIG_VERSION = 5
+export const CONFIG_VERSION = 8
 
 /** 用户手动改过分组的进程，PRD §5.2。按进程名而非 PID —— PID 每次重启都换 */
 export interface GroupOverride {
@@ -248,7 +250,14 @@ export type Framework =
   | 'electron'
   | 'hexo'
   | 'node'
-  // 以下均非 npm 生态：能识别、能登记，但推不出 `pm run` 形式的命令，一律仅登记
+  // Spring Boot 非 npm 生态，但命令形状固定（mvnw/gradlew + 硬编码子命令），
+  // 因此可启动、不标 registerOnly，走 EntryService 的第二条命令构造路径
+  | 'spring-boot'
+  // uniapp（纯 HBuilderX 项目）：有 package.json 但无编译脚本，编译器内置在 HBuilderX 里。
+  // 能识别、仅登记（registerOnly），启动交给 HBuilderX（EntryService.openInHBuilderX）。
+  | 'uniapp'
+  // 以下为非 npm 生态。命令形状固定、推得出的（python/go/rust/cpp）走 EntryService 的
+  // 第 N 条命令构造路径，可启动；命令形状推不出的（hugo/jekyll/docker-compose/static）仍仅登记。
   | 'hugo'
   | 'jekyll'
   | 'django'
@@ -259,10 +268,84 @@ export type Framework =
   | 'docker-compose'
   | 'go'
   | 'rust'
+  // C++：只跑项目内已构建的 exe（不代编译），命令形状 = 固定的可执行产物路径
+  | 'cpp'
   | 'static'
   | 'unknown'
 
 export type PackageManager = 'npm' | 'pnpm' | 'yarn' | 'bun'
+
+/**
+ * 会产出「网站首页」、因此有本地 favicon 可读的前端生态。
+ *
+ * 只对这些框架尝试读 favicon —— 后端/CLI 生态（go/rust/python/spring-boot 等）
+ * 目录里就算有 .ico 也不是网站图标，读了反而误导。两端共用这一份，避免漂移。
+ */
+export const WEB_FRAMEWORKS = [
+  'next',
+  'nuxt',
+  'angular',
+  'vue-vite',
+  'vue-cli',
+  'react-vite',
+  'react-cra',
+  'svelte',
+  'hexo',
+  'hugo',
+  'jekyll',
+  'static'
+] as const
+
+export function isWebFramework(f: Framework): boolean {
+  return (WEB_FRAMEWORKS as readonly string[]).includes(f)
+}
+
+/**
+ * Spring Boot 启动方式，仅 framework === 'spring-boot' 使用。
+ *
+ * 每种方式的可执行文件与子命令都是固定的（见 EntryService.buildSpringBootCommand）：
+ * - wrapper 模式执行项目根自带的 mvnw.cmd / gradlew.bat，子命令写死 spring-boot:run / bootRun
+ * - jar 模式只跑已构建产物，不碰任何 wrapper 脚本
+ * - system 模式用 PATH 里的 mvn / gradle
+ * 用户只能选「哪种方式」，改不了命令本身 —— 这是替代「脚本必须在 package.json」的可信来源判定。
+ */
+export type SpringBootLaunchMode =
+  | 'maven-wrapper'
+  | 'gradle-wrapper'
+  | 'jar'
+  | 'system-maven'
+  | 'system-gradle'
+
+/**
+ * Maven/Gradle 构建目标，用于后端控制台的构建操作。
+ * 值是固定枚举，不接受用户自由输入字符串 —— 安全约束同 LaunchMode：
+ * 命令由 EntryService.buildMavenCommand 按 launchMode + goal 映射成固定 args 数组。
+ */
+export type MavenGoal = 'clean' | 'compile' | 'package' | 'test' | 'install' | 'verify'
+
+/**
+ * 跨语言的启动方式枚举，`LaunchEntry.launchMode` 使用。
+ *
+ * 与 Spring Boot 同一可信性模型：每个 mode 的可执行文件与子命令都固定（见 EntryService
+ * 的 build<Lang>Command），用户只能选「哪种方式」，改不了命令本身。这替代了 npm 的
+ * 「脚本必须在 package.json」判定，是把非 npm 生态移出「仅登记」的合法依据。
+ *
+ * - python-*：file=python(whichAny)，子命令/flag 硬编码；入口文件/模块经白名单 + 项目内校验
+ * - go-run：file=go，args=['run', <项目内包路径|.>]
+ * - cargo-run[-release]：file=cargo，args=['run'] 或 ['run','--release']
+ * - cpp-exe：只跑项目内已构建的 .exe（相对项目根、禁 ..、须存在），不代编译
+ */
+export type LaunchMode =
+  | SpringBootLaunchMode
+  | 'python-file'
+  | 'python-module'
+  | 'uvicorn'
+  | 'flask'
+  | 'django'
+  | 'go-run'
+  | 'cargo-run'
+  | 'cargo-run-release'
+  | 'cpp-exe'
 
 export type EntryKind = 'service' | 'task'
 
@@ -288,6 +371,12 @@ export interface LaunchEntry {
   category?: string
   /** 仅服务使用；未设置时按已识别框架显示默认字标。 */
   icon?: ServiceIcon
+  /**
+   * 自定义图片文件名（存于 %APPDATA%/mile-terminal/images/），服务与任务均可用。
+   * 显示优先级高于 icon 与 favicon。仅由主进程 entry.setImage 压缩落盘后写入，
+   * 渲染层不可通过 edit 直接指定文件名（防路径穿越 / 探测任意文件存在性）。
+   */
+  imageId?: string
   /** 项目根绝对路径 */
   path: string
   /** monorepo 子包相对路径 */
@@ -301,6 +390,20 @@ export interface LaunchEntry {
   env: Record<string, string>
   expectedPort?: number
   outputDir?: string
+  /**
+   * 决定 spawnSession 走哪条命令构造路径。仅命令形状固定的非 npm 生态使用
+   * （spring-boot / python / go / rust / cpp）；npm 生态与仅登记条目为 undefined。
+   */
+  launchMode?: LaunchMode
+  /**
+   * 可执行产物或入口的相对路径（相对项目根，禁 `..`）。约束同 outputDir，会参与
+   * shell.openPath 的白名单推断。按 launchMode 决定语义与后缀校验：
+   * - jar（Spring Boot）→ 须以 .jar 结尾的 jar 产物
+   * - cpp-exe（C++）→ 须以 .exe 结尾的已构建可执行文件
+   * - python-file（Python）→ 项目内的入口 .py 文件
+   * - python-module（Python）→ 模块名（点分标识符，非路径）
+   */
+  jarPath?: string
   /** true = 仅监控不可启动 */
   registerOnly: boolean
   pinned: boolean
@@ -327,6 +430,17 @@ export interface DetectResult {
   /** 根目录无 dev 脚本时为 true，需用户指定子包，PRD §8.5 */
   monorepoHint: boolean
   registerOnly: boolean
+  /**
+   * 识别时探测到的默认启动方式，供新建向导预填 launchMode。
+   * Spring Boot 有 mvnw 优先 wrapper 否则 system；Python 按入口文件/框架；Go/Rust 各自默认。
+   * 命令形状推不出的生态（hugo/static 等）为 undefined。
+   */
+  detectedLaunchMode?: LaunchMode
+  /**
+   * 从 application.properties / application.yml 的 server.port 读到的端口。
+   * 读不到为 undefined，靠日志捕获兜底。
+   */
+  detectedPort?: number
   warnings: string[]
 }
 
@@ -389,24 +503,40 @@ export type EditableEntryField =
   | 'packageManager'
   | 'env'
   | 'icon'
+  | 'imageId'
   | 'expectedPort'
   | 'outputDir'
+  | 'launchMode'
+  | 'jarPath'
   | 'registerOnly'
 
 /**
- * `expectedPort` 与 `outputDir` 额外接受 null 表示「显式清空」。
+ * `expectedPort`、`outputDir`、`jarPath`、`launchMode` 额外接受 null 表示「显式清空」。
  * 用 undefined 表达清空在 IPC 上不成立 —— 结构化克隆会把 undefined 的键丢掉，
- * 到了主进程就变成「没提这个字段」，端口永远删不掉。
+ * 到了主进程就变成「没提这个字段」，值永远删不掉。
  */
 export type EntryEdit = Partial<
-  Omit<Pick<LaunchEntry, EditableEntryField>, 'expectedPort' | 'outputDir' | 'icon' | 'category'>
+  Omit<
+    Pick<LaunchEntry, EditableEntryField>,
+    'expectedPort' | 'outputDir' | 'icon' | 'imageId' | 'category' | 'launchMode' | 'jarPath'
+  >
 > & {
   expectedPort?: number | null
   outputDir?: string | null
   /** null 是跨 IPC 显式恢复自动框架图标的哨兵值。 */
   icon?: ServiceIcon | null
+  /**
+   * 只接受 null —— 显式清除自定义图片，回退到 icon / favicon / 字标。
+   * 设置图片不走 edit，走专用的 entry.setImage(bytes)：由主进程压缩落盘并回填文件名，
+   * 渲染层无从指定任意文件名。
+   */
+  imageId?: null
   /** null explicitly clears the category and returns the entry to the unclassified panel. */
   category?: string | null
+  /** null 显式清空启动方式。 */
+  launchMode?: LaunchMode | null
+  /** null 显式清空可执行产物/入口路径。 */
+  jarPath?: string | null
 }
 
 /** 条目运行态，不持久化 */

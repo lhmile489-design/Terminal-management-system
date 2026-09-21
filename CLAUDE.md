@@ -23,11 +23,11 @@ npm run build                          # 必须先构建，harness 加载的是 
 npx electron scripts/verify-m10.cjs    # 跑单个
 ```
 
-全套 15 个 harness，当前基线 **544 项断言、0 失败**：
+全套 23 个 harness，逐条断言（m7-visual 的「1px 边框」在 devicePixelRatio=2 环境差 1 条，属显示密度差异非代码回归，见 §验证纪律）：
 
 ```bash
-for f in m4-ui m5 m6-sort m6-palette m6-settings m7-visual m8 m9 m9-readonly m9-recover m10 m11-add m11-port m11-dual m12-press; do
-  npx electron scripts/verify-$f.cjs 2>&1 | grep -E '结果：|PASS [0-9]+ / FAIL|^\s*FAIL'
+for f in m4-ui m5 m6-sort m6-palette m6-settings m7-visual m8 m9 m9-readonly m9-recover m10 m11-add m11-port m11-dual m12-press m12-port-config m13-icon m14-categories m14-favicon m15-uniapp m16-langs springboot m17-image; do
+  npx electron scripts/verify-$f.cjs 2>&1 | grep -E '结果：|Result:|PASS [0-9]+ / FAIL|^\s*FAIL'
 done
 ```
 
@@ -173,5 +173,5 @@ src/shared/     两侧共用的类型与 IPC 频道名
 
 - **Node 20.19。`electron-builder` 打包前需升到 22 LTS**（长期待办，从 M1 挂到现在）。
 - 平台 Windows 11。shell 用 bash 语法（`/dev/null`、正斜杠路径）。
-- 配置落在 `%APPDATA%/mile-terminal/config.json`，`.bak` 是上一份良好版本。当前 `CONFIG_VERSION = 3`。
+- 配置落在 `%APPDATA%/mile-terminal/config.json`，`.bak` 是上一份良好版本。当前 `CONFIG_VERSION = 8`。
 - **改 `CONFIG_VERSION` 时**：迁移写显式版本分支，不要用 `{...DEFAULTS, ...raw}` 铺开 —— 那样 `version` 会永远停在旧值，每次启动都重跑迁移。harness 里不要写死版本号，从 `src/shared/types.ts` 读。

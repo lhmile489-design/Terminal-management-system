@@ -107,7 +107,7 @@ async function gotoLaunchpad(win) {
   await js(
     win,
     `(() => {
-      const b = [...document.querySelector('nav').querySelectorAll('button')].find((x) => x.getAttribute('aria-label') === '启动台');
+      const b = [...document.querySelector('nav').querySelectorAll('button')].find((x) => x.getAttribute('aria-label') === '前端启动台');
       b && b.click();
       return true;
     })()`
@@ -156,6 +156,49 @@ async function pressCtrlArrow(win, entryId, key) {
   )
 }
 
+/** 只开一段拖拽（dragstart），停在拖拽态供读样式；返回时不结束 */
+async function beginDrag(win, sourceId) {
+  return await js(
+    win,
+    `(() => {
+      const src = document.querySelector('[data-entry-id="${sourceId}"]');
+      if (!src) return false;
+      window.__dragSrc = src;
+      window.__dragDt = new DataTransfer();
+      src.dispatchEvent(new DragEvent('dragstart', { bubbles: true, cancelable: true, dataTransfer: window.__dragDt }));
+      return true;
+    })()`
+  )
+}
+
+/** 结束上一段拖拽（dragend），恢复常态 */
+async function endDrag(win) {
+  return await js(
+    win,
+    `(() => {
+      const src = window.__dragSrc;
+      if (!src) return false;
+      src.dispatchEvent(new DragEvent('dragend', { bubbles: true, cancelable: true, dataTransfer: window.__dragDt }));
+      window.__dragSrc = null;
+      return true;
+    })()`
+  )
+}
+
+/** 读某卡片所在网格的 data-sorting，以及卡片 transition-property 是否含 transform */
+async function sortingProbe(win, entryId) {
+  return await js(
+    win,
+    `(() => {
+      const card = document.querySelector('[data-entry-id="${entryId}"]');
+      const host = card && card.parentElement;
+      const sorting = (host && host.getAttribute('data-sorting')) || null;
+      const props = getComputedStyle(card).transitionProperty;
+      return { sorting, hasTransform: props.split(',').map((s) => s.trim()).includes('transform') };
+    })()`
+  )
+}
+
 const liveText = (win) =>
   js(win, `(document.querySelector('[role="status"][aria-live="polite"]')?.textContent ?? '').trim()`)
 
@@ -189,6 +232,24 @@ async function checks(win) {
   )
   await sleep(600)
   check('拖拽后顺序已落盘', diskOrder().join() === afterDrag.join(), diskOrder().join())
+
+  console.log('\n=== 拖拽动画：transform 交给 FLIP 独占 ===')
+  // 乱跳的根因是拖拽时 .surface-card 的 transform 过渡 + :hover 抬升与 FLIP card.animate 抢同一属性。
+  // 修复后拖拽态在网格挂 data-sorting，CSS 把 transform 从卡片 transition 里摘掉。
+  // 先量基态（非拖拽）证明探针读得到 transform，再量拖拽态证明它被摘掉 —— 基态对照防假绿。
+  const baseProbe = await sortingProbe(win, 'sort-0')
+  check('基态：未拖拽无 data-sorting', baseProbe.sorting === null, JSON.stringify(baseProbe))
+  check('基态：卡片 transition 含 transform', baseProbe.hasTransform === true, JSON.stringify(baseProbe))
+  await beginDrag(win, 'sort-2')
+  await sleep(120) // 等 setDragging 的 React 状态提交到 DOM
+  const dragProbe = await sortingProbe(win, 'sort-0')
+  check('拖拽态：网格挂 data-sorting=true', dragProbe.sorting === 'true', JSON.stringify(dragProbe))
+  check('拖拽态：transform 已从卡片 transition 摘除', dragProbe.hasTransform === false, JSON.stringify(dragProbe))
+  await endDrag(win)
+  await sleep(120)
+  const afterProbe = await sortingProbe(win, 'sort-0')
+  check('松手后：data-sorting 撤销', afterProbe.sorting === null, JSON.stringify(afterProbe))
+  check('松手后：transform 过渡恢复', afterProbe.hasTransform === true, JSON.stringify(afterProbe))
 
   console.log('\n=== 鼠标拖拽（跨置顶组，应拒绝） ===')
   const before = await domOrder(win)

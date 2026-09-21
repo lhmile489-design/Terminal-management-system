@@ -18,6 +18,18 @@ const PM_BINARIES: Record<PackageManager, string[]> = {
   bun: ['bun.exe']
 }
 
+/** Spring Boot 预检用到的文件名与可执行文件，与 EntryService 保持一致 */
+const MVNW_CMD = 'mvnw.cmd'
+const GRADLEW_BAT = 'gradlew.bat'
+const JAVA_BINARIES = ['java.exe']
+const SYSTEM_MAVEN_BINARIES = ['mvn.cmd', 'mvn.bat', 'mvn']
+const SYSTEM_GRADLE_BINARIES = ['gradle.cmd', 'gradle.bat', 'gradle']
+
+/** 各语言解释器 / 构建工具，与 EntryService 保持一致 */
+const PYTHON_BINARIES = ['python.exe', 'python3.exe', 'py.exe', 'python', 'python3']
+const GO_BINARIES = ['go.exe', 'go']
+const CARGO_BINARIES = ['cargo.exe', 'cargo']
+
 const MIN_FREE_BYTES = 500 * 1024 * 1024
 
 /**
@@ -47,6 +59,28 @@ export class PrecheckService {
       return finish(items)
     }
     items.push({ id: 'cwd', label: '工作目录存在且可读', level: 'pass', detail: cwd })
+
+    // Spring Boot 走独立预检序列：它没有 package.json / node_modules / npm 脚本，
+    // 后面那套 npm 专属检查全不适用。放在 registerOnly 分支之前 —— Spring Boot 是
+    // registerOnly=false 的非 npm 生态，不能落进「仅登记」的 fail。
+    if (entry.framework === 'spring-boot') {
+      return finish(await this.springBootItems(entry, cwd, snapshot, items))
+    }
+
+    // Python / Go / Rust / C++：命令形状固定的可启动生态，各走独立预检序列（只读、不 spawn、
+    // 不构建、不装依赖）。同样放在 registerOnly 分支之前 —— 它们 registerOnly=false。
+    if (entry.framework === 'go' || entry.framework === 'rust' || entry.framework === 'cpp') {
+      return finish(await this.nativeLangItems(entry, cwd, snapshot, items))
+    }
+    if (
+      entry.framework === 'python' ||
+      entry.framework === 'django' ||
+      entry.framework === 'fastapi' ||
+      entry.framework === 'flask' ||
+      entry.framework === 'streamlit'
+    ) {
+      return finish(await this.pythonItems(entry, cwd, snapshot, items))
+    }
 
     // Python 等仅登记条目到此为止，后面的检查项都以 package.json 为前提
     if (entry.registerOnly) {
@@ -191,6 +225,225 @@ export class PrecheckService {
     items.push(await diskItem(cwd))
 
     return finish(items)
+  }
+
+  /**
+   * Spring Boot 预检项，只读、不 spawn、不构建。
+   *
+   * 按 launchMode 校验各自前提：wrapper 文件存在 / jar 文件存在 / 系统构建工具在 PATH；
+   * jar 与 system 模式额外查 java 在 PATH。端口与磁盘复用 npm 路径的同款检查。
+   */
+  private async springBootItems(
+    entry: LaunchEntry,
+    cwd: string,
+    snapshot: ScanSnapshot | null,
+    items: PrecheckItem[]
+  ): Promise<PrecheckItem[]> {
+    const mode = entry.launchMode
+
+    if (!mode) {
+      items.push({
+        id: 'launchMode',
+        label: 'Spring Boot 启动方式已配置',
+        level: 'fail',
+        detail: '未选择启动方式（Maven/Gradle Wrapper、jar 或系统构建工具）',
+        fix: { action: 'pickScript', label: '配置启动方式' }
+      })
+      return items
+    }
+
+    // 各启动方式的前提文件 / 可执行文件
+    switch (mode) {
+      case 'maven-wrapper':
+        items.push(
+          await fileItem(join(cwd, MVNW_CMD), 'launchMode', 'Maven Wrapper（mvnw.cmd）存在', MVNW_CMD)
+        )
+        break
+      case 'gradle-wrapper':
+        items.push(
+          await fileItem(join(cwd, GRADLEW_BAT), 'launchMode', 'Gradle Wrapper（gradlew.bat）存在', GRADLEW_BAT)
+        )
+        break
+      case 'jar': {
+        items.push(await jarItem(entry, cwd))
+        break
+      }
+      case 'system-maven':
+        items.push(await pathItem(SYSTEM_MAVEN_BINARIES, 'launchMode', '系统 Maven（mvn）可用', 'mvn'))
+        break
+      case 'system-gradle':
+        items.push(await pathItem(SYSTEM_GRADLE_BINARIES, 'launchMode', '系统 Gradle（gradle）可用', 'gradle'))
+        break
+    }
+
+    // jar / system 模式跑的是 java；wrapper 模式由 wrapper 自己找 JAVA_HOME，这里不强求
+    if (mode === 'jar' || mode === 'system-maven' || mode === 'system-gradle') {
+      const java = await whichAny(JAVA_BINARIES)
+      items.push({
+        id: 'java',
+        label: 'java 可执行文件可用',
+        level: java ? 'pass' : 'fail',
+        detail: java ?? 'PATH 中找不到 java，请安装 JDK 或配置 PATH'
+      })
+    }
+
+    // 端口与磁盘：与 npm 路径同款检查
+    items.push(portItem(entry, snapshot))
+    items.push(await diskItem(cwd))
+    return items
+  }
+
+  /**
+   * Python 预检序列，只读、不 spawn、不装依赖（不 pip install）。
+   * python 在 PATH + 按 launchMode 校验入口前提 + 端口 + 磁盘。
+   */
+  private async pythonItems(
+    entry: LaunchEntry,
+    cwd: string,
+    snapshot: ScanSnapshot | null,
+    items: PrecheckItem[]
+  ): Promise<PrecheckItem[]> {
+    items.push(await pathItem(PYTHON_BINARIES, 'python', 'python 可执行文件可用', 'python'))
+
+    const mode = entry.launchMode
+    switch (mode) {
+      case 'python-file':
+        items.push(
+          await fileItem(
+            join(cwd, entry.jarPath ?? ''),
+            'launchMode',
+            'Python 入口文件存在',
+            entry.jarPath || '入口文件'
+          )
+        )
+        break
+      case 'django':
+        items.push(await fileItem(join(cwd, 'manage.py'), 'launchMode', 'manage.py 存在', 'manage.py'))
+        break
+      case 'python-module':
+      case 'uvicorn':
+        items.push({
+          id: 'launchMode',
+          label: '启动模块已配置',
+          level: entry.jarPath ? 'pass' : 'fail',
+          detail: entry.jarPath ? entry.jarPath : '未配置模块名',
+          fix: entry.jarPath ? undefined : { action: 'pickScript', label: '配置模块名' }
+        })
+        break
+      case 'flask':
+        // flask run 由 FLASK_APP 环境变量决定入口，这里不强求文件；给个信息项
+        items.push({ id: 'launchMode', label: 'Flask 启动方式', level: 'pass', detail: 'flask run' })
+        break
+      default:
+        items.push({
+          id: 'launchMode',
+          label: 'Python 启动方式已配置',
+          level: 'fail',
+          detail: `未选择合法的启动方式：${mode ?? '（空）'}`,
+          fix: { action: 'pickScript', label: '配置启动方式' }
+        })
+    }
+
+    items.push(portItem(entry, snapshot))
+    items.push(await diskItem(cwd))
+    return items
+  }
+
+  /**
+   * Go / Rust / C++ 预检序列，只读、不 spawn、不构建、不装依赖。
+   * - go：go 在 PATH + go.mod 存在
+   * - rust：cargo 在 PATH + Cargo.toml 存在
+   * - cpp：已配置且存在项目内 .exe（jarItem 泛化）
+   */
+  private async nativeLangItems(
+    entry: LaunchEntry,
+    cwd: string,
+    snapshot: ScanSnapshot | null,
+    items: PrecheckItem[]
+  ): Promise<PrecheckItem[]> {
+    if (entry.framework === 'go') {
+      items.push(await pathItem(GO_BINARIES, 'go', 'go 可执行文件可用', 'go'))
+      items.push(await fileItem(join(cwd, 'go.mod'), 'launchMode', 'go.mod 存在', 'go.mod'))
+    } else if (entry.framework === 'rust') {
+      items.push(await pathItem(CARGO_BINARIES, 'cargo', 'cargo 可执行文件可用', 'cargo'))
+      items.push(await fileItem(join(cwd, 'Cargo.toml'), 'launchMode', 'Cargo.toml 存在', 'Cargo.toml'))
+    } else {
+      // cpp：只跑已构建 exe，复用 binItem 校验（路径约束 + 存在性）
+      items.push(await binItem(entry, cwd, /\.exe$/i, 'exe'))
+    }
+
+    items.push(portItem(entry, snapshot))
+    items.push(await diskItem(cwd))
+    return items
+  }
+}
+
+/** 文件存在性检查项：Spring Boot wrapper 用 */
+async function fileItem(
+  target: string,
+  id: string,
+  label: string,
+  name: string
+): Promise<PrecheckItem> {
+  const ok = (await statSafe(target))?.isFile() ?? false
+  return {
+    id,
+    label,
+    level: ok ? 'pass' : 'fail',
+    detail: ok ? target : `未找到 ${name}`,
+    fix: ok ? undefined : { action: 'pickScript', label: '改用系统构建工具' }
+  }
+}
+
+/** 可执行产物检查项：路径先按约束校形，再查存在性。jar / exe 通用（按后缀参数区分） */
+async function binItem(
+  entry: LaunchEntry,
+  cwd: string,
+  extRegex: RegExp,
+  extLabel: string
+): Promise<PrecheckItem> {
+  const rel = entry.jarPath
+  const label = `${extLabel} 文件存在`
+  if (!rel) {
+    return {
+      id: 'launchMode',
+      label,
+      level: 'fail',
+      detail: `未配置 ${extLabel} 路径`,
+      fix: { action: 'pickScript', label: `配置 ${extLabel} 路径` }
+    }
+  }
+  if (isAbsolute(rel) || rel.split(/[\\/]/).includes('..') || !extRegex.test(rel)) {
+    return { id: 'launchMode', label, level: 'fail', detail: `${extLabel} 路径非法：${rel}` }
+  }
+  const abs = join(cwd, rel)
+  const ok = (await statSafe(abs))?.isFile() ?? false
+  return {
+    id: 'launchMode',
+    label,
+    level: ok ? 'pass' : 'fail',
+    detail: ok ? abs : `${extLabel} 不存在，请先构建：${rel}`
+  }
+}
+
+/** jar 文件检查项：binItem 的 .jar 特化（Spring Boot jar 模式用） */
+async function jarItem(entry: LaunchEntry, cwd: string): Promise<PrecheckItem> {
+  return binItem(entry, cwd, /\.jar$/i, 'jar')
+}
+
+/** PATH 可执行文件检查项：Spring Boot system 模式用 */
+async function pathItem(
+  binaries: string[],
+  id: string,
+  label: string,
+  name: string
+): Promise<PrecheckItem> {
+  const found = await whichAny(binaries)
+  return {
+    id,
+    label,
+    level: found ? 'pass' : 'fail',
+    detail: found ?? `PATH 中找不到 ${name}`
   }
 }
 

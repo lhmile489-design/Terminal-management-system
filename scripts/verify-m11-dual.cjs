@@ -248,7 +248,7 @@ app.whenReady().then(async () => {
 
     console.log('\n=== 5. 卡片把「端口重合」写成文字 ===')
     await js(`(()=>{const b=[...document.querySelector('nav').querySelectorAll('button')]
-      .find(x=>x.getAttribute('aria-label')==='启动台');b&&b.click();return true})()`)
+      .find(x=>x.getAttribute('aria-label') === '前端启动台');b&&b.click();return true})()`)
 
     let cards = []
     for (let i = 0; i < 40; i++) {

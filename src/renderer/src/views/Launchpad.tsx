@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { CaretDown, Warning, X } from '@phosphor-icons/react'
+import { CaretDown, Rows, SquaresFour, Warning, X } from '@phosphor-icons/react'
 import type {
   EntryKind,
   EntryRuntime,
@@ -9,20 +9,38 @@ import type {
 } from '@shared/types'
 import { EntryCard } from '../components/EntryCard'
 import type { EntryCardActions } from '../components/EntryCard'
+import { EntryRow } from '../components/EntryRow'
 import { AddEntryDialog } from '../components/AddEntryDialog'
 import { EditEntryDialog } from '../components/EditEntryDialog'
 import { PrecheckPanel } from '../components/PrecheckPanel'
+import { LaunchpadTerminalPanel } from '../components/LaunchpadTerminalPanel'
 import { useEntries } from '../store/entries'
 import { useEntryFix } from '../lib/useEntryFix'
 import { useCardSort } from '../lib/useCardSort'
 import {
   SERVICE_FILTERS,
+  STACK_LABEL,
   TASK_FILTERS,
   isLiveStatus,
   matchesServiceFilter,
-  matchesTaskFilter
+  matchesTaskFilter,
+  stackOf
 } from '../lib/entryMeta'
-import type { ServiceFilter, TaskFilter } from '../lib/entryMeta'
+import type { ServiceFilter, TaskFilter, TechStack } from '../lib/entryMeta'
+
+/** 展示形态，PRD §9.x。持久化到 localStorage，下次打开沿用 */
+type ViewMode = 'card' | 'list'
+const VIEW_MODE_KEY = 'mile.launchpad.viewMode'
+/** 技术栈 tab 选中值：'all' 或某个大类 */
+type StackFilter = 'all' | TechStack
+
+function readViewMode(): ViewMode {
+  try {
+    return localStorage.getItem(VIEW_MODE_KEY) === 'list' ? 'list' : 'card'
+  } catch {
+    return 'card'
+  }
+}
 
 interface DialogState {
   kind: EntryKind
@@ -81,12 +99,26 @@ export function Launchpad({
   const stop = useEntries((s) => s.stop)
   const restart = useEntries((s) => s.restart)
   const reorder = useEntries((s) => s.reorder)
+  const runScript = useEntries((s) => s.runScript)
 
   const [dialog, setDialog] = useState<DialogState | null>(null)
   const [editing, setEditing] = useState<string | null>(null)
   const [focus, setFocus] = useState<{ entryId: string; precheck: PrecheckResult } | null>(null)
   const [serviceFilter, setServiceFilter] = useState<ServiceFilter>('all')
   const [taskFilter, setTaskFilter] = useState<TaskFilter>('all')
+  const [stackFilter, setStackFilter] = useState<StackFilter>('all')
+  const [viewMode, setViewMode] = useState<ViewMode>(readViewMode)
+  /** 底部嵌入终端面板当前 pin 的条目 id，null 表示面板收起 */
+  const [pinnedEntryId, setPinnedEntryId] = useState<string | null>(null)
+
+  // 视图形态持久化：下次打开沿用上次选的卡片 / 列表
+  useEffect(() => {
+    try {
+      localStorage.setItem(VIEW_MODE_KEY, viewMode)
+    } catch {
+      // localStorage 不可用（隐私模式等）时静默降级，不影响功能
+    }
+  }, [viewMode])
 
   const afterFix = useCallback(async (entryId: string) => {
     try {
@@ -116,19 +148,53 @@ export function Launchpad({
     [categories]
   )
 
+  /**
+   * 技术栈 tab：从现有条目里出现过的框架大类自动生成，PRD §9.x。
+   * 新增一个 react 项目就多一个 React tab，新增 spring-boot 就多 Java tab。
+   * 每类带上条目计数；按标签排序让 tab 顺序稳定，不随条目增删跳动。
+   */
+  const stackTabs = useMemo(() => {
+    const count = new Map<TechStack, number>()
+    for (const entry of entries) {
+      const stack = stackOf(entry.framework)
+      count.set(stack, (count.get(stack) ?? 0) + 1)
+    }
+    return [...count.entries()]
+      .map(([stack, n]) => ({ stack, count: n, label: STACK_LABEL[stack] }))
+      .sort((a, b) => a.label.localeCompare(b.label))
+  }, [entries])
+
+  // 选中的技术栈 tab 若因条目删光而消失，回落到「全部」，避免筛出空列表还找不到入口
+  useEffect(() => {
+    if (stackFilter !== 'all' && !stackTabs.some((tab) => tab.stack === stackFilter)) {
+      setStackFilter('all')
+    }
+  }, [stackTabs, stackFilter])
+
+  const matchesStack = useCallback(
+    (entry: LaunchEntry) => stackFilter === 'all' || stackOf(entry.framework) === stackFilter,
+    [stackFilter]
+  )
+
   const categoryViews = useMemo<CategoryView[]>(
     () => categories
       .map((category) => ({
         ...category,
         services: category.entries.filter(
-          (entry) => entry.kind === 'service' && matchesServiceFilter(runtimes[entry.id]?.status ?? 'idle', serviceFilter)
+          (entry) =>
+            entry.kind === 'service' &&
+            matchesStack(entry) &&
+            matchesServiceFilter(runtimes[entry.id]?.status ?? 'idle', serviceFilter)
         ),
         tasks: category.entries.filter(
-          (entry) => entry.kind === 'task' && matchesTaskFilter(runtimes[entry.id]?.status ?? 'idle', taskFilter)
+          (entry) =>
+            entry.kind === 'task' &&
+            matchesStack(entry) &&
+            matchesTaskFilter(runtimes[entry.id]?.status ?? 'idle', taskFilter)
         )
       }))
       .filter((category) => category.services.length > 0 || category.tasks.length > 0),
-    [categories, runtimes, serviceFilter, taskFilter]
+    [categories, runtimes, serviceFilter, taskFilter, matchesStack]
   )
 
   const noVisibleServices =
@@ -172,8 +238,16 @@ export function Launchpad({
     onPendingKindConsumed?.()
   }, [pendingKind, onPendingKindConsumed])
 
-  const submit = async (input: NewLaunchEntry): Promise<void> => {
-    await add(input)
+  const submit = async (input: NewLaunchEntry, image?: ArrayBuffer): Promise<void> => {
+    const entry = await add(input)
+    // 新建时选了图片：条目创建后补一次 setImage（此刻才有 id），主进程压缩落盘并回填
+    if (image && entry?.id) {
+      try {
+        await window.mile.entry.setImage(entry.id, image)
+      } catch {
+        // 图片处理失败不阻断条目创建，条目已建好，用户可在编辑面板重试
+      }
+    }
   }
 
   const runStart = async (entry: LaunchEntry): Promise<void> => {
@@ -194,6 +268,10 @@ export function Launchpad({
       const sessionId = runtimes[entry.id]?.sessionId
       if (sessionId) onOpenLogs(sessionId)
     },
+    onPin: () => {
+      // 展开底部嵌入终端面板，pin 当前条目，不跳视图
+      setPinnedEntryId(entry.id)
+    },
     onDiagnose: () =>
       void window.mile.entry
         .precheck(entry.id)
@@ -203,34 +281,45 @@ export function Launchpad({
       setEditing(entry.id)
     },
     onOpenFolder: () => window.mile.shell.openPath(entry.path),
-    onOpenOutput: () =>
-      void window.mile.entry
-        .outputDir(entry.id)
-        .then((dir) => dir && window.mile.shell.openPath(dir)),
+    onOpenOutput: () => {
+      if (entry.kind === 'task' && runtimes[entry.id]?.status === 'succeeded') {
+        // 成功态：在资源管理器里定位并高亮产物文件，路径由主进程构造
+        void window.mile.entry.revealOutput(entry.id)
+      } else {
+        // 其他态（配置了 outputDir 时也允许直接打开目录）
+        void window.mile.entry
+          .outputDir(entry.id)
+          .then((dir) => dir && window.mile.shell.openPath(dir))
+      }
+    },
     onTogglePin: () => void edit(entry.id, { pinned: !entry.pinned }),
-    onRemove: () => void remove(entry.id)
+    onRemove: () => void remove(entry.id),
+    onRunScript:
+      entry.kind === 'task'
+        ? (script) => void runScript(entry.id, script)
+        : undefined
   })
 
   const focusEntry = focus ? entries.find((entry) => entry.id === focus.entryId) : undefined
   const editEntry = editing ? entries.find((entry) => entry.id === editing) : undefined
 
   return (
-    <div className="flex flex-col gap-7">
+    <div className="flex min-h-full flex-1 flex-col gap-5">
       {error && !editEntry && (
         <div
           role="alert"
-          className="flex items-start gap-3 rounded-[12px] border border-fault/40 bg-fault-soft px-4 py-3"
+          className="flex items-start gap-2.5 rounded-[8px] border border-fault/35 bg-fault/8 px-3.5 py-2.5"
         >
-          <Warning size={15} weight="bold" className="mt-0.5 shrink-0 text-fault" aria-hidden />
-          <p className="min-w-0 flex-1 text-[13px] break-words text-fault">{error}</p>
+          <Warning size={13} weight="bold" className="mt-0.5 shrink-0 text-fault" aria-hidden />
+          <p className="min-w-0 flex-1 text-[12px] break-words text-fault">{error}</p>
           <button
             type="button"
             aria-label="关闭提示"
             title="关闭提示"
             onClick={clearError}
-            className="pressable shrink-0 text-fault hover:opacity-80"
+            className="pressable shrink-0 text-fault/70 hover:text-fault"
           >
-            <X size={14} weight="bold" />
+            <X size={12} weight="bold" />
           </button>
         </div>
       )}
@@ -242,6 +331,29 @@ export function Launchpad({
         </div>
       ) : (
         <>
+          {/* 技术栈 tab：自动按现有条目的框架大类生成，点选后全局筛选服务+任务 */}
+          {stackTabs.length > 1 && (
+            <nav aria-label="技术栈筛选" className="border-b border-line pb-3">
+              <div role="tablist" className="flex flex-wrap items-center gap-1.5">
+                <StackTab
+                  label="全部"
+                  count={entries.length}
+                  active={stackFilter === 'all'}
+                  onClick={() => setStackFilter('all')}
+                />
+                {stackTabs.map((tab) => (
+                  <StackTab
+                    key={tab.stack}
+                    label={tab.label}
+                    count={tab.count}
+                    active={stackFilter === tab.stack}
+                    onClick={() => setStackFilter(tab.stack)}
+                  />
+                ))}
+              </div>
+            </nav>
+          )}
+
           <section aria-labelledby="launchpad-filter-heading" className="border-y border-line py-3">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <h2 id="launchpad-filter-heading" className="eyebrow eyebrow-tight">
@@ -260,6 +372,8 @@ export function Launchpad({
                   filters={TASK_FILTERS}
                   onChange={setTaskFilter}
                 />
+                {/* 展示形态切换：卡片网格 ↔ 紧凑列表，选择记忆到 localStorage */}
+                <ViewToggle mode={viewMode} onChange={setViewMode} />
               </div>
             </div>
           </section>
@@ -280,6 +394,7 @@ export function Launchpad({
                 category={category}
                 serviceFilter={serviceFilter}
                 taskFilter={taskFilter}
+                viewMode={viewMode}
                 reorder={reorderWithinGroup}
                 runtimes={runtimes}
                 busy={busy}
@@ -293,14 +408,14 @@ export function Launchpad({
 
       {focus && focusEntry && (
         <section aria-labelledby="precheck-heading">
-          <div className="mb-3 flex items-center justify-between gap-3">
+          <div className="mb-2.5 flex items-center justify-between gap-3">
             <h2 id="precheck-heading" className="eyebrow">
               Diagnose · {focusEntry.name}
             </h2>
             <button
               type="button"
               onClick={() => setFocus(null)}
-              className="pressable rounded-[6px] border border-line-strong bg-card px-2.5 py-1 text-[12px] text-ink-muted hover:text-ink-strong"
+              className="pressable rounded-[5px] border border-line bg-raised/50 px-2.5 py-1 text-[11.5px] text-ink-muted hover:border-line-strong hover:text-ink-strong"
             >
               收起
             </button>
@@ -339,6 +454,14 @@ export function Launchpad({
       )}
 
       {dialogs}
+
+      <LaunchpadTerminalPanel
+        entryId={pinnedEntryId}
+        entries={entries}
+        runtimes={runtimes}
+        onOpenFullTerminal={(sessionId) => onOpenLogs(sessionId)}
+        onClose={() => setPinnedEntryId(null)}
+      />
     </div>
   )
 }
@@ -372,10 +495,86 @@ function FilterControl<F extends string>({
   )
 }
 
+/** 技术栈 tab 单项：标签 + 计数徽标，选中态用强调色边框 */
+function StackTab({
+  label,
+  count,
+  active,
+  onClick
+}: {
+  label: string
+  count: number
+  active: boolean
+  onClick: () => void
+}): React.JSX.Element {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={active}
+      data-stack-tab={label}
+      onClick={onClick}
+      className={`pressable-flat flex items-center gap-1.5 rounded-[6px] border px-2.5 py-1 text-[12px] transition-colors duration-150 ${
+        active
+          ? 'border-accent/60 bg-accent/8 text-accent'
+          : 'border-transparent bg-raised/60 text-ink-faint hover:border-line hover:text-ink-muted'
+      }`}
+    >
+      <span className="font-medium">{label}</span>
+      <span
+        className={`rounded-[3px] px-1 font-mono text-[10px] ${
+          active ? 'bg-accent/15 text-accent' : 'bg-raised text-ink-faint'
+        }`}
+      >
+        {count}
+      </span>
+    </button>
+  )
+}
+
+/** 卡片 / 列表 视图切换，两个图标按钮组成的分段控件 */
+function ViewToggle({
+  mode,
+  onChange
+}: {
+  mode: ViewMode
+  onChange: (mode: ViewMode) => void
+}): React.JSX.Element {
+  return (
+    <div role="radiogroup" aria-label="展示形态" className="segmented">
+      <button
+        type="button"
+        role="radio"
+        aria-checked={mode === 'card'}
+        aria-label="卡片视图"
+        title="卡片视图"
+        data-view-toggle="card"
+        onClick={() => onChange('card')}
+        className="segmented-item"
+      >
+        <SquaresFour size={14} weight="bold" />
+      </button>
+      <button
+        type="button"
+        role="radio"
+        aria-checked={mode === 'list'}
+        aria-label="列表视图"
+        title="列表视图"
+        data-view-toggle="list"
+        onClick={() => onChange('list')}
+        className="segmented-item"
+      >
+        <Rows size={14} weight="bold" />
+      </button>
+    </div>
+  )
+}
+
 function CategoryPanel({
   category,
   serviceFilter,
   taskFilter,
+  viewMode,
   reorder,
   runtimes,
   busy,
@@ -385,6 +584,7 @@ function CategoryPanel({
   category: CategoryView
   serviceFilter: ServiceFilter
   taskFilter: TaskFilter
+  viewMode: ViewMode
   reorder: (ids: string[]) => Promise<void>
   runtimes: Record<string, EntryRuntime>
   busy: Record<string, boolean>
@@ -403,7 +603,7 @@ function CategoryPanel({
       data-category-panel
       data-category-name={category.name}
       aria-labelledby={headingId}
-      className="border-y border-line py-1"
+      className="border-y border-line py-0.5"
     >
       <h2 id={headingId}>
         <button
@@ -412,32 +612,38 @@ function CategoryPanel({
           aria-expanded={expanded}
           aria-controls={`${headingId}-content`}
           onClick={() => setExpanded((value) => !value)}
-          className="pressable flex w-full min-w-0 items-center gap-3 rounded-[6px] px-2 py-2 text-left hover:bg-raised"
+          className="pressable-flat flex w-full min-w-0 items-center gap-2.5 rounded-[5px] px-2 py-1.5 text-left hover:bg-raised/60"
         >
           <CaretDown
-            size={15}
+            size={12}
             weight="bold"
             aria-hidden
-            className={`shrink-0 text-ink-faint transition-transform ${expanded ? '' : '-rotate-90'}`}
+            className={`shrink-0 text-ink-faint/70 transition-transform ${expanded ? '' : '-rotate-90'}`}
           />
-          <span className="min-w-0 flex-1 truncate text-[14px] font-semibold text-ink-strong" title={category.name}>
+          <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-ink-strong" title={category.name}>
             {category.name}
           </span>
-          {live > 0 && <span className="status-dot shrink-0" data-halo="true" aria-label={`${live} 项运行中`} />}
-          <span className="shrink-0 font-mono text-[11px] text-ink-faint">
+          {live > 0 && (
+            <span
+              className="h-1.5 w-1.5 shrink-0 rounded-full bg-live shadow-[0_0_0_2px_color-mix(in_srgb,var(--signal-live)_22%,transparent)]"
+              aria-label={`${live} 项运行中`}
+            />
+          )}
+          <span className="shrink-0 font-mono text-[10.5px] text-ink-faint/70">
             {visible === category.entries.length ? visible : `${visible} / ${category.entries.length}`}
           </span>
         </button>
       </h2>
 
-      <div id={`${headingId}-content`} data-category-content hidden={!expanded} className="px-2 pt-3 pb-4">
-        <div className="flex flex-col gap-5">
+      <div id={`${headingId}-content`} data-category-content hidden={!expanded} className="px-2 pt-2.5 pb-3">
+        <div className="flex flex-col gap-4">
           {category.services.length > 0 && (
             <EntryGrid
               kind="service"
               entries={services}
               visible={category.services}
-              sortable={serviceFilter === 'all'}
+              sortable={serviceFilter === 'all' && viewMode === 'card'}
+              viewMode={viewMode}
               reorder={reorder}
               runtimes={runtimes}
               busy={busy}
@@ -450,7 +656,8 @@ function CategoryPanel({
               kind="task"
               entries={tasks}
               visible={category.tasks}
-              sortable={taskFilter === 'all'}
+              sortable={taskFilter === 'all' && viewMode === 'card'}
+              viewMode={viewMode}
               reorder={reorder}
               runtimes={runtimes}
               busy={busy}
@@ -469,6 +676,7 @@ function EntryGrid({
   entries,
   visible,
   sortable,
+  viewMode,
   reorder,
   runtimes,
   busy,
@@ -479,6 +687,7 @@ function EntryGrid({
   entries: LaunchEntry[]
   visible: LaunchEntry[]
   sortable: boolean
+  viewMode: ViewMode
   reorder: (ids: string[]) => Promise<void>
   runtimes: Record<string, EntryRuntime>
   busy: Record<string, boolean>
@@ -504,21 +713,41 @@ function EntryGrid({
           </span>
         </h3>
       </div>
-      <div ref={gridRef} className="grid grid-cols-1 gap-3 lg:grid-cols-2 2xl:grid-cols-3">
-        {orderedVisible.map((entry, index) => (
-          <EntryCard
-            key={entry.id}
-            entry={entry}
-            runtime={runtimes[entry.id] ?? IDLE_RUNTIME(entry.id)}
-            busy={busy[entry.id] ?? false}
-            sort={sortable ? handlersFor(entry) : undefined}
-            dragging={draggingId === entry.id}
-            position={{ index: index + 1, total: orderedVisible.length }}
-            portShared={sharedPorts.has(runtimes[entry.id]?.port ?? -1)}
-            actions={actionsFor(entry)}
-          />
-        ))}
-      </div>
+      {viewMode === 'list' ? (
+        // 列表：竖直堆叠紧凑行，不做拖拽排序（排序是卡片网格的交互）
+        <div data-entry-list className="flex flex-col gap-1.5">
+          {orderedVisible.map((entry) => (
+            <EntryRow
+              key={entry.id}
+              entry={entry}
+              runtime={runtimes[entry.id] ?? IDLE_RUNTIME(entry.id)}
+              busy={busy[entry.id] ?? false}
+              portShared={sharedPorts.has(runtimes[entry.id]?.port ?? -1)}
+              actions={actionsFor(entry)}
+            />
+          ))}
+        </div>
+      ) : (
+        <div
+          ref={gridRef}
+          data-sorting={sortable && draggingId !== null ? 'true' : undefined}
+          className="grid grid-cols-1 gap-3 lg:grid-cols-2 2xl:grid-cols-3"
+        >
+          {orderedVisible.map((entry, index) => (
+            <EntryCard
+              key={entry.id}
+              entry={entry}
+              runtime={runtimes[entry.id] ?? IDLE_RUNTIME(entry.id)}
+              busy={busy[entry.id] ?? false}
+              sort={sortable ? handlersFor(entry) : undefined}
+              dragging={draggingId === entry.id}
+              position={{ index: index + 1, total: orderedVisible.length }}
+              portShared={sharedPorts.has(runtimes[entry.id]?.port ?? -1)}
+              actions={actionsFor(entry)}
+            />
+          ))}
+        </div>
+      )}
     </section>
   )
 }

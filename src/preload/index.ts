@@ -11,6 +11,7 @@ import type {
   ListenerGroup,
   LogQuery,
   LogResult,
+  MavenGoal,
   NewLaunchEntry,
   PrecheckResult,
   ScanDiff,
@@ -55,14 +56,34 @@ const api = {
     restart: (id: string): Promise<EntryStartResult> =>
       ipcRenderer.invoke(Channels.entryRestart, id),
     install: (id: string): Promise<EntryRuntime> => ipcRenderer.invoke(Channels.entryInstall, id),
+    mavenRun: (id: string, goal: MavenGoal): Promise<EntryRuntime> =>
+      ipcRenderer.invoke(Channels.entryMavenRun, id, goal),
+    packageWithProfile: (id: string, profile: string | null): Promise<EntryRuntime> =>
+      ipcRenderer.invoke(Channels.entryPackageWithProfile, id, profile),
+    detectProfiles: (id: string): Promise<string[]> =>
+      ipcRenderer.invoke(Channels.entryDetectProfiles, id),
+    listJars: (id: string): Promise<string[]> =>
+      ipcRenderer.invoke(Channels.entryListJars, id),
     runScript: (id: string, script: string): Promise<EntryRuntime> =>
       ipcRenderer.invoke(Channels.entryRunScript, id, script),
     diagnose: (id: string): Promise<EntryDiagnosis> =>
       ipcRenderer.invoke(Channels.entryDiagnose, id),
     outputDir: (id: string): Promise<string | null> =>
       ipcRenderer.invoke(Channels.entryOutputDir, id),
+    revealOutput: (id: string): Promise<boolean> =>
+      ipcRenderer.invoke(Channels.entryRevealOutput, id),
     openPackageJson: (id: string): Promise<boolean> =>
       ipcRenderer.invoke(Channels.entryOpenPackageJson, id),
+    openInHBuilderX: (id: string): Promise<boolean> =>
+      ipcRenderer.invoke(Channels.entryOpenInHBuilderX, id),
+    favicon: (id: string): Promise<string | null> =>
+      ipcRenderer.invoke(Channels.entryFavicon, id),
+    setImage: (id: string, bytes: ArrayBuffer): Promise<string> =>
+      ipcRenderer.invoke(Channels.entrySetImage, id, bytes),
+    clearImage: (id: string): Promise<LaunchEntry> =>
+      ipcRenderer.invoke(Channels.entryClearImage, id),
+    image: (id: string): Promise<string | null> =>
+      ipcRenderer.invoke(Channels.entryImage, id),
     runtimes: (): Promise<EntryRuntime[]> => ipcRenderer.invoke(Channels.entryRuntimes),
     onChange: (cb: (list: LaunchEntry[]) => void): (() => void) =>
       subscribe(Channels.entryChanged, cb),
@@ -119,6 +140,9 @@ const api = {
     isMaximized: (): Promise<boolean> => ipcRenderer.invoke(Channels.windowIsMaximized),
     onMaximizeChange: (cb: (maximized: boolean) => void): (() => void) =>
       subscribe(Channels.windowMaximizeChanged, cb)
+  },
+  app: {
+    info: (): Promise<{ version: string; name: string }> => ipcRenderer.invoke(Channels.appInfo)
   }
 }
 

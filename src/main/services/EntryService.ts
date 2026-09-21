@@ -1,9 +1,12 @@
 import { EventEmitter } from 'node:events'
 import { randomUUID } from 'node:crypto'
-import { readFile, stat } from 'node:fs/promises'
+import { spawn } from 'node:child_process'
+import { existsSync } from 'node:fs'
+import { readFile, readdir, stat } from 'node:fs/promises'
 import { join, relative, isAbsolute, resolve } from 'node:path'
 import {
   SERVICE_ICON_IDS,
+  isWebFramework,
   type EditableEntryField,
   type EntryDiagnosis,
   type EntryEdit,
@@ -12,22 +15,31 @@ import {
   type EntryStatus,
   type Framework,
   type LaunchEntry,
+  type LaunchMode,
+  type MavenGoal,
   type NewLaunchEntry,
   type PackageManager,
   type PortHolder,
   type PrecheckResult,
-  type ServiceIcon
+  type ServiceIcon,
+  type SpringBootLaunchMode
 } from '@shared/types'
 import { readListenPorts, type ListenRow } from '../lib/winProcess'
 import type { ConfigStore } from './ConfigStore'
 import type { DetectService } from './DetectService'
 import { PrecheckService, resolveCwd, whichAny } from './PrecheckService'
+import { ImageService } from './ImageService'
 import type { EntryExpectation, ScannerService } from './ScannerService'
 import type { SessionService } from './SessionService'
 import type { OwnershipService } from './OwnershipService'
 
 /** 端口捕获正则，PRD §8.4 */
 const PORT_PATTERNS = [
+  // Spring Boot / Tomcat / Netty 专用格式必须排在通用 `port \d+` 之前，
+  // 否则 Spring Boot 冷启动日志里别处的 "port" 会先命中通用正则
+  /Tomcat started on port\D*(\d+)/i,
+  /Netty started on port\D*(\d+)/i,
+  /Tomcat initialized with port\D*(\d+)/i,
   /http:\/\/localhost:(\d+)/i,
   /http:\/\/127\.0\.0\.1:(\d+)/i,
   /Local:\s+https?:\/\/[^\s:]+:(\d+)/i,
@@ -53,6 +65,16 @@ const PORT_TAKEN = /port\s+\d+\s+is\s+in\s+use|address already in use/gi
 /** 脚本名只允许这些字符：它最终要经过 cmd.exe 解析，& | ^ 等会改变命令语义 */
 const SAFE_SCRIPT = /^[A-Za-z0-9_.:\-+]+$/
 
+/** Spring Boot profile 名：只允许字母、数字、下划线、连字符，与 Spring 命名约定一致 */
+const SAFE_PROFILE = /^[A-Za-z0-9_-]+$/
+
+function assertSafeProfile(profile: string | null): void {
+  if (profile === null) return
+  if (!SAFE_PROFILE.test(profile) || profile.length > 64) {
+    throw new Error(`Profile 名非法或过长：${profile}`)
+  }
+}
+
 const PM_BINARIES: Record<PackageManager, string[]> = {
   npm: ['npm.cmd', 'npm.exe'],
   pnpm: ['pnpm.cmd', 'pnpm.exe'],
@@ -60,17 +82,72 @@ const PM_BINARIES: Record<PackageManager, string[]> = {
   bun: ['bun.exe']
 }
 
+/**
+ * Spring Boot 启动方式的合法枚举，sanitizeEdit 与新建校形都用它挡非法值。
+ * 这五个是命令构造仅有的入口，用户改不了其中任何一条的可执行文件或子命令。
+ */
+const SPRING_BOOT_LAUNCH_MODES = new Set<SpringBootLaunchMode>([
+  'maven-wrapper',
+  'gradle-wrapper',
+  'jar',
+  'system-maven',
+  'system-gradle'
+])
+
+/** LaunchMode → 是否为 Spring Boot 的 5 个模式（给 buildSpringBootCommand 做类型收窄） */
+function isSpringBootMode(mode: LaunchMode): mode is SpringBootLaunchMode {
+  return SPRING_BOOT_LAUNCH_MODES.has(mode as SpringBootLaunchMode)
+}
+
+/** wrapper 脚本文件名，硬编码常量，必须存在于条目登记目录内。用户改不了 */
+const MVNW_CMD = 'mvnw.cmd'
+const GRADLEW_BAT = 'gradlew.bat'
+
+/** jar / system 模式需要的 java 可执行文件 */
+const JAVA_BINARIES = ['java.exe']
+/** system 模式的构建工具可执行文件 */
+const SYSTEM_MAVEN_BINARIES = ['mvn.cmd', 'mvn.bat', 'mvn']
+const SYSTEM_GRADLE_BINARIES = ['gradle.cmd', 'gradle.bat', 'gradle']
+
+/** 各语言解释器 / 构建工具的可执行文件候选，经 whichAny 定位，用户不能指定 */
+const PYTHON_BINARIES = ['python.exe', 'python3.exe', 'py.exe', 'python', 'python3']
+const GO_BINARIES = ['go.exe', 'go']
+const CARGO_BINARIES = ['cargo.exe', 'cargo']
+
+/**
+ * 全部合法的 launchMode 枚举（Spring Boot 5 个 + 各语言）。sanitizeEdit 与新建校形用它挡非法值。
+ * 这些是命令构造仅有的入口，用户改不了其中任何一条的可执行文件或硬编码子命令。
+ */
+const LAUNCH_MODES = new Set<LaunchMode>([
+  'maven-wrapper', 'gradle-wrapper', 'jar', 'system-maven', 'system-gradle',
+  'python-file', 'python-module', 'uvicorn', 'flask', 'django',
+  'go-run', 'cargo-run', 'cargo-run-release', 'cpp-exe'
+])
+
+/** 支持 launchMode 的框架（命令形状固定、可启动的非 npm 生态）。用于 sanitizeEdit 校验。 */
+const LAUNCHABLE_FRAMEWORKS = new Set<Framework>([
+  'spring-boot', 'django', 'fastapi', 'flask', 'streamlit', 'python', 'go', 'rust', 'cpp'
+])
+
+/** Python 入口文件名 / 包路径的安全字符（禁 shell 元字符，禁绝对路径由 resolveBinPath 另管） */
+const SAFE_PYTHON_ENTRY = /^[A-Za-z0-9_.\-/\\]+$/
+/** Python 模块名（点分标识符，如 uvicorn、app.main），不含路径分隔符 */
+const SAFE_PYTHON_MODULE = /^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*(:[A-Za-z_][A-Za-z0-9_]*)?$/
+/** Go 包路径：项目内相对路径或 `.`（禁 shell 元字符） */
+const SAFE_GO_PKG = /^[A-Za-z0-9_.\-/]+$/
+
 /** 任务产物目录的常见约定，按序探测，PRD §4.2 */
 const OUTPUT_DIR_CANDIDATES = ['dist', 'build', 'out', '.next', '.output', 'release']
 
 /** 可编辑字段白名单，PRD §4.6。未列出的键在 sanitizeEdit 里被静默丢弃 */
 const EDITABLE = new Set<EditableEntryField>([
   'name', 'category', 'pinned', 'kind', 'path', 'cwd', 'script', 'scripts',
-  'framework', 'packageManager', 'env', 'icon', 'expectedPort', 'outputDir', 'registerOnly'
+  'framework', 'packageManager', 'env', 'icon', 'imageId', 'expectedPort', 'outputDir',
+  'launchMode', 'jarPath', 'registerOnly'
 ])
 
 /** 决定「这张卡片是谁」的字段，运行中不可改，PRD §4.6 */
-const IDENTITY_FIELDS = ['kind', 'path', 'cwd', 'script', 'packageManager', 'expectedPort', 'env'] as const
+const IDENTITY_FIELDS = ['kind', 'path', 'cwd', 'script', 'packageManager', 'expectedPort', 'env', 'launchMode', 'jarPath'] as const
 
 const PACKAGE_MANAGERS = new Set<PackageManager>(['npm', 'pnpm', 'yarn', 'bun'])
 const SERVICE_ICONS = new Set<ServiceIcon>(SERVICE_ICON_IDS)
@@ -78,10 +155,35 @@ const CATEGORY_MAX_LENGTH = 40
 
 const FRAMEWORKS = new Set<Framework>([
   'next', 'nuxt', 'angular', 'vue-vite', 'vue-cli', 'react-vite', 'react-cra',
-  'svelte', 'electron', 'hexo', 'node',
+  'svelte', 'electron', 'hexo', 'node', 'spring-boot', 'uniapp',
   'hugo', 'jekyll', 'django', 'fastapi', 'flask', 'streamlit', 'python',
-  'docker-compose', 'go', 'rust', 'static', 'unknown'
+  'docker-compose', 'go', 'rust', 'cpp', 'static', 'unknown'
 ])
+
+/**
+ * HBuilderX cli.exe 的常见安装位置，取首个存在者。它不在 PATH，所以按绝对路径探测。
+ * 顺序即优先级。测试可用 MILE_HBUILDERX_CLI 环境变量指向夹具里的假 cli，覆盖真实探测。
+ */
+function hbuilderxCliCandidates(): string[] {
+  const override = process.env.MILE_HBUILDERX_CLI
+  if (override) return [override]
+  const localAppData = process.env.LOCALAPPDATA
+  const list = [
+    'D:\\HBuilderX\\cli.exe',
+    'C:\\Program Files\\HBuilderX\\cli.exe',
+    'D:\\Program Files\\HBuilderX\\cli.exe',
+    'C:\\HBuilderX\\cli.exe'
+  ]
+  if (localAppData) list.push(join(localAppData, 'HBuilderX', 'cli.exe'))
+  return list
+}
+
+function resolveHBuilderXCli(): string | null {
+  for (const candidate of hbuilderxCliCandidates()) {
+    if (existsSync(candidate)) return candidate
+  }
+  return null
+}
 
 const FIELD_LABEL: Partial<Record<EditableEntryField, string>> = {
   icon: '服务图标',
@@ -95,6 +197,8 @@ const FIELD_LABEL: Partial<Record<EditableEntryField, string>> = {
   name: '名称',
   category: '分类',
   pinned: '置顶',
+  launchMode: '启动方式',
+  jarPath: 'jar 路径',
   registerOnly: '仅登记'
 }
 
@@ -127,7 +231,15 @@ const TASK_CANCELED_CODE = 130
 /** 服务启动 60s 未捕获端口但进程存活，转 running（端口未知），PRD §4.3 */
 const PORT_CAPTURE_TIMEOUT_MS = 60_000
 const PORT_RELEASE_TIMEOUT_MS = 5000
-const ERROR_LINE = /\b(error|ERR!|failed|Cannot find|EADDRINUSE)\b/i
+const ERROR_LINE = /\b(error|ERR!|failed|Cannot find|EADDRINUSE|BUILD FAILURE|APPLICATION FAILED TO START)\b/i
+
+/** 一次启动要执行的命令，file + args 数组形式，绝不拼 shell 字符串 */
+interface LaunchCommand {
+  file: string
+  args: string[]
+  /** 会话标题里 `名称 · <title>` 的后半段 */
+  title: string
+}
 
 interface Watch {
   entryId: string
@@ -156,10 +268,11 @@ export class EntryService extends EventEmitter {
   private lastErrorLine = new Map<string, string>()
   private lastRunMs = new Map<string, number>()
   private precheck: PrecheckService
+  private images = new ImageService()
 
   constructor(
     private config: ConfigStore,
-    detect: DetectService,
+    private detect: DetectService,
     private sessions: SessionService,
     private scanner: ScannerService,
     private ownership: OwnershipService
@@ -299,6 +412,16 @@ export class EntryService extends EventEmitter {
           out.icon = value as ServiceIcon
           break
         }
+        case 'imageId': {
+          // 渲染层只能经 edit 清除图片（null）。设置图片走专用的 setImage(bytes)：
+          // 由主进程压缩落盘并回填哈希文件名。这里拒绝任何字符串，杜绝渲染层指定
+          // 任意文件名探测存在性 / 路径穿越。
+          if (value !== null) {
+            throw new Error('图片只能经上传设置，edit 仅接受 null 清除')
+          }
+          out.imageId = undefined
+          break
+        }
         case 'path': {
           const path = String(value)
           if (!isAbsolute(path)) throw new Error('项目目录必须是绝对路径')
@@ -374,6 +497,56 @@ export class EntryService extends EventEmitter {
           out.outputDir = dir || undefined
           break
         }
+        case 'launchMode': {
+          if (value === null) {
+            out.launchMode = undefined
+            break
+          }
+          // 启动方式只对命令形状固定的生态有意义，且只能是固定枚举之一
+          const nextFramework = patch.framework ?? target.framework
+          if (!LAUNCHABLE_FRAMEWORKS.has(nextFramework)) {
+            throw new Error('该框架不支持设置启动方式')
+          }
+          if (typeof value !== 'string' || !LAUNCH_MODES.has(value as LaunchMode)) {
+            throw new Error(`启动方式非法：${String(value)}`)
+          }
+          out.launchMode = value as LaunchMode
+          break
+        }
+        case 'jarPath': {
+          if (value === null) {
+            out.jarPath = undefined
+            break
+          }
+          // jarPath 现按 launchMode 承载 jar / exe / py 入口 / python 模块。存在性在启动时
+          // （resolveBinPath）再查，编辑时不阻塞（用户可能还没构建）。这里只做形状与后缀校验。
+          const raw = String(value).trim()
+          const mode = (patch.launchMode ?? out.launchMode ?? target.launchMode) as
+            | LaunchMode
+            | undefined
+          // python-module / uvicorn：是模块名不是路径，走标识符白名单，不做路径/后缀检查
+          if (mode === 'python-module' || mode === 'uvicorn') {
+            if (raw && !SAFE_PYTHON_MODULE.test(raw)) {
+              throw new Error(`Python 模块名/规格非法：${raw}`)
+            }
+            out.jarPath = raw || undefined
+            break
+          }
+          // 其余是项目内相对路径：相对项目根、禁 ..
+          if (isAbsolute(raw)) throw new Error('路径必须是相对项目根的路径')
+          if (raw.split(/[\\/]/).includes('..')) throw new Error('路径不能跳出项目根')
+          // 按 mode 校验后缀：jar → .jar，cpp-exe → .exe，python-file → .py
+          if (raw) {
+            if (mode === 'jar' && !/\.jar$/i.test(raw)) throw new Error('jar 路径必须以 .jar 结尾')
+            if (mode === 'cpp-exe' && !/\.exe$/i.test(raw)) throw new Error('可执行文件必须以 .exe 结尾')
+            if (mode === 'python-file' && !/\.py$/i.test(raw)) throw new Error('入口文件必须以 .py 结尾')
+            if (mode === 'python-file' && !SAFE_PYTHON_ENTRY.test(raw)) {
+              throw new Error(`入口文件名含非法字符：${raw}`)
+            }
+          }
+          out.jarPath = raw || undefined
+          break
+        }
         case 'registerOnly':
         case 'pinned':
           if (typeof value !== 'boolean') throw new Error(`${fieldLabel(key)}必须是布尔值`)
@@ -440,6 +613,84 @@ export class EntryService extends EventEmitter {
   }
 
   /**
+   * 前端条目的本地 favicon，返回 base64 data URL 或 null。
+   *
+   * 只对前端生态尝试（isWebFramework）—— 后端目录里的 .ico 不是网站图标。
+   * 路径由主进程用 resolveCwd(entry) 自己拼，渲染层只给 id；DetectService 只读文件、
+   * 不联网、不执行代码，且把查找限制在项目根内（红线 1 / 4）。
+   */
+  async favicon(id: string): Promise<string | null> {
+    const entry = this.get(id)
+    if (!entry || !isWebFramework(entry.framework)) return null
+    const hit = await this.detect.readFavicon(resolveCwd(entry))
+    return hit ? `data:${hit.mime};base64,${hit.base64}` : null
+  }
+
+  /**
+   * 设置条目自定义图片。渲染层把选中文件的原始字节交进来，主进程解码 + 压缩 + 落盘，
+   * 回填哈希文件名到条目。服务与任务都可用；图片是纯展示字段，运行中也能改（不属
+   * 运行身份，见 IDENTITY_FIELDS 不含 imageId）。返回新的 imageId。
+   */
+  async setImage(id: string, bytes: Uint8Array): Promise<string> {
+    const entry = this.get(id)
+    if (!entry) throw new Error(`条目不存在：${id}`)
+    const { imageId } = await this.images.saveFromData(bytes)
+    this.update(id, { imageId })
+    return imageId
+  }
+
+  /** 清除条目自定义图片，回退到 icon / favicon / 框架字标。 */
+  clearImage(id: string): LaunchEntry {
+    const entry = this.get(id)
+    if (!entry) throw new Error(`条目不存在：${id}`)
+    // update 的 patch 里把 imageId 置 undefined 会在 {...target, ...patch} 里覆盖掉旧值
+    const next = this.update(id, { imageId: undefined })
+    if (!next) throw new Error(`条目不存在：${id}`)
+    return next
+  }
+
+  /** 读取条目自定义图片为 data URL（显示用），无图片或读取失败返回 null。 */
+  async imageDataUrl(id: string): Promise<string | null> {
+    const entry = this.get(id)
+    if (!entry || !entry.imageId) return null
+    return this.images.read(entry.imageId)
+  }
+
+  /**
+   * 用本机 HBuilderX 打开一个 uniapp 项目。命令形状固定，符合安全红线：
+   *   file = 探测到的 cli.exe（用户不能指定），子命令硬编码 `project open`，
+   *   路径 = resolveCwd(entry) 且经 assertInsideEntry 保证在登记目录内。
+   *
+   * 只对 uniapp 条目开放。它不是受管会话：不进 SessionService、不下发 runToken、
+   * 不接管日志/端口/停止 —— 编译与运行态都在 HBuilderX 窗口里（方案 A 的诚实边界）。
+   */
+  async openInHBuilderX(id: string): Promise<boolean> {
+    const entry = this.get(id)
+    if (!entry) throw new Error('条目不存在')
+    if (entry.framework !== 'uniapp') {
+      throw new Error('仅 uniapp 项目支持用 HBuilderX 打开')
+    }
+
+    const cwd = resolveCwd(entry)
+    this.assertInsideEntry(entry, cwd)
+
+    const cli = resolveHBuilderXCli()
+    if (!cli) throw new Error('未找到 HBuilderX cli.exe，请确认已安装 HBuilderX')
+
+    // 经 cmd.exe /d /s /c 转发：与 npm 路径同理，cli 若是 .cmd/.bat 批处理无法被
+    // CreateProcess 直接执行，且这样对真实 cli.exe 同样成立。参数仍以数组传入、绝不拼
+    // shell 字符串；子命令 project open 固定、路径受 assertInsideEntry 约束。
+    // detached + unref：HBuilderX 是独立 GUI，脱离本应用生命周期，不作为子会话跟踪。
+    const comspec = process.env.ComSpec ?? 'cmd.exe'
+    const child = spawn(comspec, ['/d', '/s', '/c', cli, 'project', 'open', '--path', cwd], {
+      detached: true,
+      stdio: 'ignore'
+    })
+    child.unref()
+    return true
+  }
+
+  /**
    * 任务产物目录，PRD §4.2。条目已配置则用它，否则按常见约定探测。
    * 只做目录存在性检查，不读内容。返回 null 表示还没有产物可看。
    */
@@ -456,6 +707,44 @@ export class EntryService extends EventEmitter {
       if (await isDirectory(dir)) return dir
     }
     return null
+  }
+
+  /**
+   * 在资源管理器里定位产物：优先找产物目录下最相关的单个文件（安装包 > 压缩包 > 可执行文件）
+   * 并用 `shell.showItemInFolder` 高亮选中；找不到具体文件时 fallback 到直接打开产物目录。
+   *
+   * 路径全由主进程构造，渲染层只给 id —— 不接受任意路径，PRD §11。
+   * 返回值供调用方判断是否成功打开（主进程 handler 调 shell.showItemInFolder / shell.openPath）。
+   */
+  async revealOutput(id: string): Promise<{ kind: 'file' | 'dir' | 'none'; path: string | null }> {
+    const dir = await this.outputDir(id)
+    if (!dir) return { kind: 'none', path: null }
+
+    // 优先级：安装包/压缩包 > 可执行文件 > 网页入口
+    const PRIORITY_EXTS = [
+      ['.exe', '.msi', '.dmg', '.pkg', '.AppImage', '.deb', '.rpm'], // 安装包
+      ['.zip', '.tar.gz', '.tgz', '.7z'],                            // 压缩包
+      ['.jar'],                                                       // Java 产物
+      ['.js', '.cjs', '.mjs'],                                        // Node 产物
+      ['.html'],                                                      // 静态站入口
+    ]
+
+    let files: string[]
+    try {
+      const entries = await readdir(dir, { withFileTypes: true })
+      files = entries.filter((e) => e.isFile()).map((e) => e.name)
+    } catch {
+      // 目录刚写完可能还没刷新，fallback 到 openPath
+      return { kind: 'dir', path: dir }
+    }
+
+    for (const exts of PRIORITY_EXTS) {
+      const match = files.find((f) => exts.some((ext) => f.toLowerCase().endsWith(ext)))
+      if (match) return { kind: 'file', path: join(dir, match) }
+    }
+
+    // 没找到特定文件就打开整个目录
+    return { kind: 'dir', path: dir }
   }
 
   /** 条目预期端口，供 ScannerService 算冲突与回填 entryId */
@@ -528,6 +817,10 @@ export class EntryService extends EventEmitter {
   async runScript(id: string, script: string): Promise<EntryRuntime> {
     const entry = this.get(id)
     if (!entry) throw new Error(`条目不存在：${id}`)
+    // Spring Boot 没有 npm scripts，命令面板的「脚本」分组对它不成立
+    if (entry.framework === 'spring-boot') {
+      throw new Error('Spring Boot 条目不支持运行 npm 脚本')
+    }
     const existing = this.runtimes.get(id)
     if (existing && isLive(existing.status)) {
       throw new Error(`${entry.name} 正在运行中，先停止再执行其他脚本`)
@@ -540,7 +833,274 @@ export class EntryService extends EventEmitter {
   async install(id: string): Promise<EntryRuntime> {
     const entry = this.get(id)
     if (!entry) throw new Error(`条目不存在：${id}`)
+    // Spring Boot 依赖由 Maven/Gradle 在启动时自行处理，没有独立的「安装会话」
+    if (entry.framework === 'spring-boot') {
+      throw new Error('Spring Boot 条目不支持 npm 安装会话')
+    }
     return await this.spawnSession(entry, null, 'install')
+  }
+
+  /**
+   * 后端控制台：对 Spring Boot 条目执行 Maven/Gradle 构建任务。
+   *
+   * goal 是固定枚举（MavenGoal），不接受用户自由输入字符串。
+   * 命令按 launchMode 映射：wrapper/system 分别调用 mvnw/mvn/gradlew/gradle，
+   * 子命令 Maven 直传 goal，Gradle 用等价任务名（clean→clean, package→build 等）。
+   * jar 模式没有独立构建入口，用户先手动构建再切到 jar 模式启动。
+   *
+   * 安全约束同 buildSpringBootCommand：file + args 数组，不拼 shell 字符串。
+   */
+  async mavenRun(id: string, goal: MavenGoal): Promise<EntryRuntime> {
+    const entry = this.get(id)
+    if (!entry) throw new Error(`条目不存在：${id}`)
+    if (entry.framework !== 'spring-boot') {
+      throw new Error(`mavenRun 只支持 Spring Boot 条目，当前框架：${entry.framework}`)
+    }
+    // goal 白名单校验（防止渲染层传入非法值）
+    const VALID_GOALS: MavenGoal[] = ['clean', 'compile', 'package', 'test', 'install', 'verify']
+    if (!VALID_GOALS.includes(goal)) {
+      throw new Error(`非法构建目标：${goal}`)
+    }
+    return await this.spawnMavenGoal(entry, goal)
+  }
+
+  /**
+   * 带 profile 的打包（build 型会话）。
+   * profile 为 null = 不带 -P 参数；非 null 时经 SAFE_PROFILE 白名单校验。
+   * 安全约束同 mavenRun：file + args 数组，子命令硬编码，profile 独立元素不拼字符串。
+   */
+  async packageWithProfile(id: string, profile: string | null): Promise<EntryRuntime> {
+    const entry = this.get(id)
+    if (!entry) throw new Error(`条目不存在：${id}`)
+    if (entry.framework !== 'spring-boot') {
+      throw new Error('packageWithProfile 只支持 Spring Boot 条目')
+    }
+    assertSafeProfile(profile)
+    return await this.spawnPackageSession(entry, profile)
+  }
+
+  private async spawnPackageSession(entry: LaunchEntry, profile: string | null): Promise<EntryRuntime> {
+    const cwd = resolveCwd(entry)
+    this.assertInsideEntry(entry, cwd)
+    const { file, args, title } = await this.buildPackageCommand(entry, cwd, profile)
+    const session = this.sessions.create({
+      kind: 'build',
+      cwd,
+      projectId: entry.id,
+      title: `${entry.name} · ${title}`,
+      file,
+      args,
+      env: entry.env
+    })
+    this.update(entry.id, { lastStartedAt: Date.now() })
+    this.lastErrorLine.delete(entry.id)
+    const runtime = this.setRuntime(entry.id, {
+      status: 'starting',
+      sessionId: session.id,
+      pid: session.pid,
+      port: undefined,
+      portUnknown: false,
+      startedAt: session.startedAt,
+      exitCode: undefined,
+      precheck: undefined
+    })
+    this.watches.set(session.id, { entryId: entry.id, captured: true, timer: null })
+    return runtime
+  }
+
+  /**
+   * 带 profile 的打包命令构造（file + args 数组，不拼 shell 字符串）。
+   * Maven 用 '-P' + profile 两个独立 args 元素；Gradle 用 '-P<profile>' 单个元素（Gradle 惯例）。
+   */
+  private async buildPackageCommand(
+    entry: LaunchEntry,
+    cwd: string,
+    profile: string | null
+  ): Promise<LaunchCommand> {
+    const mode = entry.launchMode
+    if (!mode || !isSpringBootMode(mode)) {
+      throw new Error('Spring Boot 条目缺少合法的启动方式（launchMode）')
+    }
+    if (mode === 'jar') {
+      throw new Error('jar 模式无内置构建命令，请手动构建后切换到 jar 启动方式')
+    }
+    const comspec = process.env.ComSpec ?? 'cmd.exe'
+    const mavenProfileArgs = profile ? ['-P', profile] : []
+    const gradleProfileArgs = profile ? [`-P${profile}`] : []
+
+    switch (mode) {
+      case 'maven-wrapper': {
+        const wrapper = join(cwd, MVNW_CMD)
+        if (!(await isFile(wrapper))) throw new Error(`未找到 ${MVNW_CMD}`)
+        return {
+          file: comspec,
+          args: ['/d', '/s', '/c', wrapper, 'package', ...mavenProfileArgs],
+          title: profile ? `mvnw package -P ${profile}` : 'mvnw package'
+        }
+      }
+      case 'gradle-wrapper': {
+        const wrapper = join(cwd, GRADLEW_BAT)
+        if (!(await isFile(wrapper))) throw new Error(`未找到 ${GRADLEW_BAT}`)
+        return {
+          file: comspec,
+          args: ['/d', '/s', '/c', wrapper, 'build', ...gradleProfileArgs],
+          title: profile ? `gradlew build -P${profile}` : 'gradlew build'
+        }
+      }
+      case 'system-maven': {
+        const mvn = await whichAny(SYSTEM_MAVEN_BINARIES)
+        if (!mvn) throw new Error('PATH 中找不到 mvn')
+        return {
+          file: comspec,
+          args: ['/d', '/s', '/c', mvn, 'package', ...mavenProfileArgs],
+          title: profile ? `mvn package -P ${profile}` : 'mvn package'
+        }
+      }
+      case 'system-gradle': {
+        const gradle = await whichAny(SYSTEM_GRADLE_BINARIES)
+        if (!gradle) throw new Error('PATH 中找不到 gradle')
+        return {
+          file: comspec,
+          args: ['/d', '/s', '/c', gradle, 'build', ...gradleProfileArgs],
+          title: profile ? `gradle build -P${profile}` : 'gradle build'
+        }
+      }
+    }
+  }
+
+  /** 构造并执行 Maven/Gradle goal 的会话（build 型，跑完即止，不做端口捕获） */
+  private async spawnMavenGoal(entry: LaunchEntry, goal: MavenGoal): Promise<EntryRuntime> {
+    const cwd = resolveCwd(entry)
+    this.assertInsideEntry(entry, cwd)
+
+    const { file, args, title } = await this.buildMavenGoalCommand(entry, cwd, goal)
+
+    const session = this.sessions.create({
+      kind: 'build',
+      cwd,
+      projectId: entry.id,
+      title: `${entry.name} · ${title}`,
+      file,
+      args,
+      env: entry.env
+    })
+
+    this.update(entry.id, { lastStartedAt: Date.now() })
+    this.lastErrorLine.delete(entry.id)
+
+    const runtime = this.setRuntime(entry.id, {
+      status: 'starting',
+      sessionId: session.id,
+      pid: session.pid,
+      port: undefined,
+      portUnknown: false,
+      startedAt: session.startedAt,
+      exitCode: undefined,
+      precheck: undefined
+    })
+
+    // build 型会话：不做端口捕获，直接标记 captured
+    this.watches.set(session.id, { entryId: entry.id, captured: true, timer: null })
+
+    return runtime
+  }
+
+  /**
+   * 扫描 Spring Boot 项目 target/ 目录，返回可用 jar 文件的相对路径列表。
+   * 过滤掉 -sources / -javadoc 辅助包，只留主体 jar。
+   * 路径为相对项目根的相对路径（如 target/xxx.jar），符合 jarPath 字段约束。
+   * 只读目录，不执行代码。
+   */
+  async listJars(id: string): Promise<string[]> {
+    const entry = this.get(id)
+    if (!entry || entry.framework !== 'spring-boot') return []
+    const cwd = resolveCwd(entry)
+    const targetDir = join(cwd, 'target')
+    let names: string[]
+    try {
+      names = await readdir(targetDir)
+    } catch {
+      return [] // target/ 不存在（还没打包）
+    }
+    return names
+      .filter(
+        (n) =>
+          /\.jar$/i.test(n) &&
+          !n.includes('-sources') &&
+          !n.includes('-javadoc') &&
+          !n.startsWith('original-')
+      )
+      .map((n) => `target/${n}`)
+  }
+
+  /**
+   * 按 launchMode + goal 映射构建命令（file + args 数组，不拼 shell 字符串）。
+   *
+   * Maven goal 直接传递；Gradle 映射：
+   *   clean     → clean
+   *   compile   → compileJava
+   *   package   → build
+   *   test      → test
+   *   install   → publishToMavenLocal
+   *   verify    → check
+   */
+  private async buildMavenGoalCommand(
+    entry: LaunchEntry,
+    cwd: string,
+    goal: MavenGoal
+  ): Promise<LaunchCommand> {
+    const mode = entry.launchMode
+    if (!mode || !isSpringBootMode(mode)) {
+      throw new Error('Spring Boot 条目缺少合法的启动方式（launchMode）')
+    }
+    if (mode === 'jar') {
+      throw new Error('jar 模式无内置构建命令，请手动构建后切换到 jar 启动方式')
+    }
+
+    const comspec = process.env.ComSpec ?? 'cmd.exe'
+
+    // Gradle goal 映射：Maven goal → Gradle task
+    const GRADLE_TASK: Record<MavenGoal, string> = {
+      clean: 'clean',
+      compile: 'compileJava',
+      package: 'build',
+      test: 'test',
+      install: 'publishToMavenLocal',
+      verify: 'check'
+    }
+
+    switch (mode) {
+      case 'maven-wrapper': {
+        const wrapper = join(cwd, MVNW_CMD)
+        if (!(await isFile(wrapper))) {
+          throw new Error(`未找到 ${MVNW_CMD}，无法用 Maven Wrapper 执行构建`)
+        }
+        const title = `mvnw ${goal}`
+        return { file: comspec, args: ['/d', '/s', '/c', wrapper, goal], title }
+      }
+      case 'gradle-wrapper': {
+        const wrapper = join(cwd, GRADLEW_BAT)
+        if (!(await isFile(wrapper))) {
+          throw new Error(`未找到 ${GRADLEW_BAT}，无法用 Gradle Wrapper 执行构建`)
+        }
+        const task = GRADLE_TASK[goal]
+        const title = `gradlew ${task}`
+        return { file: comspec, args: ['/d', '/s', '/c', wrapper, task], title }
+      }
+      case 'system-maven': {
+        const mvn = await whichAny(SYSTEM_MAVEN_BINARIES)
+        if (!mvn) throw new Error('PATH 中找不到 mvn')
+        const title = `mvn ${goal}`
+        return { file: comspec, args: ['/d', '/s', '/c', mvn, goal], title }
+      }
+      case 'system-gradle': {
+        const gradle = await whichAny(SYSTEM_GRADLE_BINARIES)
+        if (!gradle) throw new Error('PATH 中找不到 gradle')
+        const task = GRADLE_TASK[goal]
+        const title = `gradle ${task}`
+        return { file: comspec, args: ['/d', '/s', '/c', gradle, task], title }
+      }
+    }
   }
 
   private async spawnSession(
@@ -552,26 +1112,16 @@ export class EntryService extends EventEmitter {
     const cwd = resolveCwd(entry)
     this.assertInsideEntry(entry, cwd)
 
-    if (script !== null) {
-      if (!SAFE_SCRIPT.test(script)) {
-        throw new Error(`脚本名含非法字符，拒绝执行：${script}`)
-      }
-      await this.assertScriptDeclared(cwd, script)
-    }
-
-    const pm = await whichAny(PM_BINARIES[entry.packageManager])
-    if (!pm) throw new Error(`PATH 中找不到 ${entry.packageManager}`)
-
-    // npm.cmd/pnpm.cmd 是批处理文件，CreateProcess 不能直接执行，必须经 cmd.exe。
-    // 参数仍以数组传入由 node-pty 负责转义，脚本名另有白名单，不做字符串拼接。
-    const args = ['/d', '/s', '/c', pm, ...(script === null ? ['install'] : ['run', script])]
+    // 命令构造按 framework 分派。每条路径都只产出 file + args 数组、从不拼 shell 字符串，
+    // 子命令均为硬编码枚举，可执行文件经 whichAny 定位或项目内产物绝对路径 —— 用户改不了命令本身。
+    const { file, args, title } = await this.buildCommand(entry, cwd, script)
 
     const session = this.sessions.create({
       kind,
       cwd,
       projectId: entry.id,
-      title: `${entry.name} · ${script ?? 'install'}`,
-      file: process.env.ComSpec ?? 'cmd.exe',
+      title: `${entry.name} · ${title}`,
+      file,
       args,
       env: entry.env
     })
@@ -600,6 +1150,222 @@ export class EntryService extends EventEmitter {
     }
 
     return runtime
+  }
+
+  /** 按 framework 选命令构造路径。每条都产出 file + args 数组，子命令硬编码，不拼 shell 字符串。 */
+  private async buildCommand(
+    entry: LaunchEntry,
+    cwd: string,
+    script: string | null
+  ): Promise<LaunchCommand> {
+    switch (entry.framework) {
+      case 'spring-boot':
+        return this.buildSpringBootCommand(entry, cwd)
+      case 'django':
+      case 'fastapi':
+      case 'flask':
+      case 'streamlit':
+      case 'python':
+        return this.buildPythonCommand(entry, cwd)
+      case 'go':
+        return this.buildGoCommand(entry, cwd)
+      case 'rust':
+        return this.buildRustCommand(entry)
+      case 'cpp':
+        return this.buildCppCommand(entry, cwd)
+      default:
+        return this.buildNpmCommand(entry, cwd, script)
+    }
+  }
+
+  /**
+   * Python 命令：file 固定为 python（whichAny 定位），子命令/flag 硬编码。
+   * - python-file：python <入口文件>（入口须在项目内、存在）
+   * - python-module：python -m <模块>（点分标识符，白名单）
+   * - uvicorn：python -m uvicorn <app:实例>（FastAPI）
+   * - flask：python -m flask run
+   * - django：python <manage.py> runserver（manage.py 须存在）
+   */
+  private async buildPythonCommand(entry: LaunchEntry, cwd: string): Promise<LaunchCommand> {
+    const mode = entry.launchMode
+    const python = await whichAny(PYTHON_BINARIES)
+    if (!python) throw new Error('PATH 中找不到 python')
+
+    switch (mode) {
+      case 'python-file': {
+        const rel = entry.jarPath
+        if (!rel) throw new Error('Python 入口文件未配置')
+        if (!SAFE_PYTHON_ENTRY.test(rel)) throw new Error(`入口文件名含非法字符：${rel}`)
+        const abs = await this.resolveBinPath(entry, cwd, /\.py$/i, 'py')
+        return { file: python, args: [abs], title: `python ${rel}` }
+      }
+      case 'python-module': {
+        const mod = entry.jarPath
+        if (!mod || !SAFE_PYTHON_MODULE.test(mod)) {
+          throw new Error(`Python 模块名非法：${mod ?? '（空）'}`)
+        }
+        return { file: python, args: ['-m', mod], title: `python -m ${mod}` }
+      }
+      case 'uvicorn': {
+        const app = entry.jarPath
+        if (!app || !SAFE_PYTHON_MODULE.test(app)) {
+          throw new Error(`uvicorn app 规格非法：${app ?? '（空）'}`)
+        }
+        return { file: python, args: ['-m', 'uvicorn', app], title: `uvicorn ${app}` }
+      }
+      case 'flask':
+        return { file: python, args: ['-m', 'flask', 'run'], title: 'flask run' }
+      case 'django': {
+        const manage = join(cwd, 'manage.py')
+        if (!(await isFile(manage))) throw new Error('未找到 manage.py，无法启动 Django')
+        return { file: python, args: [manage, 'runserver'], title: 'manage.py runserver' }
+      }
+      default:
+        throw new Error(`Python 条目缺少合法的启动方式（launchMode）：${mode ?? '（空）'}`)
+    }
+  }
+
+  /** Go 命令：go run <项目内包路径|.>。子命令 run 固定，包路径限项目内相对路径。 */
+  private async buildGoCommand(entry: LaunchEntry, cwd: string): Promise<LaunchCommand> {
+    if (entry.launchMode !== 'go-run') {
+      throw new Error(`Go 条目启动方式非法：${entry.launchMode ?? '（空）'}`)
+    }
+    const pkg = entry.jarPath?.trim() || '.'
+    if (!SAFE_GO_PKG.test(pkg) || pkg.split(/[\\/]/).includes('..')) {
+      throw new Error(`Go 包路径非法：${pkg}`)
+    }
+    const go = await whichAny(GO_BINARIES)
+    if (!go) throw new Error('PATH 中找不到 go')
+    // 校验包路径落在项目内（. 恒成立）
+    if (pkg !== '.') this.assertInsideEntry(entry, join(cwd, pkg))
+    return { file: go, args: ['run', pkg], title: `go run ${pkg}` }
+  }
+
+  /** Rust 命令：cargo run [--release]。子命令固定，无用户自由输入。 */
+  private async buildRustCommand(entry: LaunchEntry): Promise<LaunchCommand> {
+    const mode = entry.launchMode
+    if (mode !== 'cargo-run' && mode !== 'cargo-run-release') {
+      throw new Error(`Rust 条目启动方式非法：${mode ?? '（空）'}`)
+    }
+    const cargo = await whichAny(CARGO_BINARIES)
+    if (!cargo) throw new Error('PATH 中找不到 cargo')
+    const args = mode === 'cargo-run-release' ? ['run', '--release'] : ['run']
+    return { file: cargo, args, title: `cargo ${args.join(' ')}` }
+  }
+
+  /** C++ 命令：只跑项目内已构建的 .exe（相对项目根、禁 ..、须存在），不代编译。 */
+  private async buildCppCommand(entry: LaunchEntry, cwd: string): Promise<LaunchCommand> {
+    if (entry.launchMode !== 'cpp-exe') {
+      throw new Error(`C++ 条目启动方式非法：${entry.launchMode ?? '（空）'}`)
+    }
+    const abs = await this.resolveBinPath(entry, cwd, /\.exe$/i, 'exe')
+    // exe 是真可执行文件，可直接 CreateProcess，无需经 cmd
+    return { file: abs, args: [], title: entry.jarPath ?? 'exe' }
+  }
+
+  /** npm 生态命令：`cmd /d /s /c <pm> run <脚本>` 或 `<pm> install`。脚本名双重校验 */
+  private async buildNpmCommand(
+    entry: LaunchEntry,
+    cwd: string,
+    script: string | null
+  ): Promise<LaunchCommand> {
+    if (script !== null) {
+      if (!SAFE_SCRIPT.test(script)) {
+        throw new Error(`脚本名含非法字符，拒绝执行：${script}`)
+      }
+      await this.assertScriptDeclared(cwd, script)
+    }
+
+    const pm = await whichAny(PM_BINARIES[entry.packageManager])
+    if (!pm) throw new Error(`PATH 中找不到 ${entry.packageManager}`)
+
+    // npm.cmd/pnpm.cmd 是批处理文件，CreateProcess 不能直接执行，必须经 cmd.exe。
+    // 参数仍以数组传入由 node-pty 负责转义，脚本名另有白名单，不做字符串拼接。
+    const args = ['/d', '/s', '/c', pm, ...(script === null ? ['install'] : ['run', script])]
+    return {
+      file: process.env.ComSpec ?? 'cmd.exe',
+      args,
+      title: script ?? 'install'
+    }
+  }
+
+  /**
+   * Spring Boot 命令构造，PRD §4 / §11。
+   *
+   * 五种启动方式的可执行文件与子命令**全部固定**，用户只能选「哪种方式」：
+   * - wrapper 模式跑项目根自带的 mvnw.cmd / gradlew.bat（必须在 cwd 内），子命令写死
+   * - jar 模式只跑 `java -jar <jar>`，jar 路径受 outputDir 同款约束（相对、禁 ..、须 .jar、须存在）
+   * - system 模式用 PATH 里的 mvn / gradle
+   * 全程 file + args 数组，绝不拼 shell 字符串。cmd 已被 assertInsideEntry 保证落在登记目录内。
+   */
+  private async buildSpringBootCommand(entry: LaunchEntry, cwd: string): Promise<LaunchCommand> {
+    const mode = entry.launchMode
+    if (!mode || !isSpringBootMode(mode)) {
+      throw new Error('Spring Boot 条目缺少合法的启动方式（launchMode）')
+    }
+    const comspec = process.env.ComSpec ?? 'cmd.exe'
+
+    switch (mode) {
+      case 'maven-wrapper': {
+        const wrapper = join(cwd, MVNW_CMD)
+        if (!(await isFile(wrapper))) {
+          throw new Error(`未找到 ${MVNW_CMD}，无法用 Maven Wrapper 启动`)
+        }
+        // 用 wrapper 的绝对路径：cmd /c 不会去 cwd 搜可执行文件（只搜 PATH），
+        // 而项目本地的 mvnw.cmd 不在 PATH 里。路径由主进程用常量文件名拼，非用户输入。
+        return { file: comspec, args: ['/d', '/s', '/c', wrapper, 'spring-boot:run'], title: 'spring-boot:run' }
+      }
+      case 'gradle-wrapper': {
+        const wrapper = join(cwd, GRADLEW_BAT)
+        if (!(await isFile(wrapper))) {
+          throw new Error(`未找到 ${GRADLEW_BAT}，无法用 Gradle Wrapper 启动`)
+        }
+        return { file: comspec, args: ['/d', '/s', '/c', wrapper, 'bootRun'], title: 'bootRun' }
+      }
+      case 'jar': {
+        const jarAbs = await this.resolveJarPath(entry, cwd)
+        const java = await whichAny(JAVA_BINARIES)
+        if (!java) throw new Error('PATH 中找不到 java')
+        // java.exe 可直接 CreateProcess，无需经 cmd；jar 路径已校验在项目内且存在
+        return { file: java, args: ['-jar', jarAbs], title: `java -jar ${entry.jarPath}` }
+      }
+      case 'system-maven': {
+        const mvn = await whichAny(SYSTEM_MAVEN_BINARIES)
+        if (!mvn) throw new Error('PATH 中找不到 mvn')
+        return { file: comspec, args: ['/d', '/s', '/c', mvn, 'spring-boot:run'], title: 'mvn spring-boot:run' }
+      }
+      case 'system-gradle': {
+        const gradle = await whichAny(SYSTEM_GRADLE_BINARIES)
+        if (!gradle) throw new Error('PATH 中找不到 gradle')
+        return { file: comspec, args: ['/d', '/s', '/c', gradle, 'bootRun'], title: 'gradle bootRun' }
+      }
+    }
+  }
+
+  /**
+   * 把条目的 jarPath 字段解析成绝对路径并校验：相对项目根、禁 `..`、须匹配指定后缀、文件须存在。
+   * 约束与 outputDir 一致 —— 它同样会经过 knownPath 进入 shell.openPath 白名单。
+   * Spring Boot jar 传 /\.jar$/、C++ exe 传 /\.exe$/、Python 入口文件传 /\.py$/。
+   */
+  private async resolveBinPath(
+    entry: LaunchEntry,
+    cwd: string,
+    extRegex: RegExp,
+    extLabel: string
+  ): Promise<string> {
+    const rel = entry.jarPath
+    if (!rel) throw new Error(`未配置 ${extLabel} 路径`)
+    if (isAbsolute(rel)) throw new Error('路径必须是相对项目根的路径')
+    if (rel.split(/[\\/]/).includes('..')) throw new Error('路径不能跳出项目根')
+    if (!extRegex.test(rel)) throw new Error(`路径必须以 .${extLabel} 结尾`)
+    const abs = join(cwd, rel)
+    if (!(await isFile(abs))) throw new Error(`${extLabel} 文件不存在：${rel}`)
+    return abs
+  }
+
+  /** Spring Boot jar 模式：.jar 产物路径校验（resolveBinPath 的 jar 特化） */
+  private async resolveJarPath(entry: LaunchEntry, cwd: string): Promise<string> {
+    return this.resolveBinPath(entry, cwd, /\.jar$/i, 'jar')
   }
 
   /** 工作目录必须落在条目登记路径内，防止 cwd 被改成任意位置，PRD §11 */
@@ -911,6 +1677,14 @@ function normalizePath(target: string): string {
 async function isDirectory(target: string): Promise<boolean> {
   try {
     return (await stat(target)).isDirectory()
+  } catch {
+    return false
+  }
+}
+
+async function isFile(target: string): Promise<boolean> {
+  try {
+    return (await stat(target)).isFile()
   } catch {
     return false
   }

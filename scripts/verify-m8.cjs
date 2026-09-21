@@ -221,7 +221,7 @@ app.whenReady().then(async () => {
 
   console.log('\n=== 6. 界面：分类分区、筛选与编辑入口 ===')
   await js(`(()=>{const b=[...document.querySelector('nav').querySelectorAll('button')]
-    .find(x=>x.getAttribute('aria-label')==='启动台');b&&b.click();return true})()`)
+    .find(x=>x.getAttribute('aria-label') === '前端启动台');b&&b.click();return true})()`)
   await sleep(1200)
 
   const sections = await js(`(()=>{

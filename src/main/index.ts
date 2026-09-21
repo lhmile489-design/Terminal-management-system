@@ -6,6 +6,7 @@ import type {
   EntryEdit,
   EntryStatus,
   LogQuery,
+  MavenGoal,
   NewLaunchEntry,
   Settings,
   ThemePreference
@@ -45,6 +46,8 @@ function createWindow(): void {
     minWidth: 1180,
     minHeight: 760,
     show: false,
+    // 从任务栏隐藏（仅托盘）—— 构造时读一次，托盘 show() 重建窗口也走这条路
+    skipTaskbar: config.get().settings.hideFromTaskbar,
     icon: iconPath,
     // 与令牌 --surface-canvas 对齐，避免启动瞬间闪白
     backgroundColor: theme.state().resolved === 'dark' ? '#0B0F14' : '#F6F7F9',
@@ -158,6 +161,34 @@ function registerIpc(): void {
   ipcMain.handle(Channels.entryStop, (_e, id: string) => entries.stop(id))
   ipcMain.handle(Channels.entryRestart, (_e, id: string) => entries.restart(id))
   ipcMain.handle(Channels.entryInstall, (_e, id: string) => entries.install(id))
+  // 后端控制台：Maven/Gradle 构建任务。goal 在主进程白名单校验，不接受自由字符串。
+  ipcMain.handle(Channels.entryMavenRun, (_e, id: string, goal: unknown) => {
+    const VALID_GOALS: MavenGoal[] = ['clean', 'compile', 'package', 'test', 'install', 'verify']
+    if (typeof goal !== 'string' || !VALID_GOALS.includes(goal as MavenGoal)) {
+      throw new Error(`非法构建目标：${String(goal)}`)
+    }
+    return entries.mavenRun(id, goal as MavenGoal)
+  })
+  // 带 profile 的打包：profile 为 null 不带 -P；命令构造全在主进程，profile 经 SAFE_PROFILE 白名单
+  ipcMain.handle(Channels.entryPackageWithProfile, (_e, id: unknown, profile: unknown) => {
+    if (typeof id !== 'string') throw new Error('条目 id 非法')
+    if (profile !== null && typeof profile !== 'string') {
+      throw new Error('profile 必须是字符串或 null')
+    }
+    return entries.packageWithProfile(id, profile as string | null)
+  })
+  // 检测 Spring Boot profile 配置文件列表（只读目录，不执行代码）
+  ipcMain.handle(Channels.entryDetectProfiles, (_e, id: unknown) => {
+    if (typeof id !== 'string') return []
+    const entry = entries.get(id)
+    if (!entry || entry.framework !== 'spring-boot') return []
+    return detect.detectSpringBootProfiles(entry.path)
+  })
+  // 扫描 target/ 目录下的 jar 文件列表（只读目录），供后端控制台 jar 模式一键选择
+  ipcMain.handle(Channels.entryListJars, (_e, id: unknown) => {
+    if (typeof id !== 'string') return []
+    return entries.listJars(id)
+  })
   // 只收 id + 脚本名，命令构造与脚本校验全在主进程，PRD §9.5 / §11
   ipcMain.handle(Channels.entryRunScript, (_e, id: string, script: string) => {
     if (typeof script !== 'string') throw new Error('脚本名必须是字符串')
@@ -165,6 +196,18 @@ function registerIpc(): void {
   })
   ipcMain.handle(Channels.entryDiagnose, (_e, id: string) => entries.diagnose(id))
   ipcMain.handle(Channels.entryOutputDir, (_e, id: string) => entries.outputDir(id))
+  // 路径全在主进程构造（entries.revealOutput → outputDir → readdir），渲染层只给 id，PRD §11
+  ipcMain.handle(Channels.entryRevealOutput, async (_e, id: string) => {
+    const result = await entries.revealOutput(id)
+    if (!result.path) return false
+    if (result.kind === 'file') {
+      shell.showItemInFolder(result.path)
+    } else {
+      const err = await shell.openPath(result.path)
+      if (err) return false
+    }
+    return true
+  })
 
   // 路径由主进程按条目 id 自己拼，渲染层只给 id —— 不接受传入任意文件路径，PRD §11
   ipcMain.handle(Channels.entryOpenPackageJson, async (_e, id: string) => {
@@ -174,7 +217,35 @@ function registerIpc(): void {
     if (err) throw new Error(err)
     return true
   })
+  // uniapp 专属：只收 id，cli.exe 探测与命令构造全在主进程，PRD §11
+  ipcMain.handle(Channels.entryOpenInHBuilderX, (_e, id: string) => entries.openInHBuilderX(id))
   ipcMain.handle(Channels.entryRuntimes, () => entries.runtimeList())
+  // 只收 id，路径由主进程按条目自己拼，返回 base64 data URL 或 null，只读不联网，PRD §11
+  ipcMain.handle(Channels.entryFavicon, (_e, id: unknown) =>
+    typeof id === 'string' ? entries.favicon(id) : null
+  )
+  // 自定义图片：渲染层传 id + 原始字节，主进程压缩落盘并回填哈希文件名。字节做上限
+  // 校验（8MB），超限拒绝避免大文件占内存；解码/非图片由 ImageService 兜底抛错。
+  ipcMain.handle(Channels.entrySetImage, (_e, id: unknown, bytes: unknown) => {
+    if (typeof id !== 'string') throw new Error('条目 id 非法')
+    const view =
+      bytes instanceof Uint8Array
+        ? bytes
+        : bytes instanceof ArrayBuffer
+          ? new Uint8Array(bytes)
+          : null
+    if (!view) throw new Error('图片数据非法')
+    if (view.byteLength === 0) throw new Error('图片为空')
+    if (view.byteLength > 8 * 1024 * 1024) throw new Error('图片过大（上限 8MB）')
+    return entries.setImage(id, view)
+  })
+  ipcMain.handle(Channels.entryClearImage, (_e, id: unknown) => {
+    if (typeof id !== 'string') throw new Error('条目 id 非法')
+    return entries.clearImage(id)
+  })
+  ipcMain.handle(Channels.entryImage, (_e, id: unknown) =>
+    typeof id === 'string' ? entries.imageDataUrl(id) : null
+  )
   entries.on('changed', (list) => mainWindow?.webContents.send(Channels.entryChanged, list))
   entries.on('runtime', (runtime) =>
     mainWindow?.webContents.send(Channels.entryRuntimeChanged, runtime)
@@ -201,6 +272,8 @@ function registerIpc(): void {
     if (next.scanIntervalMs !== undefined) scanner.reschedule()
     // 主题走 ThemeService，它还要同步 nativeTheme.themeSource 并广播
     if (next.theme !== undefined) theme.set(next.theme)
+    // 任务栏可见性即时生效：托盘常驻，隐藏后窗口仍能从托盘唤出
+    if (next.hideFromTaskbar !== undefined) mainWindow?.setSkipTaskbar(next.hideFromTaskbar)
     mainWindow?.webContents.send(Channels.settingsChanged, updated)
     return updated
   })
@@ -244,6 +317,7 @@ function registerIpc(): void {
   theme.on('changed', (state) => mainWindow?.webContents.send(Channels.themeChanged, state))
 
   ipcMain.handle(Channels.windowIsMaximized, () => mainWindow?.isMaximized() ?? false)
+  ipcMain.handle(Channels.appInfo, () => ({ version: app.getVersion(), name: app.getName() }))
   ipcMain.on('window:minimize', () => mainWindow?.minimize())
   ipcMain.on('window:toggleMaximize', () => {
     if (!mainWindow) return
@@ -397,6 +471,10 @@ function sanitizeSettings(input: unknown): Partial<Settings> {
   if (raw.notifyOnTaskDone !== undefined) {
     if (typeof raw.notifyOnTaskDone !== 'boolean') throw new Error('notifyOnTaskDone 必须是布尔值')
     out.notifyOnTaskDone = raw.notifyOnTaskDone
+  }
+  if (raw.hideFromTaskbar !== undefined) {
+    if (typeof raw.hideFromTaskbar !== 'boolean') throw new Error('hideFromTaskbar 必须是布尔值')
+    out.hideFromTaskbar = raw.hideFromTaskbar
   }
   return out
 }

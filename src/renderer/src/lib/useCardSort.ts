@@ -62,7 +62,7 @@ export function useCardSort(
     )
   }, [entries, preview])
 
-  useFlip(gridRef, ordered.map((e) => e.id).join())
+  useFlip(gridRef, ordered.map((e) => e.id).join(), draggingId)
 
   /** 同置顶组内的可移动区间，越界一律夹回 */
   const groupBounds = useCallback(
@@ -185,8 +185,17 @@ export function useCardSort(
 /**
  * FLIP：DOM 重排后把卡片从旧位置动画到新位置。
  * 纯 CSS transition 管不了 grid 顺序变化 —— 元素是被移动而非位移，没有可过渡的属性。
+ *
+ * 正在拖拽的那张卡片必须跳过 FLIP：浏览器已经在给它渲染原生拖拽 ghost，
+ * 源元素本身停在原位（0.4 透明的占位框）。若再对它补一段 translate，
+ * 补间会与占位框位置打架，看起来就是被拖的卡「乱跳」。它的落点由 drop 决定，
+ * 不需要动画。其余卡片照常 FLIP 滑动。
  */
-function useFlip(gridRef: React.RefObject<HTMLDivElement | null>, orderKey: string): void {
+function useFlip(
+  gridRef: React.RefObject<HTMLDivElement | null>,
+  orderKey: string,
+  draggingId: string | null
+): void {
   const rects = useRef<Map<string, DOMRect>>(new Map())
 
   useLayoutEffect(() => {
@@ -202,6 +211,8 @@ function useFlip(gridRef: React.RefObject<HTMLDivElement | null>, orderKey: stri
       next.set(id, now)
       const was = before.get(id)
       if (!was) continue
+      // 被拖的卡不做补间：它归原生拖拽与占位框管
+      if (id === draggingId) continue
       const dx = was.left - now.left
       const dy = was.top - now.top
       if (Math.abs(dx) < 1 && Math.abs(dy) < 1) continue
@@ -211,5 +222,5 @@ function useFlip(gridRef: React.RefObject<HTMLDivElement | null>, orderKey: stri
       )
     }
     rects.current = next
-  }, [gridRef, orderKey])
+  }, [gridRef, orderKey, draggingId])
 }

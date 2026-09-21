@@ -5,17 +5,19 @@ import {
   ListMagnifyingGlass,
   Stethoscope,
   Gear,
+  BookOpen,
+  TreeStructure,
   type Icon
 } from '@phosphor-icons/react'
 import { ThemeToggle } from './ThemeToggle'
 
-export type ViewId = 'dashboard' | 'launchpad' | 'terminal' | 'logs' | 'diagnose' | 'settings'
+export type ViewId = 'dashboard' | 'launchpad' | 'backend' | 'terminal' | 'logs' | 'diagnose' | 'settings' | 'about'
 
 const NAV: { id: ViewId; label: string; icon: Icon }[] = [
   { id: 'dashboard', label: '工作台', icon: Gauge },
-  { id: 'launchpad', label: '启动台', icon: Rocket },
+  { id: 'launchpad', label: '前端启动台', icon: Rocket },
+  { id: 'backend', label: '后端控制台', icon: TreeStructure },
   { id: 'terminal', label: '终端', icon: Terminal },
-  // 日志紧跟终端：两者看的是同一批输出，一个逐会话交互、一个跨会话检索
   { id: 'logs', label: '日志', icon: ListMagnifyingGlass },
   { id: 'diagnose', label: '诊断', icon: Stethoscope }
 ]
@@ -30,7 +32,7 @@ export function NavRail({
   return (
     <nav
       aria-label="主导航"
-      className="flex w-14 shrink-0 flex-col items-center gap-1 border-r border-line bg-panel py-3"
+      className="flex w-12 shrink-0 flex-col items-center gap-0.5 border-r border-line bg-panel py-2"
     >
       {NAV.map((item) => (
         <RailButton
@@ -41,7 +43,14 @@ export function NavRail({
         />
       ))}
 
-      <div className="mt-auto flex flex-col items-center gap-1">
+      <div className="mt-auto flex flex-col items-center gap-0.5">
+        <RailButton
+          id="about"
+          label="关于"
+          icon={BookOpen}
+          active={active === 'about'}
+          onClick={() => onChange('about')}
+        />
         <ThemeToggle />
         <RailButton
           id="settings"
@@ -73,19 +82,26 @@ function RailButton({
       onClick={onClick}
       aria-label={label}
       aria-current={active ? 'page' : undefined}
-      className={`pressable group relative flex h-10 w-10 items-center justify-center rounded-[8px] ${
-        active ? 'bg-raised text-ink-strong' : 'text-ink-faint hover:bg-raised hover:text-ink'
+      className={`pressable group relative flex h-9 w-9 items-center justify-center rounded-[7px] transition-colors duration-150 ${
+        active
+          ? 'bg-raised text-ink-strong'
+          : 'text-ink-faint/70 hover:bg-raised/60 hover:text-ink'
       }`}
     >
-      <IconCmp size={18} weight={active ? 'fill' : 'regular'} />
+      <IconCmp size={16} weight={active ? 'fill' : 'regular'} />
 
+      {/* 选中指示线 */}
       {active && (
-        <span className="absolute top-1/2 -left-3 h-5 w-[2px] -translate-y-1/2 bg-info" aria-hidden />
+        <span
+          className="absolute top-1/2 -left-[3px] h-4 w-[2px] -translate-y-1/2 rounded-r-full bg-accent"
+          aria-hidden
+        />
       )}
 
+      {/* 悬停 tooltip */}
       <span
         role="tooltip"
-        className="pointer-events-none absolute left-[calc(100%+10px)] z-50 rounded-[6px] border border-line bg-card px-2.5 py-1 text-[12px] whitespace-nowrap text-ink opacity-0 transition-opacity group-hover:opacity-100"
+        className="pointer-events-none absolute left-[calc(100%+8px)] z-50 rounded-[5px] border border-line bg-card px-2 py-1 font-mono text-[11px] whitespace-nowrap text-ink opacity-0 transition-opacity duration-150 group-hover:opacity-100 shadow-[var(--shadow-lift)]"
       >
         {label}
       </span>

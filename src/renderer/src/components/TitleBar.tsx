@@ -11,26 +11,26 @@ export function TitleBar(): React.JSX.Element {
   }, [])
 
   return (
-    <header className="drag-region flex h-10 shrink-0 items-center justify-between border-b border-line bg-panel pl-4">
-      <div className="flex items-center gap-2.5">
-        <img src={logoUrl} width={20} height={20} alt="" aria-hidden draggable={false} />
-        <span className="font-mono text-[11px] font-semibold tracking-[0.14em] text-ink-muted uppercase">
+    <header className="drag-region flex h-9 shrink-0 items-center justify-between border-b border-line bg-panel pl-3">
+      <div className="flex items-center gap-2">
+        <img src={logoUrl} width={16} height={16} alt="" aria-hidden draggable={false} className="opacity-80" />
+        <span className="font-mono text-[10px] font-bold tracking-[0.18em] text-ink-faint/80 uppercase select-none">
           Mile Terminal
         </span>
       </div>
 
       <div className="no-drag flex items-center">
         <ChromeButton label="最小化" onClick={window.mile.window.minimize}>
-          <Minus size={13} weight="bold" />
+          <Minus size={11} weight="bold" />
         </ChromeButton>
         <ChromeButton
           label={maximized ? '还原' : '最大化'}
           onClick={window.mile.window.toggleMaximize}
         >
-          {maximized ? <Copy size={12} weight="bold" /> : <Square size={11} weight="bold" />}
+          {maximized ? <Copy size={10} weight="bold" /> : <Square size={10} weight="bold" />}
         </ChromeButton>
         <ChromeButton label="关闭" danger onClick={window.mile.window.close}>
-          <X size={13} weight="bold" />
+          <X size={11} weight="bold" />
         </ChromeButton>
       </div>
     </header>
@@ -48,17 +48,16 @@ function ChromeButton({
   danger?: boolean
   children: React.ReactNode
 }): React.JSX.Element {
-  // 不做位移：窗口控件贴着窗口边缘，缩放会露出底下的标题栏。按下靠底色再深一档
   return (
     <button
       type="button"
       aria-label={label}
       title={label}
       onClick={onClick}
-      className={`flex h-10 w-12 items-center justify-center text-ink-muted transition-colors ${
+      className={`flex h-9 w-11 items-center justify-center text-ink-faint/60 transition-colors duration-150 ${
         danger
-          ? 'hover:bg-fault active:bg-fault/80 hover:text-white active:text-white'
-          : 'hover:bg-raised active:bg-line-strong hover:text-ink-strong'
+          ? 'hover:bg-fault hover:text-white active:bg-fault/80 active:text-white'
+          : 'hover:bg-raised hover:text-ink-strong active:bg-line-strong'
       }`}
     >
       {children}

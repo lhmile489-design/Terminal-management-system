@@ -6,10 +6,37 @@ import {
   type EntryKind,
   type EntryRuntime,
   type LaunchEntry,
+  type LaunchMode,
   type ServiceIcon
 } from '@shared/types'
-import { FRAMEWORK_LABEL, SERVICE_ICON_META, STATUS_META, TONE_VAR, isLiveStatus } from '../lib/entryMeta'
+import {
+  FRAMEWORK_LABEL,
+  FRAMEWORK_LAUNCH_MODES,
+  LAUNCH_MODE_LABEL,
+  SERVICE_ICON_META,
+  STATUS_META,
+  TONE_VAR,
+  isLiveStatus
+} from '../lib/entryMeta'
 import { StatusPill } from './StatusPill'
+
+/** 需要在 jarPath 字段填「路径/模块」的启动方式（其余方式命令自足，无需额外输入） */
+const MODES_NEEDING_PATH = new Set<LaunchMode>([
+  'jar',
+  'cpp-exe',
+  'python-file',
+  'python-module',
+  'uvicorn'
+])
+
+/** 各 mode 的输入框提示文案 */
+const PATH_HINT: Partial<Record<LaunchMode, { label: string; hint: string; placeholder: string }>> = {
+  jar: { label: 'jar 路径', hint: '相对项目根，须以 .jar 结尾', placeholder: 'target/app.jar' },
+  'cpp-exe': { label: '可执行文件路径', hint: '相对项目根，须以 .exe 结尾', placeholder: 'build/app.exe' },
+  'python-file': { label: '入口文件', hint: '相对项目根的 .py 文件', placeholder: 'main.py' },
+  'python-module': { label: '模块名', hint: 'python -m 的模块，如 app.main', placeholder: 'app.main' },
+  uvicorn: { label: 'ASGI app', hint: 'uvicorn 的 app 规格，如 main:app', placeholder: 'main:app' }
+}
 
 /**
  * 条目编辑，PRD §4.6。
@@ -53,6 +80,14 @@ export function EditEntryDialog({
   const [outputDir, setOutputDir] = useState(entry.outputDir ?? '')
   const [framework, setFramework] = useState(entry.framework)
   const [packageManager, setPackageManager] = useState(entry.packageManager)
+  const [launchMode, setLaunchMode] = useState<LaunchMode | ''>(entry.launchMode ?? '')
+  const [jarPath, setJarPath] = useState(entry.jarPath ?? '')
+  // 自定义图片预览（data URL）。图片改动即时经 setImage/clearImage 落盘，不随保存按钮走 ——
+  // 它是展示字段（同 icon），运行中也能改，不影响运行身份。
+  const [imageUrl, setImageUrl] = useState<string | null>(null)
+  const [hasImage, setHasImage] = useState(!!entry.imageId)
+  const [imageBusy, setImageBusy] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [redetecting, setRedetecting] = useState(false)
   const [saving, setSaving] = useState(false)
   const closeRef = useRef<HTMLButtonElement>(null)
@@ -64,6 +99,47 @@ export function EditEntryDialog({
   useEffect(() => {
     closeRef.current?.focus()
   }, [])
+
+  // 载入当前自定义图片作预览（有则显示缩略图 + 移除按钮）
+  useEffect(() => {
+    if (!entry.imageId) return
+    let alive = true
+    void window.mile.entry.image(entry.id).then((url) => {
+      if (alive) setImageUrl(url)
+    })
+    return () => {
+      alive = false
+    }
+  }, [entry.id, entry.imageId])
+
+  // 上传图片：读文件字节交主进程压缩落盘，回填后刷新预览。图片改动即时生效。
+  const onPickImage = async (file: File | undefined): Promise<void> => {
+    if (!file) return
+    setImageBusy(true)
+    try {
+      const bytes = await file.arrayBuffer()
+      await window.mile.entry.setImage(entry.id, bytes)
+      const url = await window.mile.entry.image(entry.id)
+      setImageUrl(url)
+      setHasImage(true)
+    } catch {
+      // 解码失败 / 过大：主进程已拒绝，保持原样，用户可重选
+    } finally {
+      setImageBusy(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  const onRemoveImage = async (): Promise<void> => {
+    setImageBusy(true)
+    try {
+      await window.mile.entry.clearImage(entry.id)
+      setImageUrl(null)
+      setHasImage(false)
+    } finally {
+      setImageBusy(false)
+    }
+  }
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
@@ -85,6 +161,14 @@ export function EditEntryDialog({
       setPackageManager(detected.packageManager)
       setScripts(detected.scripts)
       setCwd('')
+      // 换目录后按识别结果预填启动方式（可启动的非 npm 生态）；否则清空这两个字段
+      if (FRAMEWORK_LAUNCH_MODES[detected.framework]) {
+        setLaunchMode(detected.detectedLaunchMode ?? '')
+        setJarPath('')
+      } else {
+        setLaunchMode('')
+        setJarPath('')
+      }
       // 新目录里同名脚本还在就留着，否则回落到它的 dev / build
       setScript((current) =>
         current && detected.scripts[current]
@@ -96,9 +180,14 @@ export function EditEntryDialog({
     }
   }
 
+  const launchModeOptions = FRAMEWORK_LAUNCH_MODES[framework]
+  const isLaunchable = !!launchModeOptions
+  const modeNeedsPath = launchMode !== '' && MODES_NEEDING_PATH.has(launchMode)
+
   const save = async (): Promise<void> => {
     setSaving(true)
     try {
+      const mode = isLaunchable ? launchMode || null : null
       const ok = await onSubmit({
         kind,
         name,
@@ -106,15 +195,20 @@ export function EditEntryDialog({
         icon: kind === 'service' ? icon : null,
         path,
         cwd,
-        script: script || null,
-        scripts,
+        // 可启动的非 npm 生态无 npm 脚本，脚本字段恒为空
+        script: isLaunchable ? null : script || null,
+        scripts: isLaunchable ? {} : scripts,
         framework,
         packageManager,
         env: envFromRows(envRows),
         // 空串表示清掉端口，用 null 让主进程按「显式清空」处理而不是「没提这个字段」
         expectedPort: kind === 'task' || !port ? null : Number(port),
         outputDir,
-        registerOnly: !script
+        // 可启动生态显式写 launchMode / jarPath（null 清空）
+        launchMode: isLaunchable ? mode : null,
+        jarPath: isLaunchable && mode && MODES_NEEDING_PATH.has(mode) ? jarPath.trim() || null : null,
+        // 选了启动方式才可启动；npm 项目按有无脚本判定
+        registerOnly: isLaunchable ? !mode : !script
       })
       if (ok) onClose()
     } finally {
@@ -123,6 +217,8 @@ export function EditEntryDialog({
   }
 
   const scriptNames = Object.keys(scripts)
+  // 需要填路径的模式必须填了才能保存
+  const launchIncomplete = isLaunchable && modeNeedsPath && !jarPath.trim()
   const updateEnvRow = (id: number, field: 'key' | 'value', value: string): void => {
     setEnvRows((rows) => rows.map((row) => (row.id === id ? { ...row, [field]: value } : row)))
   }
@@ -237,8 +333,60 @@ export function EditEntryDialog({
             </div>
           </Field>
 
+          {/* 自定义图片：服务与任务都可用，优先级高于预设图标与 favicon。图片即时压缩落盘 */}
+          <Field
+            label="自定义图片"
+            hint="上传后压缩存本地，卡片与列表都用它显示；优先于预设图标与 favicon"
+          >
+            <div className="flex items-center gap-3">
+              <span
+                className="icon-tile flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden"
+                aria-hidden
+              >
+                {imageUrl ? (
+                  <img
+                    src={imageUrl}
+                    className="h-9 w-9 rounded-[4px] object-contain"
+                    alt=""
+                    draggable={false}
+                  />
+                ) : (
+                  <span className="font-mono text-[11px] text-ink-faint">无</span>
+                )}
+              </span>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/gif,image/bmp"
+                className="hidden"
+                onChange={(e) => void onPickImage(e.target.files?.[0])}
+              />
+              <button
+                type="button"
+                disabled={imageBusy}
+                onClick={() => fileInputRef.current?.click()}
+                className="pressable rounded-[6px] border border-line-strong bg-card px-2.5 py-1.5 text-[12px] text-ink-muted hover:text-ink-strong disabled:opacity-45"
+              >
+                {imageBusy ? '处理中…' : hasImage ? '更换图片' : '上传图片'}
+              </button>
+              {hasImage && (
+                <button
+                  type="button"
+                  disabled={imageBusy}
+                  onClick={() => void onRemoveImage()}
+                  className="pressable rounded-[6px] border border-line-strong bg-card px-2.5 py-1.5 text-[12px] text-ink-muted hover:text-ink-strong disabled:opacity-45"
+                >
+                  移除
+                </button>
+              )}
+            </div>
+          </Field>
+
           {kind === 'service' && (
-            <Field label="服务卡片图标" hint="选择自动时沿用已识别的框架字标">
+            <Field
+              label="服务卡片图标"
+              hint={hasImage ? '已上传自定义图片，将优先显示' : '选择自动时沿用已识别的框架字标'}
+            >
               <div
                 data-icon-picker
                 role="group"
@@ -322,29 +470,65 @@ export function EditEntryDialog({
             </p>
           </Field>
 
-          <Field
-            label={kind === 'service' ? '启动脚本' : '执行脚本'}
-            hint="留空表示仅登记，可监控不可启动"
-            locked={live}
-          >
-            {scriptNames.length === 0 ? (
-              <p className="text-[12px] text-ink-faint">该项目没有可用脚本，只能仅登记</p>
-            ) : (
-              <select
-                value={script}
-                disabled={live}
-                onChange={(e) => setScript(e.target.value)}
-                className="w-full rounded-[6px] border border-line bg-card px-2.5 py-1.5 font-mono text-[12px] text-ink-strong outline-none focus:border-accent disabled:opacity-45"
-              >
-                <option value="">不设置（仅登记）</option>
-                {scriptNames.map((s) => (
-                  <option key={s} value={s}>
-                    {s} — {scripts[s]}
-                  </option>
-                ))}
-              </select>
-            )}
-          </Field>
+          {isLaunchable ? (
+            <>
+              <Field label="启动方式" hint="留空表示仅登记，可监控不可启动" locked={live}>
+                <select
+                  value={launchMode}
+                  disabled={live}
+                  onChange={(e) => setLaunchMode(e.target.value as LaunchMode | '')}
+                  className="w-full rounded-[6px] border border-line bg-card px-2.5 py-1.5 font-mono text-[12px] text-ink-strong outline-none focus:border-accent disabled:opacity-45"
+                >
+                  <option value="">不设置（仅登记）</option>
+                  {launchModeOptions.map((m) => (
+                    <option key={m} value={m}>
+                      {LAUNCH_MODE_LABEL[m]}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+
+              {modeNeedsPath && (
+                <Field
+                  label={PATH_HINT[launchMode]?.label ?? '路径'}
+                  hint={PATH_HINT[launchMode]?.hint ?? ''}
+                  locked={live}
+                >
+                  <input
+                    value={jarPath}
+                    disabled={live}
+                    placeholder={PATH_HINT[launchMode]?.placeholder ?? ''}
+                    onChange={(e) => setJarPath(e.target.value)}
+                    className="w-full rounded-[6px] border border-line bg-card px-2.5 py-1.5 font-mono text-[12px] text-ink-strong outline-none focus:border-accent disabled:opacity-45"
+                  />
+                </Field>
+              )}
+            </>
+          ) : (
+            <Field
+              label={kind === 'service' ? '启动脚本' : '执行脚本'}
+              hint="留空表示仅登记，可监控不可启动"
+              locked={live}
+            >
+              {scriptNames.length === 0 ? (
+                <p className="text-[12px] text-ink-faint">该项目没有可用脚本，只能仅登记</p>
+              ) : (
+                <select
+                  value={script}
+                  disabled={live}
+                  onChange={(e) => setScript(e.target.value)}
+                  className="w-full rounded-[6px] border border-line bg-card px-2.5 py-1.5 font-mono text-[12px] text-ink-strong outline-none focus:border-accent disabled:opacity-45"
+                >
+                  <option value="">不设置（仅登记）</option>
+                  {scriptNames.map((s) => (
+                    <option key={s} value={s}>
+                      {s} — {scripts[s]}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </Field>
+          )}
 
           <Field
             label="环境变量"
@@ -435,7 +619,7 @@ export function EditEntryDialog({
           <button
             type="button"
             onClick={() => void save()}
-            disabled={saving || !name.trim()}
+            disabled={saving || !name.trim() || launchIncomplete}
             className="btn-primary px-3 py-1.5 text-[12px]"
           >
             {saving ? '保存中' : '保存'}

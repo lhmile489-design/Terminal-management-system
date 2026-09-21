@@ -1,5 +1,7 @@
 import {
   ArrowClockwise,
+  ArrowSquareOut,
+  CaretDown,
   FolderOpen,
   Package,
   PencilSimple,
@@ -10,10 +12,13 @@ import {
   Terminal,
   Trash
 } from '@phosphor-icons/react'
-import type { EntryKind, EntryRuntime, Framework, LaunchEntry } from '@shared/types'
-import { FRAMEWORK_LABEL, SERVICE_ICON_META, STATUS_META, TONE_VAR, cardTone, isLiveStatus } from '../lib/entryMeta'
+import type { EntryRuntime, LaunchEntry } from '@shared/types'
+import { useRef, useState } from 'react'
+import { FRAMEWORK_LABEL, STATUS_META, TONE_VAR, cardTone, isLiveStatus } from '../lib/entryMeta'
 import { ellipsisPath, formatUptime } from '../lib/format'
 import type { CardSortHandlers } from '../lib/useCardSort'
+import { useEntryImage } from '../store/favicons'
+import { EntryGlyph } from './EntryGlyph'
 import { StatusPill } from './StatusPill'
 
 export interface EntryCardActions {
@@ -21,12 +26,16 @@ export interface EntryCardActions {
   onStop: () => void
   onRestart: () => void
   onLogs: () => void
+  /** 嵌入式终端面板：展开底部 panel 并 pin 该条目，不跳视图。省略时日志按钮回退到 onLogs */
+  onPin?: () => void
   onDiagnose: () => void
   onEdit: () => void
   onOpenFolder: () => void
   onOpenOutput: () => void
   onTogglePin: () => void
   onRemove: () => void
+  /** 任务卡片：运行指定脚本（脚本必须在 package.json scripts 里） */
+  onRunScript?: (script: string) => void
 }
 
 export function EntryCard({
@@ -55,6 +64,8 @@ export function EntryCard({
   const live = isLiveStatus(runtime.status)
   const isService = entry.kind === 'service'
   const port = runtime.port ?? entry.expectedPort
+  // 卡片图标：自定义图片 > favicon（web 框架），两视图共用 useEntryImage，无则回退字标
+  const imageUrl = useEntryImage(entry)
 
   return (
     <article
@@ -87,7 +98,7 @@ export function EntryCard({
           data-card-icon={isService ? entry.icon ?? 'auto' : undefined}
           aria-hidden
         >
-          <EntryGlyph entry={entry} />
+          <EntryGlyph entry={entry} imageUrl={imageUrl} size={24} glyphClass="text-[18px]" />
         </span>
 
         <div className="flex min-w-0 flex-1 flex-col gap-1">
@@ -98,6 +109,15 @@ export function EntryCard({
             <span className="shrink-0 rounded-[4px] bg-raised px-1.5 font-mono text-[10px] font-semibold tracking-[0.08em] text-ink-muted">
               {isService ? '服务' : '任务'}
             </span>
+            {/* uniapp 由 HBuilderX 编译/运行，本应用只能唤起它 —— 徽标让人一眼区分它与直管服务 */}
+            {entry.framework === 'uniapp' && (
+              <span
+                className="shrink-0 rounded-[4px] border border-accent/60 px-1.5 font-mono text-[10px] font-semibold tracking-[0.08em] text-accent"
+                title="uniapp 项目：编译与运行由 HBuilderX 负责，本应用不接管其日志、端口与停止"
+              >
+                HBuilderX
+              </span>
+            )}
           </h3>
           <p className="flex min-w-0 items-center gap-2">
             <StatusPill tone={status.tone} label={status.label} halo={live} />
@@ -171,13 +191,39 @@ export function EntryCard({
             disabled={busy}
             primary
           />
-        ) : (
+        ) : isService ? (
           <Action
             icon={Play}
-            label={isService ? '启动' : '运行'}
+            label="启动"
             onClick={actions.onStart}
             disabled={busy || entry.registerOnly}
-            hint={entry.registerOnly ? '仅登记条目不可启动' : undefined}
+            hint={
+              entry.framework === 'uniapp'
+                ? 'uniapp 由 HBuilderX 启动'
+                : entry.registerOnly
+                  ? '仅登记条目不可启动'
+                  : undefined
+            }
+            primary
+          />
+        ) : (
+          /* 任务：「运行」主按钮 + 可选下拉（有多个脚本时显示） */
+          <TaskRunButton
+            entry={entry}
+            busy={busy}
+            onStart={actions.onStart}
+            onRunScript={actions.onRunScript}
+          />
+        )}
+
+        {/* uniapp 专属：唤起本机 HBuilderX 打开该项目（命令构造全在主进程） */}
+        {entry.framework === 'uniapp' && (
+          <Action
+            icon={ArrowSquareOut}
+            label="用 HBuilderX 打开"
+            onClick={() => {
+              void window.mile.entry.openInHBuilderX(entry.id)
+            }}
             primary
           />
         )}
@@ -195,7 +241,7 @@ export function EntryCard({
         <Action
           icon={Terminal}
           label="日志"
-          onClick={actions.onLogs}
+          onClick={actions.onPin ?? actions.onLogs}
           disabled={!runtime.sessionId}
           iconOnly
         />
@@ -204,20 +250,27 @@ export function EntryCard({
         <Action icon={PencilSimple} label="编辑" onClick={actions.onEdit} iconOnly />
         <Action icon={FolderOpen} label="打开目录" onClick={actions.onOpenFolder} iconOnly />
 
-        {/* 产物目录只对任务有意义，且要跑完才有东西可看，PRD §4.2 */}
+        {/* 产物目录只对任务有意义，且要跑完才有东西可看，PRD §4.2
+            成功态：提升为 primary 带标签，视觉上从操作栏里跳出来，引导用户点。
+            其他态：保持 icon-only 灰色，条目指定了 outputDir 时也允许点（任务未跑也能直接去看上次产物）。 */}
         {!isService && (
-          <Action
-            icon={Package}
-            label="打开产物目录"
-            onClick={actions.onOpenOutput}
-            disabled={runtime.status !== 'succeeded' && !entry.outputDir}
-            hint={
-              runtime.status !== 'succeeded' && !entry.outputDir
-                ? '任务成功后可用'
-                : undefined
-            }
-            iconOnly
-          />
+          runtime.status === 'succeeded' ? (
+            <Action
+              icon={Package}
+              label="查看产物"
+              onClick={actions.onOpenOutput}
+              primary
+            />
+          ) : (
+            <Action
+              icon={Package}
+              label="打开产物目录"
+              onClick={actions.onOpenOutput}
+              disabled={!entry.outputDir}
+              hint={!entry.outputDir ? '任务成功后可用' : undefined}
+              iconOnly
+            />
+          )
         )}
         <Action
           icon={PushPin}
@@ -237,6 +290,134 @@ export function EntryCard({
         />
       </div>
     </article>
+  )
+}
+
+/**
+ * 任务卡片的「运行」区域。
+ *
+ * - 只有一个脚本（或仅登记）→ 和服务一样，单个「运行」按钮。
+ * - 有多个脚本 → 分裂按钮：左侧「运行」执行默认脚本（entry.script）；
+ *   右侧小箭头展开下拉，列出所有已声明脚本供选择执行。
+ *
+ * 下拉用 onBlur 关闭：焦点移到菜单外时收起，键盘 Escape 也收起。
+ * 命令构造与安全校验全在主进程（runScript = assertScriptDeclared + SAFE_SCRIPT），
+ * 渲染层只传脚本名字符串，不构造任何命令。
+ */
+function TaskRunButton({
+  entry,
+  busy,
+  onStart,
+  onRunScript
+}: {
+  entry: LaunchEntry
+  busy: boolean
+  onStart: () => void
+  onRunScript?: (script: string) => void
+}): React.JSX.Element {
+  const [open, setOpen] = useState(false)
+  const wrapRef = useRef<HTMLDivElement>(null)
+
+  const scriptNames = Object.keys(entry.scripts)
+  // 只有 1 条（或仅登记）时退化为普通单按钮，不显示下拉
+  const hasManyScripts = !entry.registerOnly && scriptNames.length > 1 && !!onRunScript
+
+  const handleBlur = (): void => {
+    // 焦点移到包裹元素外才关闭；移到菜单项上时 relatedTarget 还在内部
+    requestAnimationFrame(() => {
+      if (wrapRef.current && !wrapRef.current.contains(document.activeElement)) {
+        setOpen(false)
+      }
+    })
+  }
+
+  if (!hasManyScripts) {
+    return (
+      <Action
+        icon={Play}
+        label="运行"
+        onClick={onStart}
+        disabled={busy || entry.registerOnly}
+        hint={entry.registerOnly ? '仅登记条目不可启动' : undefined}
+        primary
+      />
+    )
+  }
+
+  return (
+    <div ref={wrapRef} className="relative flex" onBlur={handleBlur}>
+      {/* 主「运行」按钮：执行 entry.script（条目默认脚本） */}
+      <button
+        type="button"
+        disabled={busy}
+        onClick={onStart}
+        title={`运行 ${entry.script ?? ''}`}
+        className="pressable flex items-center gap-1.5 rounded-l-[6px] rounded-r-none border-r border-r-black/10 bg-accent px-2 py-1.5 text-[12px] font-semibold text-on-accent hover:brightness-110 disabled:pointer-events-none disabled:opacity-40"
+      >
+        <Play size={13} weight="bold" aria-hidden />
+        运行
+      </button>
+      {/* 下拉箭头按钮 */}
+      <button
+        type="button"
+        disabled={busy}
+        aria-label="选择要运行的脚本"
+        aria-expanded={open}
+        aria-haspopup="menu"
+        onClick={() => setOpen((v) => !v)}
+        className="pressable flex items-center rounded-l-none rounded-r-[6px] bg-accent px-1.5 py-1.5 text-on-accent hover:brightness-110 disabled:pointer-events-none disabled:opacity-40"
+      >
+        <CaretDown
+          size={11}
+          weight="bold"
+          aria-hidden
+          className={`transition-transform duration-150 ${open ? 'rotate-180' : ''}`}
+        />
+      </button>
+
+      {/* 下拉菜单 */}
+      {open && (
+        <div
+          role="menu"
+          aria-label="选择脚本"
+          onKeyDown={(e) => e.key === 'Escape' && setOpen(false)}
+          className="absolute top-full left-0 z-20 mt-1 min-w-[11rem] max-w-[22rem] overflow-hidden rounded-[8px] border border-line bg-surface shadow-[0_4px_16px_rgba(0,0,0,0.18)]"
+        >
+          {scriptNames.map((name) => {
+            const cmd = entry.scripts[name] ?? ''
+            const isDefault = name === entry.script
+            return (
+              <button
+                key={name}
+                role="menuitem"
+                type="button"
+                onClick={() => {
+                  setOpen(false)
+                  onRunScript(name)
+                }}
+                className="pressable-flat flex w-full min-w-0 flex-col gap-0.5 px-3 py-2 text-left hover:bg-raised focus-visible:bg-raised focus-visible:outline-none"
+              >
+                <span className="flex min-w-0 items-center gap-1.5">
+                  <span className="truncate font-mono text-[12px] font-semibold text-ink-strong">
+                    {name}
+                  </span>
+                  {isDefault && (
+                    <span className="shrink-0 rounded-[3px] bg-accent/15 px-1 font-mono text-[10px] font-semibold text-accent">
+                      默认
+                    </span>
+                  )}
+                </span>
+                {cmd && (
+                  <span className="truncate font-mono text-[10px] text-ink-faint" title={cmd}>
+                    {cmd}
+                  </span>
+                )}
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -281,59 +462,4 @@ function Action({
       {!iconOnly && label}
     </button>
   )
-}
-
-/**
- * 卡片图标瓦片里的字形。用框架名首字母而非彩色 logo ——
- * 内置各家品牌图标会带来商标与体积问题，且深浅两模式都要各配一版。
- */
-const GLYPH: Record<Framework, string> = {
-  next: 'N',
-  nuxt: 'Nu',
-  angular: 'A',
-  'vue-vite': 'V',
-  'vue-cli': 'V',
-  'react-vite': 'R',
-  'react-cra': 'R',
-  svelte: 'S',
-  electron: 'E',
-  hexo: 'Hx',
-  node: 'JS',
-  hugo: 'Hg',
-  jekyll: 'Jk',
-  django: 'Dj',
-  fastapi: 'Fa',
-  flask: 'Fl',
-  streamlit: 'St',
-  python: 'Py',
-  'docker-compose': 'Do',
-  go: 'Go',
-  rust: 'Rs',
-  static: '</>',
-  unknown: '?'
-}
-
-function FrameworkGlyph({
-  framework,
-  kind
-}: {
-  framework: Framework
-  kind: EntryKind
-}): React.JSX.Element {
-  // 未识别的任务给个终端符号，比一个问号更像「一条命令」
-  const text = framework === 'unknown' && kind === 'task' ? '>_' : GLYPH[framework]
-  return (
-    <span className="font-mono text-[15px] font-bold" aria-hidden>
-      {text}
-    </span>
-  )
-}
-
-function EntryGlyph({ entry }: { entry: LaunchEntry }): React.JSX.Element {
-  const meta = entry.kind === 'service' && entry.icon ? SERVICE_ICON_META[entry.icon] : undefined
-  if (meta) {
-    const IconCmp = meta.icon
-    return <IconCmp size={20} weight="bold" aria-hidden />
-  }
-  return <FrameworkGlyph framework={entry.framework} kind={entry.kind} />
 }

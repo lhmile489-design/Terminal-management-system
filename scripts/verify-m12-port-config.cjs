@@ -154,7 +154,7 @@ app.whenReady().then(async () => {
       String(BLOCKER_PORT)
     )
 
-    await js(`document.querySelector('nav button[aria-label="启动台"]')?.click()`)
+    await js(`document.querySelector('nav button[aria-label="前端启动台"]')?.click()`)
     check(
       'launchpad rendered its entries',
       Boolean(await waitFor('manual entry card', () => js(`Boolean(document.querySelector('article[data-entry-id="manual"]'))`)))

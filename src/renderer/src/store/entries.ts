@@ -3,6 +3,7 @@ import type {
   EntryEdit,
   EntryRuntime,
   LaunchEntry,
+  MavenGoal,
   NewLaunchEntry,
   PrecheckResult
 } from '@shared/types'
@@ -31,6 +32,13 @@ interface EntriesStore {
   stop: (id: string) => Promise<void>
   restart: (id: string) => Promise<PrecheckResult | null>
   install: (id: string) => Promise<void>
+  /** 后端控制台：执行 Maven/Gradle 构建任务；失败时错误落到 error 字段 */
+  mavenRun: (id: string, goal: MavenGoal) => Promise<EntryRuntime | null>
+  /**
+   * 后端控制台：带 profile 的打包（build 型会话）。
+   * profile 为 null = 不带 -P 参数；失败时错误落到 error 字段。
+   */
+  packageWithProfile: (id: string, profile: string | null) => Promise<EntryRuntime | null>
   /** 执行条目已声明的某个脚本，供命令面板用；失败时错误落到 error 字段 */
   runScript: (id: string, script: string) => Promise<EntryRuntime | null>
   precheck: (id: string) => Promise<PrecheckResult>
@@ -113,6 +121,12 @@ export const useEntries = create<EntriesStore>((set, get) => ({
   install: async (id) => {
     await guard(set, id, () => window.mile.entry.install(id))
   },
+
+  mavenRun: async (id, goal) =>
+    await guard(set, id, () => window.mile.entry.mavenRun(id, goal)),
+
+  packageWithProfile: async (id, profile) =>
+    await guard(set, id, () => window.mile.entry.packageWithProfile(id, profile)),
 
   runScript: async (id, script) =>
     await guard(set, id, () => window.mile.entry.runScript(id, script)),

@@ -9,7 +9,15 @@ import {
   Terminal,
   type Icon
 } from '@phosphor-icons/react'
-import type { EntryStatus, Framework, LaunchSource, PrecheckLevel, ServiceIcon } from '@shared/types'
+import type {
+  EntryStatus,
+  Framework,
+  LaunchMode,
+  LaunchSource,
+  PrecheckLevel,
+  ServiceIcon,
+  SpringBootLaunchMode
+} from '@shared/types'
 
 /** 服务卡片使用的受限 Phosphor 图标集。主进程只接受此列表中的标识。 */
 export const SERVICE_ICON_META: Record<ServiceIcon, { label: string; icon: Icon }> = {
@@ -87,6 +95,8 @@ export const FRAMEWORK_LABEL: Record<Framework, string> = {
   electron: 'Electron',
   hexo: 'Hexo',
   node: 'Node',
+  'spring-boot': 'Spring Boot',
+  uniapp: 'uniapp',
   hugo: 'Hugo',
   jekyll: 'Jekyll',
   django: 'Django',
@@ -97,8 +107,122 @@ export const FRAMEWORK_LABEL: Record<Framework, string> = {
   'docker-compose': 'Docker Compose',
   go: 'Go',
   rust: 'Rust',
+  cpp: 'C++',
   static: '静态站点',
   unknown: '未知'
+}
+
+/** Spring Boot 启动方式的中文标签，用于新建/编辑面板的下拉选项 */
+export const SPRING_BOOT_LAUNCH_MODE_LABEL: Record<SpringBootLaunchMode, string> = {
+  'maven-wrapper': 'Maven Wrapper（mvnw）',
+  'gradle-wrapper': 'Gradle Wrapper（gradlew）',
+  jar: '运行已构建的 jar',
+  'system-maven': '系统 Maven（mvn）',
+  'system-gradle': '系统 Gradle（gradle）'
+}
+
+/** 全部启动方式的中文标签，用于新建/编辑面板的下拉选项（含 Spring Boot 与各语言） */
+export const LAUNCH_MODE_LABEL: Record<LaunchMode, string> = {
+  ...SPRING_BOOT_LAUNCH_MODE_LABEL,
+  'python-file': 'Python 入口文件（python <文件>）',
+  'python-module': 'Python 模块（python -m <模块>）',
+  uvicorn: 'Uvicorn（python -m uvicorn <app>）',
+  flask: 'Flask（flask run）',
+  django: 'Django（manage.py runserver）',
+  'go-run': 'go run',
+  'cargo-run': 'cargo run',
+  'cargo-run-release': 'cargo run --release',
+  'cpp-exe': '运行已构建的 .exe'
+}
+
+/** 每个可启动框架允许的 launchMode 列表，新建/编辑面板据此渲染下拉选项 */
+export const FRAMEWORK_LAUNCH_MODES: Partial<Record<Framework, LaunchMode[]>> = {
+  'spring-boot': ['maven-wrapper', 'gradle-wrapper', 'jar', 'system-maven', 'system-gradle'],
+  python: ['python-file', 'python-module', 'uvicorn', 'flask'],
+  django: ['django', 'python-file', 'python-module'],
+  fastapi: ['uvicorn', 'python-module', 'python-file'],
+  flask: ['flask', 'python-module', 'python-file'],
+  streamlit: ['python-module', 'python-file'],
+  go: ['go-run'],
+  rust: ['cargo-run', 'cargo-run-release'],
+  cpp: ['cpp-exe']
+}
+
+/**
+ * 技术栈大类：把细分框架归并成用户口中的「React / Java / Vue」这类粗粒度标签，
+ * 用于任务台顶部的技术栈 tab。react-vite 与 react-cra 都归 React，spring-boot 归 Java。
+ *
+ * 值是稳定的英文键（做 tab 的标识与筛选比较），标签走 STACK_LABEL。
+ */
+export type TechStack =
+  | 'react'
+  | 'vue'
+  | 'next'
+  | 'nuxt'
+  | 'angular'
+  | 'svelte'
+  | 'node'
+  | 'java'
+  | 'python'
+  | 'go'
+  | 'rust'
+  | 'cpp'
+  | 'docker'
+  | 'uniapp'
+  | 'static'
+  | 'other'
+
+const FRAMEWORK_STACK: Record<Framework, TechStack> = {
+  next: 'next',
+  nuxt: 'nuxt',
+  angular: 'angular',
+  'vue-vite': 'vue',
+  'vue-cli': 'vue',
+  'react-vite': 'react',
+  'react-cra': 'react',
+  svelte: 'svelte',
+  electron: 'node',
+  hexo: 'node',
+  node: 'node',
+  'spring-boot': 'java',
+  uniapp: 'uniapp',
+  hugo: 'go', // Hugo 是 Go 写的静态站生成器，归 Go 一类而非另立
+  jekyll: 'other',
+  django: 'python',
+  fastapi: 'python',
+  flask: 'python',
+  streamlit: 'python',
+  python: 'python',
+  'docker-compose': 'docker',
+  go: 'go',
+  rust: 'rust',
+  cpp: 'cpp',
+  static: 'static',
+  unknown: 'other'
+}
+
+/** 技术栈大类的展示标签，tab 上显示这个 */
+export const STACK_LABEL: Record<TechStack, string> = {
+  react: 'React',
+  vue: 'Vue',
+  next: 'Next.js',
+  nuxt: 'Nuxt',
+  angular: 'Angular',
+  svelte: 'Svelte',
+  node: 'Node',
+  java: 'Java',
+  python: 'Python',
+  go: 'Go',
+  rust: 'Rust',
+  cpp: 'C++',
+  docker: 'Docker',
+  uniapp: 'uniapp',
+  static: '静态站点',
+  other: '其他'
+}
+
+export function stackOf(framework: Framework): TechStack {
+  return FRAMEWORK_STACK[framework] ?? 'other'
 }
 
 /**

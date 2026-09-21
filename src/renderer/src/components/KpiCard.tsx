@@ -3,7 +3,6 @@ import { Sparkline } from './Sparkline'
 
 type Tone = 'neutral' | 'live' | 'warn' | 'fault' | 'info' | 'accent'
 
-/** 色调驱动图标瓦片底色与迷你折线，neutral 用弱文字色而非 accent */
 const TONE_VAR: Record<Tone, string> = {
   neutral: 'var(--text-faint)',
   live: 'var(--signal-live)',
@@ -39,51 +38,54 @@ export function KpiCard({
   return (
     <article
       data-kpi-card
-      className="surface-card flex min-h-[144px] min-w-0 flex-col px-4 py-3.5"
+      className="surface-card flex min-w-0 flex-col px-3.5 py-3"
       style={{ '--glow': TONE_VAR[tone] } as React.CSSProperties}
     >
-      <div className="flex min-w-0 items-start justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-3">
-          <span className="icon-tile icon-tile-sm h-10 w-10" aria-hidden>
-            <IconCmp size={18} weight="bold" />
+      {/* 顶部：图标瓦片 + 标签 + 趋势图 */}
+      <div className="flex min-w-0 items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span className="icon-tile icon-tile-sm h-8 w-8 shrink-0" aria-hidden>
+            <IconCmp size={15} weight="bold" />
           </span>
-
           <div className="min-w-0">
-            <h3 className="flex items-center gap-1.5 truncate text-[11px] font-semibold text-ink-muted">
+            <h3 className="flex items-center gap-1.5 truncate text-[11px] font-semibold text-ink-muted leading-none">
               {label}
-              {live && <span className="status-dot" data-halo="true" aria-hidden />}
+              {live && (
+                <span
+                  className="h-1.5 w-1.5 shrink-0 rounded-full bg-live shadow-[0_0_0_2px_color-mix(in_srgb,var(--signal-live)_22%,transparent)]"
+                  aria-hidden
+                />
+              )}
             </h3>
             {hint && (
-              <p className="mt-0.5 truncate text-[10.5px] text-ink-faint" title={hint}>
+              <p className="mt-0.5 truncate text-[10px] text-ink-faint/70 leading-none" title={hint}>
                 {hint}
               </p>
             )}
           </div>
         </div>
-
         {trend && <Sparkline points={trend} tone={TONE_VAR[tone]} />}
       </div>
 
-      <div className="mt-3 flex items-end gap-1.5">
-        {/* tabular-nums 让每轮刷新数字不跳动；三列布局允许主读数承担视觉重心。 */}
-        <p className="flex min-w-0 items-baseline gap-1">
-          <span className="font-mono text-[32px] leading-none font-bold text-ink-strong tabular-nums">
-            {value}
+      {/* 主读数 */}
+      <div className="mt-2.5 flex items-baseline gap-1">
+        <span className="font-mono text-[26px] font-bold leading-none text-ink-strong tabular-nums">
+          {value}
+        </span>
+        {unit && (
+          <span className="font-mono text-[12px] font-semibold text-ink-faint/60 leading-none">
+            {unit}
           </span>
-          {unit && (
-            <span className="shrink-0 font-mono text-[14px] font-semibold text-ink-faint opacity-70">
-              {unit}
-            </span>
-          )}
-        </p>
+        )}
       </div>
 
+      {/* 底部详情行 */}
       {detail && (
         <p
           data-kpi-detail
-          className="mt-auto flex min-h-6 items-center gap-2 border-t border-line pt-2 font-mono text-[10.5px] text-ink-faint"
+          className="mt-auto pt-2.5 flex items-center gap-1.5 border-t border-line font-mono text-[10px] text-ink-faint/70 mt-2.5"
         >
-          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--glow)]" aria-hidden />
+          <span className="h-1 w-1 shrink-0 rounded-full bg-[var(--glow)]" aria-hidden />
           <span className="truncate">{detail}</span>
         </p>
       )}

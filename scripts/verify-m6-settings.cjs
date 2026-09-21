@@ -350,6 +350,27 @@ async function checks(win) {
   await callIpc(Channels.settingsPatch, { closeToTray: false })
   check('closeToTray 可关闭', diskSettings().closeToTray === false)
 
+  console.log('\n=== 从任务栏隐藏（仅托盘）===')
+  // Electron 不公开 skipTaskbar 的 getter，改为在真实窗口上探针 setSkipTaskbar：
+  // 记录它被主进程副作用调用时的实参，证明 patch → handler → 窗口这条链真的走通。
+  // 探针只包裹、仍调原实现，不改行为；先记基态证明探针在动。
+  const skipCalls = []
+  const realSetSkip = win.setSkipTaskbar.bind(win)
+  win.setSkipTaskbar = (v) => {
+    skipCalls.push(v)
+    return realSetSkip(v)
+  }
+  check('探针就位且初始未隐藏', skipCalls.length === 0 && diskSettings().hideFromTaskbar !== true, String(diskSettings().hideFromTaskbar))
+  await callIpc(Channels.settingsPatch, { hideFromTaskbar: true })
+  await sleep(200)
+  check('hideFromTaskbar 已落盘', diskSettings().hideFromTaskbar === true, String(diskSettings().hideFromTaskbar))
+  check('开启触发 setSkipTaskbar(true)', skipCalls[skipCalls.length - 1] === true, JSON.stringify(skipCalls))
+  await callIpc(Channels.settingsPatch, { hideFromTaskbar: false })
+  await sleep(200)
+  check('hideFromTaskbar 可关闭', diskSettings().hideFromTaskbar === false, String(diskSettings().hideFromTaskbar))
+  check('关闭触发 setSkipTaskbar(false)', skipCalls[skipCalls.length - 1] === false, JSON.stringify(skipCalls))
+  win.setSkipTaskbar = realSetSkip
+
   console.log('\n=== 无障碍回归 ===')
   await goto(win, '设置')
   const unlabeled = await js(

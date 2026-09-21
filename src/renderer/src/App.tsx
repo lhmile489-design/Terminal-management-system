@@ -6,10 +6,12 @@ import { NavRail, type ViewId } from './components/NavRail'
 import { ActivitySidebar, type ActivityEvent } from './components/ActivitySidebar'
 import { Dashboard } from './views/Dashboard'
 import { Launchpad } from './views/Launchpad'
+import { BackendConsole } from './views/BackendConsole'
 import { Diagnose } from './views/Diagnose'
 import { TerminalWorkspace } from './views/TerminalWorkspace'
 import { LogCenter } from './views/LogCenter'
 import { Settings } from './views/Settings'
+import { About } from './views/About'
 import { CommandPalette, type PaletteAction } from './components/CommandPalette'
 import { useEntryFix } from './lib/useEntryFix'
 import { useSessions } from './store/sessions'
@@ -31,9 +33,15 @@ const TITLES: Record<
   },
   launchpad: {
     eyebrow: 'Launchpad',
-    title: '启动台',
+    title: '前端启动台',
     romanized: 'LAUNCHPAD',
-    caption: '一键启动与管理你的本地服务和批处理任务'
+    caption: '一键启动与管理你的本地前端服务和批处理任务'
+  },
+  backend: {
+    eyebrow: 'Backend',
+    title: '后端控制台',
+    romanized: 'BACKEND',
+    caption: 'Spring Boot 项目管理：启停服务、Maven/Gradle 构建操作'
   },
   terminal: {
     eyebrow: 'Terminal',
@@ -58,6 +66,12 @@ const TITLES: Record<
     title: '设置',
     romanized: 'SETTINGS',
     caption: '采集周期、主题与终端偏好'
+  },
+  about: {
+    eyebrow: 'About',
+    title: '关于',
+    romanized: 'ABOUT',
+    caption: '版本信息、使用教程与项目介绍'
   }
 }
 
@@ -220,7 +234,7 @@ export function App(): React.JSX.Element {
       <div className="flex min-h-0 flex-1">
         <NavRail active={view} onChange={setView} />
 
-        <main className="flex min-w-0 flex-1 flex-col overflow-y-auto px-7 py-6">
+        <main className="flex min-w-0 flex-1 flex-col overflow-y-auto px-6 py-5">
           <ViewHeader
             eyebrow={meta.eyebrow}
             title={meta.title}
@@ -250,6 +264,7 @@ export function App(): React.JSX.Element {
               onPendingKindConsumed={() => setPaletteAdd(null)}
             />
           )}
+          {view === 'backend' && <BackendConsole />}
           {view === 'terminal' && <TerminalWorkspace />}
           {view === 'logs' && <LogCenter />}
           {view === 'diagnose' && (
@@ -261,6 +276,7 @@ export function App(): React.JSX.Element {
             />
           )}
           {view === 'settings' && <Settings />}
+          {view === 'about' && <About />}
         </main>
 
         <ActivitySidebar events={events} onClear={clearEvents} />
@@ -290,13 +306,13 @@ function PaletteHint({ onOpen }: { onOpen: () => void }): React.JSX.Element {
     <button
       type="button"
       onClick={onOpen}
-      className="pressable-flat flex w-[300px] max-w-full items-center gap-2.5 rounded-[8px] border border-line-strong bg-card px-3 py-2 text-left text-ink-faint hover:border-line-strong hover:text-ink-muted"
+      className="pressable-flat flex w-[260px] max-w-full items-center gap-2 rounded-[6px] border border-line bg-raised/50 px-2.5 py-1.5 text-left text-ink-faint hover:border-line-strong hover:text-ink-muted"
     >
-      <MagnifyingGlass size={14} weight="bold" className="shrink-0" aria-hidden />
-      <span className="min-w-0 flex-1 truncate text-[12.5px]">
-        搜索服务、端口、命令或输入操作…
+      <MagnifyingGlass size={12} weight="bold" className="shrink-0 text-ink-faint/60" aria-hidden />
+      <span className="min-w-0 flex-1 truncate text-[11.5px]">
+        搜索服务、端口、命令…
       </span>
-      <kbd className="shrink-0 rounded-[4px] border border-line-strong px-1.5 font-mono text-[10px]">
+      <kbd className="shrink-0 rounded-[3px] border border-line px-1 font-mono text-[9.5px] text-ink-faint/60">
         ^K
       </kbd>
     </button>
@@ -338,9 +354,9 @@ function HeaderAction({
     <button
       type="button"
       onClick={onClick}
-      className="pressable flex items-center gap-1.5 rounded-[8px] border border-line-strong bg-card px-2.5 py-2 text-[12px] text-ink-muted hover:text-ink-strong"
+      className="pressable flex items-center gap-1.5 rounded-[6px] border border-line bg-raised/50 px-2.5 py-1.5 text-[11.5px] text-ink-muted hover:border-line-strong hover:bg-raised hover:text-ink-strong"
     >
-      <IconCmp size={13} weight="bold" />
+      <IconCmp size={12} weight="bold" />
       {label}
     </button>
   )

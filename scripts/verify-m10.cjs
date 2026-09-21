@@ -3,9 +3,10 @@
  *
  * 三段都有「看着对但其实没量到东西」的陷阱，所以每段都先确认量的是真东西：
  *
- * 1. 识别扩展：只断言 framework 不够 —— 那只证明字符串对上了。要求同时
- *    registerOnly === true，因为启动路径写死为 `包管理器 run 脚本`，非 npm 生态
- *    推不出那个形状；识别成 Go 却允许启动，等于替用户构造命令，违反需求 5。
+ * 1. 识别扩展：只断言 framework 不够 —— 那只证明字符串对上了。命令形状固定的语言
+ *    （Python/Go/Rust 及 Django/FastAPI/Flask/Streamlit）要求 registerOnly === false
+ *    且探测出 detectedLaunchMode；推不出命令形状的生态（Jekyll/Hugo/docker-compose/
+ *    static）仍要求 registerOnly === true —— 识别成那些却允许启动，等于替用户构造命令。
  *
  * 2. 通知：electron.Notification 是不可配置的 getter，改不动。用 Module._load
  *    代理在加载主进程包之前换掉它，这样数出来的是真的 show() 次数，而不是
@@ -53,6 +54,11 @@ const { tmpdir } = require('node:os')
 const ROOT = join(__dirname, '..')
 const FIX = join(__dirname, 'fixture')
 const FIXT = join(__dirname, 'fixture-task')
+
+// 版本号从 src/shared/types.ts 读，别写死 —— 见 CLAUDE.md「改 CONFIG_VERSION 时」
+const CONFIG_VERSION = Number(
+  /CONFIG_VERSION\s*=\s*(\d+)/.exec(readFileSync(join(ROOT, 'src/shared/types.ts'), 'utf8'))?.[1]
+)
 
 const SANDBOX = join(tmpdir(), `mile-m10-${process.pid}`)
 mkdirSync(join(SANDBOX, 'mile-terminal'), { recursive: true })
@@ -184,6 +190,9 @@ const PROBE_CASES = [
   ['unknown', probe('bare', { 'notes.txt': 'nothing recognizable' })]
 ]
 
+// 命令形状固定、已可启动的语言生态（其余标记仍仅登记）
+const LAUNCHABLE_PROBES = new Set(['django', 'fastapi', 'streamlit', 'flask', 'python', 'go', 'rust'])
+
 // 反例：Hugo 要求配置 + 目录约定同时在。光有 config.toml 太通用，
 // 若它被认成 Hugo，那条规则就是在靠文件名猜。
 const CONF_ONLY = probe('conf-only', { 'config.toml': 'title = "something"\n' })
@@ -227,12 +236,22 @@ app.whenReady().then(async () => {
   for (const [expected, dir] of PROBE_CASES) {
     const r = await detect(dir)
     check(`识别为 ${expected}`, r.framework === expected, `${r.framework} @ ${r.name}`)
-    // 识别到了不等于能启动。非 npm 生态必须仅登记，否则就是在替用户猜命令
-    check(
-      `${expected} 标记为仅登记`,
-      r.registerOnly === true && r.hasPackageJson === false,
-      `registerOnly=${r.registerOnly}`
-    )
+    // 识别到了不等于能启动。命令形状固定的语言（Python/Go/Rust 及 Django/FastAPI/Flask/
+    // Streamlit）已可启动，走 EntryService 的第 N 条命令构造路径；推不出命令形状的生态
+    // （Jekyll/Hugo/docker-compose/static/unknown）仍必须仅登记，否则就是在替用户猜命令。
+    if (LAUNCHABLE_PROBES.has(expected)) {
+      check(
+        `${expected} 可启动（非仅登记）`,
+        r.registerOnly === false && r.hasPackageJson === false && !!r.detectedLaunchMode,
+        `registerOnly=${r.registerOnly} launchMode=${r.detectedLaunchMode}`
+      )
+    } else {
+      check(
+        `${expected} 标记为仅登记`,
+        r.registerOnly === true && r.hasPackageJson === false,
+        `registerOnly=${r.registerOnly}`
+      )
+    }
     check(`${expected} 不推断任何脚本`, r.devScript === null && r.buildScript === null &&
       Object.keys(r.scripts).length === 0, `devScript=${r.devScript} scripts=${Object.keys(r.scripts).length}`)
   }
@@ -265,7 +284,7 @@ app.whenReady().then(async () => {
   // 界面侧的映射表漏一项就会渲染出 undefined。这一段必须站在启动台上量 ——
   // 工作台没有条目卡片，卡片找不到时 out[f] 会是 null，断言就会空过。
   await js(`(()=>{const b=[...document.querySelector('nav').querySelectorAll('button')]
-    .find(x=>x.getAttribute('aria-label')==='启动台');b&&b.click();return true})()`)
+    .find(x=>x.getAttribute('aria-label')==='前端启动台');b&&b.click();return true})()`)
   await sleep(1200)
   const cardPresent = await js(`!![...document.querySelectorAll('main article.surface-card')]
     .find(c=>c.dataset.entryId==='svc')`)
@@ -292,7 +311,7 @@ app.whenReady().then(async () => {
 
   console.log('\n=== 2. 配置迁移与通知开关（PRD §4.7）===')
   const migrated = onDisk()
-  check('配置版本已升到 3', migrated.version === 3, String(migrated.version))
+  check(`配置版本已升到 ${CONFIG_VERSION}`, migrated.version === CONFIG_VERSION, String(migrated.version))
   check('迁移补上 notifyOnTaskDone', migrated.settings.notifyOnTaskDone === true,
     String(migrated.settings.notifyOnTaskDone))
   check('迁移不动既有设置', migrated.settings.scanIntervalMs === 2000 &&

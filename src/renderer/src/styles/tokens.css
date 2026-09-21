@@ -219,6 +219,21 @@ button {
   opacity: 0.4;
 }
 
+/*
+  拖拽进行中，transform 交给 useCardSort 的 FLIP 动画独占。
+  否则 .surface-card 的 transform 过渡 + :hover 抬升会与 card.animate() 抢同一属性 ——
+  重排时卡片从光标下滑过，:hover 反复开关 translateY，补间叠在 FLIP 上就「乱跳」。
+  只压制干扰源（hover 抬升 + transform 过渡），滑动本身仍由 FLIP 驱动；松手即恢复手感。
+*/
+[data-sorting='true'] .surface-card {
+  transition:
+    border-color 150ms ease-out,
+    box-shadow 150ms ease-out;
+}
+[data-sorting='true'] .surface-card[data-interactive='true']:hover {
+  transform: none;
+}
+
 /* KPI 使用固定最小列宽：宽屏自然形成 3×2，窄屏先降列而不是压缩读数和上下文。 */
 section[aria-labelledby='kpi-heading'] {
   container-type: inline-size;
@@ -540,14 +555,14 @@ section[aria-labelledby='kpi-heading'] {
 }
 
 /*
-  展示型标题：大字 + 等宽副标。参考项目的核心视觉签名 ——
+  展示型标题（不再用于 ViewHeader，保留给内容页中的大型强调区）：
   副标用 em 单位跟随主标缩放，窗口变窄时两者比例不变。
 */
 .display-title {
   display: flex;
   align-items: baseline;
   gap: 0.6em;
-  font-size: clamp(28px, 3.2vw, 38px);
+  font-size: clamp(22px, 2.4vw, 30px);
   font-weight: 800;
   letter-spacing: 0.02em;
   line-height: 1.15;

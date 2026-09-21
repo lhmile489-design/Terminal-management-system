@@ -125,7 +125,7 @@ app.whenReady().then(async () => {
     win.setBounds({ width: 1500, height: 940 })
 
     const navigate = await js(`(() => {
-      const button = document.querySelector('nav button[aria-label="启动台"]')
+      const button = document.querySelector('nav button[aria-label="前端启动台"]')
       if (!button) return false
       button.click()
       return true

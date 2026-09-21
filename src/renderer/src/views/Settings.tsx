@@ -159,6 +159,14 @@ export function Settings(): React.JSX.Element {
               onChange={(v) => void patch({ closeToTray: v })}
             />
           </Row>
+          <Row label="从任务栏隐藏（仅托盘）" hint="任务栏不显示图标，应用只留在系统托盘；点托盘图标或菜单唤出窗口">
+            <Toggle
+              label="从任务栏隐藏（仅托盘）"
+              checked={settings.hideFromTaskbar}
+              disabled={saving}
+              onChange={(v) => void patch({ hideFromTaskbar: v })}
+            />
+          </Row>
         </Panel>
       </section>
 

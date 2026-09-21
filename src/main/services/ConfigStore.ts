@@ -17,7 +17,8 @@ const DEFAULTS: AppConfig = {
     scrollback: 5000,
     killOwnedOnQuit: true,
     closeToTray: false,
-    notifyOnTaskDone: true
+    notifyOnTaskDone: true,
+    hideFromTaskbar: false
   }
 }
 
@@ -112,6 +113,21 @@ export class ConfigStore {
         return { ...entry, category }
       })
     }
+
+    // v5 -> v6：从任务栏隐藏（仅托盘）。默认关，行为对现有用户保持不变
+    if (from < 6) {
+      out.settings.hideFromTaskbar = DEFAULTS.settings.hideFromTaskbar
+    }
+
+    // v6 -> v7：LaunchEntry 新增可选的 launchMode / jarPath（仅 Spring Boot 用）。
+    // 老条目本就不该有这两个字段，保持 undefined 即可，无需回填 —— 这一步只把
+    // 版本号推进到 7，好让下次需要区分新旧结构时有依据。
+    void from
+
+    // v7 -> v8：LaunchEntry 新增可选的 imageId（自定义图片文件名，服务与任务均可用）。
+    // 老条目无此字段，保持 undefined 即可 —— 图片是纯展示增强，缺省时回退 icon/favicon/字标。
+    // 仅推进版本号，不回填。（imageId 只由主进程 setImage 写入，迁移不构造它。）
+    void from
 
     // 迁移后仍要校形：数组字段被手改成对象会让下游 .some / .filter 直接抛
     if (!Array.isArray(out.entries)) out.entries = []

@@ -121,9 +121,9 @@ export function Dashboard({
   ]
 
   return (
-    <div className="flex flex-col gap-7">
+    <div className="flex flex-col gap-5">
       <section aria-labelledby="kpi-heading">
-        <h2 id="kpi-heading" className="eyebrow mb-3">
+        <h2 id="kpi-heading" className="eyebrow mb-2.5">
           Overview
         </h2>
         <div className="kpi-grid">
@@ -136,7 +136,7 @@ export function Dashboard({
       <DiscoveredListeners onRequestAdd={onRequestAdd} />
 
       <section aria-labelledby="listeners-heading">
-        <h2 id="listeners-heading" className="eyebrow mb-3">
+        <h2 id="listeners-heading" className="eyebrow mb-2.5">
           My Services · 我的服务
         </h2>
         {/* 定位端口只交给真正持有那一行的表：两张表都拿到的话，没命中的那张
@@ -151,7 +151,7 @@ export function Dashboard({
       </section>
 
       <section aria-labelledby="background-heading">
-        <div className="mb-3 flex items-center gap-2">
+        <div className="mb-2.5 flex items-center gap-2">
           <h2 id="background-heading" className="eyebrow">
             Background · 应用后台
           </h2>
@@ -159,7 +159,7 @@ export function Dashboard({
             type="button"
             aria-expanded={showBackground}
             onClick={() => setShowBackground((v) => !v)}
-            className="pressable flex items-center gap-1 rounded-[5px] border border-line-strong bg-card px-2 py-0.5 font-mono text-[10px] text-ink-muted hover:text-ink-strong"
+            className="pressable flex items-center gap-1 rounded-[5px] border border-line bg-raised/50 px-1.5 py-0.5 font-mono text-[10px] text-ink-muted hover:border-line-strong hover:text-ink-strong"
           >
             <CaretRight
               size={9}

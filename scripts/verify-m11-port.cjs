@@ -194,7 +194,7 @@ app.whenReady().then(async () => {
 
     console.log('\n=== 4. 界面显示的端口一致 ===')
     await js(`(()=>{const b=[...document.querySelector('nav').querySelectorAll('button')]
-      .find(x=>x.getAttribute('aria-label')==='启动台');b&&b.click();return true})()`)
+      .find(x=>x.getAttribute('aria-label') === '前端启动台');b&&b.click();return true})()`)
     /*
      * 量端口胶囊按钮本身，不拿整卡文案套正则。
      *

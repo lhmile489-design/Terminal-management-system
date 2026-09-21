@@ -140,14 +140,14 @@ async function checks(win) {
 
   const cardsReady = await waitUntil(
     win,
-    `document.querySelectorAll('section[aria-labelledby="services-heading"] article, section[aria-labelledby="tasks-heading"] article').length === 2`,
+    `document.querySelectorAll('section[data-category-kind="service"] article, section[data-category-kind="task"] article').length === 2`,
     20_000,
     '两张条目卡片'
   )
   const cardInfo = await run(
     win,
     `(() => {
-      const arts = [...document.querySelectorAll('section[aria-labelledby="services-heading"] article, section[aria-labelledby="tasks-heading"] article')];
+      const arts = [...document.querySelectorAll('section[data-category-kind="service"] article, section[data-category-kind="task"] article')];
       return arts.map((a) => ({
         title: a.querySelector('h3 span')?.textContent?.trim(),
         badges: [...a.querySelectorAll('span')].map((s) => s.textContent.trim()).filter((t) => ['服务','任务','未启动','运行中','启动中','已停止','异常退出','已完成','失败','预检未通过'].includes(t)),
@@ -167,7 +167,7 @@ async function checks(win) {
   const brokenClicked = await run(
     win,
     `(() => {
-      const arts = [...document.querySelectorAll('section[aria-labelledby="services-heading"] article, section[aria-labelledby="tasks-heading"] article')];
+      const arts = [...document.querySelectorAll('section[data-category-kind="service"] article, section[data-category-kind="task"] article')];
       const target = arts.find((a) => a.textContent.includes('目录不存在的任务'));
       if (!target) return false;
       // 任务的启动按钮叫「运行」——一次性命令没有「停止运行中的服务」那层含义
@@ -205,7 +205,7 @@ async function checks(win) {
   const startClicked = await run(
     win,
     `(() => {
-      const arts = [...document.querySelectorAll('section[aria-labelledby="services-heading"] article, section[aria-labelledby="tasks-heading"] article')];
+      const arts = [...document.querySelectorAll('section[data-category-kind="service"] article, section[data-category-kind="task"] article')];
       const target = arts.find((a) => a.textContent.includes('Fixture Dev'));
       const btn = [...target.querySelectorAll('button')].find((b) => b.getAttribute('aria-label') === '启动');
       if (!btn || btn.disabled) return false;
@@ -218,7 +218,7 @@ async function checks(win) {
   const running = await waitUntil(
     win,
     `(() => {
-      const arts = [...document.querySelectorAll('section[aria-labelledby="services-heading"] article, section[aria-labelledby="tasks-heading"] article')];
+      const arts = [...document.querySelectorAll('section[data-category-kind="service"] article, section[data-category-kind="task"] article')];
       const t = arts.find((a) => a.textContent.includes('Fixture Dev'));
       return !!t && t.textContent.includes('运行中');
     })()`,
@@ -230,7 +230,7 @@ async function checks(win) {
   const portShown = await waitUntil(
     win,
     `(() => {
-      const arts = [...document.querySelectorAll('section[aria-labelledby="services-heading"] article, section[aria-labelledby="tasks-heading"] article')];
+      const arts = [...document.querySelectorAll('section[data-category-kind="service"] article, section[data-category-kind="task"] article')];
       const t = arts.find((a) => a.textContent.includes('Fixture Dev'));
       if (!t) return false;
       // 端口在页头当作「打开 localhost」的按钮，不再是 dl 里的一行
@@ -242,7 +242,7 @@ async function checks(win) {
   const portText = await run(
     win,
     `(() => {
-      const arts = [...document.querySelectorAll('section[aria-labelledby="services-heading"] article, section[aria-labelledby="tasks-heading"] article')];
+      const arts = [...document.querySelectorAll('section[data-category-kind="service"] article, section[data-category-kind="task"] article')];
       const t = arts.find((a) => a.textContent.includes('Fixture Dev'));
       const port = [...t.querySelectorAll('button')].find((b) => /^:\\d{2,5}$/.test(b.textContent.trim()));
       return [port ? port.textContent.trim() + ' → ' + (port.getAttribute('title') || '') : '无端口按钮']
@@ -256,7 +256,7 @@ async function checks(win) {
     await run(
       win,
       `(() => {
-        const arts = [...document.querySelectorAll('section[aria-labelledby="services-heading"] article, section[aria-labelledby="tasks-heading"] article')];
+        const arts = [...document.querySelectorAll('section[data-category-kind="service"] article, section[data-category-kind="task"] article')];
         const t = arts.find((a) => a.textContent.includes('Fixture Dev'));
         const btns = [...t.querySelectorAll('button')];
         const stop = btns.find((b) => b.getAttribute('aria-label') === '停止');
@@ -340,7 +340,7 @@ async function checks(win) {
   await run(
     win,
     `(() => {
-      const arts = [...document.querySelectorAll('section[aria-labelledby="services-heading"] article, section[aria-labelledby="tasks-heading"] article')];
+      const arts = [...document.querySelectorAll('section[data-category-kind="service"] article, section[data-category-kind="task"] article')];
       const t = arts.find((a) => a.textContent.includes('Fixture Dev'));
       const btn = [...t.querySelectorAll('button')].find((b) => b.getAttribute('aria-label') === '停止');
       if (btn) btn.click();
@@ -350,7 +350,7 @@ async function checks(win) {
   await waitUntil(
     win,
     `(() => {
-      const arts = [...document.querySelectorAll('section[aria-labelledby="services-heading"] article, section[aria-labelledby="tasks-heading"] article')];
+      const arts = [...document.querySelectorAll('section[data-category-kind="service"] article, section[data-category-kind="task"] article')];
       const t = arts.find((a) => a.textContent.includes('Fixture Dev'));
       return !!t && !t.textContent.includes('运行中');
     })()`,

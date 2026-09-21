@@ -1,7 +1,8 @@
 /**
- * 视图页头：eyebrow + 展示型大标题（中文主标 + 等宽罗马字副标）+ 说明 + 右侧动作区。
+ * 视图页头：eyebrow + 标题行（主标 + 等宽罗马字副标）+ 说明 + 右侧动作区。
  *
- * 参考项目的核心视觉签名。副标用 em 跟随主标缩放，窗口变窄时比例不变。
+ * 升级方向：收紧垂直空间，标题从展示型大字缩为紧凑标题行，
+ * 保留 eyebrow + romanized 签名但尺寸降档，让内容区更早出现在屏幕上。
  */
 export function ViewHeader({
   eyebrow,
@@ -18,19 +19,44 @@ export function ViewHeader({
   actions?: React.ReactNode
 }): React.JSX.Element {
   return (
-    <header className="mb-7 shrink-0">
-      <div className="flex items-start justify-between gap-6">
-        <div className="min-w-0">
-          <p className="eyebrow eyebrow-tight mb-2.5">{eyebrow}</p>
-          <h1 className="display-title">
-            {title}
-            <span className="romanized" aria-hidden>
+    <header className="mb-5 shrink-0 border-b border-line pb-4">
+      <div className="flex items-center justify-between gap-4">
+        <div className="min-w-0 flex items-center gap-4">
+          {/* 竖向分隔线 + eyebrow 标签 */}
+          <div className="flex items-center gap-3">
+            <span className="h-5 w-px shrink-0 bg-accent/70" aria-hidden />
+            <p className="font-mono text-[9.5px] font-bold uppercase tracking-[0.2em] text-ink-faint/70 whitespace-nowrap">
+              {eyebrow}
+            </p>
+          </div>
+
+          {/* 标题 + 副标 */}
+          <div className="flex items-baseline gap-2.5 min-w-0">
+            <h1 className="text-[18px] font-bold tracking-tight text-ink-strong leading-none whitespace-nowrap">
+              {title}
+            </h1>
+            <span
+              className="font-mono text-[9px] font-semibold tracking-[0.22em] text-ink-faint/50 uppercase whitespace-nowrap"
+              aria-hidden
+            >
               {romanized}
             </span>
-          </h1>
-          <p className="mt-2 text-[13px] text-ink-muted">{caption}</p>
+          </div>
+
+          {/* 说明文字，宽屏时紧随标题 */}
+          {caption && (
+            <p className="hidden lg:block text-[12px] text-ink-faint/80 truncate max-w-sm">
+              {caption}
+            </p>
+          )}
         </div>
-        {actions && <div className="flex shrink-0 flex-col items-end gap-2.5">{actions}</div>}
+
+        {/* 右侧动作区 */}
+        {actions && (
+          <div className="flex shrink-0 items-center gap-2">
+            {actions}
+          </div>
+        )}
       </div>
     </header>
   )
