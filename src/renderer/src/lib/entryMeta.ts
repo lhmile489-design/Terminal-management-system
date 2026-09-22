@@ -72,8 +72,16 @@ export const TONE_VAR: Record<Tone, string> = {
   accent: 'var(--signal-accent)'
 }
 
-/** 卡片边框着色只对这三种状态有意义，其余保持中性边框 */
-export function cardTone(tone: Tone): 'live' | 'warn' | 'fault' | undefined {
+/**
+ * 卡片 data-tone 值。
+ * busy（启动中/停止中）单独一档，做扫描动画；
+ * live/warn/fault 染边框；其余保持中性。
+ */
+export function cardTone(
+  tone: Tone,
+  busy?: boolean
+): 'live' | 'warn' | 'fault' | 'busy' | undefined {
+  if (busy) return 'busy'
   return tone === 'live' || tone === 'warn' || tone === 'fault' ? tone : undefined
 }
 

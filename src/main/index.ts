@@ -5,9 +5,11 @@ import type {
   CreateSessionInput,
   EntryEdit,
   EntryStatus,
+  GroupPatch,
   LogQuery,
   MavenGoal,
   NewLaunchEntry,
+  NewProjectGroup,
   Settings,
   ThemePreference
 } from '@shared/types'
@@ -19,6 +21,7 @@ import { ScannerService } from './services/ScannerService'
 import { DetectService } from './services/DetectService'
 import { EntryService } from './services/EntryService'
 import { LogService } from './services/LogService'
+import { GroupService } from './services/GroupService'
 
 // 打包后 resources/ 被 extraResources 平铺到 resourcesPath，开发期从工程根取
 const iconPath = app.isPackaged
@@ -34,6 +37,7 @@ let config: ConfigStore
 let theme: ThemeService
 let scanner: ScannerService
 let entries: EntryService
+let groups: GroupService
 let mainWindow: BrowserWindow | null = null
 let tray: Tray | null = null
 /** before-quit 已触发：close 事件不再拦成「收起到托盘」 */
@@ -56,7 +60,9 @@ function createWindow(): void {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: false
+      // preload 只使用 contextBridge + ipcRenderer，不依赖 Node.js 内置模块，
+      // 可以安全开启沙箱。沙箱收窄了渲染进程依赖漏洞的逃逸面，PRD §11
+      sandbox: true
     }
   })
 
@@ -81,8 +87,11 @@ function createWindow(): void {
     win.hide()
   })
 
+  // 与 shellOpenLocalhost 保持相同口径：只允许 localhost/127.0.0.1，不接受任意外部 URL，PRD §11
   win.webContents.setWindowOpenHandler(({ url }) => {
-    if (/^https?:\/\//.test(url)) shell.openExternal(url)
+    if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/i.test(url)) {
+      void shell.openExternal(url)
+    }
     return { action: 'deny' }
   })
 
@@ -189,6 +198,15 @@ function registerIpc(): void {
     if (typeof id !== 'string') return []
     return entries.listJars(id)
   })
+  // 将条目的 expectedPort 切换到指定端口并持久化。port 必须是 1024-65535 的整数。
+  ipcMain.handle(Channels.entrySwitchPort, (_e, id: unknown, port: unknown) => {
+    if (typeof id !== 'string') throw new Error('条目 id 非法')
+    const p = Number(port)
+    if (!Number.isInteger(p) || p < 1024 || p > 65535) {
+      throw new Error(`端口非法：${String(port)}，必须是 1024-65535 的整数`)
+    }
+    return entries.switchPort(id, p)
+  })
   // 只收 id + 脚本名，命令构造与脚本校验全在主进程，PRD §9.5 / §11
   ipcMain.handle(Channels.entryRunScript, (_e, id: string, script: string) => {
     if (typeof script !== 'string') throw new Error('脚本名必须是字符串')
@@ -256,6 +274,52 @@ function registerIpc(): void {
   entries.on('warning', (text: string) =>
     mainWindow?.webContents.send(Channels.entryWarning, text)
   )
+
+  // ── 工作组 IPC，PRD-WORKGROUPS §4 ──────────────────────────────────────────
+  ipcMain.handle(Channels.groupList, () => groups.list())
+
+  ipcMain.handle(Channels.groupAdd, (_e, input: unknown) => {
+    if (typeof input !== 'object' || input === null) throw new Error('工作组输入必须是对象')
+    return groups.add(input as NewProjectGroup)
+  })
+
+  ipcMain.handle(Channels.groupPatch, (_e, id: unknown, patch: unknown) => {
+    if (typeof id !== 'string') throw new Error('工作组 id 必须是字符串')
+    if (typeof patch !== 'object' || patch === null) throw new Error('工作组补丁必须是对象')
+    return groups.patch(id, patch as GroupPatch)
+  })
+
+  ipcMain.handle(Channels.groupRemove, (_e, id: unknown) => {
+    if (typeof id !== 'string') throw new Error('工作组 id 必须是字符串')
+    groups.remove(id)
+  })
+
+  ipcMain.handle(Channels.groupReorder, (_e, ids: unknown) => {
+    if (!Array.isArray(ids) || !ids.every((id) => typeof id === 'string')) {
+      throw new Error('ids 必须是字符串数组')
+    }
+    groups.reorder(ids as string[])
+  })
+
+  groups.on('changed', (list) => mainWindow?.webContents.send(Channels.groupChanged, list))
+
+  // entry:revealLastJar：路径由主进程从 EntryRuntime.lastBuiltJar 构造，渲染层只给 id，PRD §11
+  ipcMain.handle(Channels.entryRevealLastJar, async (_e, id: unknown) => {
+    if (typeof id !== 'string') throw new Error('条目 id 非法')
+    const entry = entries.get(id)
+    if (!entry) throw new Error('条目不存在')
+    const runtime = entries.runtimeOf(id)
+    if (!runtime?.lastBuiltJar) throw new Error('没有可定位的 jar 文件，请先执行 Package')
+    // lastBuiltJar 来自 listJars()，已经过 target/ 目录扫描，是相对路径
+    // 安全校验：不含 ..，不含绝对路径前缀，必须在项目目录内
+    const rel = runtime.lastBuiltJar
+    if (rel.includes('..') || /^[/\\]/.test(rel)) throw new Error('jar 路径越界')
+    const absPath = join(entry.path, rel)
+    // 二次确认：拼接后的绝对路径必须在项目目录内
+    if (!absPath.startsWith(entry.path)) throw new Error('jar 路径越界')
+    shell.showItemInFolder(absPath)
+    return true
+  })
 
   // 查询条件逐字段校形：坏值会让筛选静默失效，用户以为「没有这样的日志」
   ipcMain.handle(Channels.logQuery, (_e, query: unknown) => logs.query(sanitizeLogQuery(query)))
@@ -334,8 +398,11 @@ app.whenReady().then(() => {
   theme = new ThemeService(config)
   scanner = new ScannerService(ownership, config)
   entries = new EntryService(config, detect, sessions, scanner, ownership)
+  groups = new GroupService(config)
   // 回注而非构造注入：Scanner 需要条目预期端口，Entry 需要 Scanner 快照，互为依赖
   scanner.setExpectationSource(() => entries.expectations())
+  // scanner 晚于 sessions 构建，后注入供 kill 前重校验归属用，PRD §6.3 步骤 4
+  sessions.setScanner(scanner)
   registerIpc()
   createWindow()
   createTray()

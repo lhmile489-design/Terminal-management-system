@@ -19,9 +19,13 @@ import {
   Copy,
   FileJpg,
   CaretDown,
-  LightbulbFilament
+  LightbulbFilament,
+  FolderOpen,
+  Rocket,
+  ProhibitInset
 } from '@phosphor-icons/react'
 import type { LaunchEntry, MavenGoal, PrecheckResult, SpringBootLaunchMode } from '@shared/types'
+import { GROUP_ENV_LABEL } from '@shared/types'
 import {
   FRAMEWORK_LABEL,
   STATUS_META,
@@ -33,6 +37,7 @@ import { StatusPill } from '../components/StatusPill'
 import { TerminalView } from '../components/TerminalView'
 import { PrecheckPanel } from '../components/PrecheckPanel'
 import { useEntries } from '../store/entries'
+import { useGroups } from '../store/groups'
 import { useEntryFix } from '../lib/useEntryFix'
 
 // ─── 构建目标定义 ─────────────────────────────────────────────────────────────
@@ -313,6 +318,7 @@ function ConsolePanel({ entry }: { entry: LaunchEntry }): React.JSX.Element {
     }))
   )
   const busy = useEntries((s) => !!s.busy[entry.id])
+  const groupOf = useGroups((s) => s.groupOf)
 
   const runtime = runtimeOf(entry.id)
   const statusMeta = STATUS_META[runtime.status]
@@ -322,6 +328,11 @@ function ConsolePanel({ entry }: { entry: LaunchEntry }): React.JSX.Element {
   const tool = buildToolOf(entry.launchMode)
   const mode = entry.launchMode as SpringBootLaunchMode | undefined
   const isJarMode = mode === 'jar'
+
+  // 环境警示：所属工作组的 env 为 sandbox 或 prod 时，启动前弹内联确认横幅
+  const entryGroup = entry.groupId ? groupOf(entry.groupId) : undefined
+  const envLevel = entryGroup?.env
+  const [showEnvWarning, setShowEnvWarning] = useState(false)
 
   const [precheck, setPrecheck] = useState<PrecheckResult | null>(null)
   const { runFix, dialogs: fixDialogs } = useEntryFix(useCallback(() => setPrecheck(null), []))
@@ -375,10 +386,16 @@ function ConsolePanel({ entry }: { entry: LaunchEntry }): React.JSX.Element {
   }, [handleModeChange, showCopied])
 
   const handleStart = useCallback(async () => {
+    // 环境警示：沙箱 / 生产环境先弹确认横幅
+    if ((envLevel === 'sandbox' || envLevel === 'prod') && !showEnvWarning) {
+      setShowEnvWarning(true)
+      return
+    }
+    setShowEnvWarning(false)
     clearError(); setPrecheck(null)
     const result = await start(entry.id)
     if (result) setPrecheck(result)
-  }, [start, entry.id, clearError])
+  }, [start, entry.id, clearError, envLevel, showEnvWarning])
 
   const handleStop = useCallback(() => {
     clearError(); void stop(entry.id)
@@ -482,6 +499,59 @@ function ConsolePanel({ entry }: { entry: LaunchEntry }): React.JSX.Element {
         </div>
       </div>
 
+      {/* ── 环境警示横幅 ── */}
+      {showEnvWarning && entryGroup && (envLevel === 'sandbox' || envLevel === 'prod') && (
+        <div
+          className={[
+            'mx-4 mt-2 shrink-0 rounded-[5px] border px-3 py-2.5',
+            envLevel === 'prod'
+              ? 'border-fault/30 bg-fault/8'
+              : 'border-warn/30 bg-warn/8'
+          ].join(' ')}
+        >
+          <div className="flex items-start gap-2">
+            {envLevel === 'prod' ? (
+              <ProhibitInset size={13} weight="fill" className="mt-px shrink-0 text-fault" aria-hidden />
+            ) : (
+              <Warning size={13} weight="bold" className="mt-px shrink-0 text-warn" aria-hidden />
+            )}
+            <div className="flex-1">
+              <p className={`text-[12px] font-semibold ${envLevel === 'prod' ? 'text-fault' : 'text-warn'}`}>
+                {envLevel === 'prod'
+                  ? `警告：当前工作组「${entryGroup.name}」处于生产环境！`
+                  : `当前工作组「${entryGroup.name}」处于沙箱（${GROUP_ENV_LABEL[envLevel]}）环境`
+                }
+              </p>
+              {envLevel === 'prod' && (
+                <p className="mt-0.5 text-[11px] text-fault/80">生产环境启动将影响真实业务数据，请确认操作。</p>
+              )}
+            </div>
+          </div>
+          <div className="mt-2 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => void handleStart()}
+              className={[
+                'pressable flex items-center gap-1 rounded-[4px] border px-3 py-1 text-[11.5px] font-medium transition-colors',
+                envLevel === 'prod'
+                  ? 'border-fault/30 bg-fault/10 text-fault hover:bg-fault/18'
+                  : 'border-warn/30 bg-warn/10 text-warn hover:bg-warn/18'
+              ].join(' ')}
+            >
+              <Play size={9} weight="bold" aria-hidden />
+              确认启动
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowEnvWarning(false)}
+              className="pressable flex items-center gap-1 rounded-[4px] border border-line bg-raised/40 px-3 py-1 text-[11.5px] text-ink-muted transition-colors hover:bg-raised hover:text-ink-strong"
+            >
+              取消
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── 错误横幅 + 智能修复建议 ── */}
       {error && (
         <div className="mx-4 mt-2 shrink-0">
@@ -534,7 +604,7 @@ function ConsolePanel({ entry }: { entry: LaunchEntry }): React.JSX.Element {
       {/* ── 预检结果 ── */}
       {precheck && (
         <div className="mx-4 mt-2 shrink-0">
-          <PrecheckPanel result={precheck} onFix={(action) => void runFix(entry.id, action)} />
+          <PrecheckPanel result={precheck} onFix={(action, suggestedPort) => void runFix(entry.id, action, suggestedPort)} />
         </div>
       )}
       {fixDialogs}
@@ -592,6 +662,42 @@ function ConsolePanel({ entry }: { entry: LaunchEntry }): React.JSX.Element {
                 />
               ))}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── 打包完成操作横幅（当 runtime.lastBuiltJar 非空时出现）── */}
+      {runtime.lastBuiltJar && (
+        <div className="mx-4 mt-2 shrink-0 rounded-[5px] border border-live/25 bg-live/7 px-3 py-2">
+          <div className="flex items-center gap-2">
+            <CheckCircle size={11} weight="bold" className="shrink-0 text-live" aria-hidden />
+            <span className="min-w-0 flex-1 truncate font-mono text-[10.5px] text-live/90">
+              打包完成：{runtime.lastBuiltJar.replace('target/', '')}
+            </span>
+          </div>
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => void window.mile.entry.revealLastJar(entry.id)}
+              className="pressable flex items-center gap-1 rounded-[4px] border border-live/25 bg-live/8 px-2 py-1 text-[10.5px] text-live/90 transition-colors hover:bg-live/15"
+            >
+              <FolderOpen size={10} weight="bold" aria-hidden />
+              在资源管理器中打开
+            </button>
+            <button
+              type="button"
+              disabled={live || busy}
+              onClick={() => void (async () => {
+                await edit(entry.id, { jarPath: runtime.lastBuiltJar ?? null, launchMode: 'jar' })
+                clearError()
+                void handleStart()
+              })()}
+              title={live ? '请先停止服务再切换' : '切换到此 jar 并立即启动'}
+              className="pressable flex items-center gap-1 rounded-[4px] border border-live/25 bg-live/8 px-2 py-1 text-[10.5px] text-live/90 transition-colors hover:bg-live/15 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <Rocket size={10} weight="bold" aria-hidden />
+              切换到此 jar 并启动
+            </button>
           </div>
         </div>
       )}
@@ -702,7 +808,7 @@ export function BackendConsole(): React.JSX.Element {
   const selectedEntry = springBootEntries.find((e) => e.id === selectedId) ?? null
 
   return (
-    <div className="-mx-7 -my-6 flex min-h-0 flex-1 overflow-hidden">
+    <div className="-mx-6 -my-5 flex min-h-0 flex-1 overflow-hidden">
 
       {/* ── 左侧导航栏 ── */}
       <div className="flex w-48 shrink-0 flex-col border-r border-line bg-panel">

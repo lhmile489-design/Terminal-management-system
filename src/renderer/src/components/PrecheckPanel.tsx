@@ -1,4 +1,4 @@
-import { CheckCircle, Warning, XCircle } from '@phosphor-icons/react'
+import { ArrowRight, CheckCircle, Warning, XCircle } from '@phosphor-icons/react'
 import type { PrecheckFixAction, PrecheckLevel, PrecheckResult } from '@shared/types'
 import { LEVEL_META, TONE_CLASS } from '../lib/entryMeta'
 import { StatusPill } from './StatusPill'
@@ -14,7 +14,7 @@ export function PrecheckPanel({
   onFix
 }: {
   result: PrecheckResult
-  onFix: (action: PrecheckFixAction) => void
+  onFix: (action: PrecheckFixAction, suggestedPort?: number) => void
 }): React.JSX.Element {
   const fails = result.items.filter((i) => i.level === 'fail').length
   const warns = result.items.filter((i) => i.level === 'warn').length
@@ -46,6 +46,7 @@ export function PrecheckPanel({
         {result.items.map((item) => {
           const meta = LEVEL_META[item.level]
           const IconCmp = ICON[item.level]
+          const isSwitchPort = item.fix?.action === 'switchPort'
           return (
             <li
               key={item.id}
@@ -71,9 +72,17 @@ export function PrecheckPanel({
               {item.fix && (
                 <button
                   type="button"
-                  onClick={() => onFix(item.fix!.action)}
-                  className="pressable shrink-0 rounded-[6px] border border-line-strong bg-card px-2.5 py-1 text-[12px] text-ink-muted hover:text-ink-strong"
+                  onClick={() => onFix(item.fix!.action, item.fix!.suggestedPort)}
+                  className={[
+                    'pressable shrink-0 flex items-center gap-1.5 rounded-[6px] border px-2.5 py-1 text-[11.5px] font-medium transition-colors duration-150',
+                    isSwitchPort
+                      ? 'border-accent/40 bg-accent/8 text-accent hover:bg-accent/14'
+                      : 'border-line bg-card text-ink-muted hover:border-line-strong hover:text-ink-strong'
+                  ].join(' ')}
                 >
+                  {isSwitchPort && (
+                    <ArrowRight size={11} weight="bold" className="shrink-0" aria-hidden />
+                  )}
                   {item.fix.label}
                 </button>
               )}

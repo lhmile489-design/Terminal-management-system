@@ -8,6 +8,7 @@ import type {
   ScanSnapshot
 } from '@shared/types'
 import { satisfies } from '../lib/semver'
+import { findFreePort } from '../lib/portScanner'
 import type { DetectService } from './DetectService'
 
 /** 包管理器可执行文件名，只查 PATH 中存在性，绝不执行，PRD §5.1 第 4 项 */
@@ -42,7 +43,11 @@ const MIN_FREE_BYTES = 500 * 1024 * 1024
 export class PrecheckService {
   constructor(private detect: DetectService) {}
 
-  async run(entry: LaunchEntry, snapshot: ScanSnapshot | null): Promise<PrecheckResult> {
+  async run(
+    entry: LaunchEntry,
+    snapshot: ScanSnapshot | null,
+    allEntries: LaunchEntry[] = []
+  ): Promise<PrecheckResult> {
     const items: PrecheckItem[] = []
     const cwd = resolveCwd(entry)
 
@@ -64,13 +69,13 @@ export class PrecheckService {
     // 后面那套 npm 专属检查全不适用。放在 registerOnly 分支之前 —— Spring Boot 是
     // registerOnly=false 的非 npm 生态，不能落进「仅登记」的 fail。
     if (entry.framework === 'spring-boot') {
-      return finish(await this.springBootItems(entry, cwd, snapshot, items))
+      return finish(await this.springBootItems(entry, cwd, snapshot, allEntries, items))
     }
 
     // Python / Go / Rust / C++：命令形状固定的可启动生态，各走独立预检序列（只读、不 spawn、
     // 不构建、不装依赖）。同样放在 registerOnly 分支之前 —— 它们 registerOnly=false。
     if (entry.framework === 'go' || entry.framework === 'rust' || entry.framework === 'cpp') {
-      return finish(await this.nativeLangItems(entry, cwd, snapshot, items))
+      return finish(await this.nativeLangItems(entry, cwd, snapshot, allEntries, items))
     }
     if (
       entry.framework === 'python' ||
@@ -79,7 +84,7 @@ export class PrecheckService {
       entry.framework === 'flask' ||
       entry.framework === 'streamlit'
     ) {
-      return finish(await this.pythonItems(entry, cwd, snapshot, items))
+      return finish(await this.pythonItems(entry, cwd, snapshot, allEntries, items))
     }
 
     // Python 等仅登记条目到此为止，后面的检查项都以 package.json 为前提
@@ -219,7 +224,7 @@ export class PrecheckService {
     }
 
     // 8. 预期端口空闲 —— 查最近一次采集快照，不额外发起探测
-    items.push(portItem(entry, snapshot))
+    items.push(await portItem(entry, snapshot, allEntries))
 
     // 9. 磁盘余量
     items.push(await diskItem(cwd))
@@ -237,6 +242,7 @@ export class PrecheckService {
     entry: LaunchEntry,
     cwd: string,
     snapshot: ScanSnapshot | null,
+    allEntries: LaunchEntry[],
     items: PrecheckItem[]
   ): Promise<PrecheckItem[]> {
     const mode = entry.launchMode
@@ -288,7 +294,7 @@ export class PrecheckService {
     }
 
     // 端口与磁盘：与 npm 路径同款检查
-    items.push(portItem(entry, snapshot))
+    items.push(await portItem(entry, snapshot, allEntries))
     items.push(await diskItem(cwd))
     return items
   }
@@ -301,6 +307,7 @@ export class PrecheckService {
     entry: LaunchEntry,
     cwd: string,
     snapshot: ScanSnapshot | null,
+    allEntries: LaunchEntry[],
     items: PrecheckItem[]
   ): Promise<PrecheckItem[]> {
     items.push(await pathItem(PYTHON_BINARIES, 'python', 'python 可执行文件可用', 'python'))
@@ -344,7 +351,7 @@ export class PrecheckService {
         })
     }
 
-    items.push(portItem(entry, snapshot))
+    items.push(await portItem(entry, snapshot, allEntries))
     items.push(await diskItem(cwd))
     return items
   }
@@ -359,6 +366,7 @@ export class PrecheckService {
     entry: LaunchEntry,
     cwd: string,
     snapshot: ScanSnapshot | null,
+    allEntries: LaunchEntry[],
     items: PrecheckItem[]
   ): Promise<PrecheckItem[]> {
     if (entry.framework === 'go') {
@@ -372,7 +380,7 @@ export class PrecheckService {
       items.push(await binItem(entry, cwd, /\.exe$/i, 'exe'))
     }
 
-    items.push(portItem(entry, snapshot))
+    items.push(await portItem(entry, snapshot, allEntries))
     items.push(await diskItem(cwd))
     return items
   }
@@ -447,11 +455,39 @@ async function pathItem(
   }
 }
 
-function portItem(entry: LaunchEntry, snapshot: ScanSnapshot | null): PrecheckItem {
+async function portItem(
+  entry: LaunchEntry,
+  snapshot: ScanSnapshot | null,
+  allEntries: LaunchEntry[] = []
+): Promise<PrecheckItem> {
   const port = entry.expectedPort
   if (!port) {
     return { id: 'port', label: '预期端口空闲', level: 'pass', detail: '未设置预期端口' }
   }
+
+  // ── 优先检查：其他条目（不论启动状态）是否与本条目配置了同一端口 ──
+  // 这是"配置冲突"，OS 还没有监听也会被发现，能在启动前拦住重复配置。
+  // 只比较已设置 expectedPort 的其他条目；自己不算。
+  const configConflicts = allEntries.filter(
+    (e) => e.id !== entry.id && e.expectedPort === port
+  )
+  if (configConflicts.length > 0) {
+    const names = configConflicts.map((e) => e.name).join('、')
+    const suggestedPort = await findFreePort(port + 1)
+    return {
+      id: 'port',
+      label: '预期端口空闲',
+      level: 'warn',
+      detail: `端口 :${port} 与「${names}」配置重复，同时运行时会冲突`,
+      fix: {
+        action: 'switchPort',
+        label: suggestedPort ? `切换到 :${suggestedPort}` : '改用其他端口',
+        suggestedPort: suggestedPort ?? undefined
+      }
+    }
+  }
+
+  // ── 次级检查：OS 监听快照（已在运行的进程是否占用此端口）──
   if (!snapshot) {
     return { id: 'port', label: '预期端口空闲', level: 'pass', detail: '尚无采集快照，跳过' }
   }
@@ -476,6 +512,10 @@ function portItem(entry: LaunchEntry, snapshot: ScanSnapshot | null): PrecheckIt
   const owned = others.find((l) => l.ownership === 'owned') ?? others[0]
   const more = others.length > 1 ? `，另有 ${others.length - 1} 个进程也在监听` : ''
   const self = holders.length > others.length ? '本条目也在监听同一端口，' : ''
+
+  // 尝试扫描一个空闲的候选端口，供用户一键切换
+  const suggestedPort = await findFreePort(port + 1)
+
   return {
     id: 'port',
     label: '预期端口空闲',
@@ -483,7 +523,13 @@ function portItem(entry: LaunchEntry, snapshot: ScanSnapshot | null): PrecheckIt
     detail: `${self}:${port} 被 ${owned.processName}（PID ${owned.pid}，${
       owned.ownership === 'owned' ? '受控' : '外部'
     }）占用${more}`,
-    fix: { action: 'resolvePort', label: owned.ownership === 'owned' ? '停止它' : '改用其他端口' }
+    fix: owned.ownership === 'owned'
+      ? { action: 'resolvePort', label: '停止它' }
+      : {
+          action: 'switchPort',
+          label: suggestedPort ? `切换到 :${suggestedPort}` : '改用其他端口',
+          suggestedPort: suggestedPort ?? undefined
+        }
   }
 }
 

@@ -22,6 +22,8 @@ export interface KpiCardProps {
   tone?: Tone
   trend?: number[]
   live?: boolean
+  /** 交错入场索引：KPI 网格按此计算 animation-delay，0-based */
+  index?: number
 }
 
 export function KpiCard({
@@ -33,13 +35,14 @@ export function KpiCard({
   detail,
   tone = 'neutral',
   trend,
-  live
+  live,
+  index = 0
 }: KpiCardProps): React.JSX.Element {
   return (
     <article
       data-kpi-card
-      className="surface-card flex min-w-0 flex-col px-3.5 py-3"
-      style={{ '--glow': TONE_VAR[tone] } as React.CSSProperties}
+      className="item-enter surface-card flex min-w-0 flex-col px-3.5 py-3"
+      style={{ '--glow': TONE_VAR[tone], '--i': index } as React.CSSProperties}
     >
       {/* 顶部：图标瓦片 + 标签 + 趋势图 */}
       <div className="flex min-w-0 items-center justify-between gap-2">

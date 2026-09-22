@@ -39,6 +39,11 @@ interface EntriesStore {
    * profile 为 null = 不带 -P 参数；失败时错误落到 error 字段。
    */
   packageWithProfile: (id: string, profile: string | null) => Promise<EntryRuntime | null>
+  /**
+   * 预检端口冲突修复：将条目的 expectedPort 切换到指定空闲端口并持久化。
+   * 失败时错误落到 error 字段。
+   */
+  switchPort: (id: string, port: number) => Promise<void>
   /** 执行条目已声明的某个脚本，供命令面板用；失败时错误落到 error 字段 */
   runScript: (id: string, script: string) => Promise<EntryRuntime | null>
   precheck: (id: string) => Promise<PrecheckResult>
@@ -127,6 +132,10 @@ export const useEntries = create<EntriesStore>((set, get) => ({
 
   packageWithProfile: async (id, profile) =>
     await guard(set, id, () => window.mile.entry.packageWithProfile(id, profile)),
+
+  switchPort: async (id, port) => {
+    await guard(set, id, () => window.mile.entry.switchPort(id, port))
+  },
 
   runScript: async (id, script) =>
     await guard(set, id, () => window.mile.entry.runScript(id, script)),

@@ -14,7 +14,7 @@ import { useEntries } from '../store/entries'
  * 返回 dialogs 元素，调用方直接渲染。
  */
 export function useEntryFix(onAfterFix: (entryId: string) => void): {
-  runFix: (entryId: string, action: PrecheckFixAction) => Promise<void>
+  runFix: (entryId: string, action: PrecheckFixAction, suggestedPort?: number) => Promise<void>
   dialogs: React.JSX.Element | null
 } {
   const entries = useEntries((s) => s.entries)
@@ -22,6 +22,7 @@ export function useEntryFix(onAfterFix: (entryId: string) => void): {
   const remove = useEntries((s) => s.remove)
   const install = useEntries((s) => s.install)
   const stop = useEntries((s) => s.stop)
+  const switchPort = useEntries((s) => s.switchPort)
 
   const [scriptPicker, setScriptPicker] = useState<LaunchEntry | null>(null)
   const [portDialog, setPortDialog] = useState<{ entry: LaunchEntry; holderName?: string } | null>(
@@ -30,7 +31,7 @@ export function useEntryFix(onAfterFix: (entryId: string) => void): {
   const [nodeNotice, setNodeNotice] = useState<string | null>(null)
 
   const runFix = useCallback(
-    async (entryId: string, action: PrecheckFixAction): Promise<void> => {
+    async (entryId: string, action: PrecheckFixAction, suggestedPort?: number): Promise<void> => {
       const entry = entries.find((e) => e.id === entryId)
       if (!entry) return
 
@@ -88,11 +89,22 @@ export function useEntryFix(onAfterFix: (entryId: string) => void): {
           setPortDialog({ entry, holderName: holder?.processName })
           return
         }
+
+        case 'switchPort': {
+          // suggestedPort 由主进程预扫描后通过 PrecheckItem.fix.suggestedPort 带来。
+          // 有值时直接切换（一键），无值时退化为弹框让用户手动输入。
+          if (suggestedPort) {
+            await switchPort(entry.id, suggestedPort)
+          } else {
+            setPortDialog({ entry })
+          }
+          break
+        }
       }
 
       onAfterFix(entry.id)
     },
-    [entries, edit, remove, install, stop, onAfterFix]
+    [entries, edit, remove, install, stop, switchPort, onAfterFix]
   )
 
   const dialogs =
@@ -125,7 +137,11 @@ export function useEntryFix(onAfterFix: (entryId: string) => void): {
               }).then((saved) => {
                 if (saved) onAfterFix(target)
               })
-            } : undefined}
+            } : (port) => {
+              const target = portDialog.entry.id
+              setPortDialog(null)
+              void switchPort(target, port).then(() => onAfterFix(target))
+            }}
           />
         )}
 

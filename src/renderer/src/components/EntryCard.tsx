@@ -1,24 +1,31 @@
-import {
-  ArrowClockwise,
-  ArrowSquareOut,
-  CaretDown,
-  FolderOpen,
-  Package,
-  PencilSimple,
-  Play,
-  PushPin,
-  Stethoscope,
-  Stop,
-  Terminal,
-  Trash
-} from '@phosphor-icons/react'
 import type { EntryRuntime, LaunchEntry } from '@shared/types'
 import { useRef, useState } from 'react'
-import { FRAMEWORK_LABEL, STATUS_META, TONE_VAR, cardTone, isLiveStatus } from '../lib/entryMeta'
-import { ellipsisPath, formatUptime } from '../lib/format'
+import {
+  FRAMEWORK_LABEL,
+  STATUS_META,
+  TONE_VAR,
+  cardTone,
+  isBusyStatus,
+  isLiveStatus
+} from '../lib/entryMeta'
+import { formatUptime } from '../lib/format'
 import type { CardSortHandlers } from '../lib/useCardSort'
 import { useEntryImage } from '../store/favicons'
 import { EntryGlyph } from './EntryGlyph'
+import {
+  IconCaretDown,
+  IconEdit,
+  IconExternalLink,
+  IconFolder,
+  IconPackage,
+  IconPlay,
+  IconPushPin,
+  IconRestart,
+  IconStethoscope,
+  IconStop,
+  IconTerminal,
+  IconTrash
+} from './icons'
 import { StatusPill } from './StatusPill'
 
 export interface EntryCardActions {
@@ -62,9 +69,9 @@ export function EntryCard({
 }): React.JSX.Element {
   const status = STATUS_META[runtime.status]
   const live = isLiveStatus(runtime.status)
+  const isBusy = isBusyStatus(runtime.status)
   const isService = entry.kind === 'service'
   const port = runtime.port ?? entry.expectedPort
-  // 卡片图标：自定义图片 > favicon（web 框架），两视图共用 useEntryImage，无则回退字标
   const imageUrl = useEntryImage(entry)
 
   return (
@@ -77,7 +84,6 @@ export function EntryCard({
       onDrop={sort?.onDrop}
       onDragEnd={sort?.onDragEnd}
       onKeyDown={sort?.onKeyDown}
-      // 卡片本身要能聚焦，否则键盘排序无从触发，PRD §9.4
       tabIndex={sort ? 0 : undefined}
       aria-roledescription={sort ? '可排序卡片' : undefined}
       aria-label={
@@ -85,41 +91,45 @@ export function EntryCard({
           ? `${entry.name}，第 ${position.index} 项，共 ${position.total} 项。按住 Ctrl 加方向键可改变顺序`
           : undefined
       }
-      data-tone={cardTone(status.tone)}
+      data-tone={cardTone(status.tone, isBusy)}
       data-dragging={dragging || undefined}
       data-interactive={sort ? 'true' : undefined}
-      // --glow 驱动图标瓦片底色、边框着色与状态胶囊，状态色只在这里给一次
-      style={{ '--glow': TONE_VAR[status.tone] } as React.CSSProperties}
-      className="surface-card flex min-w-0 flex-col gap-3 px-4 py-3.5"
+      style={{ '--glow': TONE_VAR[status.tone], '--i': position?.index ?? 0 } as React.CSSProperties}
+      className="item-enter surface-card relative flex min-w-0 flex-col gap-0 px-4 pt-3.5 pb-3"
     >
-      <header className="flex min-w-0 items-start gap-3">
+      {/* ── 第一行：图标 + 名称 + 状态胶囊 + 端口 ── */}
+      <header className="flex min-w-0 items-center gap-2.5">
         <span
-          className="icon-tile h-11 w-11"
-          data-card-icon={isService ? entry.icon ?? 'auto' : undefined}
+          className="icon-tile h-9 w-9 shrink-0"
+          data-card-icon={isService ? (entry.icon ?? 'auto') : undefined}
           aria-hidden
         >
-          <EntryGlyph entry={entry} imageUrl={imageUrl} size={24} glyphClass="text-[18px]" />
+          <EntryGlyph entry={entry} imageUrl={imageUrl} size={18} glyphClass="text-[11px]" />
         </span>
 
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <h3 className="flex min-w-0 items-baseline gap-2">
-            <span className="truncate text-[14px] font-semibold text-ink-strong" title={entry.name}>
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <div className="flex min-w-0 items-center gap-1.5">
+            <span
+              className="truncate text-[13.5px] font-semibold text-ink-strong"
+              title={entry.name}
+            >
               {entry.name}
             </span>
-            <span className="shrink-0 rounded-[4px] bg-raised px-1.5 font-mono text-[10px] font-semibold tracking-[0.08em] text-ink-muted">
+            <span className="shrink-0 rounded-[4px] bg-raised px-1.5 font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink-muted">
               {isService ? '服务' : '任务'}
             </span>
-            {/* uniapp 由 HBuilderX 编译/运行，本应用只能唤起它 —— 徽标让人一眼区分它与直管服务 */}
             {entry.framework === 'uniapp' && (
               <span
-                className="shrink-0 rounded-[4px] border border-accent/60 px-1.5 font-mono text-[10px] font-semibold tracking-[0.08em] text-accent"
+                className="shrink-0 rounded-[4px] border border-accent/60 px-1.5 font-mono text-[9.5px] font-semibold tracking-[0.06em] text-accent"
                 title="uniapp 项目：编译与运行由 HBuilderX 负责，本应用不接管其日志、端口与停止"
               >
                 HBuilderX
               </span>
             )}
-          </h3>
-          <p className="flex min-w-0 items-center gap-2">
+          </div>
+
+          {/* 状态胶囊 + 端口按钮 */}
+          <div className="flex items-center gap-1.5">
             <StatusPill tone={status.tone} label={status.label} halo={live} />
             {port !== undefined && port !== null && (
               <button
@@ -131,178 +141,185 @@ export function EntryCard({
                 }
                 onClick={() => window.mile.shell.openLocalhost(port)}
                 data-shared={portShared || undefined}
-                className="pressable shrink-0 rounded-[4px] border border-line-strong px-1.5 font-mono text-[10px] font-bold text-accent hover:bg-accent hover:text-on-accent data-[shared]:border-warn/60 data-[shared]:text-warn data-[shared]:hover:bg-warn data-[shared]:hover:text-on-accent"
+                className="pressable shrink-0 rounded-[4px] border border-line-strong px-1.5 font-mono text-[10px] font-bold text-accent hover:bg-accent/15 hover:text-accent data-[shared]:border-warn/60 data-[shared]:text-warn data-[shared]:hover:bg-warn/15 data-[shared]:hover:text-warn"
               >
                 :{port}
               </button>
             )}
-            {/*
-              端口重合必须有文字，不能只靠把胶囊染黄 —— 两张卡片都写 :3000 时，
-              「颜色不一样」传达不出「localhost 只通向其中一个」。
-            */}
             {portShared && (
               <span
-                className="shrink-0 rounded-[4px] bg-warn-soft px-1.5 font-mono text-[10px] font-semibold text-warn"
+                className="shrink-0 rounded-[4px] bg-warn-soft px-1.5 font-mono text-[9.5px] font-semibold text-warn"
                 title={`另有条目也在监听 :${port}`}
               >
                 端口重合
               </span>
             )}
-          </p>
+          </div>
         </div>
+
+        {/* 右上角运行时长 / 退出码角标 */}
+        {live && (
+          <span className="shrink-0 font-mono text-[10px] text-ink-faint/70">
+            {formatUptime(runtime.startedAt)}
+          </span>
+        )}
+        {!live && runtime.exitCode !== undefined && (
+          <span
+            className={`shrink-0 font-mono text-[10px] ${
+              runtime.exitCode === 0 ? 'text-live/70' : 'text-fault/70'
+            }`}
+          >
+            退出 {runtime.exitCode}
+          </span>
+        )}
       </header>
 
-      <p className="truncate font-mono text-[11px] text-ink-faint" title={entry.path}>
-        {FRAMEWORK_LABEL[entry.framework]} · {entry.packageManager}
-        {entry.script ? ` run ${entry.script}` : ''}
-      </p>
-
-      <dl className="grid grid-cols-[auto_1fr] items-baseline gap-x-3 gap-y-1 text-[11px]">
-        <dt className="font-mono text-ink-faint">目录</dt>
-        <dd className="truncate font-mono text-ink-muted" title={entry.path}>
-          {ellipsisPath(entry.path, 30)}
-        </dd>
-
-        {/* 端口已提到页头的胶囊旁，这里只在「有预期端口但没抓到」时补一句 */}
-        {port === undefined || port === null ? (
-          <>
-            <dt className="font-mono text-ink-faint">端口</dt>
-            <dd className="font-mono text-ink-muted">{runtime.portUnknown ? '端口未知' : '—'}</dd>
-          </>
-        ) : null}
-
-        <dt className="font-mono text-ink-faint">{live ? '已运行' : '上次'}</dt>
-        <dd className="font-mono text-ink-muted">
-          {live
-            ? formatUptime(runtime.startedAt)
-            : runtime.exitCode === undefined
-              ? '—'
-              : `退出码 ${runtime.exitCode}`}
-        </dd>
-      </dl>
-
-      <div className="flex flex-wrap items-center gap-1.5">
-        {/* 任务说「运行/中止」，服务说「启动/停止」—— 一次性命令没有「停止运行中的服务」那层含义 */}
-        {live ? (
-          <Action
-            icon={Stop}
-            label={isService ? '停止' : '中止'}
-            onClick={actions.onStop}
-            disabled={busy}
-            primary
-          />
-        ) : isService ? (
-          <Action
-            icon={Play}
-            label="启动"
-            onClick={actions.onStart}
-            disabled={busy || entry.registerOnly}
-            hint={
-              entry.framework === 'uniapp'
-                ? 'uniapp 由 HBuilderX 启动'
-                : entry.registerOnly
-                  ? '仅登记条目不可启动'
-                  : undefined
-            }
-            primary
-          />
-        ) : (
-          /* 任务：「运行」主按钮 + 可选下拉（有多个脚本时显示） */
-          <TaskRunButton
-            entry={entry}
-            busy={busy}
-            onStart={actions.onStart}
-            onRunScript={actions.onRunScript}
-          />
+      {/* ── 第二行：框架 badge 组 ── */}
+      <div className="mt-2 flex flex-wrap items-center gap-1 pl-[calc(36px+10px)]">
+        <span className="badge-neutral">{FRAMEWORK_LABEL[entry.framework]}</span>
+        {entry.packageManager && (
+          <span className="badge-neutral">{entry.packageManager}</span>
         )}
-
-        {/* uniapp 专属：唤起本机 HBuilderX 打开该项目（命令构造全在主进程） */}
-        {entry.framework === 'uniapp' && (
-          <Action
-            icon={ArrowSquareOut}
-            label="用 HBuilderX 打开"
-            onClick={() => {
-              void window.mile.entry.openInHBuilderX(entry.id)
-            }}
-            primary
-          />
+        {entry.script && (
+          <span className="badge-neutral">run {entry.script}</span>
         )}
+      </div>
 
-        {isService && (
-          <Action
-            icon={ArrowClockwise}
-            label="重启"
-            onClick={actions.onRestart}
-            disabled={busy || entry.registerOnly}
-            iconOnly
-          />
-        )}
+      {/* ── 第三行：路径 ── */}
+      <div className="mt-1.5 flex items-center gap-1 pl-[calc(36px+10px)]">
+        <IconFolder size={10} className="shrink-0 text-ink-faint/50" />
+        <span
+          className="truncate font-mono text-[10px] text-ink-faint/70"
+          title={entry.path}
+        >
+          {entry.path}
+        </span>
+      </div>
 
-        <Action
-          icon={Terminal}
-          label="日志"
-          onClick={actions.onPin ?? actions.onLogs}
-          disabled={!runtime.sessionId}
-          iconOnly
-        />
-        <Action icon={Stethoscope} label="诊断" onClick={actions.onDiagnose} iconOnly />
-        {/* 编辑运行中也能点：面板自己会锁住影响运行身份的字段，并给出停止入口，PRD §4.6 */}
-        <Action icon={PencilSimple} label="编辑" onClick={actions.onEdit} iconOnly />
-        <Action icon={FolderOpen} label="打开目录" onClick={actions.onOpenFolder} iconOnly />
-
-        {/* 产物目录只对任务有意义，且要跑完才有东西可看，PRD §4.2
-            成功态：提升为 primary 带标签，视觉上从操作栏里跳出来，引导用户点。
-            其他态：保持 icon-only 灰色，条目指定了 outputDir 时也允许点（任务未跑也能直接去看上次产物）。 */}
-        {!isService && (
-          runtime.status === 'succeeded' ? (
-            <Action
-              icon={Package}
-              label="查看产物"
-              onClick={actions.onOpenOutput}
+      {/* ── 操作区：主操作 / 次操作（信息类）/ 危险操作 ── */}
+      <div className="mt-3 flex items-center gap-1 border-t border-line/40 pt-2.5">
+        {/* 主操作组 */}
+        <div className="flex items-center gap-1">
+          {live ? (
+            <CardAction
+              icon={IconStop}
+              label={isService ? '停止' : '中止'}
+              onClick={actions.onStop}
+              disabled={busy}
+              primary
+            />
+          ) : isService ? (
+            <CardAction
+              icon={IconPlay}
+              label="启动"
+              onClick={actions.onStart}
+              disabled={busy || entry.registerOnly}
+              hint={
+                entry.framework === 'uniapp'
+                  ? 'uniapp 由 HBuilderX 启动'
+                  : entry.registerOnly
+                    ? '仅登记条目不可启动'
+                    : undefined
+              }
               primary
             />
           ) : (
-            <Action
-              icon={Package}
-              label="打开产物目录"
-              onClick={actions.onOpenOutput}
-              disabled={!entry.outputDir}
-              hint={!entry.outputDir ? '任务成功后可用' : undefined}
-              iconOnly
+            <TaskRunButton
+              entry={entry}
+              busy={busy}
+              onStart={actions.onStart}
+              onRunScript={actions.onRunScript}
             />
-          )
-        )}
-        <Action
-          icon={PushPin}
-          label={entry.pinned ? '取消置顶' : '置顶'}
-          onClick={actions.onTogglePin}
-          active={entry.pinned}
-          iconOnly
-        />
-        <Action
-          icon={Trash}
-          label="移除条目"
-          onClick={actions.onRemove}
-          disabled={live}
-          hint={live ? '运行中不可移除，请先停止' : undefined}
-          iconOnly
-          className="ml-auto"
-        />
+          )}
+
+          {entry.framework === 'uniapp' && (
+            <CardAction
+              icon={IconExternalLink}
+              label="用 HBuilderX 打开"
+              onClick={() => {
+                void window.mile.entry.openInHBuilderX(entry.id)
+              }}
+              primary
+            />
+          )}
+
+          {isService && (
+            <CardAction
+              icon={IconRestart}
+              label="重启"
+              onClick={actions.onRestart}
+              disabled={busy || entry.registerOnly}
+            />
+          )}
+
+          <CardAction
+            icon={IconTerminal}
+            label="日志"
+            onClick={actions.onPin ?? actions.onLogs}
+            disabled={!runtime.sessionId}
+          />
+        </div>
+
+        {/* 竖分隔线 */}
+        <div className="mx-0.5 h-4 w-px shrink-0 bg-line-strong/50" />
+
+        {/* 次操作组（信息类） */}
+        <div className="flex items-center gap-1">
+          <CardAction icon={IconStethoscope} label="诊断" onClick={actions.onDiagnose} />
+          <CardAction icon={IconEdit} label="编辑" onClick={actions.onEdit} />
+          <CardAction icon={IconFolder} label="打开目录" onClick={actions.onOpenFolder} />
+
+          {!isService && (
+            runtime.status === 'succeeded' ? (
+              <CardAction
+                icon={IconPackage}
+                label="查看产物"
+                onClick={actions.onOpenOutput}
+                primary
+              />
+            ) : (
+              <CardAction
+                icon={IconPackage}
+                label="打开产物目录"
+                onClick={actions.onOpenOutput}
+                disabled={!entry.outputDir}
+                hint={!entry.outputDir ? '任务成功后可用' : undefined}
+              />
+            )
+          )}
+        </div>
+
+        {/* 竖分隔线 */}
+        <div className="mx-0.5 h-4 w-px shrink-0 bg-line-strong/50" />
+
+        {/* 状态操作组（置顶 + 危险操作推到末尾） */}
+        <div className="flex items-center gap-1 ml-auto">
+          <CardAction
+            icon={IconPushPin}
+            label={entry.pinned ? '取消置顶' : '置顶'}
+            onClick={actions.onTogglePin}
+            active={entry.pinned}
+          />
+          <CardAction
+            icon={IconTrash}
+            label="移除条目"
+            onClick={actions.onRemove}
+            disabled={live}
+            hint={live ? '运行中不可移除，请先停止' : undefined}
+            danger
+          />
+        </div>
       </div>
+
+      {/* busy 时底部进度条 */}
+      {isBusy && <div className="card-progress-bar" />}
     </article>
   )
 }
 
 /**
  * 任务卡片的「运行」区域。
- *
- * - 只有一个脚本（或仅登记）→ 和服务一样，单个「运行」按钮。
- * - 有多个脚本 → 分裂按钮：左侧「运行」执行默认脚本（entry.script）；
- *   右侧小箭头展开下拉，列出所有已声明脚本供选择执行。
- *
- * 下拉用 onBlur 关闭：焦点移到菜单外时收起，键盘 Escape 也收起。
- * 命令构造与安全校验全在主进程（runScript = assertScriptDeclared + SAFE_SCRIPT），
- * 渲染层只传脚本名字符串，不构造任何命令。
+ * 只有一个脚本 → 单「运行」按钮；有多个脚本 → 分裂按钮。
  */
 function TaskRunButton({
   entry,
@@ -319,11 +336,9 @@ function TaskRunButton({
   const wrapRef = useRef<HTMLDivElement>(null)
 
   const scriptNames = Object.keys(entry.scripts)
-  // 只有 1 条（或仅登记）时退化为普通单按钮，不显示下拉
   const hasManyScripts = !entry.registerOnly && scriptNames.length > 1 && !!onRunScript
 
   const handleBlur = (): void => {
-    // 焦点移到包裹元素外才关闭；移到菜单项上时 relatedTarget 还在内部
     requestAnimationFrame(() => {
       if (wrapRef.current && !wrapRef.current.contains(document.activeElement)) {
         setOpen(false)
@@ -333,8 +348,8 @@ function TaskRunButton({
 
   if (!hasManyScripts) {
     return (
-      <Action
-        icon={Play}
+      <CardAction
+        icon={IconPlay}
         label="运行"
         onClick={onStart}
         disabled={busy || entry.registerOnly}
@@ -346,18 +361,20 @@ function TaskRunButton({
 
   return (
     <div ref={wrapRef} className="relative flex" onBlur={handleBlur}>
-      {/* 主「运行」按钮：执行 entry.script（条目默认脚本） */}
+      {/* 左半：主运行操作。用 btn-primary 类而非硬编码 bg-ink-strong，
+          深色模式下自动切换为蓝灰底+柔蓝白字，避免同色灰底灰字。
+          border-r 用 btn-primary-border 颜色的半透明变体作分隔。 */}
       <button
         type="button"
         disabled={busy}
         onClick={onStart}
         title={`运行 ${entry.script ?? ''}`}
-        className="pressable flex items-center gap-1.5 rounded-l-[6px] rounded-r-none border-r border-r-black/10 bg-accent px-2 py-1.5 text-[12px] font-semibold text-on-accent hover:brightness-110 disabled:pointer-events-none disabled:opacity-40"
+        className="btn-primary pressable flex items-center gap-1.5 rounded-l-[6px] rounded-r-none border-r-0 px-2.5 py-1.5 text-[12px] font-semibold [border-right:1px_solid_color-mix(in_srgb,currentColor_20%,transparent)] disabled:pointer-events-none"
       >
-        <Play size={13} weight="bold" aria-hidden />
+        <IconPlay size={12} strokeWidth={2} />
         运行
       </button>
-      {/* 下拉箭头按钮 */}
+      {/* 右半：下拉选脚本。同一套 btn-primary 颜色，圆角只在右侧 */}
       <button
         type="button"
         disabled={busy}
@@ -365,23 +382,21 @@ function TaskRunButton({
         aria-expanded={open}
         aria-haspopup="menu"
         onClick={() => setOpen((v) => !v)}
-        className="pressable flex items-center rounded-l-none rounded-r-[6px] bg-accent px-1.5 py-1.5 text-on-accent hover:brightness-110 disabled:pointer-events-none disabled:opacity-40"
+        className="btn-primary pressable flex items-center rounded-l-none rounded-r-[6px] border-l-0 px-1.5 py-1.5 disabled:pointer-events-none"
       >
-        <CaretDown
+        <IconCaretDown
           size={11}
-          weight="bold"
-          aria-hidden
-          className={`transition-transform duration-150 ${open ? 'rotate-180' : ''}`}
+          strokeWidth={2}
+          className={`transition-transform duration-250 [transition-timing-function:cubic-bezier(0.34,1.56,0.64,1)] ${open ? 'rotate-180' : ''}`}
         />
       </button>
 
-      {/* 下拉菜单 */}
       {open && (
         <div
           role="menu"
           aria-label="选择脚本"
           onKeyDown={(e) => e.key === 'Escape' && setOpen(false)}
-          className="absolute top-full left-0 z-20 mt-1 min-w-[11rem] max-w-[22rem] overflow-hidden rounded-[8px] border border-line bg-surface shadow-[0_4px_16px_rgba(0,0,0,0.18)]"
+          className="absolute top-full left-0 z-20 mt-1 min-w-[11rem] max-w-[22rem] overflow-hidden rounded-[8px] border border-line bg-card shadow-[0_4px_16px_rgba(0,0,0,0.18)]"
         >
           {scriptNames.map((name) => {
             const cmd = entry.scripts[name] ?? ''
@@ -421,7 +436,7 @@ function TaskRunButton({
   )
 }
 
-function Action({
+function CardAction({
   icon: IconCmp,
   label,
   onClick,
@@ -429,25 +444,24 @@ function Action({
   hint,
   primary,
   active,
-  iconOnly,
-  className = ''
+  danger
 }: {
-  icon: React.ComponentType<{ size?: number; weight?: 'bold' }>
+  icon: React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }>
   label: string
   onClick: () => void
   disabled?: boolean
   hint?: string
   primary?: boolean
   active?: boolean
-  iconOnly?: boolean
-  className?: string
+  danger?: boolean
 }): React.JSX.Element {
-  // 主按钮的配色与禁用态都收在 .btn-primary 里，见 tokens.css 的说明
-  const base = primary
-    ? 'btn-primary'
+  const cls = primary
+    ? 'btn-primary gap-1.5 px-2.5 py-1.5 text-[12px] font-semibold'
     : active
-      ? 'border border-line-strong bg-raised text-ink-strong'
-      : 'border border-line-strong bg-card text-ink-muted hover:text-ink-strong disabled:cursor-not-allowed disabled:border-line disabled:text-ink-faint'
+      ? 'h-7 w-7 border border-accent/50 bg-accent/10 text-accent'
+      : danger
+        ? 'h-7 w-7 border border-line bg-card text-ink-faint hover:border-fault/40 hover:bg-fault/8 hover:text-fault disabled:cursor-not-allowed disabled:opacity-35'
+        : 'h-7 w-7 border border-line bg-card text-ink-muted hover:border-line-strong hover:text-ink-strong disabled:cursor-not-allowed disabled:opacity-35'
 
   return (
     <button
@@ -456,10 +470,11 @@ function Action({
       disabled={disabled}
       aria-label={label}
       title={hint ?? label}
-      className={`pressable flex items-center gap-1.5 rounded-[6px] px-2 py-1.5 text-[12px] ${base} ${className}`}
+      className={`pressable flex shrink-0 items-center justify-center rounded-[6px] transition-colors duration-150 ${cls}`}
     >
-      <IconCmp size={13} weight="bold" />
-      {!iconOnly && label}
+      <IconCmp size={13} strokeWidth={1.7} />
+      {primary && <span>{label}</span>}
     </button>
   )
 }
+

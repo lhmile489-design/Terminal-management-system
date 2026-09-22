@@ -26,7 +26,7 @@ export function ThemeToggle(): React.JSX.Element {
       <IconCmp size={17} weight="regular" />
       <span
         role="tooltip"
-        className="pointer-events-none absolute left-[calc(100%+10px)] z-50 rounded-[6px] border border-line bg-card px-2.5 py-1 text-[12px] whitespace-nowrap text-ink opacity-0 transition-opacity group-hover:opacity-100"
+        className="pointer-events-none absolute left-[calc(100%+10px)] z-50 rounded-[6px] border border-line bg-card px-2.5 py-1 text-[12px] whitespace-nowrap text-ink opacity-0 -translate-x-1 transition-[opacity,transform] duration-200 [transition-timing-function:cubic-bezier(0.34,1.56,0.64,1)] group-hover:translate-x-0 group-hover:opacity-100"
       >
         {label}
       </span>

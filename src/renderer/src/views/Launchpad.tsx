@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { CaretDown, Rows, SquaresFour, Warning, X } from '@phosphor-icons/react'
 import type {
   EntryKind,
   EntryRuntime,
@@ -14,6 +13,18 @@ import { AddEntryDialog } from '../components/AddEntryDialog'
 import { EditEntryDialog } from '../components/EditEntryDialog'
 import { PrecheckPanel } from '../components/PrecheckPanel'
 import { LaunchpadTerminalPanel } from '../components/LaunchpadTerminalPanel'
+import { GroupsPanel } from '../components/GroupsPanel'
+import {
+  IconChevronDown,
+  IconCommand,
+  IconFolder,
+  IconGrid,
+  IconList,
+  IconPlay,
+  IconPlus,
+  IconWarning,
+  IconX
+} from '../components/icons'
 import { useEntries } from '../store/entries'
 import { useEntryFix } from '../lib/useEntryFix'
 import { useCardSort } from '../lib/useCardSort'
@@ -31,6 +42,8 @@ import type { ServiceFilter, TaskFilter, TechStack } from '../lib/entryMeta'
 /** 展示形态，PRD §9.x。持久化到 localStorage，下次打开沿用 */
 type ViewMode = 'card' | 'list'
 const VIEW_MODE_KEY = 'mile.launchpad.viewMode'
+/** 启动台主模式：全部 | 工作组 */
+type LaunchpadMode = 'all' | 'groups'
 /** 技术栈 tab 选中值：'all' 或某个大类 */
 type StackFilter = 'all' | TechStack
 
@@ -108,6 +121,7 @@ export function Launchpad({
   const [taskFilter, setTaskFilter] = useState<TaskFilter>('all')
   const [stackFilter, setStackFilter] = useState<StackFilter>('all')
   const [viewMode, setViewMode] = useState<ViewMode>(readViewMode)
+  const [launchpadMode, setLaunchpadMode] = useState<LaunchpadMode>('all')
   /** 底部嵌入终端面板当前 pin 的条目 id，null 表示面板收起 */
   const [pinnedEntryId, setPinnedEntryId] = useState<string | null>(null)
 
@@ -310,7 +324,7 @@ export function Launchpad({
           role="alert"
           className="flex items-start gap-2.5 rounded-[8px] border border-fault/35 bg-fault/8 px-3.5 py-2.5"
         >
-          <Warning size={13} weight="bold" className="mt-0.5 shrink-0 text-fault" aria-hidden />
+          <IconWarning size={13} strokeWidth={1.6} className="mt-0.5 shrink-0 text-fault" />
           <p className="min-w-0 flex-1 text-[12px] break-words text-fault">{error}</p>
           <button
             type="button"
@@ -319,64 +333,127 @@ export function Launchpad({
             onClick={clearError}
             className="pressable shrink-0 text-fault/70 hover:text-fault"
           >
-            <X size={12} weight="bold" />
+            <IconX size={12} strokeWidth={2} />
           </button>
         </div>
       )}
 
-      {entries.length === 0 ? (
-        <div className="surface-card px-6 py-14 text-center">
-          <p className="text-[13px] text-ink-muted">启动台还没有条目</p>
-          <p className="mt-1.5 text-[12px] text-ink-faint">添加一个项目目录，识别后即可一键启动</p>
+      {/* 模式切换：全部 / 工作组 */}
+      {entries.length > 0 && (
+        <div className="flex items-center gap-1 border-b border-line pb-2.5">
+          <div role="tablist" className="segmented flex items-center">
+            <button
+              role="tab"
+              type="button"
+              aria-selected={launchpadMode === 'all'}
+              onClick={() => setLaunchpadMode('all')}
+              className={`segmented-item px-3 py-1 text-[12px] ${launchpadMode === 'all' ? 'active' : ''}`}
+            >
+              全部
+            </button>
+            <button
+              role="tab"
+              type="button"
+              aria-selected={launchpadMode === 'groups'}
+              onClick={() => setLaunchpadMode('groups')}
+              className={`segmented-item px-3 py-1 text-[12px] ${launchpadMode === 'groups' ? 'active' : ''}`}
+            >
+              工作组
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── 工作组模式 ── */}
+      {launchpadMode === 'groups' && (
+        <GroupsPanel actionsFor={actionsFor} />
+      )}
+
+      {/* ── 全部模式 ── */}
+      {launchpadMode === 'all' && (
+        <>
+        {entries.length === 0 ? (
+          <div className="flex flex-col items-center gap-6 py-16">
+          {/* 主图标 */}
+          <div className="flex h-14 w-14 items-center justify-center rounded-[14px] border-2 border-dashed border-line-strong/60">
+            <IconPlay size={26} strokeWidth={1.4} className="translate-x-0.5 text-ink-faint/40" />
+          </div>
+
+          <div className="text-center">
+            <p className="text-[14px] font-semibold text-ink-strong">启动台还没有项目</p>
+            <p className="mt-1 text-[12px] text-ink-faint">添加一个项目目录，识别框架后即可一键启动</p>
+          </div>
+
+          <div className="grid w-full max-w-[420px] grid-cols-3 gap-3">
+            <EmptyGuideCard
+              icon={IconPlus}
+              label="添加服务"
+              desc="长期运行的开发服务、后端进程"
+              onClick={() => setDialog({ kind: 'service' })}
+            />
+            <EmptyGuideCard
+              icon={IconCommand}
+              label="添加任务"
+              desc="构建、部署等一次性批处理命令"
+              onClick={() => setDialog({ kind: 'task' })}
+            />
+            <EmptyGuideCard
+              icon={IconFolder}
+              label="打开目录"
+              desc="从文件夹自动识别项目框架"
+              onClick={() => setDialog({ kind: 'service' })}
+            />
+          </div>
         </div>
       ) : (
         <>
-          {/* 技术栈 tab：自动按现有条目的框架大类生成，点选后全局筛选服务+任务 */}
-          {stackTabs.length > 1 && (
-            <nav aria-label="技术栈筛选" className="border-b border-line pb-3">
-              <div role="tablist" className="flex flex-wrap items-center gap-1.5">
-                <StackTab
-                  label="全部"
-                  count={entries.length}
-                  active={stackFilter === 'all'}
-                  onClick={() => setStackFilter('all')}
-                />
-                {stackTabs.map((tab) => (
+          {/* 工具栏：技术栈 tab + 筛选 + 视图切换，一行搞定 */}
+          <div className="flex flex-wrap items-center gap-2 border-b border-line pb-2.5">
+            {/* 技术栈 tab：仅在有多个栈时显示 */}
+            {stackTabs.length > 1 && (
+              <nav aria-label="技术栈筛选">
+                <div role="tablist" className="flex items-center gap-0.5">
                   <StackTab
-                    key={tab.stack}
-                    label={tab.label}
-                    count={tab.count}
-                    active={stackFilter === tab.stack}
-                    onClick={() => setStackFilter(tab.stack)}
+                    label="全部"
+                    count={entries.length}
+                    active={stackFilter === 'all'}
+                    onClick={() => setStackFilter('all')}
                   />
-                ))}
-              </div>
-            </nav>
-          )}
+                  {stackTabs.map((tab) => (
+                    <StackTab
+                      key={tab.stack}
+                      label={tab.label}
+                      count={tab.count}
+                      active={stackFilter === tab.stack}
+                      onClick={() => setStackFilter(tab.stack)}
+                    />
+                  ))}
+                </div>
+              </nav>
+            )}
 
-          <section aria-labelledby="launchpad-filter-heading" className="border-y border-line py-3">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <h2 id="launchpad-filter-heading" className="eyebrow eyebrow-tight">
-                Filters · 筛选
-              </h2>
-              <div className="flex flex-wrap items-center gap-3">
-                <FilterControl
-                  label="服务筛选"
-                  filter={serviceFilter}
-                  filters={SERVICE_FILTERS}
-                  onChange={setServiceFilter}
-                />
-                <FilterControl
-                  label="任务筛选"
-                  filter={taskFilter}
-                  filters={TASK_FILTERS}
-                  onChange={setTaskFilter}
-                />
-                {/* 展示形态切换：卡片网格 ↔ 紧凑列表，选择记忆到 localStorage */}
-                <ViewToggle mode={viewMode} onChange={setViewMode} />
-              </div>
+            {stackTabs.length > 1 && (
+              <div className="h-3.5 w-px shrink-0 bg-line-strong/60" />
+            )}
+
+            {/* 筛选 + 视图切换推到右侧 */}
+            <div className="flex flex-wrap items-center gap-2 ml-auto">
+              <FilterControl
+                label="服务筛选"
+                filter={serviceFilter}
+                filters={SERVICE_FILTERS}
+                onChange={setServiceFilter}
+              />
+              <FilterControl
+                label="任务筛选"
+                filter={taskFilter}
+                filters={TASK_FILTERS}
+                onChange={setTaskFilter}
+              />
+              <div className="h-3.5 w-px shrink-0 bg-line-strong/60" />
+              <ViewToggle mode={viewMode} onChange={setViewMode} />
             </div>
-          </section>
+          </div>
 
           {categoryViews.length > 0 && (noVisibleServices || noVisibleTasks) && (
             <div role="status" className="flex flex-wrap gap-x-4 gap-y-1 text-[12.5px] text-ink-faint">
@@ -406,6 +483,9 @@ export function Launchpad({
         </>
       )}
 
+        </>
+      )}
+
       {focus && focusEntry && (
         <section aria-labelledby="precheck-heading">
           <div className="mb-2.5 flex items-center justify-between gap-3">
@@ -422,7 +502,7 @@ export function Launchpad({
           </div>
           <PrecheckPanel
             result={focus.precheck}
-            onFix={(action) => void runFix(focusEntry.id, action)}
+            onFix={(action, suggestedPort) => void runFix(focusEntry.id, action, suggestedPort)}
           />
         </section>
       )}
@@ -552,7 +632,7 @@ function ViewToggle({
         onClick={() => onChange('card')}
         className="segmented-item"
       >
-        <SquaresFour size={14} weight="bold" />
+        <IconGrid size={14} strokeWidth={1.6} />
       </button>
       <button
         type="button"
@@ -564,7 +644,7 @@ function ViewToggle({
         onClick={() => onChange('list')}
         className="segmented-item"
       >
-        <Rows size={14} weight="bold" />
+        <IconList size={14} strokeWidth={1.6} />
       </button>
     </div>
   )
@@ -612,26 +692,33 @@ function CategoryPanel({
           aria-expanded={expanded}
           aria-controls={`${headingId}-content`}
           onClick={() => setExpanded((value) => !value)}
-          className="pressable-flat flex w-full min-w-0 items-center gap-2.5 rounded-[5px] px-2 py-1.5 text-left hover:bg-raised/60"
+          className={`pressable-flat flex w-full min-w-0 items-center gap-2.5 rounded-[5px] border-l-2 py-1.5 pl-3 pr-2 text-left transition-colors hover:bg-raised/60 ${
+            expanded ? 'border-accent/60' : 'border-line-strong/50'
+          }`}
         >
-          <CaretDown
-            size={12}
-            weight="bold"
-            aria-hidden
-            className={`shrink-0 text-ink-faint/70 transition-transform ${expanded ? '' : '-rotate-90'}`}
-          />
-          <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-ink-strong" title={category.name}>
+          <span
+            className="min-w-0 flex-1 truncate text-[13px] font-semibold text-ink-strong"
+            title={category.name}
+          >
             {category.name}
           </span>
           {live > 0 && (
-            <span
-              className="h-1.5 w-1.5 shrink-0 rounded-full bg-live shadow-[0_0_0_2px_color-mix(in_srgb,var(--signal-live)_22%,transparent)]"
-              aria-label={`${live} 项运行中`}
-            />
+            <span className="flex shrink-0 items-center gap-1 text-[11px] font-medium text-live">
+              <span
+                className="h-1.5 w-1.5 rounded-full bg-live shadow-[0_0_0_2px_color-mix(in_srgb,var(--signal-live)_22%,transparent)]"
+                aria-hidden
+              />
+              {live} 运行中
+            </span>
           )}
-          <span className="shrink-0 font-mono text-[10.5px] text-ink-faint/70">
+          <span className="shrink-0 rounded-[4px] bg-raised px-1.5 font-mono text-[10px] text-ink-faint">
             {visible === category.entries.length ? visible : `${visible} / ${category.entries.length}`}
           </span>
+          <IconChevronDown
+            size={12}
+            strokeWidth={1.8}
+            className={`shrink-0 text-ink-faint/70 transition-transform duration-300 [transition-timing-function:cubic-bezier(0.34,1.56,0.64,1)] ${expanded ? 'rotate-0' : '-rotate-90'}`}
+          />
         </button>
       </h2>
 
@@ -716,7 +803,7 @@ function EntryGrid({
       {viewMode === 'list' ? (
         // 列表：竖直堆叠紧凑行，不做拖拽排序（排序是卡片网格的交互）
         <div data-entry-list className="flex flex-col gap-1.5">
-          {orderedVisible.map((entry) => (
+          {orderedVisible.map((entry, i) => (
             <EntryRow
               key={entry.id}
               entry={entry}
@@ -724,6 +811,7 @@ function EntryGrid({
               busy={busy[entry.id] ?? false}
               portShared={sharedPorts.has(runtimes[entry.id]?.port ?? -1)}
               actions={actionsFor(entry)}
+              index={i}
             />
           ))}
         </div>
@@ -749,5 +837,32 @@ function EntryGrid({
         </div>
       )}
     </section>
+  )
+}
+
+/** 空状态引导卡，三格布局 */
+function EmptyGuideCard({
+  icon: IconCmp,
+  label,
+  desc,
+  onClick
+}: {
+  icon: React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }>
+  label: string
+  desc: string
+  onClick: () => void
+}): React.JSX.Element {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="pressable group flex flex-col items-center gap-2 rounded-[10px] border border-dashed border-line-strong/60 bg-card px-4 py-5 text-center transition-colors duration-200 hover:border-accent/50 hover:bg-accent/5"
+    >
+      <span className="flex h-9 w-9 items-center justify-center rounded-[8px] bg-raised transition-colors group-hover:bg-accent/10">
+        <IconCmp size={18} strokeWidth={1.5} className="text-ink-muted transition-colors group-hover:text-accent" />
+      </span>
+      <span className="text-[12px] font-semibold text-ink-strong">{label}</span>
+      <span className="text-[10.5px] leading-relaxed text-ink-faint">{desc}</span>
+    </button>
   )
 }

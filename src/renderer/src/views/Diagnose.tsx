@@ -19,7 +19,7 @@ export function Diagnose({
 }: {
   selectedId: string | null
   onSelect: (id: string) => void
-  onFix: (entryId: string, action: PrecheckFixAction) => Promise<void>
+  onFix: (entryId: string, action: PrecheckFixAction, suggestedPort?: number) => Promise<void>
   /** 外部修复动作完成后自增，用于触发重新收集 */
   refreshKey: number
 }): React.JSX.Element {
@@ -136,7 +136,7 @@ export function Diagnose({
                 </h2>
                 <PrecheckPanel
                   result={report.precheck}
-                  onFix={(action) => void onFix(entry.id, action).then(() => collect(entry.id))}
+                  onFix={(action, suggestedPort) => void onFix(entry.id, action, suggestedPort).then(() => collect(entry.id))}
                 />
               </section>
 

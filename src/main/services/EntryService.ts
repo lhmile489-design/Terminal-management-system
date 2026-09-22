@@ -141,7 +141,7 @@ const OUTPUT_DIR_CANDIDATES = ['dist', 'build', 'out', '.next', '.output', 'rele
 
 /** 可编辑字段白名单，PRD §4.6。未列出的键在 sanitizeEdit 里被静默丢弃 */
 const EDITABLE = new Set<EditableEntryField>([
-  'name', 'category', 'pinned', 'kind', 'path', 'cwd', 'script', 'scripts',
+  'name', 'category', 'groupId', 'pinned', 'kind', 'path', 'cwd', 'script', 'scripts',
   'framework', 'packageManager', 'env', 'icon', 'imageId', 'expectedPort', 'outputDir',
   'launchMode', 'jarPath', 'registerOnly'
 ])
@@ -252,6 +252,11 @@ interface Watch {
    * 而 PRD §4.6 要求区分「我停的」和「它自己崩的」。
    */
   stoppedByUser?: boolean
+  /**
+   * 标记此会话是 packageWithProfile 发起的打包构建。
+   * 退出码为 0 时，主进程扫描 target/ 写入 lastBuiltJar，供渲染层展示操作横幅。
+   */
+  isPackage?: boolean
 }
 
 /**
@@ -395,6 +400,17 @@ export class EntryService extends EventEmitter {
         case 'category':
           out.category = normalizeCategory(value)
           break
+        case 'groupId': {
+          // null = 移出工作组（清空 groupId）；字符串 = 设置工作组 id
+          if (value === null) {
+            out.groupId = undefined
+          } else {
+            if (typeof value !== 'string') throw new Error('groupId 必须是字符串或 null')
+            if (value.length > 64) throw new Error('groupId 过长')
+            out.groupId = value
+          }
+          break
+        }
         case 'kind':
           if (value !== 'service' && value !== 'task') throw new Error(`类型非法：${String(value)}`)
           out.kind = value
@@ -592,6 +608,11 @@ export class EntryService extends EventEmitter {
     return [...this.runtimes.values()]
   }
 
+  /** 获取单个条目的运行态，供主进程内部（如 entryRevealLastJar handler）使用 */
+  runtimeOf(id: string): EntryRuntime | undefined {
+    return this.runtimes.get(id)
+  }
+
   /**
    * shell.openPath 白名单：目标是否为某条目的工作目录或其产物目录。
    * 采集快照只含正在监听的进程 cwd，停止状态的条目不在其中，所以需要这一路。
@@ -775,7 +796,7 @@ export class EntryService extends EventEmitter {
   async runPrecheck(id: string): Promise<PrecheckResult> {
     const entry = this.get(id)
     if (!entry) throw new Error(`条目不存在：${id}`)
-    const result = await this.precheck.run(entry, this.scanner.snapshot())
+    const result = await this.precheck.run(entry, this.scanner.snapshot(), this.list())
     this.setRuntime(id, { precheck: result })
     return result
   }
@@ -790,7 +811,7 @@ export class EntryService extends EventEmitter {
     }
 
     this.setRuntime(id, { status: 'precheck', exitCode: undefined, portUnknown: false })
-    const precheck = await this.precheck.run(entry, this.scanner.snapshot())
+    const precheck = await this.precheck.run(entry, this.scanner.snapshot(), this.list())
     if (!precheck.ok) {
       this.setRuntime(id, { status: 'blocked', precheck })
       return { ok: false, precheck }
@@ -904,7 +925,7 @@ export class EntryService extends EventEmitter {
       exitCode: undefined,
       precheck: undefined
     })
-    this.watches.set(session.id, { entryId: entry.id, captured: true, timer: null })
+    this.watches.set(session.id, { entryId: entry.id, captured: true, timer: null, isPackage: true })
     return runtime
   }
 
@@ -1031,6 +1052,18 @@ export class EntryService extends EventEmitter {
           !n.startsWith('original-')
       )
       .map((n) => `target/${n}`)
+  }
+
+  /**
+   * 将条目的 expectedPort 切换到指定端口并持久化。
+   * 由预检"端口冲突→切换"快捷修复路径调用；端口范围已在 IPC 层校验。
+   * 只改 expectedPort 元数据，不影响实际启动命令（那是项目配置的职责）。
+   */
+  async switchPort(id: string, newPort: number): Promise<void> {
+    const entry = this.get(id)
+    if (!entry) throw new Error(`条目不存在：${id}`)
+    const updated: LaunchEntry = { ...entry, expectedPort: newPort }
+    this.commit(this.list().map((e) => (e.id === id ? updated : e)))
   }
 
   /**
@@ -1536,6 +1569,18 @@ export class EntryService extends EventEmitter {
     })
     this.update(watch.entryId, { lastExitCode: exitCode })
 
+    // packageWithProfile 打包成功：扫描 target/ 写入 lastBuiltJar，触发渲染层操作横幅
+    if (watch.isPackage && exitCode === 0 && entry) {
+      // 异步扫描，失败不影响状态机
+      this.listJars(watch.entryId)
+        .then((jars) => {
+          if (jars.length > 0) {
+            this.setRuntime(watch.entryId, { lastBuiltJar: jars[0] })
+          }
+        })
+        .catch(() => {/* 扫描失败静默，不影响主流程 */})
+    }
+
     /*
      * 任务完成通知挂在这里而不是 'runtime' 事件上，PRD §4.7。
      *
@@ -1555,7 +1600,7 @@ export class EntryService extends EventEmitter {
     const entry = this.get(id)
     if (!entry) throw new Error(`条目不存在：${id}`)
 
-    const precheck = await this.precheck.run(entry, this.scanner.snapshot())
+    const precheck = await this.precheck.run(entry, this.scanner.snapshot(), this.list())
     const runtime = this.runtimes.get(id)
     const port = runtime?.port ?? entry.expectedPort ?? null
 

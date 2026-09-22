@@ -71,7 +71,7 @@ export function ActivitySidebar({
         ) : (
           <ol className="flex flex-col gap-2.5">
             {events.map((e) => (
-              <li key={e.id} className="flex gap-2.5">
+              <li key={e.id} className="event-enter flex gap-2.5">
                 <span
                   className="status-dot mt-[6px]"
                   data-halo={e.level === 'live' || e.level === 'fault' || undefined}
@@ -191,7 +191,7 @@ function TopList({
 
   return (
     <ol className="flex flex-col gap-2">
-      {rows.map((l) => (
+      {rows.map((l, i) => (
         <li key={l.pid} className="flex flex-col gap-1">
           <span className="flex items-baseline justify-between gap-2">
             <span className="truncate text-[12.5px] text-ink" title={l.processName}>
@@ -201,8 +201,8 @@ function TopList({
           </span>
           <span className="load-track" aria-hidden>
             <span
-              className="load-fill"
-              style={{ width: `${Math.round((weigh(l) / max) * 100)}%` }}
+              className="load-fill bar-grow"
+              style={{ width: `${Math.round((weigh(l) / max) * 100)}%`, '--i': i } as React.CSSProperties}
             />
           </span>
         </li>

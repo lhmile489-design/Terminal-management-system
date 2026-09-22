@@ -7,13 +7,16 @@ import type {
   EntryEdit,
   EntryRuntime,
   EntryStartResult,
+  GroupPatch,
   LaunchEntry,
   ListenerGroup,
   LogQuery,
   LogResult,
   MavenGoal,
   NewLaunchEntry,
+  NewProjectGroup,
   PrecheckResult,
+  ProjectGroup,
   ScanDiff,
   ScanSnapshot,
   Settings,
@@ -62,6 +65,8 @@ const api = {
       ipcRenderer.invoke(Channels.entryPackageWithProfile, id, profile),
     detectProfiles: (id: string): Promise<string[]> =>
       ipcRenderer.invoke(Channels.entryDetectProfiles, id),
+    switchPort: (id: string, port: number): Promise<void> =>
+      ipcRenderer.invoke(Channels.entrySwitchPort, id, port),
     listJars: (id: string): Promise<string[]> =>
       ipcRenderer.invoke(Channels.entryListJars, id),
     runScript: (id: string, script: string): Promise<EntryRuntime> =>
@@ -85,6 +90,8 @@ const api = {
     image: (id: string): Promise<string | null> =>
       ipcRenderer.invoke(Channels.entryImage, id),
     runtimes: (): Promise<EntryRuntime[]> => ipcRenderer.invoke(Channels.entryRuntimes),
+    revealLastJar: (id: string): Promise<boolean> =>
+      ipcRenderer.invoke(Channels.entryRevealLastJar, id),
     onChange: (cb: (list: LaunchEntry[]) => void): (() => void) =>
       subscribe(Channels.entryChanged, cb),
     onRuntime: (cb: (runtime: EntryRuntime) => void): (() => void) =>
@@ -143,6 +150,17 @@ const api = {
   },
   app: {
     info: (): Promise<{ version: string; name: string }> => ipcRenderer.invoke(Channels.appInfo)
+  },
+  group: {
+    list: (): Promise<ProjectGroup[]> => ipcRenderer.invoke(Channels.groupList),
+    add: (input: NewProjectGroup): Promise<ProjectGroup> =>
+      ipcRenderer.invoke(Channels.groupAdd, input),
+    patch: (id: string, patch: GroupPatch): Promise<ProjectGroup> =>
+      ipcRenderer.invoke(Channels.groupPatch, id, patch),
+    remove: (id: string): Promise<void> => ipcRenderer.invoke(Channels.groupRemove, id),
+    reorder: (ids: string[]): Promise<void> => ipcRenderer.invoke(Channels.groupReorder, ids),
+    onChange: (cb: (list: ProjectGroup[]) => void): (() => void) =>
+      subscribe(Channels.groupChanged, cb)
   }
 }
 

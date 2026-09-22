@@ -6,6 +6,7 @@ import { CONFIG_VERSION, type AppConfig } from '@shared/types'
 const DEFAULTS: AppConfig = {
   version: CONFIG_VERSION,
   entries: [],
+  groups: [],
   ignoredListeners: [],
   groupOverrides: [],
   watchedKeywords: [],
@@ -129,8 +130,15 @@ export class ConfigStore {
     // 仅推进版本号，不回填。（imageId 只由主进程 setImage 写入，迁移不构造它。）
     void from
 
+    // v8 -> v9：AppConfig 新增 groups 字段（工作组列表）；LaunchEntry 新增可选 groupId。
+    // 老条目无 groupId，保持 undefined 即可；groups 数组初始化为空，用户自行创建。
+    if (from < 9) {
+      if (!Array.isArray(out.groups)) out.groups = []
+    }
+
     // 迁移后仍要校形：数组字段被手改成对象会让下游 .some / .filter 直接抛
     if (!Array.isArray(out.entries)) out.entries = []
+    if (!Array.isArray(out.groups)) out.groups = []
     if (!Array.isArray(out.ignoredListeners)) out.ignoredListeners = []
     if (!Array.isArray(out.groupOverrides)) out.groupOverrides = []
     if (!Array.isArray(out.watchedKeywords)) out.watchedKeywords = []

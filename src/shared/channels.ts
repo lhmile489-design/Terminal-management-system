@@ -85,7 +85,32 @@ export const Channels = {
    * 扫描 Spring Boot 项目 target/ 目录，返回可用 jar 文件的相对路径列表。
    * 过滤掉 -sources / -javadoc 包，只读目录结构，不执行代码。
    */
-  entryListJars: 'entry:listJars'
+  entryListJars: 'entry:listJars',
+  /**
+   * 将条目的 expectedPort 切换到指定端口并持久化。
+   * 主进程校验 port 范围（1024-65535），写入 ConfigStore。
+   */
+  entrySwitchPort: 'entry:switchPort',
+
+  // ── 工作组，PRD-WORKGROUPS §4 ─────────────────────────────────────────────
+  /** 获取全部工作组列表，返回 ProjectGroup[] */
+  groupList: 'group:list',
+  /** 创建工作组，返回 ProjectGroup */
+  groupAdd: 'group:add',
+  /** 更新工作组属性（name/description/env/order），返回 ProjectGroup */
+  groupPatch: 'group:patch',
+  /** 删除工作组（同时清空所有 entry.groupId === id），返回 void */
+  groupRemove: 'group:remove',
+  /** 批量重排工作组，传入有序 id 数组，返回 void */
+  groupReorder: 'group:reorder',
+  /** 主进程推送工作组全量列表，与 entry:changed 同模式 */
+  groupChanged: 'group:changed',
+
+  /**
+   * 在系统资源管理器中定位最近打包成功的 jar 文件。
+   * 主进程从 EntryRuntime.lastBuiltJar 构造绝对路径并校验边界。
+   */
+  entryRevealLastJar: 'entry:revealLastJar'
 } as const
 
 export type Channel = (typeof Channels)[keyof typeof Channels]

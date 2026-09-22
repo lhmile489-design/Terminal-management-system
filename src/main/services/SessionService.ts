@@ -5,6 +5,7 @@ import { spawn as spawnPty, type IPty } from 'node-pty'
 import type { CreateSessionInput, SessionMeta } from '@shared/types'
 import { defaultShell, shellLaunchArgs } from '../lib/shell'
 import type { OwnershipService } from './OwnershipService'
+import type { ScannerService } from './ScannerService'
 
 const MAX_BUFFER_CHARS = 400_000
 const FLUSH_INTERVAL_MS = 16
@@ -24,9 +25,16 @@ const nextId = (): string => `s${++seq}-${Date.now().toString(36)}`
 
 export class SessionService extends EventEmitter {
   private entries = new Map<string, Entry>()
+  /** 后注入（scanner 晚于 sessions 构建），用于 kill 前重校验归属，PRD §6.3 步骤 4 */
+  private scanner: ScannerService | null = null
 
   constructor(private ownership: OwnershipService) {
     super()
+  }
+
+  /** 由 index.ts 在 app.whenReady 里调用，避免构造时的循环依赖 */
+  setScanner(scanner: ScannerService): void {
+    this.scanner = scanner
   }
 
   create(input: CreateSessionInput): SessionMeta {
@@ -142,7 +150,11 @@ export class SessionService extends EventEmitter {
   stop(id: string): void {
     const entry = this.entries.get(id)
     if (!entry) return
-    entry.pty.write('\x03')
+    try {
+      entry.pty.write('\x03')
+    } catch {
+      // pty 已退出，\x03 无法写入，3s 后 kill 仍会执行
+    }
     setTimeout(() => this.kill(id), 3000)
   }
 
@@ -154,6 +166,23 @@ export class SessionService extends EventEmitter {
     if (status === 'stopped' || status === 'crashed') {
       this.ownership.unregister(id)
       return
+    }
+    // PRD §6.3 步骤 4：kill 前重新验证归属，防止 3s 等待期间 PID 被回收复用后误杀。
+    // 异步路径：先拿到表再执行，同步地 void 掉整段；若 scanner 尚未注入则跳过重校验
+    // (仅在极早期 disposeAll 场景，此时 scanner 还未完成首次采集，风险可接受)
+    void this.doKill(id, pid, entry)
+  }
+
+  private async doKill(id: string, pid: number, entry: Entry): Promise<void> {
+    if (this.scanner) {
+      try {
+        const table = await this.scanner.table([pid])
+        await this.ownership.assertKillable(pid, table)
+      } catch {
+        // 重校验拒绝（归属变化或 PID 已复用）：取消 kill，仅清理会话登记
+        this.ownership.unregister(id)
+        return
+      }
     }
 
     // Vite/webpack 会拉起子进程，pty.kill() 只结束 conhost 根进程，必须带树终止

@@ -1,71 +1,72 @@
-import {
-  ArrowClockwise,
-  ArrowSquareOut,
-  FolderOpen,
-  Package,
-  PencilSimple,
-  Play,
-  PushPin,
-  Stethoscope,
-  Stop,
-  Terminal,
-  Trash
-} from '@phosphor-icons/react'
 import type { EntryRuntime, LaunchEntry } from '@shared/types'
-import { FRAMEWORK_LABEL, STATUS_META, TONE_VAR, cardTone, isLiveStatus } from '../lib/entryMeta'
+import { FRAMEWORK_LABEL, STATUS_META, TONE_VAR, cardTone, isBusyStatus, isLiveStatus } from '../lib/entryMeta'
 import { formatUptime } from '../lib/format'
 import { useEntryImage } from '../store/favicons'
 import type { EntryCardActions } from './EntryCard'
 import { EntryGlyph } from './EntryGlyph'
+import {
+  IconEdit,
+  IconExternalLink,
+  IconFolder,
+  IconPackage,
+  IconPlay,
+  IconPushPin,
+  IconRestart,
+  IconStethoscope,
+  IconStop,
+  IconTerminal,
+  IconTrash
+} from './icons'
 import { StatusPill } from './StatusPill'
 
 /**
  * 条目的列表行形态，PRD §9.x（视图切换）。
  *
  * 与 EntryCard 同数据、同动作，只是横向紧凑排布：一行装下名称、状态、端口与操作。
- * 状态色仍只染边框与胶囊、绝不染整行底（与卡片同一约束）。列表不做拖拽排序 ——
- * 排序是卡片网格的交互，列表按现有顺序平铺即可。
+ * 状态色仍只染边框与胶囊、绝不染整行底（与卡片同一约束）。列表不做拖拽排序。
  */
 export function EntryRow({
   entry,
   runtime,
   busy,
   actions,
-  portShared
+  portShared,
+  index = 0
 }: {
   entry: LaunchEntry
   runtime: EntryRuntime
   busy: boolean
   actions: EntryCardActions
   portShared?: boolean
+  /** 交错入场索引 */
+  index?: number
 }): React.JSX.Element {
   const status = STATUS_META[runtime.status]
   const live = isLiveStatus(runtime.status)
+  const isBusy = isBusyStatus(runtime.status)
   const isService = entry.kind === 'service'
   const port = runtime.port ?? entry.expectedPort
-  // 列表图标：与卡片同一来源（自定义图片 > favicon），共用 useEntryImage + EntryGlyph
   const imageUrl = useEntryImage(entry)
 
   return (
     <div
       data-entry-id={entry.id}
       data-entry-row
-      data-tone={cardTone(status.tone)}
-      style={{ '--glow': TONE_VAR[status.tone] } as React.CSSProperties}
-      className="surface-card flex items-center gap-3 px-3 py-2"
+      data-tone={cardTone(status.tone, isBusy)}
+      style={{ '--glow': TONE_VAR[status.tone], '--i': index } as React.CSSProperties}
+      className="item-enter surface-card flex items-center gap-3 px-3 py-2"
     >
-      {/* 图标瓦片，比卡片小一号；自定义图片/favicon 有则显示图，无则回退框架字标 */}
+      {/* 图标瓦片 */}
       <span className="icon-tile h-8 w-8 shrink-0" aria-hidden>
         <EntryGlyph entry={entry} imageUrl={imageUrl} size={20} glyphClass="text-[12px]" />
       </span>
 
-      {/* 名称 + 目录，占据主要宽度 */}
+      {/* 名称 + 框架 badge */}
       <div className="flex min-w-0 flex-1 flex-col">
         <span className="flex min-w-0 items-center gap-1.5">
           <span className="truncate text-[13px] font-semibold text-ink-strong" title={entry.name}>
             {entry.name}
           </span>
-          {/* uniapp 由 HBuilderX 编译/运行，本应用只能唤起它 */}
           {entry.framework === 'uniapp' && (
             <span
               className="shrink-0 rounded-[4px] border border-accent/60 px-1 font-mono text-[9.5px] font-semibold tracking-[0.06em] text-accent"
@@ -75,9 +76,13 @@ export function EntryRow({
             </span>
           )}
         </span>
-        <span className="truncate font-mono text-[10.5px] text-ink-faint" title={entry.path}>
-          {FRAMEWORK_LABEL[entry.framework]}
-          {entry.script ? ` · ${entry.script}` : ''}
+        <span className="flex min-w-0 items-center gap-1 truncate">
+          <span className="badge-neutral">{FRAMEWORK_LABEL[entry.framework]}</span>
+          {entry.script && (
+            <span className="truncate font-mono text-[10px] text-ink-faint/70">
+              {entry.script}
+            </span>
+          )}
         </span>
       </div>
 
@@ -97,7 +102,7 @@ export function EntryRow({
           }
           onClick={() => window.mile.shell.openLocalhost(port)}
           data-shared={portShared || undefined}
-          className="pressable shrink-0 rounded-[4px] border border-line-strong px-1.5 font-mono text-[10px] font-bold text-accent hover:bg-accent hover:text-on-accent data-[shared]:border-warn/60 data-[shared]:text-warn"
+          className="pressable shrink-0 rounded-[4px] border border-line-strong px-1.5 font-mono text-[10px] font-bold text-accent hover:bg-accent/15 hover:text-accent data-[shared]:border-warn/60 data-[shared]:text-warn"
         >
           :{port}
         </button>
@@ -112,13 +117,14 @@ export function EntryRow({
             : `退出 ${runtime.exitCode}`}
       </span>
 
-      {/* 操作：全图标，紧凑 */}
+      {/* 操作区：主操作 / 次操作 / 危险操作 分组 */}
       <div className="flex shrink-0 items-center gap-1">
+        {/* 主操作 */}
         {live ? (
-          <RowAction icon={Stop} label={isService ? '停止' : '中止'} onClick={actions.onStop} disabled={busy} primary />
+          <RowAction icon={IconStop} label={isService ? '停止' : '中止'} onClick={actions.onStop} disabled={busy} primary />
         ) : (
           <RowAction
-            icon={Play}
+            icon={IconPlay}
             label={isService ? '启动' : '运行'}
             onClick={actions.onStart}
             disabled={busy || entry.registerOnly}
@@ -132,10 +138,9 @@ export function EntryRow({
             primary
           />
         )}
-        {/* uniapp 专属：唤起本机 HBuilderX 打开该项目 */}
         {entry.framework === 'uniapp' && (
           <RowAction
-            icon={ArrowSquareOut}
+            icon={IconExternalLink}
             label="用 HBuilderX 打开"
             onClick={() => {
               void window.mile.entry.openInHBuilderX(entry.id)
@@ -145,32 +150,43 @@ export function EntryRow({
         )}
         {isService && (
           <RowAction
-            icon={ArrowClockwise}
+            icon={IconRestart}
             label="重启"
             onClick={actions.onRestart}
             disabled={busy || entry.registerOnly}
           />
         )}
-        <RowAction icon={Terminal} label="日志" onClick={actions.onPin ?? actions.onLogs} disabled={!runtime.sessionId} />
-        <RowAction icon={Stethoscope} label="诊断" onClick={actions.onDiagnose} />
-        <RowAction icon={PencilSimple} label="编辑" onClick={actions.onEdit} />
-        <RowAction icon={FolderOpen} label="打开目录" onClick={actions.onOpenFolder} />
+        <RowAction icon={IconTerminal} label="日志" onClick={actions.onPin ?? actions.onLogs} disabled={!runtime.sessionId} />
+
+        {/* 竖分隔线 */}
+        <div className="mx-0.5 h-4 w-px shrink-0 bg-line-strong/50" />
+
+        {/* 次操作 */}
+        <RowAction icon={IconStethoscope} label="诊断" onClick={actions.onDiagnose} />
+        <RowAction icon={IconEdit} label="编辑" onClick={actions.onEdit} />
+        <RowAction icon={IconFolder} label="打开目录" onClick={actions.onOpenFolder} />
         {!isService && (
           <RowAction
-            icon={Package}
+            icon={IconPackage}
             label="打开产物目录"
             onClick={actions.onOpenOutput}
             disabled={runtime.status !== 'succeeded' && !entry.outputDir}
             hint={runtime.status !== 'succeeded' && !entry.outputDir ? '任务成功后可用' : undefined}
           />
         )}
-        <RowAction icon={PushPin} label={entry.pinned ? '取消置顶' : '置顶'} onClick={actions.onTogglePin} active={entry.pinned} />
+
+        {/* 竖分隔线 */}
+        <div className="mx-0.5 h-4 w-px shrink-0 bg-line-strong/50" />
+
+        {/* 置顶 + 危险 */}
+        <RowAction icon={IconPushPin} label={entry.pinned ? '取消置顶' : '置顶'} onClick={actions.onTogglePin} active={entry.pinned} />
         <RowAction
-          icon={Trash}
+          icon={IconTrash}
           label="移除条目"
           onClick={actions.onRemove}
           disabled={live}
           hint={live ? '运行中不可移除，请先停止' : undefined}
+          danger
         />
       </div>
     </div>
@@ -184,21 +200,25 @@ function RowAction({
   disabled,
   hint,
   primary,
-  active
+  active,
+  danger
 }: {
-  icon: React.ComponentType<{ size?: number; weight?: 'bold' }>
+  icon: React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }>
   label: string
   onClick: () => void
   disabled?: boolean
   hint?: string
   primary?: boolean
   active?: boolean
+  danger?: boolean
 }): React.JSX.Element {
   const base = primary
     ? 'btn-primary'
     : active
-      ? 'border border-line-strong bg-raised text-ink-strong'
-      : 'border border-line-strong bg-card text-ink-muted hover:text-ink-strong disabled:cursor-not-allowed disabled:border-line disabled:text-ink-faint'
+      ? 'border border-accent/50 bg-accent/10 text-accent'
+      : danger
+        ? 'border border-line bg-card text-ink-faint hover:border-fault/40 hover:bg-fault/8 hover:text-fault disabled:cursor-not-allowed disabled:opacity-35'
+        : 'border border-line bg-card text-ink-muted hover:border-line-strong hover:text-ink-strong disabled:cursor-not-allowed disabled:opacity-35'
   return (
     <button
       type="button"
@@ -208,7 +228,7 @@ function RowAction({
       title={hint ?? label}
       className={`pressable flex h-7 w-7 items-center justify-center rounded-[6px] ${base}`}
     >
-      <IconCmp size={13} weight="bold" />
+      <IconCmp size={13} strokeWidth={1.7} />
     </button>
   )
 }

@@ -167,6 +167,50 @@ src/shared/     两侧共用的类型与 IPC 频道名
   - `:active` 必须写在 `:hover` **之后** —— 两者特异性相等，后写的才生效。
   - `prefers-reduced-motion` 的覆盖块要排在所有 `:active` 规则之后，且选择器长度一致（带上那两个 `:not()`）：媒体查询不加特异性，写短了盖不住。
 
+### 非线性动画（v1.6+）
+
+所有动画曲线从 `ease-out` 升级为精调 cubic-bezier，有两条核心曲线：
+
+| 用途 | 曲线 | 时长 |
+|------|------|------|
+| **回弹 / spring（弹起、slide-in）** | `cubic-bezier(0.34, 1.56, 0.64, 1)` | 200–400ms |
+| **标准缓出（颜色、边框、透明度）** | `cubic-bezier(0.25, 0.46, 0.45, 0.94)` | 150–200ms |
+| **按下瞬动（快速触感）** | `cubic-bezier(0.55, 0, 1, 0.45)` | 60ms |
+
+spring 曲线的 `y2 = 1.56` 超过 1，产生轻微过冲后落回终态，用于：
+- `.pressable` / `.btn-primary` 松手弹回
+- 卡片 hover lift（translateY + box-shadow）
+- `.segmented-item` 松手
+- tooltip / 指示线滑入
+- 分组 chevron 旋转
+
+**规则：**
+- 按下（`:active`）永远用快速曲线 60ms，松开（基态 `transition`）用 spring 200ms+
+- `transition-duration` 不要用 `transition-duration: 60ms` 简写覆盖——必须把所有属性显式列在 `:active` 的 `transition` 简写里，否则只有速度变快但曲线还是基态的 spring，感觉很诡异
+- 卡片 hover 用 400ms spring：时长要够长，弹性弧线才能走完；150ms 的 spring 弧线几乎看不出来
+
+### 高斯模糊（v1.6+）
+
+**只允许用于固定/粘性层（z-50 遮罩、命令面板、浮层）**，绝不用于滚动容器——滚动时 `backdrop-filter` 引发持续 GPU 重绘，低端机掉帧严重。
+
+`tokens.css` 提供两个工具类：
+
+| 类名 | 用途 | 参数 |
+|------|------|------|
+| `.scrim-frosted` | 全屏遮罩（命令面板背后的蒙版） | `blur(8px) saturate(160%)` |
+| `.surface-frosted` | 浮层容器（命令面板、弹窗卡片） | `blur(20px) saturate(180%)` |
+
+`.surface-frosted` 自带：
+- 深色：深藏青半透明底 + 顶部 1px 高光线 + 大投影（玻璃厚度感）
+- 浅色：近白半透明底 + 顶部高光 + 柔阴影
+- 边框颜色跟随 `--stroke-strong` 主题变量
+
+**命令面板专用入场动画类：**
+- `.cmd-scrim`：遮罩淡入 180ms
+- `.cmd-dialog`：对话框从上方 spring 落下 260ms（translateY(-10px) scale(0.97) → 原位）
+
+新增 `.tooltip-enter`（`slide-in-right` keyframe）和 `[animation:slide-in-right_220ms_...]`（NavRail 指示线）两种 spring 滑入用法，二者均有 `prefers-reduced-motion` 兜底（animation: none）。
+
 ---
 
 ## 环境

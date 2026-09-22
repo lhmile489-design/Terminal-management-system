@@ -275,7 +275,7 @@ export function EditEntryDialog({
             <button
               type="button"
               onClick={onStop}
-              className="pressable flex shrink-0 items-center gap-1.5 rounded-[6px] border border-warn/40 px-2.5 py-1 text-[12px] text-warn hover:bg-warn hover:text-on-accent"
+              className="pressable flex shrink-0 items-center gap-1.5 rounded-[6px] border border-warn/40 px-2.5 py-1 text-[12px] text-warn hover:bg-warn/15 hover:text-warn"
             >
               <Stop size={12} weight="fill" />
               停止服务

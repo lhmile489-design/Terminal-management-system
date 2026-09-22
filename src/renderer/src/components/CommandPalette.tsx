@@ -119,14 +119,14 @@ export function CommandPalette({
     <div
       role="presentation"
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
-      className="fixed inset-0 z-50 flex items-start justify-center bg-black/45 pt-[12vh]"
+      className="scrim-frosted cmd-scrim fixed inset-0 z-50 flex items-start justify-center pt-[12vh]"
     >
       <div
         role="dialog"
         aria-modal="true"
         aria-label="命令面板"
         onKeyDown={onKeyDown}
-        className="flex max-h-[64vh] w-[560px] max-w-[calc(100vw-48px)] flex-col overflow-hidden rounded-[12px] border border-line-strong bg-panel"
+        className="cmd-dialog surface-frosted flex max-h-[64vh] w-[560px] max-w-[calc(100vw-48px)] flex-col overflow-hidden rounded-[14px]"
       >
         <div className="flex shrink-0 items-center gap-2.5 border-b border-line px-3.5 py-3">
           <MagnifyingGlass size={15} weight="bold" className="shrink-0 text-ink-faint" aria-hidden />

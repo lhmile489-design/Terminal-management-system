@@ -127,8 +127,8 @@ export function Dashboard({
           Overview
         </h2>
         <div className="kpi-grid">
-          {cards.map((card) => (
-            <KpiCard key={card.label} {...card} />
+          {cards.map((card, i) => (
+            <KpiCard key={card.label} {...card} index={i} />
           ))}
         </div>
       </section>
@@ -164,7 +164,8 @@ export function Dashboard({
             <CaretRight
               size={9}
               weight="bold"
-              style={{ transform: showBackground ? 'rotate(90deg)' : undefined }}
+              className="transition-transform duration-300 [transition-timing-function:cubic-bezier(0.34,1.56,0.64,1)]"
+              style={{ transform: showBackground ? 'rotate(90deg)' : 'rotate(0deg)' }}
             />
             {background.length}
           </button>

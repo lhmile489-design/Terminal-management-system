@@ -217,7 +217,7 @@ export interface Settings {
 }
 
 /** 当前配置结构版本。加字段就要加迁移，见 ConfigStore.migrate */
-export const CONFIG_VERSION = 8
+export const CONFIG_VERSION = 9
 
 /** 用户手动改过分组的进程，PRD §5.2。按进程名而非 PID —— PID 每次重启都换 */
 export interface GroupOverride {
@@ -225,9 +225,46 @@ export interface GroupOverride {
   group: ListenerGroup
 }
 
+// ── 工作组，PRD-WORKGROUPS §2 ─────────────────────────────────────────────────
+
+/**
+ * 工作组运行环境。决定 Java 启动时的提示级别与默认 profile 高亮。
+ * - dev：无提示，正常启动
+ * - sandbox：黄色警示横幅，用户确认后启动
+ * - prod：红色强提示横幅，强调影响真实业务
+ */
+export type GroupEnvironment = 'dev' | 'sandbox' | 'prod'
+
+export const GROUP_ENV_LABEL: Record<GroupEnvironment, string> = {
+  dev: '开发',
+  sandbox: '沙箱',
+  prod: '生产'
+}
+
+/** 用户定义的项目工作组。条目通过 LaunchEntry.groupId 关联。*/
+export interface ProjectGroup {
+  /** UUID，主进程生成 */
+  id: string
+  /** 显示名称，最长 40 字 */
+  name: string
+  /** 可选描述，最长 120 字 */
+  description?: string
+  /** 当前激活环境；新建时默认 'dev' */
+  env: GroupEnvironment
+  createdAt: number
+  order: number
+}
+
+export type NewProjectGroup = Omit<ProjectGroup, 'id' | 'createdAt' | 'order' | 'env'> &
+  Partial<Pick<ProjectGroup, 'env' | 'description'>>
+
+export type GroupPatch = Partial<Pick<ProjectGroup, 'name' | 'description' | 'env' | 'order'>>
+
 export interface AppConfig {
   version: number
   entries: LaunchEntry[]
+  /** 用户创建的项目工作组，v9 起；旧版迁移时初始化为 [] */
+  groups: ProjectGroup[]
   ignoredListeners: { processName: string; port: number }[]
   /** 手动提升到「我的服务」或移回后台的进程名，v2 起 */
   groupOverrides: GroupOverride[]
@@ -411,6 +448,11 @@ export interface LaunchEntry {
   createdAt: number
   lastStartedAt?: number
   lastExitCode?: number
+  /**
+   * 所属工作组 ID，由 group:assignEntries 或 entry:edit 写入。
+   * 未设置表示该条目不属于任何工作组（仍可在「全部」视图下操作）。
+   */
+  groupId?: string
 }
 
 /** 新建条目时的入参，id/order/createdAt 由主进程生成 */
@@ -456,13 +498,20 @@ export type PrecheckFixAction =
   | 'createInstallSession'
   | 'showNodeRequirement'
   | 'resolvePort'
+  /** 将条目的 expectedPort 切换到主进程扫描出的空闲端口 */
+  | 'switchPort'
 
 export interface PrecheckItem {
   id: string
   label: string
   level: PrecheckLevel
   detail?: string
-  fix?: { action: PrecheckFixAction; label: string }
+  fix?: {
+    action: PrecheckFixAction
+    label: string
+    /** switchPort 动作时主进程预扫描的候选空闲端口 */
+    suggestedPort?: number
+  }
 }
 
 export interface PrecheckResult {
@@ -493,6 +542,7 @@ export type EntryStatus =
 export type EditableEntryField =
   | 'name'
   | 'category'
+  | 'groupId'
   | 'pinned'
   | 'kind'
   | 'path'
@@ -518,7 +568,7 @@ export type EditableEntryField =
 export type EntryEdit = Partial<
   Omit<
     Pick<LaunchEntry, EditableEntryField>,
-    'expectedPort' | 'outputDir' | 'icon' | 'imageId' | 'category' | 'launchMode' | 'jarPath'
+    'expectedPort' | 'outputDir' | 'icon' | 'imageId' | 'category' | 'groupId' | 'launchMode' | 'jarPath'
   >
 > & {
   expectedPort?: number | null
@@ -533,6 +583,8 @@ export type EntryEdit = Partial<
   imageId?: null
   /** null explicitly clears the category and returns the entry to the unclassified panel. */
   category?: string | null
+  /** null 显式清空工作组归属，将条目移出工作组。 */
+  groupId?: string | null
   /** null 显式清空启动方式。 */
   launchMode?: LaunchMode | null
   /** null 显式清空可执行产物/入口路径。 */
@@ -551,6 +603,12 @@ export interface EntryRuntime {
   startedAt?: number
   exitCode?: number
   precheck?: PrecheckResult
+  /**
+   * 最近一次 packageWithProfile 成功后扫描到的 jar 相对路径（相对项目根）。
+   * 渲染层据此展示"打包完成"操作横幅；下一次 build 开始时清空。
+   * 不持久化，key={entry.id} 切换条目时自动丢弃。
+   */
+  lastBuiltJar?: string
 }
 
 export interface EntryStartResult {

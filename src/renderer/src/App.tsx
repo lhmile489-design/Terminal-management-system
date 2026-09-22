@@ -19,6 +19,7 @@ import type { EntryKind } from '@shared/types'
 import { useScanner } from './store/scanner'
 import { useEntries } from './store/entries'
 import { useSettings } from './store/settings'
+import { useGroups } from './store/groups'
 import { STATUS_META } from './lib/entryMeta'
 
 const TITLES: Record<
@@ -101,17 +102,21 @@ export function App(): React.JSX.Element {
   const runScript = useEntries((s) => s.runScript)
   const initSettings = useSettings((s) => s.init)
   const setSettings = useSettings((s) => s.set)
+  const initGroups = useGroups((s) => s.init)
+  const setGroups = useGroups((s) => s.setGroups)
 
   useEffect(() => {
     void refresh()
     void initScanner()
     void initEntries()
     void initSettings()
-  }, [refresh, initScanner, initEntries, initSettings])
+    void initGroups()
+  }, [refresh, initScanner, initEntries, initSettings, initGroups])
 
   useEffect(() => window.mile.scanner.onDiff(applyDiff), [applyDiff])
   useEffect(() => window.mile.entry.onChange(setEntries), [setEntries])
   useEffect(() => window.mile.settings.onChange(setSettings), [setSettings])
+  useEffect(() => window.mile.group.onChange(setGroups), [setGroups])
 
   const pushEvent = useCallback((level: ActivityEvent['level'], text: string) => {
     setEvents((prev) =>
@@ -234,49 +239,58 @@ export function App(): React.JSX.Element {
       <div className="flex min-h-0 flex-1">
         <NavRail active={view} onChange={setView} />
 
-        <main className="flex min-w-0 flex-1 flex-col overflow-y-auto px-6 py-5">
-          <ViewHeader
-            eyebrow={meta.eyebrow}
-            title={meta.title}
-            romanized={meta.romanized}
-            caption={meta.caption}
-            actions={
-              <>
-                <PaletteHint onOpen={() => setPaletteOpen(true)} />
-                <QuickActions view={view} onAdd={setPaletteAdd} />
-              </>
-            }
-          />
+        <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
+          {/* ─── 固定顶栏 ─── */}
+          <div className="shrink-0 border-b border-line bg-panel px-6 py-3">
+            {/* key=view 让标题在切视图时触发 header-enter 重播 */}
+            <div key={view} className="header-enter">
+              <ViewHeader
+                eyebrow={meta.eyebrow}
+                title={meta.title}
+                romanized={meta.romanized}
+                caption={meta.caption}
+                actions={
+                  <>
+                    <PaletteHint onOpen={() => setPaletteOpen(true)} />
+                    <QuickActions view={view} onAdd={setPaletteAdd} />
+                  </>
+                }
+              />
+            </div>
+          </div>
 
-          {view === 'dashboard' && (
-            <Dashboard
-              onRequestAdd={requestAdd}
-              highlightPort={highlightPort}
-              onHighlightConsumed={() => setHighlightPort(null)}
-            />
-          )}
-          {view === 'launchpad' && (
-            <Launchpad
-              onOpenLogs={openLogs}
-              pendingAdd={pendingAdd}
-              onPendingConsumed={() => setPendingAdd(null)}
-              pendingKind={paletteAdd}
-              onPendingKindConsumed={() => setPaletteAdd(null)}
-            />
-          )}
-          {view === 'backend' && <BackendConsole />}
-          {view === 'terminal' && <TerminalWorkspace />}
-          {view === 'logs' && <LogCenter />}
-          {view === 'diagnose' && (
-            <Diagnose
-              selectedId={diagnoseId}
-              onSelect={setDiagnoseId}
-              onFix={runFix}
-              refreshKey={fixNonce}
-            />
-          )}
-          {view === 'settings' && <Settings />}
-          {view === 'about' && <About />}
+          {/* ─── 滚动内容区：key=view 切换时触发 view-enter 重播 ─── */}
+          <div key={view} className="view-enter flex-1 overflow-y-auto px-6 py-5">
+            {view === 'dashboard' && (
+              <Dashboard
+                onRequestAdd={requestAdd}
+                highlightPort={highlightPort}
+                onHighlightConsumed={() => setHighlightPort(null)}
+              />
+            )}
+            {view === 'launchpad' && (
+              <Launchpad
+                onOpenLogs={openLogs}
+                pendingAdd={pendingAdd}
+                onPendingConsumed={() => setPendingAdd(null)}
+                pendingKind={paletteAdd}
+                onPendingKindConsumed={() => setPaletteAdd(null)}
+              />
+            )}
+            {view === 'backend' && <BackendConsole />}
+            {view === 'terminal' && <TerminalWorkspace />}
+            {view === 'logs' && <LogCenter />}
+            {view === 'diagnose' && (
+              <Diagnose
+                selectedId={diagnoseId}
+                onSelect={setDiagnoseId}
+                onFix={runFix}
+                refreshKey={fixNonce}
+              />
+            )}
+            {view === 'settings' && <Settings />}
+            {view === 'about' && <About />}
+          </div>
         </main>
 
         <ActivitySidebar events={events} onClear={clearEvents} />

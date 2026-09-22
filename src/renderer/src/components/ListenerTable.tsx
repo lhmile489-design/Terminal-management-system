@@ -120,7 +120,7 @@ function PortChip({ port }: { port: number }): React.JSX.Element {
       type="button"
       title={`在浏览器打开 http://localhost:${port}`}
       onClick={() => window.mile.shell.openLocalhost(port)}
-      className="pressable rounded-[4px] border border-line-strong px-1.5 font-mono text-[11px] font-bold text-accent hover:bg-accent hover:text-on-accent"
+      className="pressable rounded-[4px] border border-line-strong px-1.5 font-mono text-[11px] font-bold text-accent hover:bg-accent/15 hover:text-accent"
     >
       {port}
     </button>
