@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo } from 'react'
 import { Plus, Pencil, Trash, FolderSimple, Users, Warning, CheckCircle } from '@phosphor-icons/react'
+import { useShallow } from 'zustand/react/shallow'
 import type { GroupEnvironment, LaunchEntry, ProjectGroup } from '@shared/types'
 import { GROUP_ENV_LABEL } from '@shared/types'
 import { useGroups } from '../store/groups'
@@ -155,7 +156,7 @@ interface AssignDialogProps {
 }
 
 export function AssignGroupDialog({ group, entries, onClose }: AssignDialogProps): React.JSX.Element {
-  const { patch: patchEntry } = useEntries((s) => ({ patch: s.edit }))
+  const patchEntry = useEntries((s) => s.edit)
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
 
@@ -255,9 +256,9 @@ interface GroupPanelProps {
 }
 
 export function GroupsPanel({ actionsFor }: GroupPanelProps): React.JSX.Element {
-  const { groups, add, patch, remove } = useGroups((s) => ({
-    groups: s.groups, add: s.add, patch: s.patch, remove: s.remove
-  }))
+  const { groups, add, patch, remove } = useGroups(
+    useShallow((s) => ({ groups: s.groups, add: s.add, patch: s.patch, remove: s.remove }))
+  )
   const entries = useEntries((s) => s.entries)
   const runtimes = useEntries((s) => s.runtimes)
   const busy = useEntries((s) => s.busy)
