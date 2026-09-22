@@ -347,7 +347,7 @@ export function Launchpad({
               type="button"
               aria-selected={launchpadMode === 'all'}
               onClick={() => setLaunchpadMode('all')}
-              className={`segmented-item px-3 py-1 text-[12px] ${launchpadMode === 'all' ? 'active' : ''}`}
+              className="segmented-item px-3 py-1 text-[12px]"
             >
               全部
             </button>
@@ -356,7 +356,7 @@ export function Launchpad({
               type="button"
               aria-selected={launchpadMode === 'groups'}
               onClick={() => setLaunchpadMode('groups')}
-              className={`segmented-item px-3 py-1 text-[12px] ${launchpadMode === 'groups' ? 'active' : ''}`}
+              className="segmented-item px-3 py-1 text-[12px]"
             >
               工作组
             </button>

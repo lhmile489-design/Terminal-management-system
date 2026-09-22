@@ -53,7 +53,8 @@ export const useGroups = create<GroupsStore>((set, get) => ({
   },
 
   reorder: async (ids) => {
-    // 先本地重排，再以主进程推送为准
+    // 先快照旧顺序，以便 IPC 失败时回滚
+    const prev = get().groups
     set((s) => {
       const rank = new Map(ids.map((id, i) => [id, i]))
       return {
@@ -62,6 +63,12 @@ export const useGroups = create<GroupsStore>((set, get) => ({
         )
       }
     })
-    await window.mile.group.reorder(ids)
+    try {
+      await window.mile.group.reorder(ids)
+    } catch (err) {
+      // IPC 失败：回滚到操作前的顺序，主进程未持久化所以无需追平
+      set({ groups: prev })
+      throw err
+    }
   }
 }))
