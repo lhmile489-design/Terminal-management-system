@@ -7,16 +7,18 @@ import {
   Gear,
   BookOpen,
   TreeStructure,
+  Folders,
   type Icon
 } from '@phosphor-icons/react'
 import { ThemeToggle } from './ThemeToggle'
 
-export type ViewId = 'dashboard' | 'launchpad' | 'backend' | 'terminal' | 'logs' | 'diagnose' | 'settings' | 'about'
+export type ViewId = 'dashboard' | 'launchpad' | 'backend' | 'workgroups' | 'terminal' | 'logs' | 'diagnose' | 'settings' | 'about'
 
 const NAV: { id: ViewId; label: string; icon: Icon }[] = [
   { id: 'dashboard', label: '工作台', icon: Gauge },
   { id: 'launchpad', label: '前端启动台', icon: Rocket },
   { id: 'backend', label: '后端控制台', icon: TreeStructure },
+  { id: 'workgroups', label: '工作组', icon: Folders },
   { id: 'terminal', label: '终端', icon: Terminal },
   { id: 'logs', label: '日志', icon: ListMagnifyingGlass },
   { id: 'diagnose', label: '诊断', icon: Stethoscope }

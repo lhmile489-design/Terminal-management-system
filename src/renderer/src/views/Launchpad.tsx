@@ -13,7 +13,6 @@ import { AddEntryDialog } from '../components/AddEntryDialog'
 import { EditEntryDialog } from '../components/EditEntryDialog'
 import { PrecheckPanel } from '../components/PrecheckPanel'
 import { LaunchpadTerminalPanel } from '../components/LaunchpadTerminalPanel'
-import { GroupsPanel } from '../components/GroupsPanel'
 import {
   IconChevronDown,
   IconCommand,
@@ -42,8 +41,6 @@ import type { ServiceFilter, TaskFilter, TechStack } from '../lib/entryMeta'
 /** 展示形态，PRD §9.x。持久化到 localStorage，下次打开沿用 */
 type ViewMode = 'card' | 'list'
 const VIEW_MODE_KEY = 'mile.launchpad.viewMode'
-/** 启动台主模式：全部 | 工作组 */
-type LaunchpadMode = 'all' | 'groups'
 /** 技术栈 tab 选中值：'all' 或某个大类 */
 type StackFilter = 'all' | TechStack
 
@@ -121,7 +118,6 @@ export function Launchpad({
   const [taskFilter, setTaskFilter] = useState<TaskFilter>('all')
   const [stackFilter, setStackFilter] = useState<StackFilter>('all')
   const [viewMode, setViewMode] = useState<ViewMode>(readViewMode)
-  const [launchpadMode, setLaunchpadMode] = useState<LaunchpadMode>('all')
   /** 底部嵌入终端面板当前 pin 的条目 id，null 表示面板收起 */
   const [pinnedEntryId, setPinnedEntryId] = useState<string | null>(null)
 
@@ -338,41 +334,8 @@ export function Launchpad({
         </div>
       )}
 
-      {/* 模式切换：全部 / 工作组 */}
-      {entries.length > 0 && (
-        <div className="flex items-center gap-1 border-b border-line pb-2.5">
-          <div role="tablist" className="segmented flex items-center">
-            <button
-              role="tab"
-              type="button"
-              aria-selected={launchpadMode === 'all'}
-              onClick={() => setLaunchpadMode('all')}
-              className="segmented-item px-3 py-1 text-[12px]"
-            >
-              全部
-            </button>
-            <button
-              role="tab"
-              type="button"
-              aria-selected={launchpadMode === 'groups'}
-              onClick={() => setLaunchpadMode('groups')}
-              className="segmented-item px-3 py-1 text-[12px]"
-            >
-              工作组
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ── 工作组模式 ── */}
-      {launchpadMode === 'groups' && (
-        <GroupsPanel actionsFor={actionsFor} />
-      )}
-
-      {/* ── 全部模式 ── */}
-      {launchpadMode === 'all' && (
-        <>
-        {entries.length === 0 ? (
+      {/* ── 全部 ── */}
+      {entries.length === 0 ? (
           <div className="flex flex-col items-center gap-6 py-16">
           {/* 主图标 */}
           <div className="flex h-14 w-14 items-center justify-center rounded-[14px] border-2 border-dashed border-line-strong/60">
@@ -480,9 +443,6 @@ export function Launchpad({
               />
             ))
           )}
-        </>
-      )}
-
         </>
       )}
 

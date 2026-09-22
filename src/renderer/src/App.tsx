@@ -7,6 +7,7 @@ import { ActivitySidebar, type ActivityEvent } from './components/ActivitySideba
 import { Dashboard } from './views/Dashboard'
 import { Launchpad } from './views/Launchpad'
 import { BackendConsole } from './views/BackendConsole'
+import { Workgroups } from './views/Workgroups'
 import { Diagnose } from './views/Diagnose'
 import { TerminalWorkspace } from './views/TerminalWorkspace'
 import { LogCenter } from './views/LogCenter'
@@ -43,6 +44,12 @@ const TITLES: Record<
     title: '后端控制台',
     romanized: 'BACKEND',
     caption: 'Spring Boot 项目管理：启停服务、Maven/Gradle 构建操作'
+  },
+  workgroups: {
+    eyebrow: 'Workgroups',
+    title: '工作组',
+    romanized: 'WORKGROUPS',
+    caption: '按项目组合管理前端与后端服务，统一环境控制'
   },
   terminal: {
     eyebrow: 'Terminal',
@@ -278,6 +285,9 @@ export function App(): React.JSX.Element {
               />
             )}
             {view === 'backend' && <BackendConsole />}
+            {view === 'workgroups' && (
+              <Workgroups onOpenLogs={openLogs} />
+            )}
             {view === 'terminal' && <TerminalWorkspace />}
             {view === 'logs' && <LogCenter />}
             {view === 'diagnose' && (
