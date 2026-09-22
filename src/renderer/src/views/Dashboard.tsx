@@ -12,6 +12,7 @@ import { KpiCard, type KpiCardProps } from '../components/KpiCard'
 import { ListenerTable } from '../components/ListenerTable'
 import { DiscoveredListeners } from '../components/DiscoveredListeners'
 import { WatchedProcesses } from '../components/WatchedProcesses'
+import { MyServicesPanel } from '../components/MyServicesPanel'
 import { useScanner } from '../store/scanner'
 import { useEntries } from '../store/entries'
 import { isLiveStatus } from '../lib/entryMeta'
@@ -20,12 +21,15 @@ import { formatClock, formatPercent } from '../lib/format'
 export function Dashboard({
   onRequestAdd,
   highlightPort,
-  onHighlightConsumed
+  onHighlightConsumed,
+  onOpenLogs
 }: {
   onRequestAdd: (path: string, name: string) => void
   /** 命令面板定位过来的端口，滚动到对应行并短暂高亮 */
   highlightPort?: number | null
   onHighlightConsumed?: () => void
+  /** 打开终端/日志视图 */
+  onOpenLogs?: (sessionId: string) => void
 }): React.JSX.Element {
   const listeners = useScanner((s) => s.listeners)
   const system = useScanner((s) => s.system)
@@ -134,6 +138,9 @@ export function Dashboard({
       </section>
 
       <DiscoveredListeners onRequestAdd={onRequestAdd} />
+
+      {/* 服务操作台：启动台条目，支持快速启停与强制关闭 */}
+      <MyServicesPanel onOpenLogs={onOpenLogs ?? (() => {})} />
 
       <section aria-labelledby="listeners-heading">
         <h2 id="listeners-heading" className="eyebrow mb-2.5">

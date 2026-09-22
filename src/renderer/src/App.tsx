@@ -273,6 +273,7 @@ export function App(): React.JSX.Element {
                 onRequestAdd={requestAdd}
                 highlightPort={highlightPort}
                 onHighlightConsumed={() => setHighlightPort(null)}
+                onOpenLogs={openLogs}
               />
             )}
             {view === 'launchpad' && (
