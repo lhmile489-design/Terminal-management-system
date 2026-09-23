@@ -68,7 +68,11 @@ export class OwnershipService {
       // 父链上溯可能撞到 PID 复用：登记时刻晚于目标进程启动时刻则不可能是其祖先
       if (hit) {
         const row = table.byPid.get(pid)
-        if (!row?.startedAt || row.startedAt >= hit.startedAt - 60_000) return hit
+        // 读不到目标进程的启动时间时，无法排除 PID 复用的可能性。
+        // 按「宁可不停也不误杀」的安全取向，此时保守地拒绝归属（返回 null），
+        // 而不是「读不到就信任」—— 后者会在 WMI 暂时失效时开放误杀窗口。
+        if (!row?.startedAt) return null
+        if (row.startedAt >= hit.startedAt - 60_000) return hit
         return null
       }
       const row = table.byPid.get(cursor)

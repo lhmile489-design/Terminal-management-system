@@ -1703,8 +1703,12 @@ function capturePort(chunk: string): number | null {
   return null
 }
 
-/** Vite 的 Local: 行带颜色码，不剥掉会打断端口正则 */
-const ANSI = /\[[0-9;?]*[a-zA-Z]/g
+/**
+ * 剥掉 ANSI 控制序列，让端口正则不被颜色码或光标定位干扰。
+ * 覆盖 CSI（颜色/光标）与 OSC（窗口标题）两类，与 LogService 保持一致。
+ * 其余单字节 ESC 序列（=、>、M 等）极少出现在端口行里，残留  不会命中端口正则。
+ */
+const ANSI = /\x1b\[[0-9;?]*[ -\/]*[@-~]|\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)/g
 
 function stripAnsi(text: string): string {
   return text.replace(ANSI, '')

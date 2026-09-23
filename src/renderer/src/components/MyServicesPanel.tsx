@@ -85,8 +85,8 @@ function ServiceRow({
         />
       </div>
 
-      {/* 操作按钮区 */}
-      <div className="shrink-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150 [transition-timing-function:cubic-bezier(0.25,0.46,0.45,0.94)]">
+      {/* 操作按钮区：hover 或键盘聚焦时可见，保证键盘用户也能操作 */}
+      <div className="shrink-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-150 [transition-timing-function:cubic-bezier(0.25,0.46,0.45,0.94)]">
         {/* 日志按钮：有 sessionId 才可用 */}
         {runtime.sessionId && (
           <ActionBtn
@@ -128,7 +128,11 @@ function ServiceRow({
         )}
       </div>
 
-      {/* 强制关闭：始终可见（当可用时），红色警示 */}
+      {/* 强制关闭：始终可见（当可用时），红色警示。
+          调用路径与普通停止相同（stop()→\x03→3s 后 taskkill），
+          区别在于：普通停止按钮在进程卡住（isBusy）时隐藏，强制关闭始终显示，
+          给用户一个"我知道后果，立刻停"的明确入口。
+          安全校验（归属三重验证）由主进程 OwnershipService 保证，此处不跳过。 */}
       {canForceStop && (
         <button
           type="button"
