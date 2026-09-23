@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
-import type { LaunchEntry, PrecheckResult } from '@shared/types'
+import type { LaunchEntry } from '@shared/types'
 import type { EntryCardActions } from '../components/EntryCard'
 import { GroupsPanel } from '../components/GroupsPanel'
 import { EditEntryDialog } from '../components/EditEntryDialog'
@@ -29,15 +29,10 @@ export function Workgroups({ onOpenLogs }: WorkgroupsProps): React.JSX.Element {
   const error = useEntries((s) => s.error)
 
   const [editing, setEditing] = useState<string | null>(null)
-  const [, setFocus] = useState<{ entryId: string; precheck: PrecheckResult } | null>(null)
 
-  const afterFix = useCallback(async (entryId: string) => {
-    try {
-      setFocus({ entryId, precheck: await window.mile.entry.precheck(entryId) })
-    } catch {
-      setFocus(null)
-    }
-  }, [])
+  // useEntryFix 修复完成后不需要在本视图展示 precheck 结果；
+  // 若将来需要展示，在此处补 useState<PrecheckResult> 并绑定 UI。
+  const afterFix = useCallback((_entryId: string) => { /* 修复完成，无额外操作 */ }, [])
 
   const { dialogs } = useEntryFix((id) => void afterFix(id))
 
@@ -59,10 +54,10 @@ export function Workgroups({ onOpenLogs }: WorkgroupsProps): React.JSX.Element {
     onPin: () => {
       // 工作组视图内 pin 操作：选中该条目作为终端预览目标（GroupsPanel 内部处理）
     },
-    onDiagnose: () =>
-      void window.mile.entry
-        .precheck(entry.id)
-        .then((precheck) => setFocus({ entryId: entry.id, precheck })),
+    onDiagnose: () => {
+      // 工作组视图暂不展示 precheck 详情弹窗，诊断请前往「诊断」视图
+      void window.mile.entry.precheck(entry.id)
+    },
     onEdit: () => {
       clearError()
       setEditing(entry.id)

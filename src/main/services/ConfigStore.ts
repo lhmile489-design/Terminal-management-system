@@ -123,11 +123,13 @@ export class ConfigStore {
     // v6 -> v7：LaunchEntry 新增可选的 launchMode / jarPath（仅 Spring Boot 用）。
     // 老条目本就不该有这两个字段，保持 undefined 即可，无需回填 —— 这一步只把
     // 版本号推进到 7，好让下次需要区分新旧结构时有依据。
+    // （无数据迁移操作，`void from` 仅消除 TypeScript「变量已声明但从未读取」的 lint 警告）
     void from
 
     // v7 -> v8：LaunchEntry 新增可选的 imageId（自定义图片文件名，服务与任务均可用）。
     // 老条目无此字段，保持 undefined 即可 —— 图片是纯展示增强，缺省时回退 icon/favicon/字标。
     // 仅推进版本号，不回填。（imageId 只由主进程 setImage 写入，迁移不构造它。）
+    // （无数据迁移操作，同上）
     void from
 
     // v8 -> v9：AppConfig 新增 groups 字段（工作组列表）；LaunchEntry 新增可选 groupId。

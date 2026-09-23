@@ -184,6 +184,8 @@ export function App(): React.JSX.Element {
 
   // Ctrl+K 全局唤起命令面板，PRD §9.5。用 capture 抢在终端 xterm 之前，
   // 否则焦点在终端里时按键会被当成输入吞掉。
+  // ⚠️ 扩展注意：向此 handler 添加新快捷键时，应避免与 xterm 默认快捷键冲突
+  // （Ctrl+C/D/Z/L/R 等）。若必须覆盖，需先检查焦点是否在终端内并决定是否 preventDefault。
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       if (e.ctrlKey && !e.altKey && (e.key === 'k' || e.key === 'K')) {
