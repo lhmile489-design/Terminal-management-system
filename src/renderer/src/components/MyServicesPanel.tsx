@@ -28,6 +28,7 @@ interface ServiceRowProps {
   busy: boolean
   onStart: () => void
   onStop: () => void
+  onRestart: () => void
   onForceStop: () => void
   onLogs: () => void
 }
@@ -38,6 +39,7 @@ function ServiceRow({
   busy,
   onStart,
   onStop,
+  onRestart,
   onForceStop,
   onLogs
 }: ServiceRowProps): React.JSX.Element {
@@ -120,7 +122,7 @@ function ServiceRow({
           <ActionBtn
             icon={ArrowClockwise}
             label="重启"
-            onClick={onStop}
+            onClick={onRestart}
             tone="neutral"
           />
         )}
@@ -192,11 +194,13 @@ export function MyServicesPanel({
   const busy = useEntries((s) => s.busy)
   const start = useEntries((s) => s.start)
   const stop = useEntries((s) => s.stop)
+  const restart = useEntries((s) => s.restart)
 
   const [collapsed, setCollapsed] = useState(false)
 
   const handleStart = useCallback((id: string) => { void start(id) }, [start])
   const handleStop = useCallback((id: string) => { void stop(id) }, [stop])
+  const handleRestart = useCallback((id: string) => { void restart(id) }, [restart])
 
   if (entries.length === 0) return null
 
@@ -269,6 +273,7 @@ export function MyServicesPanel({
                   busy={isBusy}
                   onStart={() => handleStart(entry.id)}
                   onStop={() => handleStop(entry.id)}
+                  onRestart={() => handleRestart(entry.id)}
                   onForceStop={() => handleStop(entry.id)}
                   onLogs={() => {
                     if (runtime.sessionId) onOpenLogs(runtime.sessionId)
