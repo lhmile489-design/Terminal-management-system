@@ -361,6 +361,16 @@ function TaskRunButton({
     return () => document.removeEventListener('keydown', onKey)
   }, [open])
 
+  // 页面滚动时关闭：菜单用 fixed 定位，坐标打开时计算一次，
+  // 滚动后触发按钮已经移走，菜单会悬在错误位置，直接关掉最干净。
+  useEffect(() => {
+    if (!open) return
+    const close = (): void => setOpen(false)
+    // capture: true 确保能捕到滚动容器的 scroll 事件（scroll 不冒泡）
+    window.addEventListener('scroll', close, { capture: true, passive: true })
+    return () => window.removeEventListener('scroll', close, true)
+  }, [open])
+
   const handleToggle = (): void => {
     if (!caretBtnRef.current) return
     const rect = caretBtnRef.current.getBoundingClientRect()
