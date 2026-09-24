@@ -374,14 +374,20 @@ function TaskRunButton({
   const handleToggle = (): void => {
     if (!caretBtnRef.current) return
     const rect = caretBtnRef.current.getBoundingClientRect()
-    // 菜单左对齐到分裂按钮组的左边缘（wrapRef）
     const wrapRect = wrapRef.current?.getBoundingClientRect() ?? rect
-    setMenuStyle({
-      position: 'fixed',
-      top: rect.bottom + 6,
-      left: wrapRect.left,
-      zIndex: 9999
-    })
+    const viewportH = window.innerHeight
+    const MENU_MAX_H = 280
+    const GAP = 6
+
+    // 下方空间不足时向上弹出
+    const spaceBelow = viewportH - rect.bottom - GAP
+    const spaceAbove = rect.top - GAP
+    const openUpward = spaceBelow < MENU_MAX_H && spaceAbove > spaceBelow
+
+    setMenuStyle(openUpward
+      ? { position: 'fixed', bottom: viewportH - rect.top + GAP, left: wrapRect.left, zIndex: 9999 }
+      : { position: 'fixed', top: rect.bottom + GAP, left: wrapRect.left, zIndex: 9999 }
+    )
     setOpen((v) => !v)
   }
 
@@ -436,7 +442,7 @@ function TaskRunButton({
           role="menu"
           aria-label="选择脚本"
           style={menuStyle}
-          className="min-w-[11rem] max-w-[22rem] overflow-hidden rounded-[8px] border border-line bg-card shadow-[0_4px_20px_rgba(0,0,0,0.22)]"
+          className="min-w-[11rem] max-w-[22rem] max-h-[280px] overflow-y-auto rounded-[8px] border border-line bg-card shadow-[0_4px_20px_rgba(0,0,0,0.22)]"
         >
           {scriptNames.map((name) => {
             const cmd = entry.scripts[name] ?? ''
