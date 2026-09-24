@@ -674,14 +674,10 @@ section[aria-labelledby='kpi-heading'] {
 
 /*
   卡片左侧状态色条（::before 伪元素）。
-  surface-card 已有 position: relative（来自 border-radius 计算），
-  这里追加 overflow-hidden 让色条不超出圆角。
-  注意：不用 overflow: clip，clip 会裁掉 box-shadow，改用 hidden。
+  surface-card 有 position: relative（来自 border-radius 计算）。
+  色条两端用 border-radius 跟随卡片圆角，不再依赖 overflow: hidden ——
+  overflow: hidden 会裁剪绝对定位的浮层（如下拉菜单），导致菜单被遮住。
 */
-.surface-card {
-  overflow: hidden;
-}
-
 .surface-card::before {
   content: '';
   position: absolute;
@@ -691,6 +687,7 @@ section[aria-labelledby='kpi-heading'] {
   width: 3px;
   background: var(--glow, transparent);
   opacity: 0;
+  border-radius: 12px 0 0 12px;
   transition: opacity 200ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
