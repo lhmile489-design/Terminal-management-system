@@ -1,5 +1,6 @@
 import type { EntryRuntime, LaunchEntry } from '@shared/types'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import {
   FRAMEWORK_LABEL,
   STATUS_META,
@@ -333,17 +334,45 @@ function TaskRunButton({
   onRunScript?: (script: string) => void
 }): React.JSX.Element {
   const [open, setOpen] = useState(false)
+  const [menuStyle, setMenuStyle] = useState<React.CSSProperties>({})
   const wrapRef = useRef<HTMLDivElement>(null)
+  const caretBtnRef = useRef<HTMLButtonElement>(null)
 
   const scriptNames = Object.keys(entry.scripts)
   const hasManyScripts = !entry.registerOnly && scriptNames.length > 1 && !!onRunScript
 
-  const handleBlur = (): void => {
-    requestAnimationFrame(() => {
-      if (wrapRef.current && !wrapRef.current.contains(document.activeElement)) {
+  // 点击菜单外部时关闭
+  useEffect(() => {
+    if (!open) return
+    const onPointerDown = (e: PointerEvent): void => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
         setOpen(false)
       }
+    }
+    document.addEventListener('pointerdown', onPointerDown, true)
+    return () => document.removeEventListener('pointerdown', onPointerDown, true)
+  }, [open])
+
+  // Escape 关闭
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent): void => { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [open])
+
+  const handleToggle = (): void => {
+    if (!caretBtnRef.current) return
+    const rect = caretBtnRef.current.getBoundingClientRect()
+    // 菜单左对齐到分裂按钮组的左边缘（wrapRef）
+    const wrapRect = wrapRef.current?.getBoundingClientRect() ?? rect
+    setMenuStyle({
+      position: 'fixed',
+      top: rect.bottom + 6,
+      left: wrapRect.left,
+      zIndex: 9999
     })
+    setOpen((v) => !v)
   }
 
   if (!hasManyScripts) {
@@ -360,7 +389,7 @@ function TaskRunButton({
   }
 
   return (
-    <div ref={wrapRef} className="relative flex" onBlur={handleBlur}>
+    <div ref={wrapRef} className="relative flex">
       {/* 左半：主运行操作。用 btn-primary 类而非硬编码 bg-ink-strong，
           深色模式下自动切换为蓝灰底+柔蓝白字，避免同色灰底灰字。
           border-r 用 btn-primary-border 颜色的半透明变体作分隔。 */}
@@ -376,12 +405,13 @@ function TaskRunButton({
       </button>
       {/* 右半：下拉选脚本。同一套 btn-primary 颜色，圆角只在右侧 */}
       <button
+        ref={caretBtnRef}
         type="button"
         disabled={busy}
         aria-label="选择要运行的脚本"
         aria-expanded={open}
         aria-haspopup="menu"
-        onClick={() => setOpen((v) => !v)}
+        onClick={handleToggle}
         className="btn-primary pressable flex items-center rounded-l-none rounded-r-[6px] border-l-0 px-1.5 py-1.5 disabled:pointer-events-none"
       >
         <IconCaretDown
@@ -391,12 +421,12 @@ function TaskRunButton({
         />
       </button>
 
-      {open && (
+      {open && createPortal(
         <div
           role="menu"
           aria-label="选择脚本"
-          onKeyDown={(e) => e.key === 'Escape' && setOpen(false)}
-          className="absolute top-full left-0 z-20 mt-1 min-w-[11rem] max-w-[22rem] overflow-hidden rounded-[8px] border border-line bg-card shadow-[0_4px_16px_rgba(0,0,0,0.18)]"
+          style={menuStyle}
+          className="min-w-[11rem] max-w-[22rem] overflow-hidden rounded-[8px] border border-line bg-card shadow-[0_4px_20px_rgba(0,0,0,0.22)]"
         >
           {scriptNames.map((name) => {
             const cmd = entry.scripts[name] ?? ''
@@ -430,7 +460,8 @@ function TaskRunButton({
               </button>
             )
           })}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )
