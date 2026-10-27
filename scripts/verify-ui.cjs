@@ -246,6 +246,8 @@ app.whenReady().then(async () => {
   const RULES = [
     ['文字色带透明度', /\btext-(?:ink[a-z-]*|live|warn|fault|accent|info)\/\d+/g],
     ['小于 12px 的任意字号', /text-\[(?:\d|1[01])(?:\.\d+)?px\]/g],
+    // CSS 里直接写的 font-size 也要管：阶段 8 的扫描只认 Tailwind 写法，漏掉了 tokens.css 里的 10px 胶囊
+    ['CSS 里小于 12px 的 font-size', /font-size:\s*(?:\d|1[01])(?:\.\d+)?px/g],
     ['任意值圆角 rounded-[Npx]', /rounded-\[\d+px\]/g],
     ['window.confirm 调用', /window\.confirm\(/g],
     ['旧自绘图标 components/icons', /from ['"][./]*components\/icons['"]|from ['"]\.\/icons['"]/g]

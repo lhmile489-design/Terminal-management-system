@@ -1,103 +1,86 @@
 {
-  "measuredAt": "2026-10-26T17:22:40.107Z",
+  "measuredAt": "2026-10-27T08:22:26.167Z",
   "window": "1180x760",
   "views": {
-    "light/总览": {
-      "lowContrast": 23,
-      "veryLowContrast": 18,
-      "smallText": 50,
+    "light/服务": {
+      "lowContrast": 0,
+      "veryLowContrast": 0,
+      "smallText": 0,
       "tinyTargets": 0,
-      "titleBarH": 36,
-      "navW": 48
+      "titleBarH": 40,
+      "navW": 184
+    },
+    "light/总览": {
+      "lowContrast": 0,
+      "veryLowContrast": 0,
+      "smallText": 0,
+      "tinyTargets": 0,
+      "titleBarH": 40,
+      "navW": 184
     },
     "light/终端": {
-      "lowContrast": 5,
-      "veryLowContrast": 3,
-      "smallText": 21,
+      "lowContrast": 0,
+      "veryLowContrast": 0,
+      "smallText": 0,
       "tinyTargets": 0,
-      "titleBarH": 36,
-      "navW": 48
-    },
-    "light/日志": {
-      "lowContrast": 6,
-      "veryLowContrast": 3,
-      "smallText": 31,
-      "tinyTargets": 1,
-      "titleBarH": 36,
-      "navW": 48
+      "titleBarH": 40,
+      "navW": 184
     },
     "light/设置": {
-      "lowContrast": 5,
-      "veryLowContrast": 3,
-      "smallText": 42,
-      "tinyTargets": 2,
-      "titleBarH": 36,
-      "navW": 48
+      "lowContrast": 0,
+      "veryLowContrast": 0,
+      "smallText": 0,
+      "tinyTargets": 0,
+      "titleBarH": 40,
+      "navW": 184
     },
     "light/关于": {
-      "lowContrast": 5,
-      "veryLowContrast": 3,
-      "smallText": 31,
+      "lowContrast": 0,
+      "veryLowContrast": 0,
+      "smallText": 0,
       "tinyTargets": 0,
-      "titleBarH": 36,
-      "navW": 48
-    },
-    "dark/总览": {
-      "lowContrast": 23,
-      "veryLowContrast": 5,
-      "smallText": 50,
-      "tinyTargets": 0,
-      "titleBarH": 36,
-      "navW": 48
-    },
-    "dark/终端": {
-      "lowContrast": 5,
-      "veryLowContrast": 2,
-      "smallText": 21,
-      "tinyTargets": 0,
-      "titleBarH": 36,
-      "navW": 48
-    },
-    "dark/日志": {
-      "lowContrast": 6,
-      "veryLowContrast": 2,
-      "smallText": 31,
-      "tinyTargets": 1,
-      "titleBarH": 36,
-      "navW": 48
-    },
-    "dark/设置": {
-      "lowContrast": 5,
-      "veryLowContrast": 2,
-      "smallText": 42,
-      "tinyTargets": 2,
-      "titleBarH": 36,
-      "navW": 48
-    },
-    "dark/关于": {
-      "lowContrast": 5,
-      "veryLowContrast": 2,
-      "smallText": 31,
-      "tinyTargets": 0,
-      "titleBarH": 36,
-      "navW": 48
-    },
-    "light/服务": {
-      "lowContrast": 18,
-      "veryLowContrast": 7,
-      "smallText": 62,
-      "tinyTargets": 2,
-      "titleBarH": 36,
-      "navW": 48
+      "titleBarH": 40,
+      "navW": 184
     },
     "dark/服务": {
-      "lowContrast": 18,
-      "veryLowContrast": 6,
-      "smallText": 62,
-      "tinyTargets": 2,
-      "titleBarH": 36,
-      "navW": 48
+      "lowContrast": 0,
+      "veryLowContrast": 0,
+      "smallText": 0,
+      "tinyTargets": 0,
+      "titleBarH": 40,
+      "navW": 184
+    },
+    "dark/总览": {
+      "lowContrast": 0,
+      "veryLowContrast": 0,
+      "smallText": 0,
+      "tinyTargets": 0,
+      "titleBarH": 40,
+      "navW": 184
+    },
+    "dark/终端": {
+      "lowContrast": 0,
+      "veryLowContrast": 0,
+      "smallText": 0,
+      "tinyTargets": 0,
+      "titleBarH": 40,
+      "navW": 184
+    },
+    "dark/设置": {
+      "lowContrast": 0,
+      "veryLowContrast": 0,
+      "smallText": 0,
+      "tinyTargets": 0,
+      "titleBarH": 40,
+      "navW": 184
+    },
+    "dark/关于": {
+      "lowContrast": 0,
+      "veryLowContrast": 0,
+      "smallText": 0,
+      "tinyTargets": 0,
+      "titleBarH": 40,
+      "navW": 184
     }
-  },
-  "note": "服务页基线 = 旧 前端启动台/后端控制台/工作组/诊断 四页各项计数的最大值（阶段 4d 合并视图时换键，未放宽）"
+  }
 }
