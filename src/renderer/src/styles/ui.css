@@ -953,3 +953,7 @@
 .add-foot-msg { margin-right: auto; font-size: 12.5px; color: var(--text-muted); }
 @media (prefers-reduced-motion: reduce) { .add-dialog { animation: none; } .add-drop:hover, .add-drop:active { transform: none; } }
 .svc-status { width: 132px; flex: none; }
+
+/* 端口重合：文字说明，不只靠颜色 */
+.svc-row-port[data-shared='true'] { color: color-mix(in srgb, var(--signal-warn) 72%, var(--text-strong)); }
+.svc-shared { display: block; font-style: normal; font-family: var(--font-sans); font-size: 12px; font-weight: 600; }

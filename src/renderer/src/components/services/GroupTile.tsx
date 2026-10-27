@@ -7,6 +7,7 @@ import { useEntryImage } from '../../store/favicons'
 import { ICON } from '../../lib/icons'
 import { FRAMEWORK_LABEL, STATUS_META, isBusyStatus, isLiveStatus, type Tone } from '../../lib/entryMeta'
 import { isGroupStartable } from '../../lib/services'
+import { useEntries } from '../../store/entries'
 
 const IDLE = (id: string): EntryRuntime => ({ entryId: id, status: 'idle', portUnknown: false })
 
@@ -166,6 +167,12 @@ function EntryLine({
   const image = useEntryImage(entry)
   const meta = STATUS_META[runtime.status]
   const port = runtime.port ?? entry.expectedPort
+  // 端口重合：两个以上运行中的条目实听同一端口，localhost 只会打开其中一个（PRD §4.3）
+  const livePort = isLiveStatus(runtime.status) ? runtime.port : undefined
+  const shared = useEntries((s) =>
+    livePort != null &&
+    Object.values(s.runtimes).filter((r) => r.port === livePort && isLiveStatus(r.status)).length > 1
+  )
   const sub = entry.kind === 'task' ? entry.script ?? '任务' : FRAMEWORK_LABEL[entry.framework]
 
   return (
@@ -185,7 +192,14 @@ function EntryLine({
         <b>{entry.name}</b>
         <span><em className="svc-kind" data-kind={entry.kind}>{entry.kind === 'task' ? '任务' : '服务'}</em>{sub}</span>
       </span>
-      <span className="svc-row-port">{port ? `:${port}` : ''}</span>
+      <span
+        className="svc-row-port"
+        data-shared={shared || undefined}
+        title={shared ? `:${port} 有多个条目在监听，localhost:${port} 只会打开其中一个。改掉一边的端口才能同时访问` : undefined}
+      >
+        {port ? `:${port}` : ''}
+        {shared && <em className="svc-shared">端口重合</em>}
+      </span>
       <span onClick={(e) => e.stopPropagation()}>
         <RowToggle entry={entry} runtime={runtime} failed={failed} onToggle={() => actions.toggle(entry)} />
       </span>

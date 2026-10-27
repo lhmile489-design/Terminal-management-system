@@ -246,19 +246,20 @@ app.whenReady().then(async () => {
       )
     }
 
-    console.log('\n=== 5. 卡片把「端口重合」写成文字 ===')
+    console.log('\n=== 5. 服务行把「端口重合」写成文字 ===')
     await js(`(()=>{const b=[...document.querySelector('nav').querySelectorAll('button')]
-      .find(x=>x.getAttribute('aria-label') === '前端启动台');b&&b.click();return true})()`)
+      .find(x=>x.getAttribute('aria-label') === '服务');b&&b.click();return true})()`)
 
     let cards = []
     for (let i = 0; i < 40; i++) {
-      cards = await js(`JSON.stringify([...document.querySelectorAll('main article')]
+      cards = await js(`JSON.stringify([...document.querySelectorAll('main .svc-row')]
         .filter(a=>a.dataset.entryId==='v4'||a.dataset.entryId==='v6')
         .map(a=>{
-          const b=[...a.querySelectorAll('button')].find(x=>/^:\\d+$/.test((x.textContent||'').trim()))
+          const b=a.querySelector('.svc-row-port')
+          const m=b ? (b.textContent||'').match(/:\\d+/) : null
           return {
             id: a.dataset.entryId,
-            port: b ? (b.textContent||'').trim() : null,
+            port: m ? m[0] : null,
             shared: b ? b.dataset.shared === 'true' : false,
             text: a.textContent.includes('端口重合'),
             title: b ? (b.getAttribute('title')||'') : ''
@@ -290,7 +291,9 @@ app.whenReady().then(async () => {
     )
 
     console.log('\n=== 6. 修复动作只停止诊断出的另一条 ===')
-    await js(`document.querySelector('article[data-entry-id="v4"] button[aria-label="诊断"]')?.click()`)
+    await js(`document.querySelector('.svc-row[data-entry-id="v4"]')?.click()`)
+    await sleep(400)
+    await js(`[...document.querySelectorAll('.svc-detail [role="tab"]')].find(x=>x.textContent.includes('诊断'))?.click()`)
     let clickedFix = false
     for (let i = 0; i < 40; i++) {
       clickedFix = await js(`(()=>{
@@ -320,7 +323,7 @@ app.whenReady().then(async () => {
     let cleared = false
     for (let i = 0; i < 40; i++) {
       cleared = await js(`(()=>{
-        const a=[...document.querySelectorAll('main article')].find(x=>x.dataset.entryId==='v4')
+        const a=document.querySelector('main .svc-row[data-entry-id="v4"]')
         return !!a && !a.textContent.includes('端口重合')
       })()`)
       if (cleared) break
