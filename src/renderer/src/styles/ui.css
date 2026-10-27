@@ -957,3 +957,27 @@
 /* 端口重合：文字说明，不只靠颜色 */
 .svc-row-port[data-shared='true'] { color: color-mix(in srgb, var(--signal-warn) 72%, var(--text-strong)); }
 .svc-shared { display: block; font-style: normal; font-family: var(--font-sans); font-size: 12px; font-weight: 600; }
+
+/* 拖动成员到别的工作组：被拖的行变淡，目标磁贴品牌蓝虚线描边 + 浅底提示 */
+.svc-row[draggable='true'] { cursor: grab; }
+.svc-row[data-dragging='true'] { opacity: 0.45; cursor: grabbing; }
+.ui-tile[data-drop-over='true'] {
+  border-color: var(--btn-primary-bg);
+  border-style: dashed;
+  box-shadow: 0 0 0 3px var(--signal-accent-soft), var(--shadow-lift-lg);
+}
+/* 运行中的端口：点一下在浏览器打开 http://localhost:端口 */
+.svc-port-btn {
+  font: inherit;
+  padding: 2px 6px;
+  border-radius: 6px;
+  color: color-mix(in srgb, var(--signal-accent) 72%, var(--text-strong));
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 3px;
+  transition: background-color 90ms var(--ease-out), text-decoration-color 90ms var(--ease-out), transform 200ms var(--ease-spring);
+}
+.svc-port-btn:hover { background: var(--signal-accent-soft); text-decoration-color: currentColor; }
+.svc-port-btn:active { transform: scale(0.96); transition-duration: 70ms; }
+.svc-row-port[data-shared='true'] .svc-port-btn { color: color-mix(in srgb, var(--signal-warn) 72%, var(--text-strong)); }
+@media (prefers-reduced-motion: reduce) { .svc-port-btn:active { transform: none; } }

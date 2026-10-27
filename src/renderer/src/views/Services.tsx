@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { EntryKind, EntryRuntime, LaunchEntry, NewLaunchEntry, ProjectGroup } from '@shared/types'
 import { GROUP_ENV_LABEL } from '@shared/types'
-import { Button, Segmented, Select, TextInput, SplitPane, type MenuItem } from '../components/ui'
+import { Button, Segmented, Select, TextInput, SplitPane, toast, type MenuItem } from '../components/ui'
 import { GroupTile, type RowActions } from '../components/services/GroupTile'
 import { EntryDetail, effectiveTab, hasBuildTab, type DetailTab } from '../components/services/EntryDetail'
 import { hasOpenOverlay } from '../lib/overlay'
@@ -142,6 +142,16 @@ export function Services({
   const selected = selectedId ? entries.find((e) => e.id === selectedId) : undefined
   const groupOf = (e: LaunchEntry): ProjectGroup | undefined => groups.find((g) => g.id === e.groupId)
 
+  /** 换工作组。groupId 不是身份字段，运行中也能改；null = 移出到未分组 */
+  function moveEntry(id: string, groupId: string | null): void {
+    const entry = entries.find((e) => e.id === id)
+    if (!entry || (entry.groupId ?? null) === groupId) return
+    const target = groupId ? groups.find((g) => g.id === groupId)?.name : '未分组'
+    void edit(id, { groupId }).then((ok) => {
+      if (ok) toast({ tone: 'live', title: `已把「${entry.name}」移到「${target ?? '工作组'}」` })
+    })
+  }
+
   const flashFail = (id: string): void => {
     setFailedId(id)
     window.setTimeout(() => setFailedId((cur) => (cur === id ? null : cur)), 420)
@@ -233,6 +243,13 @@ export function Services({
     if (entry.framework === 'uniapp') {
       items.push({ label: '用 HBuilderX 打开', icon: ICON.openExternal, onSelect: () => void window.mile.entry.openInHBuilderX(entry.id) })
     }
+    // 拖拽的键盘替代：移到其他工作组 / 移出到未分组
+    const targets = groups.filter((g) => g.id !== entry.groupId)
+    if (targets.length || entry.groupId) items.push({ sep: true })
+    for (const g of targets) {
+      items.push({ label: `移到「${g.name}」`, icon: ICON.group, onSelect: () => moveEntry(entry.id, g.id) })
+    }
+    if (entry.groupId) items.push({ label: '移出到未分组', icon: ICON.group, onSelect: () => moveEntry(entry.id, null) })
     items.push(
       { sep: true },
       { label: '移除', icon: ICON.remove, danger: true, disabled: live, onSelect: () => void removeEntry(entry) }
@@ -349,7 +366,8 @@ export function Services({
   const actions: RowActions = {
     select: (e) => { setCursorId(e.id); void pick(e.id) },
     toggle: (e) => void toggle(e),
-    menu: rowMenu
+    menu: rowMenu,
+    move: (id, gid) => moveEntry(id, gid)
   }
 
   const categories = useMemo(

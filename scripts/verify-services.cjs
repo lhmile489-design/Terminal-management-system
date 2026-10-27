@@ -40,6 +40,13 @@ writeFileSync(
   'utf8'
 )
 
+// 拦下「打开 localhost」：只记录请求，不真的拉起浏览器
+const OPENED = []
+{
+  const { ipcMain } = require('electron')
+  const on = ipcMain.on.bind(ipcMain)
+  ipcMain.on = (ch, fn) => ch === 'shell:openLocalhost' ? on(ch, (_e, port) => OPENED.push(port)) : on(ch, fn)
+}
 require(join(ROOT, 'out', 'main', 'index.js'))
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
@@ -84,9 +91,9 @@ app.whenReady().then(async () => {
     return {mall:mall.id,site:site.id}})()`)
 
   console.log('\n=== 1. 工作组分段 ===')
-  await key('1', { ctrlKey: true })
+  await key('2', { ctrlKey: true })
   const onPage = await waitFor(`(document.querySelector('main h1')||{}).textContent==='服务'`)
-  check('Ctrl+1 进入服务页', onPage)
+  check('Ctrl+2 进入服务页', onPage)
   await sleep(300)
   const kinds = await js(`Object.fromEntries([...document.querySelectorAll('.svc-row')].map(r=>[r.dataset.entryId,(r.querySelector('.svc-kind')||{textContent:''}).textContent]))`)
   check('每行标注任务或服务', kinds.d === '任务' && kinds.a === '服务' && kinds.b === '服务', JSON.stringify(kinds))
@@ -310,7 +317,7 @@ app.whenReady().then(async () => {
 
   console.log('\n=== 总览服务操作台：按打开次数排序、最多 5 个、无左侧图标 ===')
   await js(`localStorage.setItem('mile.launchCount',JSON.stringify({b:9,e:5}));true`)
-  await key('2', { ctrlKey: true })
+  await key('1', { ctrlKey: true })
   await waitFor(`!!document.querySelector('section[aria-labelledby="my-services-panel-heading"] li')`)
   const ops = await js(`[...document.querySelectorAll('section[aria-labelledby="my-services-panel-heading"] li')].map(li=>({t:li.textContent,img:!!li.querySelector('img, [data-glyph], .entry-glyph')}))`)
   check('打开次数最多的排第一', /公司文档站/.test(ops[0] && ops[0].t), ops.map((o) => o.t.slice(0, 6)).join('、'))
@@ -321,7 +328,7 @@ app.whenReady().then(async () => {
   console.log('\n=== 运行状态筛选 ===')
   await js(`document.activeElement&&document.activeElement.blur();true`)
   await key('Escape'); await key('Escape'); await sleep(200)
-  await key('1', { ctrlKey: true }); await sleep(300)
+  await key('2', { ctrlKey: true }); await sleep(300)
   const pickStatus = (v) => js(`(()=>{const s=document.querySelector('select[aria-label="运行状态"]');if(!s)return false;
     const set=Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set;set.call(s,${JSON.stringify(v)});
     s.dispatchEvent(new Event('change',{bubbles:true}));return true})()`)
@@ -351,6 +358,51 @@ app.whenReady().then(async () => {
   check('未选目录时「添加服务」禁用', addBtn === true, String(addBtn))
   await key('Escape'); await sleep(300)
   check('Esc 关闭对话框', !(await js(`!!document.querySelector('.add-dialog')`)))
+
+  console.log('\n=== 拖动成员到别的工作组 ===')
+  await js(`document.activeElement&&document.activeElement.blur();true`)
+  await key('Escape'); await key('Escape'); await sleep(200)
+  await key('2', { ctrlKey: true }); await sleep(300)
+  check('成员行可拖动', await js(`!!document.querySelector('[data-entry-id="e"][draggable="true"]')`))
+  // 未分组的 e 拖进商城项目：用真实 DataTransfer 走 dragstart → dragover → drop
+  // dragover 与 drop 分两次调用：高亮是 React 状态，要等一次重渲染才进 DOM
+  const accepted = await js(`(()=>{const src=document.querySelector('[data-entry-id="e"]');const dst=document.querySelector('[data-group-id="${ids.mall}"]');
+    if(!src||!dst)return false;window.__dt=new DataTransfer();
+    src.dispatchEvent(new DragEvent('dragstart',{bubbles:true,dataTransfer:window.__dt}));
+    const over=new DragEvent('dragover',{bubbles:true,cancelable:true,dataTransfer:window.__dt});dst.dispatchEvent(over);
+    return over.defaultPrevented})()`)
+  const hl = await waitFor(`document.querySelector('[data-group-id="${ids.mall}"]').dataset.dropOver==='true'`, 1500)
+  check('拖到别的工作组时磁贴接受并高亮', accepted === true && hl, JSON.stringify({ accepted, hl }))
+  await js(`(()=>{const src=document.querySelector('[data-entry-id="e"]');const dst=document.querySelector('[data-group-id="${ids.mall}"]');
+    dst.dispatchEvent(new DragEvent('drop',{bubbles:true,cancelable:true,dataTransfer:window.__dt}));
+    src.dispatchEvent(new DragEvent('dragend',{bubbles:true,dataTransfer:window.__dt}));return true})()`)
+  const movedOk = await waitFor(`window.mile.entry.list().then(l=>(l.find(x=>x.id==='e')||{}).groupId==='${ids.mall}')`)
+  check('放下后条目归到新工作组（写进主进程）', movedOk)
+  check('页面上行移到了新磁贴', await waitFor(`!!document.querySelector('[data-group-id="${ids.mall}"] [data-entry-id="e"]')`))
+  check('高亮在放下后消失', !(await js(`!!document.querySelector('[data-drop-over]')`)))
+  // 键盘用户的替代入口：行菜单里的「移到工作组」
+  await js(`document.querySelector('[data-entry-id="e"] [aria-label$="更多操作"]').click();true`)
+  await sleep(200)
+  const moveItems = await js(`[...document.querySelectorAll('[role="menu"] [role="menuitem"]')].map(x=>x.textContent.trim()).filter(t=>t.startsWith('移到')||t.startsWith('移出'))`)
+  check('菜单里有「移到 / 移出」工作组的入口', moveItems.length >= 2, moveItems.join('、'))
+  await js(`[...document.querySelectorAll('[role="menu"] [role="menuitem"]')].find(x=>x.textContent.includes('未分组')).click();true`)
+  check('用菜单移回未分组', await waitFor(`window.mile.entry.list().then(l=>!(l.find(x=>x.id==='e')||{}).groupId)`))
+
+  console.log('\n=== 点端口在浏览器打开 ===')
+  await press('[data-entry-id="a"]', '启动')
+  const portBtn = await waitFor(`!!document.querySelector('[data-entry-id="a"] .svc-port-btn')`, 15000)
+  check('运行中端口是可点的按钮', portBtn)
+  if (portBtn) {
+    const info = await js(`(()=>{const b=document.querySelector('[data-entry-id="a"] .svc-port-btn');return {t:b.textContent.trim(),title:b.getAttribute('title')||'',tag:b.tagName}})()`)
+    check('按钮显示端口并说明会在浏览器打开', /^:\d+/.test(info.t) && info.title.includes('localhost'), JSON.stringify(info))
+    const selBefore = await js(`document.querySelector('[data-entry-id="a"]').getAttribute('aria-selected')`)
+    await js(`document.querySelector('[data-entry-id="a"] .svc-port-btn').click();true`)
+    await sleep(300)
+    check('点端口不会顺带选中整行', (await js(`document.querySelector('[data-entry-id="a"]').getAttribute('aria-selected')`)) === selBefore)
+    check('外部打开请求已发出', OPENED.some((u) => /^\d+$/.test(String(u))), OPENED.join(','))
+  }
+  await press('[data-entry-id="a"]', '停止')
+  await waitFor(`(document.querySelector('[data-entry-id="a"] .ui-dot')||{dataset:{}}).dataset.tone!=='live'`, 8000)
 
   console.log(`\n结果：${pass} 通过，${fail} 失败`)
   try { rmSync(SANDBOX, { recursive: true, force: true }) } catch { console.log(`  (沙箱残留，交由系统清理：${SANDBOX})`) }

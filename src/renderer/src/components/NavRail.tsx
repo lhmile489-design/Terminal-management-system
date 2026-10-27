@@ -35,13 +35,14 @@ interface NavTop extends NavLeaf {
 
 /** 5 项一级导航，UI-REFACTOR Q9 / Q10 / Q19 */
 export const NAV_TOP: NavTop[] = [
+  // 总览是默认首页，排第一位（用户 2026-10-27 要求）
+  { id: 'dashboard', label: '总览', icon: ICON.navOverview, key: 1 },
   {
     id: 'services',
     label: '服务',
     icon: ICON.navServices,
-    key: 1
+    key: 2
   },
-  { id: 'dashboard', label: '总览', icon: ICON.navOverview, key: 2 },
   {
     id: 'terminal',
     label: '终端',

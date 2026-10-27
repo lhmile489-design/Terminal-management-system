@@ -15,7 +15,12 @@ export interface RowActions {
   select: (entry: LaunchEntry) => void
   toggle: (entry: LaunchEntry) => void
   menu: (entry: LaunchEntry) => MenuItem[]
+  /** 拖到另一个工作组：groupId 为 null 表示移到「未分组」 */
+  move: (entryId: string, groupId: string | null) => void
 }
+
+/** 拖拽载荷的 MIME。只带条目 id，归组改动仍走 entry.edit，由主进程校验 */
+const DRAG_MIME = 'application/x-mile-entry'
 
 /**
  * 工作组磁贴，UI-REFACTOR Q10 / Q12。头部：组名、环境、「N/M 运行中」、整组启停、「⋯」。
@@ -59,9 +64,40 @@ export function GroupTile({
   const tone: Tone | undefined = fault ? 'fault' : startable.length && live === startable.length ? 'live' : undefined
   const allOn = startable.length > 0 && live === startable.length
   const name = group?.name ?? '未分组'
+  const [dropOver, setDropOver] = useState(false)
+  const targetId = group?.id ?? null
+
+  // 只接受本应用的条目拖拽；拖到它本来所在的组不算移动
+  const accepts = (e: React.DragEvent): boolean => e.dataTransfer.types.includes(DRAG_MIME)
+  const onDragOver = (e: React.DragEvent): void => {
+    if (!accepts(e)) return
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    if (!dropOver) setDropOver(true)
+  }
+  const onDragLeave = (e: React.DragEvent): void => {
+    // 在磁贴内部子元素之间移动也会触发 dragleave，只在真正离开磁贴时取消高亮
+    if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDropOver(false)
+  }
+  const onDrop = (e: React.DragEvent): void => {
+    setDropOver(false)
+    const id = e.dataTransfer.getData(DRAG_MIME)
+    if (!id) return
+    e.preventDefault()
+    if (all.some((m) => m.id === id)) return
+    actions.move(id, targetId)
+  }
 
   return (
-    <Tile tone={tone} aria-label={name} data-group-id={group?.id ?? 'none'}>
+    <Tile
+      tone={tone}
+      aria-label={name}
+      data-group-id={group?.id ?? 'none'}
+      data-drop-over={dropOver || undefined}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+    >
       <div className="svc-group-head" data-cursor={cursorId === `g:${group?.id ?? 'none'}` || undefined}>
         <ICON.group size={20} aria-hidden className="shrink-0 text-ink-muted" />
         <h2 className="ui-tile-title">{name}</h2>
@@ -174,6 +210,8 @@ function EntryLine({
     Object.values(s.runtimes).filter((r) => r.port === livePort && isLiveStatus(r.status)).length > 1
   )
   const sub = entry.kind === 'task' ? entry.script ?? '任务' : FRAMEWORK_LABEL[entry.framework]
+  const [dragging, setDragging] = useState(false)
+  const sharedTip = `:${port} 有多个条目在监听，localhost:${port} 只会打开其中一个。改掉一边的端口才能同时访问`
 
   return (
     <div
@@ -182,6 +220,14 @@ function EntryLine({
       aria-selected={selected}
       data-cursor={cursor || undefined}
       data-entry-id={entry.id}
+      data-dragging={dragging || undefined}
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData(DRAG_MIME, entry.id)
+        e.dataTransfer.effectAllowed = 'move'
+        setDragging(true)
+      }}
+      onDragEnd={() => setDragging(false)}
       onClick={() => actions.select(entry)}
     >
       <StatusDot tone={meta.tone} label={meta.label} />
@@ -192,12 +238,27 @@ function EntryLine({
         <b>{entry.name}</b>
         <span><em className="svc-kind" data-kind={entry.kind}>{entry.kind === 'task' ? '任务' : '服务'}</em>{sub}</span>
       </span>
-      <span
-        className="svc-row-port"
-        data-shared={shared || undefined}
-        title={shared ? `:${port} 有多个条目在监听，localhost:${port} 只会打开其中一个。改掉一边的端口才能同时访问` : undefined}
-      >
-        {port ? `:${port}` : ''}
+      <span className="svc-row-port" data-shared={shared || undefined} title={shared ? sharedTip : undefined}>
+        {livePort ? (
+          // 运行中且捕获到端口：点击在浏览器打开 localhost（主进程只接受整数端口，PRD §11）
+          <button
+            type="button"
+            className="svc-port-btn"
+            data-shared={shared || undefined}
+            title={shared ? sharedTip : `在浏览器打开 http://localhost:${livePort}`}
+            onClick={(e) => {
+              e.stopPropagation()
+              window.mile.shell.openLocalhost(livePort)
+            }}
+          >
+            :{livePort}
+            <ICON.openExternal size={12} aria-hidden />
+          </button>
+        ) : port ? (
+          `:${port}`
+        ) : (
+          ''
+        )}
         {shared && <em className="svc-shared">端口重合</em>}
       </span>
       <span onClick={(e) => e.stopPropagation()}>

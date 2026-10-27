@@ -6,7 +6,7 @@ import { DialogShell } from './ui'
  */
 const KEYS: { label: string; keys: string[] }[] = [
   { label: '打开命令面板', keys: ['Ctrl', 'K'] },
-  { label: '切换到服务 / 总览 / 终端 / 设置 / 关于', keys: ['Ctrl', '1–5'] },
+  { label: '切换到总览 / 服务 / 终端 / 设置 / 关于', keys: ['Ctrl', '1–5'] },
   { label: '打开快捷键一览', keys: ['?'] },
   { label: '关闭最上层的弹窗、抽屉或菜单', keys: ['Esc'] }
 ]
