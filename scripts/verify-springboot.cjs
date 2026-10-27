@@ -199,7 +199,17 @@ app.whenReady().then(async () => {
 
     // 先停掉运行中的条目，否则改身份字段会被运行中锁挡（那是另一条正确路径，但会干扰本节）
     await js(`window.mile.entry.stop(${JSON.stringify(entryId)})`)
-    await sleep(500)
+    // 轮询到运行态离开 live 再测负向用例：还在 stopping 时 edit 会以「运行中锁定」被拒，
+    // 那样下面的断言就是靠错误的原因通过的
+    const LIVE = ['precheck', 'starting', 'running', 'stopping']
+    let settled = 'timeout'
+    for (let i = 0; i < 60; i++) {
+      const rt = (await js(`window.mile.entry.runtimes()`)).find((r) => r.entryId === entryId)
+      settled = rt ? rt.status : 'idle'
+      if (!LIVE.includes(settled)) break
+      await sleep(150)
+    }
+    check('前提：负向用例开始前条目已停下', !LIVE.includes(settled), settled)
 
     // jar 路径含 .. 必须被拒
     const jarEscape = await js(`
@@ -209,9 +219,10 @@ app.whenReady().then(async () => {
     `)
     check('jar 路径含 .. 被拒', String(jarEscape).startsWith('REJECTED'), String(jarEscape))
 
-    // 非 .jar 结尾被拒
+    // 非 .jar 结尾被拒。后缀只在 jar 模式下才有意义，所以连同 launchMode 一起提：
+    // 以前单提 jarPath 时条目还是 maven-wrapper，这条是靠「运行中锁定」的报错假绿通过的
     const jarBadExt = await js(`
-      window.mile.entry.edit(${JSON.stringify(entryId)}, { jarPath: 'target/app.txt' })
+      window.mile.entry.edit(${JSON.stringify(entryId)}, { launchMode: 'jar', jarPath: 'target/app.txt' })
         .then(() => 'ACCEPTED')
         .catch((e) => 'REJECTED: ' + e.message)
     `)

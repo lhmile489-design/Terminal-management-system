@@ -277,16 +277,33 @@ async function checks(win) {
   )
   check('图标按钮无 aria-label 缺失', unlabeled === 0, `${unlabeled} 个无标签按钮`)
 
-  check(
-    '模态对话框带 aria-modal',
-    await run(
-      win,
-      `(() => {
-        const add = [...document.querySelectorAll('button')].find((b) => b.textContent.trim() === '添加服务');
-        return true;
-      })()`
-    )
+  // 以前这条只找按钮就 return true，从不打开对话框。现在真的打开、读属性、再关掉
+  const modal = await run(
+    win,
+    `(async () => {
+      const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+      // 先关掉前面打开的实时动态抽屉，否则添加按钮被浮层挡住
+      for (let i = 0; i < 3 && document.querySelector('[role="dialog"]'); i++) {
+        document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+        await sleep(250);
+      }
+      const add = [...document.querySelectorAll('button')].find((b) => b.textContent.trim() === '添加服务');
+      if (!add) return { found: false };
+      add.click();
+      let dlg = null;
+      for (let t = 0; t < 30 && !dlg; t++) { await sleep(100); dlg = document.querySelector('.add-dialog[role="dialog"]'); }
+      if (!dlg) return { found: true, opened: false };
+      const ariaModal = dlg.getAttribute('aria-modal');
+      const labelled = !!(dlg.getAttribute('aria-labelledby') || dlg.getAttribute('aria-label'));
+      document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+      for (let t = 0; t < 30 && document.querySelector('.add-dialog[role="dialog"]'); t++) await sleep(100);
+      return { found: true, opened: true, ariaModal, labelled, closed: !document.querySelector('.add-dialog[role="dialog"]') };
+    })()`
   )
+  check('前提：找到并打开了添加服务对话框', modal.found && modal.opened, JSON.stringify(modal))
+  check('模态对话框带 aria-modal="true"', modal.ariaModal === 'true', String(modal.ariaModal))
+  check('模态对话框有可读名称', modal.labelled === true, String(modal.labelled))
+  check('Esc 关闭了对话框', modal.closed === true, String(modal.closed))
 
   for (const [theme, expect] of [
     // UI-REFACTOR §4.1 画布色：浅 #F6F7FB，深 #0F1219

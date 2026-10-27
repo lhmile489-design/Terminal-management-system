@@ -315,7 +315,8 @@ app.whenReady().then(async () => {
     if (panelStopStatus === 'stopped' || panelStopStatus === 'crashed') break
     await sleep(500)
   }
-  check('表单内停止真的停下了服务', panelStopStatus === 'stopped' || panelStopStatus === 'crashed', panelStopStatus)
+  // 用户发起的停止一定落在 stopped（stoppedByUser）。crashed 说明停止路径本身出了问题，不能算过
+  check('表单内停止真的停下了服务', panelStopStatus === 'stopped', panelStopStatus)
   await sleep(500)
   const afterStop = await formState()
   check('停止后配置标签仍打开', !!afterStop)

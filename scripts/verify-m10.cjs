@@ -141,6 +141,27 @@ const TASK_PKG_ORIGINAL = readFileSync(TASK_PKG, 'utf8')
   pkg.scripts = { ...pkg.scripts, noisy: 'node noisy.cjs' }
   writeFileSync(TASK_PKG, JSON.stringify(pkg, null, 2), 'utf8')
 }
+/*
+ * 夹具还原必须在任何退出路径上都执行：中途抛错跳过还原，会留下带 noisy 的 package.json，
+ * 症状是「单跑绿、全套红」。幂等，正常收尾、进程退出、未处理 rejection 都调它。
+ */
+let fixtureRestored = false
+function restoreFixture() {
+  if (fixtureRestored) return
+  fixtureRestored = true
+  try {
+    writeFileSync(TASK_PKG, TASK_PKG_ORIGINAL, 'utf8')
+    rmSync(join(FIXT, 'noisy.cjs'), { force: true })
+  } catch (err) {
+    console.log(`  (夹具还原失败，请手动检查 ${TASK_PKG}：${err && err.message})`)
+  }
+}
+process.on('exit', restoreFixture)
+process.on('unhandledRejection', (err) => {
+  console.log('HARNESS ERROR', err)
+  restoreFixture()
+  app.exit(1)
+})
 
 /**
  * 日志夹具：一次输出覆盖三个级别、一个中文错误、\r 原地重写的进度条与
@@ -642,10 +663,9 @@ app.whenReady().then(async () => {
   check('清空后仍继续采集新输出', regrown > 0, `${regrown} 行`)
 
   console.log(`\n结果：${pass} 通过，${fail} 失败`)
+  // 夹具还原：noisy 是本脚本加的，留着会让其他脚本看到一个不属于它们的脚本
+  restoreFixture()
   try {
-    // 夹具还原：noisy 是本脚本加的，留着会让其他脚本看到一个不属于它们的脚本
-    writeFileSync(TASK_PKG, TASK_PKG_ORIGINAL, 'utf8')
-    rmSync(join(FIXT, 'noisy.cjs'), { force: true })
     rmSync(SANDBOX, { recursive: true, force: true })
   } catch {
     console.log(`  (沙箱残留，交由系统清理：${SANDBOX})`)

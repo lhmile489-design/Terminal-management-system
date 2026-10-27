@@ -277,9 +277,19 @@ app.whenReady().then(async () => {
     nonMile.map((l) => `${l.launchSource}:${l.ownership}`).slice(0, 6).join(' '))
   const claimsEditor = fresh.listeners.filter((l) =>
     ['vscode', 'cursor', 'jetbrains', 'claude', 'codex', 'terminal'].includes(l.launchSource))
-  check('被推断为编辑器/终端拉起的行仍按真实归属判定（来源不提权）',
-    claimsEditor.every((l) => l.ownership === 'external' || l.ownership === 'owned'),
-    claimsEditor.map((l) => `${l.launchSource}:${l.ownership}`).join(' ') || '本轮无此类行')
+  /*
+   * 以前写成 `external || owned`，把所有合法取值都放过了，又没有长度门槛 —— 恒真。
+   * 真正要量的是：带编辑器/终端来源徽标、但不在本应用会话树里的行，不能被判成 owned。
+   * 本机没有这类进程时如实记为「未覆盖」，不计通过也不计失败，免得空集假绿。
+   */
+  const editorExternal = claimsEditor.filter((l) => !ownedNow.some((o) => o.pid === l.pid))
+  if (editorExternal.length === 0) {
+    console.log('  SKIP  来源不提权：本轮没有编辑器/终端来源的外部监听，此条未覆盖')
+  } else {
+    check(`编辑器/终端来源的外部行没有一个被判为受控（来源不提权，${editorExternal.length} 行）`,
+      editorExternal.every((l) => l.ownership !== 'owned'),
+      editorExternal.map((l) => `${l.launchSource}:${l.ownership}`).slice(0, 6).join(' '))
+  }
 
   console.log('\n=== 6. 关注进程关键字规整，PRD §5.5 ===')
   const setKw = (arr) => call(`window.mile.scanner.setWatchedKeywords(${JSON.stringify(arr)})`)
