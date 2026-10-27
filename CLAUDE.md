@@ -23,13 +23,18 @@ npm run build                          # 必须先构建，harness 加载的是 
 npx electron scripts/verify-m10.cjs    # 跑单个
 ```
 
-全套 23 个 harness，逐条断言（m7-visual 的「1px 边框」在 devicePixelRatio=2 环境差 1 条，属显示密度差异非代码回归，见 §验证纪律）：
+全套 33 个 Electron harness，逐条断言（m7-visual 的「1px 边框」在 devicePixelRatio=2 环境差 1 条，属显示密度差异非代码回归，见 §验证纪律）：
 
 ```bash
-for f in ui shell services m4-ui m5 m6-sort m6-palette m6-settings m7-visual m8 m9 m9-readonly m9-recover m10 m11-add m11-port m11-dual m12-press m12-port-config m13-icon m14-categories m14-favicon m15-uniapp m16-langs springboot m17-image; do
+for f in ui shell services m4-ui m5 m6-sort m6-palette m6-settings m7-visual m8 m9 m9-readonly m9-recover m10 m11-add m11-port m11-dual m12-press m12-port-config m13-icon m14-categories m14-favicon m15-uniapp m16-langs springboot m17-image review-ipc review-entry review-scanner review-quit review-panel review-links review-keys; do
   npx electron scripts/verify-$f.cjs 2>&1 | grep -E '结果：|Result:|PASS [0-9]+ / FAIL|^\s*FAIL'
 done
+node scripts/verify-review-ownership.cjs   # 纯逻辑，不起 Electron：用 esbuild 单独打包 OwnershipService 喂合成进程表
 ```
+
+`review-*` 来自 2026-10-27 审查修复：IPC 边界与导航守卫、entry:add 校形、采集失败推送、退出等进程树、操作台停止按钮、关于页外链白名单、输入框里的 Ctrl+Tab、PID 复用防护。review-quit 会真的走一次 `app.quit()`，确认 shell 拉起的子进程也被树终止。
+
+`verify-m4.ts`、`verify-package-ui.cjs`、`verify-package-ui2.cjs` **已停用**（文件头有硬停止标记）：它们没有 appData 沙箱，会读写真实配置，`verify-m4.ts` 还会清空真实条目。不在清单里，不要恢复运行，除非先补沙箱。
 
 m9-readonly / m9-recover 单独成进程，因为它们要「带着坏配置文件启动」—— 只读判定与备份恢复都发生在 `ConfigStore` 构造时，主进程起来之后再改文件已经晚了。
 
