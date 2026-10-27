@@ -858,3 +858,20 @@
 .svc-term { flex: 1; min-height: 260px; border-radius: 12px; overflow: hidden; background: var(--terminal-bg); border: 1px solid var(--stroke-base); }
 .svc-note { margin-bottom: 12px; color: var(--text-muted); }
 .svc-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+
+/* 配置标签的保存条（Q13）：有改动才出现，贴在详情底部 */
+.svc-savebar {
+  position: sticky;
+  bottom: -16px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 16px -16px -16px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--stroke-base);
+  background: var(--surface-panel);
+  animation: ui-toast-in 200ms var(--ease-spring);
+}
+.svc-savebar-msg { margin-right: auto; font-size: 13px; font-weight: 600; color: var(--text-strong); }
+@media (prefers-reduced-motion: reduce) { .svc-savebar { animation: none; } }

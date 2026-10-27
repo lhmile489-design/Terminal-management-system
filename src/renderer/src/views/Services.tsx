@@ -5,7 +5,6 @@ import { Button, Segmented, TextInput, SplitPane, type MenuItem } from '../compo
 import { GroupTile, type RowActions } from '../components/services/GroupTile'
 import { EntryDetail, effectiveTab, type DetailTab } from '../components/services/EntryDetail'
 import { AddEntryDialog } from '../components/AddEntryDialog'
-import { EditEntryDialog } from '../components/EditEntryDialog'
 import { AssignGroupDialog, GroupDialog } from '../components/GroupsPanel'
 import { useEntries } from '../store/entries'
 import { useGroups } from '../store/groups'
@@ -72,7 +71,8 @@ export function Services({
   const [failedId, setFailedId] = useState<string | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
   const [addDialog, setAddDialog] = useState<{ kind: EntryKind; path?: string; name?: string; groupId?: string } | null>(null)
-  const [editingId, setEditingId] = useState<string | null>(null)
+  /** 配置标签有未保存改动（Q13）：切换服务、关闭详情前先确认 */
+  const [dirty, setDirty] = useState(false)
   const [groupDialog, setGroupDialog] = useState<{ group?: ProjectGroup } | null>(null)
   const [assigning, setAssigning] = useState<ProjectGroup | null>(null)
 
@@ -100,6 +100,7 @@ export function Services({
     if (selectedId && !entries.some((e) => e.id === selectedId)) {
       setSelectedId(null)
       setMaximized(false)
+      setDirty(false)
     }
   }, [entries, selectedId])
 
@@ -137,10 +138,32 @@ export function Services({
     window.setTimeout(() => setFailedId((cur) => (cur === id ? null : cur)), 420)
   }
 
+  /** 换选中（或关闭详情）。配置有未保存改动时先确认，取消则留在原处 */
+  const pick = async (id: string | null): Promise<boolean> => {
+    if (dirty && id !== selectedId) {
+      const ok = await confirm({
+        title: '放弃未保存的改动？',
+        body: '当前服务的配置改了还没保存，离开后这些改动会丢失。',
+        okLabel: '放弃改动',
+        danger: true
+      })
+      if (!ok) return false
+      setDirty(false)
+    }
+    setSelectedId(id)
+    if (id === null) setMaximized(false)
+    return true
+  }
+  const pickTab = (id: string, t: DetailTab): void => {
+    void pick(id).then((ok) => ok && setTab(t))
+  }
+
   const openDiagnose = (entry: LaunchEntry): void => {
-    setSelectedId(entry.id)
-    setTab('diagnose')
-    setRefreshKey((n) => n + 1)
+    void pick(entry.id).then((ok) => {
+      if (!ok) return
+      setTab('diagnose')
+      setRefreshKey((n) => n + 1)
+    })
   }
 
   const toggle = async (entry: LaunchEntry): Promise<void> => {
@@ -175,9 +198,9 @@ export function Services({
       items.push({ sep: true })
     }
     items.push(
-      { label: '查看输出', icon: ICON.output, onSelect: () => { setSelectedId(entry.id); setTab('output') } },
+      { label: '查看输出', icon: ICON.output, onSelect: () => pickTab(entry.id, 'output') },
       { label: '诊断', icon: ICON.diagnose, onSelect: () => openDiagnose(entry) },
-      { label: '配置', icon: ICON.config, onSelect: () => { setSelectedId(entry.id); setTab('config') } },
+      { label: '配置', icon: ICON.config, onSelect: () => pickTab(entry.id, 'config') },
       { label: '打开目录', icon: ICON.openFolder, onSelect: () => window.mile.shell.openPath(entry.path) },
       { label: '查看产物', icon: ICON.artifact, onSelect: () => openOutput(entry, rt) }
     )
@@ -220,7 +243,7 @@ export function Services({
   ]
 
   const actions: RowActions = {
-    select: (e) => setSelectedId((cur) => (cur === e.id ? cur : e.id)),
+    select: (e) => void pick(e.id),
     toggle: (e) => void toggle(e),
     menu: rowMenu
   }
@@ -240,7 +263,6 @@ export function Services({
     setTab('overview')
   }
 
-  const editing = editingId ? entries.find((e) => e.id === editingId) : undefined
 
   const list = (
     <div className="svc-groups">
@@ -304,7 +326,8 @@ export function Services({
         </div>
       </div>
 
-      {error && !editing && (
+      {/* 配置标签自己在面板内显示保存失败的原因，这里不重复 */}
+      {error && !(selected && effectiveTab(selected, tab) === 'config') && (
         <div role="alert" className="ui-tile svc-empty-row" data-tone="fault">
           <p>{error}</p>
           <Button size="sm" onClick={clearError}>知道了</Button>
@@ -327,10 +350,11 @@ export function Services({
               onTab={setTab}
               maximized={maximized}
               onToggleMax={() => setMaximized((v) => !v)}
-              onClose={() => { setSelectedId(null); setMaximized(false) }}
+              onClose={() => void pick(null)}
               onToggle={() => void toggle(selected)}
               failed={failedId === selected.id}
-              onEdit={() => { clearError(); setEditingId(selected.id) }}
+              categories={categories}
+              onDirtyChange={setDirty}
               onOpenLogs={onOpenLogs}
               onFix={(action, port) => void runFix(selected.id, action, port)}
               refreshKey={refreshKey}
@@ -347,17 +371,6 @@ export function Services({
           categories={categories}
           onSubmit={submitAdd}
           onClose={() => setAddDialog(null)}
-        />
-      )}
-      {editing && (
-        <EditEntryDialog
-          entry={editing}
-          runtime={runtimes[editing.id] ?? IDLE(editing.id)}
-          categories={categories}
-          error={error}
-          onSubmit={(patch) => edit(editing.id, patch)}
-          onStop={() => void stop(editing.id)}
-          onClose={() => { setEditingId(null); clearError() }}
         />
       )}
       {groupDialog && (

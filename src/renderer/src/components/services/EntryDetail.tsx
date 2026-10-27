@@ -6,6 +6,8 @@ import { EntryGlyph } from '../EntryGlyph'
 import { PrecheckPanel } from '../PrecheckPanel'
 import { TerminalView } from '../TerminalView'
 import { ConsolePanel } from '../../views/BackendConsole'
+import { EntryConfigForm } from '../EntryConfigForm'
+import { useEntries } from '../../store/entries'
 import { useEntryImage } from '../../store/favicons'
 import { useScanner } from '../../store/scanner'
 import { ICON } from '../../lib/icons'
@@ -42,7 +44,8 @@ export function EntryDetail({
   onClose,
   onToggle,
   failed,
-  onEdit,
+  categories,
+  onDirtyChange,
   onOpenLogs,
   onFix,
   refreshKey
@@ -57,7 +60,8 @@ export function EntryDetail({
   onClose: () => void
   onToggle: () => void
   failed?: boolean
-  onEdit: () => void
+  categories: string[]
+  onDirtyChange: (dirty: boolean) => void
   onOpenLogs: (sessionId: string) => void
   onFix: (action: PrecheckFixAction, suggestedPort?: number) => void
   refreshKey: number
@@ -138,7 +142,9 @@ export function EntryDetail({
             <p className="svc-note">正在检查…</p>
           ))}
         {current === 'build' && <ConsolePanel entry={entry} />}
-        {current === 'config' && <ConfigSummary entry={entry} onEdit={onEdit} />}
+        {current === 'config' && (
+          <ConfigTab entry={entry} runtime={runtime} categories={categories} onDirtyChange={onDirtyChange} />
+        )}
       </div>
     </section>
   )
@@ -225,22 +231,43 @@ function Output({
   )
 }
 
-/** 阶段 4c 前的过渡：配置只读摘要 + 「编辑」打开既有对话框 */
-function ConfigSummary({ entry, onEdit }: { entry: LaunchEntry; onEdit: () => void }): React.JSX.Element {
+/**
+ * 配置标签：在详情里直接改（Q13）。放弃改动 = 换 key 重挂载表单回到已保存的值；
+ * 卸载（切标签 / 换服务）时把未保存状态清掉，父组件的提醒只针对还挂着的表单。
+ */
+function ConfigTab({
+  entry,
+  runtime,
+  categories,
+  onDirtyChange
+}: {
+  entry: LaunchEntry
+  runtime: EntryRuntime
+  categories: string[]
+  onDirtyChange: (dirty: boolean) => void
+}): React.JSX.Element {
+  const edit = useEntries((s) => s.edit)
+  const stop = useEntries((s) => s.stop)
+  const error = useEntries((s) => s.error)
+  const clearError = useEntries((s) => s.clearError)
+  const [nonce, setNonce] = useState(0)
+  useEffect(() => () => onDirtyChange(false), [onDirtyChange])
   return (
-    <>
-      <dl className="svc-kv">
-        <dt>名称</dt><dd>{entry.name}</dd>
-        <dt>分类</dt><dd>{entry.category ?? '未分类'}</dd>
-        <dt>预期端口</dt><dd className="font-mono tabular-nums">{entry.expectedPort ?? '—'}</dd>
-        <dt>启动脚本</dt><dd><span className="mono">{entry.script ?? '—'}</span></dd>
-        {/* 只显示键名，不显示值（安全红线） */}
-        <dt>环境变量</dt><dd>{Object.keys(entry.env).join('、') || '无'}</dd>
-      </dl>
-      <div className="mt-4">
-        <Button size="sm" icon={ICON.config} onClick={onEdit}>编辑配置</Button>
-      </div>
-    </>
+    <EntryConfigForm
+      key={`${entry.id}:${nonce}`}
+      entry={entry}
+      runtime={runtime}
+      categories={categories}
+      error={error}
+      onSubmit={(patch) => edit(entry.id, patch)}
+      onStop={() => void stop(entry.id)}
+      onDiscard={() => {
+        clearError()
+        setNonce((n) => n + 1)
+        onDirtyChange(false)
+      }}
+      onDirtyChange={onDirtyChange}
+    />
   )
 }
 

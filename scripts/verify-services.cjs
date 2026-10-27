@@ -181,6 +181,38 @@ app.whenReady().then(async () => {
   const cols2 = await js(`getComputedStyle(document.querySelector('.svc-groups')).gridTemplateColumns.split(' ').length`)
   check('关闭后磁贴回到 2 列', cols2 === 2, `${cols2} 列`)
 
+  console.log('\n=== 配置标签直接编辑（Q13）===')
+  const nameInput = `[...document.querySelectorAll('.svc-detail label')].find(l=>l.textContent.trim().startsWith('名称'))?.querySelector('input')`
+  const setName = (v) => js(`(()=>{const i=${nameInput};if(!i)return false;
+    const set=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set;set.call(i,${JSON.stringify(v)});
+    i.dispatchEvent(new Event('input',{bubbles:true}));return true})()`)
+  await js(`document.querySelector('[data-entry-id="a"]').click();true`)
+  await waitFor(`!!document.querySelector('.svc-detail')`)
+  await press('.svc-detail', '配置')
+  check('配置标签里有可编辑的名称输入框', await waitFor(`!!(${nameInput})`))
+  check('未改动时没有保存条', !(await js(`!!document.querySelector('.svc-savebar')`)))
+  await setName('个人博客2')
+  check('改动后出现保存条', await waitFor(`!!document.querySelector('.svc-savebar')`))
+
+  await js(`document.querySelector('[data-entry-id="b"]').click();true`)
+  check('有未保存改动时切换服务先确认', await waitFor(`!!document.querySelector('[role="alertdialog"]')`))
+  await press('[role="alertdialog"]', '取消')
+  await waitFor(`!document.querySelector('[role="alertdialog"]')`)
+  check('取消后仍停在原服务', await js(`document.querySelector('[data-entry-id="a"]').getAttribute('aria-selected')==='true'`))
+  check('取消后改动还在', (await js(`(${nameInput})?.value`)) === '个人博客2')
+
+  await press('.svc-savebar', '放弃')
+  check('放弃后保存条消失', await waitFor(`!document.querySelector('.svc-savebar')`))
+  check('放弃后回到已保存的值', (await js(`(${nameInput})?.value`)) === '个人博客', await js(`(${nameInput})?.value`))
+
+  await setName('个人博客-改')
+  await waitFor(`!!document.querySelector('.svc-savebar')`)
+  await press('.svc-savebar', '保存')
+  const saved = await waitFor(`window.mile.entry.list().then(l=>l.find(e=>e.id==='a')?.name==='个人博客-改')`)
+  check('保存后写进主进程配置', saved)
+  check('保存后保存条消失', await waitFor(`!document.querySelector('.svc-savebar')`))
+  check('列表行显示新名称', await waitFor(`document.querySelector('[data-entry-id="a"]').textContent.includes('个人博客-改')`))
+
   console.log(`\n结果：${pass} 通过，${fail} 失败`)
   try { rmSync(SANDBOX, { recursive: true, force: true }) } catch { console.log(`  (沙箱残留，交由系统清理：${SANDBOX})`) }
   app.exit(fail === 0 ? 0 : 1)
