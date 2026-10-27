@@ -891,3 +891,13 @@
 /* 成员行的类型标记：服务 / 任务 */
 .svc-kind { display: inline-block; margin-right: 6px; padding: 0 6px; border-radius: var(--radius-pill); font-style: normal; font-size: 12px; font-weight: 600; line-height: 18px; background: var(--surface-raised); color: var(--text-muted); }
 .svc-kind[data-kind='task'] { background: var(--signal-accent-soft); color: color-mix(in srgb, var(--signal-accent) 72%, var(--text-strong)); }
+
+/* 配置表单「常用 / 高级」分组（Q13）：高级默认折叠 */
+.svc-sec { font-size: 13px; font-weight: 700; color: var(--text-strong); }
+.svc-adv { border-top: 1px solid var(--stroke-base); padding-top: 12px; }
+.svc-adv > summary { display: flex; align-items: baseline; gap: 8px; cursor: pointer; list-style: none; font-size: 13px; font-weight: 700; color: var(--text-strong); padding: 4px 0; }
+.svc-adv > summary::-webkit-details-marker { display: none; }
+.svc-adv > summary::before { content: '›'; display: inline-block; width: 12px; transition: transform 200ms var(--ease-spring); }
+.svc-adv[open] > summary::before { transform: rotate(90deg); }
+.svc-adv > summary span { font-size: 12px; font-weight: 400; color: var(--text-faint); }
+.svc-adv > div { margin-top: 12px; }

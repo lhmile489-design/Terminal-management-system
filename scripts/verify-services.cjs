@@ -215,6 +215,13 @@ app.whenReady().then(async () => {
   const saved = await waitFor(`window.mile.entry.list().then(l=>l.find(e=>e.id==='a')?.name==='个人博客-改')`)
   check('保存后写进主进程配置', saved)
   check('保存后保存条消失', await waitFor(`!document.querySelector('.svc-savebar')`))
+  // 常用 / 高级分组（Q13）
+  const grp = await js(`(()=>{const a=document.querySelector('.svc-detail details.svc-adv');if(!a)return null;
+    const labels=(root)=>[...root.querySelectorAll('label')].map(l=>l.textContent.trim().slice(0,4));
+    return {open:a.open,adv:a.textContent.includes('环境变量'),nameOutside:!a.contains(document.querySelector('.svc-detail input:not([type=number])'))}})()`)
+  check('配置分「常用 / 高级」，高级默认折叠', !!grp && grp.open === false, JSON.stringify(grp))
+  check('环境变量放在「高级」里', !!grp && grp.adv)
+  check('名称在「常用」里，不用展开就能改', !!grp && grp.nameOutside)
   check('列表行显示新名称', await waitFor(`document.querySelector('[data-entry-id="a"]').textContent.includes('个人博客-改')`))
 
   console.log('\n=== 列表键盘操作（Q15）===')

@@ -261,6 +261,7 @@ export function EntryConfigForm({
             </p>
           )}
 
+          <h3 className="svc-sec">常用</h3>
           <Field label="名称">
             <input
               value={name}
@@ -284,161 +285,6 @@ export function EntryConfigForm({
                 <option key={item} value={item} />
               ))}
             </datalist>
-          </Field>
-
-          <Field label="类型" locked={live}>
-            <div role="radiogroup" className="segmented">
-              {(['service', 'task'] as const).map((k) => (
-                <button
-                  key={k}
-                  type="button"
-                  role="radio"
-                  aria-checked={kind === k}
-                  disabled={live}
-                  onClick={() => setKind(k)}
-                  className="segmented-item disabled:cursor-not-allowed disabled:opacity-45"
-                >
-                  {k === 'service' ? '服务' : '任务'}
-                </button>
-              ))}
-            </div>
-          </Field>
-
-          {/* 自定义图片：服务与任务都可用，优先级高于预设图标与 favicon。图片即时压缩落盘 */}
-          <Field
-            label="自定义图片"
-            hint="上传后压缩存本地，卡片与列表都用它显示；优先于预设图标与 favicon"
-          >
-            <div className="flex items-center gap-3">
-              <span
-                className="icon-tile flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden"
-                aria-hidden
-              >
-                {imageUrl ? (
-                  <img
-                    src={imageUrl}
-                    className="h-9 w-9 rounded-[4px] object-contain"
-                    alt=""
-                    draggable={false}
-                  />
-                ) : (
-                  <span className="font-mono text-[11px] text-ink-faint">无</span>
-                )}
-              </span>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/png,image/jpeg,image/webp,image/gif,image/bmp"
-                className="hidden"
-                onChange={(e) => void onPickImage(e.target.files?.[0])}
-              />
-              <button
-                type="button"
-                disabled={imageBusy}
-                onClick={() => fileInputRef.current?.click()}
-                className="pressable rounded-[6px] border border-line-strong bg-card px-2.5 py-1.5 text-[12px] text-ink-muted hover:text-ink-strong disabled:opacity-45"
-              >
-                {imageBusy ? '处理中…' : hasImage ? '更换图片' : '上传图片'}
-              </button>
-              {hasImage && (
-                <button
-                  type="button"
-                  disabled={imageBusy}
-                  onClick={() => void onRemoveImage()}
-                  className="pressable rounded-[6px] border border-line-strong bg-card px-2.5 py-1.5 text-[12px] text-ink-muted hover:text-ink-strong disabled:opacity-45"
-                >
-                  移除
-                </button>
-              )}
-            </div>
-          </Field>
-
-          {kind === 'service' && (
-            <Field
-              label="服务卡片图标"
-              hint={hasImage ? '已上传自定义图片，将优先显示' : '选择自动时沿用已识别的框架字标'}
-            >
-              <div
-                data-icon-picker
-                role="group"
-                aria-label="服务卡片图标"
-                className="grid grid-cols-3 gap-1.5 sm:grid-cols-9"
-              >
-                <button
-                  type="button"
-                  data-icon-option="auto"
-                  aria-label="自动（框架图标）"
-                  title="自动（框架图标）"
-                  aria-pressed={icon === null}
-                  onClick={() => setIcon(null)}
-                  className={`pressable flex h-9 w-full items-center justify-center rounded-[6px] border text-ink-muted hover:text-ink-strong ${
-                    icon === null
-                      ? 'border-accent bg-accent-soft text-accent'
-                      : 'border-line-strong bg-card'
-                  }`}
-                >
-                  <ArrowsClockwise size={15} weight="bold" aria-hidden />
-                </button>
-                {SERVICE_ICON_IDS.map((option) => {
-                  const { icon: IconCmp, label } = SERVICE_ICON_META[option]
-                  const selected = icon === option
-                  return (
-                    <button
-                      key={option}
-                      type="button"
-                      data-icon-option={option}
-                      aria-label={label}
-                      title={label}
-                      aria-pressed={selected}
-                      onClick={() => setIcon(option)}
-                      className={`pressable flex h-9 w-full items-center justify-center rounded-[6px] border text-ink-muted hover:text-ink-strong ${
-                        selected
-                          ? 'border-accent bg-accent-soft text-accent'
-                          : 'border-line-strong bg-card'
-                      }`}
-                    >
-                      <IconCmp size={16} weight="bold" aria-hidden />
-                    </button>
-                  )
-                })}
-              </div>
-            </Field>
-          )}
-
-          <Field label="项目目录" locked={live}>
-            <div className="flex items-center gap-2">
-              <span
-                className="min-w-0 flex-1 truncate rounded-[6px] border border-line bg-card px-2.5 py-1.5 font-mono text-[12px] text-ink-muted"
-                title={path}
-              >
-                {path}
-              </span>
-              <button
-                type="button"
-                disabled={live || redetecting}
-                onClick={() => void pick()}
-                className="pressable flex shrink-0 items-center gap-1.5 rounded-[6px] border border-line-strong bg-card px-2.5 py-1.5 text-[12px] text-ink-muted hover:text-ink-strong disabled:cursor-not-allowed disabled:opacity-45"
-              >
-                <FolderOpen size={13} weight="bold" />
-                {redetecting ? '识别中' : '更换'}
-              </button>
-            </div>
-          </Field>
-
-          <Field label="子目录" hint="monorepo 子包，相对项目根，留空表示用根目录" locked={live}>
-            <input
-              value={cwd}
-              disabled={live}
-              placeholder="packages/web"
-              onChange={(e) => setCwd(e.target.value)}
-              className="w-full rounded-[6px] border border-line bg-card px-2.5 py-1.5 font-mono text-[12px] text-ink-strong outline-none focus:border-accent disabled:opacity-45"
-            />
-          </Field>
-
-          <Field label="识别结果">
-            <p className="font-mono text-[12px] text-ink-muted">
-              {FRAMEWORK_LABEL[framework]} · {packageManager}
-            </p>
           </Field>
 
           {isLaunchable ? (
@@ -501,61 +347,8 @@ export function EntryConfigForm({
             </Field>
           )}
 
-          <Field
-            label="环境变量"
-            hint="值以密码形式遮盖；诊断中只显示变量名"
-            locked={live}
-          >
-            <div data-env-editor className="flex flex-col gap-2">
-              {envRows.map((row, index) => (
-                <div key={row.id} data-env-row className="flex items-center gap-2">
-                  <input
-                    data-env-key
-                    value={row.key}
-                    disabled={live}
-                    aria-label={`环境变量名称 ${index + 1}`}
-                    placeholder="NAME"
-                    onChange={(e) => updateEnvRow(row.id, 'key', e.target.value)}
-                    className="min-w-0 flex-1 rounded-[6px] border border-line bg-card px-2.5 py-1.5 font-mono text-[12px] text-ink-strong outline-none focus:border-accent disabled:opacity-45"
-                  />
-                  <input
-                    data-env-value
-                    type="password"
-                    value={row.value}
-                    disabled={live}
-                    autoComplete="new-password"
-                    aria-label={`环境变量值 ${index + 1}`}
-                    placeholder="value"
-                    onChange={(e) => updateEnvRow(row.id, 'value', e.target.value)}
-                    className="min-w-0 flex-1 rounded-[6px] border border-line bg-card px-2.5 py-1.5 font-mono text-[12px] text-ink-strong outline-none focus:border-accent disabled:opacity-45"
-                  />
-                  <button
-                    type="button"
-                    aria-label="删除环境变量"
-                    title="删除环境变量"
-                    disabled={live}
-                    onClick={() => removeEnvRow(row.id)}
-                    className="pressable flex h-8 w-8 shrink-0 items-center justify-center rounded-[6px] border border-line text-ink-faint hover:border-fault/50 hover:text-fault disabled:cursor-not-allowed disabled:opacity-45"
-                  >
-                    <Trash size={14} weight="bold" />
-                  </button>
-                </div>
-              ))}
-              <button
-                type="button"
-                aria-label="添加环境变量"
-                title="添加环境变量"
-                disabled={live}
-                onClick={addEnvRow}
-                className="pressable flex h-8 w-8 items-center justify-center rounded-[6px] border border-line-strong bg-card text-ink-muted hover:text-ink-strong disabled:cursor-not-allowed disabled:opacity-45"
-              >
-                <Plus size={14} weight="bold" />
-              </button>
-            </div>
-          </Field>
-
           {/* 任务不监听端口，PRD §4.6 强制为空 —— 直接不给这个字段，比给了再报错清楚 */}
-          {kind === 'service' ? (
+          {kind === 'service' && (
             <Field label="预期端口" hint="供预检与冲突判定参照，实际端口由项目决定" locked={live}>
               <input
                 type="number"
@@ -567,16 +360,231 @@ export function EntryConfigForm({
                 className="w-full rounded-[6px] border border-line bg-card px-2.5 py-1.5 font-mono text-[12.5px] text-ink-strong outline-none focus:border-accent disabled:opacity-45"
               />
             </Field>
-          ) : (
-            <Field label="产物目录" hint="留空则按 dist / build / out 等约定探测">
+          )}
+
+          <details className="svc-adv">
+            <summary>高级<span>类型、目录、环境变量、图标</span></summary>
+            <div className="flex flex-col gap-4">
+            <Field label="类型" locked={live}>
+              <div role="radiogroup" className="segmented">
+                {(['service', 'task'] as const).map((k) => (
+                  <button
+                    key={k}
+                    type="button"
+                    role="radio"
+                    aria-checked={kind === k}
+                    disabled={live}
+                    onClick={() => setKind(k)}
+                    className="segmented-item disabled:cursor-not-allowed disabled:opacity-45"
+                  >
+                    {k === 'service' ? '服务' : '任务'}
+                  </button>
+                ))}
+              </div>
+            </Field>
+
+            <Field label="项目目录" locked={live}>
+              <div className="flex items-center gap-2">
+                <span
+                  className="min-w-0 flex-1 truncate rounded-[6px] border border-line bg-card px-2.5 py-1.5 font-mono text-[12px] text-ink-muted"
+                  title={path}
+                >
+                  {path}
+                </span>
+                <button
+                  type="button"
+                  disabled={live || redetecting}
+                  onClick={() => void pick()}
+                  className="pressable flex shrink-0 items-center gap-1.5 rounded-[6px] border border-line-strong bg-card px-2.5 py-1.5 text-[12px] text-ink-muted hover:text-ink-strong disabled:cursor-not-allowed disabled:opacity-45"
+                >
+                  <FolderOpen size={13} weight="bold" />
+                  {redetecting ? '识别中' : '更换'}
+                </button>
+              </div>
+            </Field>
+
+            <Field label="子目录" hint="monorepo 子包，相对项目根，留空表示用根目录" locked={live}>
               <input
-                value={outputDir}
-                placeholder="dist"
-                onChange={(e) => setOutputDir(e.target.value)}
-                className="w-full rounded-[6px] border border-line bg-card px-2.5 py-1.5 font-mono text-[12px] text-ink-strong outline-none focus:border-accent"
+                value={cwd}
+                disabled={live}
+                placeholder="packages/web"
+                onChange={(e) => setCwd(e.target.value)}
+                className="w-full rounded-[6px] border border-line bg-card px-2.5 py-1.5 font-mono text-[12px] text-ink-strong outline-none focus:border-accent disabled:opacity-45"
               />
             </Field>
-          )}
+
+            <Field label="识别结果">
+              <p className="font-mono text-[12px] text-ink-muted">
+                {FRAMEWORK_LABEL[framework]} · {packageManager}
+              </p>
+            </Field>
+
+            <Field
+              label="环境变量"
+              hint="值以密码形式遮盖；诊断中只显示变量名"
+              locked={live}
+            >
+              <div data-env-editor className="flex flex-col gap-2">
+                {envRows.map((row, index) => (
+                  <div key={row.id} data-env-row className="flex items-center gap-2">
+                    <input
+                      data-env-key
+                      value={row.key}
+                      disabled={live}
+                      aria-label={`环境变量名称 ${index + 1}`}
+                      placeholder="NAME"
+                      onChange={(e) => updateEnvRow(row.id, 'key', e.target.value)}
+                      className="min-w-0 flex-1 rounded-[6px] border border-line bg-card px-2.5 py-1.5 font-mono text-[12px] text-ink-strong outline-none focus:border-accent disabled:opacity-45"
+                    />
+                    <input
+                      data-env-value
+                      type="password"
+                      value={row.value}
+                      disabled={live}
+                      autoComplete="new-password"
+                      aria-label={`环境变量值 ${index + 1}`}
+                      placeholder="value"
+                      onChange={(e) => updateEnvRow(row.id, 'value', e.target.value)}
+                      className="min-w-0 flex-1 rounded-[6px] border border-line bg-card px-2.5 py-1.5 font-mono text-[12px] text-ink-strong outline-none focus:border-accent disabled:opacity-45"
+                    />
+                    <button
+                      type="button"
+                      aria-label="删除环境变量"
+                      title="删除环境变量"
+                      disabled={live}
+                      onClick={() => removeEnvRow(row.id)}
+                      className="pressable flex h-8 w-8 shrink-0 items-center justify-center rounded-[6px] border border-line text-ink-faint hover:border-fault/50 hover:text-fault disabled:cursor-not-allowed disabled:opacity-45"
+                    >
+                      <Trash size={14} weight="bold" />
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  aria-label="添加环境变量"
+                  title="添加环境变量"
+                  disabled={live}
+                  onClick={addEnvRow}
+                  className="pressable flex h-8 w-8 items-center justify-center rounded-[6px] border border-line-strong bg-card text-ink-muted hover:text-ink-strong disabled:cursor-not-allowed disabled:opacity-45"
+                >
+                  <Plus size={14} weight="bold" />
+                </button>
+              </div>
+            </Field>
+
+            {kind !== 'service' && (
+              <Field label="产物目录" hint="留空则按 dist / build / out 等约定探测">
+                <input
+                  value={outputDir}
+                  placeholder="dist"
+                  onChange={(e) => setOutputDir(e.target.value)}
+                  className="w-full rounded-[6px] border border-line bg-card px-2.5 py-1.5 font-mono text-[12px] text-ink-strong outline-none focus:border-accent"
+                />
+              </Field>
+            )}
+
+            {/* 自定义图片：服务与任务都可用，优先级高于预设图标与 favicon。图片即时压缩落盘 */}
+            <Field
+              label="自定义图片"
+              hint="上传后压缩存本地，卡片与列表都用它显示；优先于预设图标与 favicon"
+            >
+              <div className="flex items-center gap-3">
+                <span
+                  className="icon-tile flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden"
+                  aria-hidden
+                >
+                  {imageUrl ? (
+                    <img
+                      src={imageUrl}
+                      className="h-9 w-9 rounded-[4px] object-contain"
+                      alt=""
+                      draggable={false}
+                    />
+                  ) : (
+                    <span className="font-mono text-[11px] text-ink-faint">无</span>
+                  )}
+                </span>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/gif,image/bmp"
+                  className="hidden"
+                  onChange={(e) => void onPickImage(e.target.files?.[0])}
+                />
+                <button
+                  type="button"
+                  disabled={imageBusy}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="pressable rounded-[6px] border border-line-strong bg-card px-2.5 py-1.5 text-[12px] text-ink-muted hover:text-ink-strong disabled:opacity-45"
+                >
+                  {imageBusy ? '处理中…' : hasImage ? '更换图片' : '上传图片'}
+                </button>
+                {hasImage && (
+                  <button
+                    type="button"
+                    disabled={imageBusy}
+                    onClick={() => void onRemoveImage()}
+                    className="pressable rounded-[6px] border border-line-strong bg-card px-2.5 py-1.5 text-[12px] text-ink-muted hover:text-ink-strong disabled:opacity-45"
+                  >
+                    移除
+                  </button>
+                )}
+              </div>
+            </Field>
+
+            {kind === 'service' && (
+              <Field
+                label="服务卡片图标"
+                hint={hasImage ? '已上传自定义图片，将优先显示' : '选择自动时沿用已识别的框架字标'}
+              >
+                <div
+                  data-icon-picker
+                  role="group"
+                  aria-label="服务卡片图标"
+                  className="grid grid-cols-3 gap-1.5 sm:grid-cols-9"
+                >
+                  <button
+                    type="button"
+                    data-icon-option="auto"
+                    aria-label="自动（框架图标）"
+                    title="自动（框架图标）"
+                    aria-pressed={icon === null}
+                    onClick={() => setIcon(null)}
+                    className={`pressable flex h-9 w-full items-center justify-center rounded-[6px] border text-ink-muted hover:text-ink-strong ${
+                      icon === null
+                        ? 'border-accent bg-accent-soft text-accent'
+                        : 'border-line-strong bg-card'
+                    }`}
+                  >
+                    <ArrowsClockwise size={15} weight="bold" aria-hidden />
+                  </button>
+                  {SERVICE_ICON_IDS.map((option) => {
+                    const { icon: IconCmp, label } = SERVICE_ICON_META[option]
+                    const selected = icon === option
+                    return (
+                      <button
+                        key={option}
+                        type="button"
+                        data-icon-option={option}
+                        aria-label={label}
+                        title={label}
+                        aria-pressed={selected}
+                        onClick={() => setIcon(option)}
+                        className={`pressable flex h-9 w-full items-center justify-center rounded-[6px] border text-ink-muted hover:text-ink-strong ${
+                          selected
+                            ? 'border-accent bg-accent-soft text-accent'
+                            : 'border-line-strong bg-card'
+                        }`}
+                      >
+                        <IconCmp size={16} weight="bold" aria-hidden />
+                      </button>
+                    )
+                  })}
+                </div>
+              </Field>
+            )}
+            </div>
+          </details>
         </div>
 
         {dirty && (
