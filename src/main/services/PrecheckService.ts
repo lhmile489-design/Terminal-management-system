@@ -468,10 +468,15 @@ async function portItem(
   // ── 优先检查：其他条目（不论启动状态）是否与本条目配置了同一端口 ──
   // 这是"配置冲突"，OS 还没有监听也会被发现，能在启动前拦住重复配置。
   // 只比较已设置 expectedPort 的其他条目；自己不算。
+  //
+  // 但另一个进程已经真的在听这个端口时，让下面的实时检查先说话：撞的是正在运行的进程，
+  // 受控的给「停止它」（停止前主进程仍走 OwnershipService 归属校验），外部的给换端口。
+  // 只是配置重复、还没同时运行时，才在这里建议改端口。
+  const liveOther = !!snapshot?.listeners.some((l) => l.ports.includes(port) && l.entryId !== entry.id)
   const configConflicts = allEntries.filter(
     (e) => e.id !== entry.id && e.expectedPort === port
   )
-  if (configConflicts.length > 0) {
+  if (configConflicts.length > 0 && !liveOther) {
     const names = configConflicts.map((e) => e.name).join('、')
     const suggestedPort = await findFreePort(port + 1)
     return {
