@@ -237,13 +237,13 @@ async function checks(win) {
   console.log('\n=== 回车执行：前往视图 ===')
   await pressCtrlK(win)
   await sleep(250)
-  await typeQuery(win, '> 前往诊断')
+  await typeQuery(win, '> 前往服务')
   await sleep(250)
   await pressKey(win, 'Enter')
   await sleep(700)
   check(
-    '前往诊断切换了视图',
-    await js(win, `document.querySelector('h1').textContent.trim().startsWith('诊断')`),
+    '前往服务切换了视图',
+    await js(win, `document.querySelector('h1').textContent.trim().startsWith('服务')`),
     await js(win, `document.querySelector('h1').textContent.trim()`)
   )
 
