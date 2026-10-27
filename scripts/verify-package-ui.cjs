@@ -1,6 +1,13 @@
 /**
  * 验证「带环境打包」区渲染
+ *
+ * 已停用（2026-10-27 审查）：本脚本没有 app.setPath('appData', 沙箱)，
+ * 加载主进程会读写真实的 %APPDATA%/mile-terminal/config.json；也没有任何断言。
+ * 恢复前必须先补沙箱与断言，再删掉下面这段硬停止。
  */
+console.error('verify-package-ui.cjs 已停用：缺 appData 沙箱，会读写真实配置。见文件头说明。')
+process.exit(2)
+
 const { app, BrowserWindow } = require('electron')
 const { join } = require('node:path')
 const fs = require('node:fs')

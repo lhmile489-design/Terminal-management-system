@@ -11,6 +11,16 @@ import { readListenPorts } from '../src/main/lib/winProcess'
 
 import { join } from 'node:path'
 
+/*
+ * 已停用（2026-10-27 审查）：本脚本没有 app.setPath('appData', 沙箱)，
+ * new ConfigStore() 读写的是真实的 %APPDATA%/mile-terminal/config.json，
+ * 收尾的 config.patch({ entries: [] }) 会清空真实条目；下方还写死了本机真实项目路径。
+ * 恢复前必须先补沙箱、换成 scripts/fixture* 夹具，再删掉这段硬停止。
+ * 放在全部 import 之后、任何业务代码之前：import 只加载模块，不构造 ConfigStore。
+ */
+console.error('verify-m4.ts 已停用：缺 appData 沙箱，会清空真实条目。见此处说明。')
+process.exit(2)
+
 const WEB = 'E:\\WebApp'
 const VUE_VITE = `${WEB}\\Elaina-website-project\\Elaina-admin-project`
 const NEXT = `${WEB}\\lhmile-website-project\\lhmile_blog_react`
