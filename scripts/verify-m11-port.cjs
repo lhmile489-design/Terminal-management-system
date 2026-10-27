@@ -194,7 +194,7 @@ app.whenReady().then(async () => {
 
     console.log('\n=== 4. 界面显示的端口一致 ===')
     await js(`(()=>{const b=[...document.querySelector('nav').querySelectorAll('button')]
-      .find(x=>x.getAttribute('aria-label') === '前端启动台');b&&b.click();return true})()`)
+      .find(x=>x.getAttribute('aria-label') === '服务');b&&b.click();return true})()`)
     /*
      * 量端口胶囊按钮本身，不拿整卡文案套正则。
      *
@@ -205,11 +205,10 @@ app.whenReady().then(async () => {
     const cardPort = await (async () => {
       for (let i = 0; i < 40; i++) {
         const raw = await js(`(()=>{
-          const c = [...document.querySelectorAll('main article')].find(x=>x.dataset.entryId==='svc')
-          if (!c) return ''
-          const b = [...c.querySelectorAll('button')]
-            .find(x=>/^:\\d+$/.test((x.textContent||'').trim()))
-          return b ? (b.textContent||'').trim() : ''
+          // UI-REFACTOR 阶段 4：端口在服务页成员行的 .svc-row-port 里
+          const b = document.querySelector('.svc-row[data-entry-id="svc"] .svc-row-port')
+          const t = b ? (b.textContent||'').trim() : ''
+          return /^:\\d+$/.test(t) ? t : ''
         })()`)
         if (raw) return Number(raw.slice(1))
         await sleep(200)
