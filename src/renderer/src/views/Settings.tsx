@@ -42,22 +42,21 @@ export function Settings(): React.JSX.Element {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="set-grid">
       {error && (
         <div
           role="alert"
-          className="flex items-start gap-3 rounded-[12px] border border-fault/40 bg-fault-soft px-4 py-3"
+          className="set-error"
         >
-          <Warning size={15} weight="bold" className="mt-0.5 shrink-0 text-fault" aria-hidden />
-          <p className="min-w-0 flex-1 text-[13px] break-words text-fault">{error}</p>
+          <Warning size={16} className="shrink-0" aria-hidden />
+          <p className="min-w-0 flex-1 break-words">{error}</p>
         </div>
       )}
 
-      <section aria-labelledby="settings-scan-heading">
-        <h2 id="settings-scan-heading" className="eyebrow mb-3">
+      <section className="set-tile" aria-labelledby="settings-scan-heading">
+        <h2 id="settings-scan-heading" className="set-tile-title">
           1 · 采集
         </h2>
-        <Panel>
           <Row label="采集周期" hint="窗口不可见时自动降频到 10 秒">
             <Choice
               options={[
@@ -71,14 +70,12 @@ export function Settings(): React.JSX.Element {
               onPick={(v) => void patch({ scanIntervalMs: v as AppSettings['scanIntervalMs'] })}
             />
           </Row>
-        </Panel>
       </section>
 
-      <section aria-labelledby="settings-appearance-heading">
-        <h2 id="settings-appearance-heading" className="eyebrow mb-3">
+      <section className="set-tile" aria-labelledby="settings-appearance-heading">
+        <h2 id="settings-appearance-heading" className="set-tile-title">
           2 · 外观
         </h2>
-        <Panel>
           <Row label="主题">
             <Choice
               options={[
@@ -91,14 +88,12 @@ export function Settings(): React.JSX.Element {
               onPick={(v) => void patch({ theme: v as AppSettings['theme'] })}
             />
           </Row>
-        </Panel>
       </section>
 
-      <section aria-labelledby="settings-terminal-heading">
-        <h2 id="settings-terminal-heading" className="eyebrow mb-3">
+      <section className="set-tile" aria-labelledby="settings-terminal-heading">
+        <h2 id="settings-terminal-heading" className="set-tile-title">
           3 · 终端
         </h2>
-        <Panel>
           <Row label="外部终端" hint="「在外部终端打开」使用的程序">
             <Choice
               options={[
@@ -135,14 +130,12 @@ export function Settings(): React.JSX.Element {
               onChange={(v) => void patch({ scrollback: v })}
             />
           </Row>
-        </Panel>
       </section>
 
-      <section aria-labelledby="settings-exit-heading">
-        <h2 id="settings-exit-heading" className="eyebrow mb-3">
+      <section className="set-tile" aria-labelledby="settings-exit-heading">
+        <h2 id="settings-exit-heading" className="set-tile-title">
           4 · 退出行为
         </h2>
-        <Panel>
           <Row label="退出时停止受控进程" hint="只停本应用启动的会话，外部进程一律不动">
             <Toggle
               label="退出时停止受控进程"
@@ -167,14 +160,12 @@ export function Settings(): React.JSX.Element {
               onChange={(v) => void patch({ hideFromTaskbar: v })}
             />
           </Row>
-        </Panel>
       </section>
 
-      <section aria-labelledby="settings-notify-heading">
-        <h2 id="settings-notify-heading" className="eyebrow mb-3">
+      <section className="set-tile" aria-labelledby="settings-notify-heading">
+        <h2 id="settings-notify-heading" className="set-tile-title">
           5 · 通知
         </h2>
-        <Panel>
           <Row label="任务完成时弹系统通知" hint="只在任务自然结束时推送，自己按停止不算；重启应用不会补发历史">
             <Toggle
               label="任务完成时弹系统通知"
@@ -183,14 +174,9 @@ export function Settings(): React.JSX.Element {
               onChange={(v) => void patch({ notifyOnTaskDone: v })}
             />
           </Row>
-        </Panel>
       </section>
     </div>
   )
-}
-
-function Panel({ children }: { children: React.ReactNode }): React.JSX.Element {
-  return <div className="surface-card overflow-hidden">{children}</div>
 }
 
 function Row({
@@ -203,10 +189,10 @@ function Row({
   children: React.ReactNode
 }): React.JSX.Element {
   return (
-    <div className="flex items-center justify-between gap-6 border-b border-line px-4 py-3 last:border-b-0">
+    <div className="set-row">
       <div className="min-w-0">
-        <p className="text-[13px] text-ink-strong">{label}</p>
-        {hint && <p className="mt-0.5 text-[11.5px] text-ink-faint">{hint}</p>}
+        <p className="set-row-label">{label}</p>
+        {hint && <p className="set-row-hint">{hint}</p>}
       </div>
       <div className="shrink-0">{children}</div>
     </div>
@@ -225,7 +211,7 @@ function Choice<T extends string | number>({
   onPick: (value: T) => void
 }): React.JSX.Element {
   return (
-    <div role="radiogroup" className="segmented flex-wrap justify-end">
+    <div role="radiogroup" className="ui-seg set-seg">
       {options.map((o) => (
         <button
           key={String(o.value)}
@@ -234,7 +220,7 @@ function Choice<T extends string | number>({
           aria-checked={o.value === value}
           disabled={disabled}
           onClick={() => onPick(o.value)}
-          className="segmented-item disabled:cursor-not-allowed disabled:opacity-45"
+          
         >
           {o.label}
         </button>
@@ -262,18 +248,18 @@ function Stepper({
 }): React.JSX.Element {
   const clamp = (v: number): number => Math.min(Math.max(v, min), max)
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="ui-stepper">
       <button
         type="button"
         aria-label="减小"
         title="减小"
         disabled={disabled || value <= min}
         onClick={() => onChange(clamp(value - step))}
-        className="pressable flex h-7 w-7 items-center justify-center rounded-[6px] border border-line-strong bg-card font-mono text-[13px] text-ink-muted hover:text-ink-strong disabled:cursor-not-allowed disabled:opacity-40"
+        className="ui-iconbtn set-step-btn" data-size="md"
       >
         −
       </button>
-      <span className="w-[76px] text-center font-mono text-[12.5px] text-ink-strong">
+      <span className="ui-stepper-value">
         {value} {unit}
       </span>
       <button
@@ -282,7 +268,7 @@ function Stepper({
         title="增大"
         disabled={disabled || value >= max}
         onClick={() => onChange(clamp(value + step))}
-        className="pressable flex h-7 w-7 items-center justify-center rounded-[6px] border border-line-strong bg-card font-mono text-[13px] text-ink-muted hover:text-ink-strong disabled:cursor-not-allowed disabled:opacity-40"
+        className="ui-iconbtn set-step-btn" data-size="md"
       >
         +
       </button>
@@ -309,16 +295,7 @@ function Toggle({
       aria-label={label}
       disabled={disabled}
       onClick={() => onChange(!checked)}
-      className={`pressable flex h-[22px] w-[38px] items-center rounded-full border px-[2px] disabled:cursor-not-allowed disabled:opacity-45 ${
-        checked
-          ? 'justify-end border-accent bg-accent-soft'
-          : 'justify-start border-line-strong bg-raised'
-      }`}
-    >
-      <span
-        className={`h-[16px] w-[16px] rounded-full ${checked ? 'bg-accent' : 'bg-ink-faint'}`}
-        aria-hidden
-      />
-    </button>
+      className="ui-switch"
+    />
   )
 }

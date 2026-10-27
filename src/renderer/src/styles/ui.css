@@ -1070,3 +1070,18 @@
 .log-src { max-width: 9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: var(--text-muted); text-align: left; border-radius: 4px; }
 .log-src:not(:disabled):hover { color: var(--signal-accent); text-decoration: underline; cursor: pointer; }
 .term-sess-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; padding: 0; text-align: left; background: none; border: 0; color: inherit; }
+
+/* ── 设置页：分组磁贴 2 列（UI-REFACTOR §3.6）────────────────── */
+.set-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; container-type: inline-size; }
+@container (max-width: 44rem) { .set-grid { grid-template-columns: minmax(0, 1fr); } }
+.set-error { grid-column: 1 / -1; display: flex; align-items: flex-start; gap: 10px; padding: 12px 16px; border: 1px solid var(--signal-fault); border-radius: var(--radius-control); background: var(--signal-fault-soft); color: color-mix(in srgb, var(--signal-fault) 72%, var(--text-strong)); font-size: 13px; }
+.set-tile { min-width: 0; padding: 16px; border: 1px solid transparent; border-radius: var(--radius-card); background: var(--surface-card); box-shadow: var(--shadow-lift); }
+[data-theme='dark'] .set-tile { border-color: var(--stroke-base); }
+.set-tile-title { margin-bottom: 8px; font-family: var(--font-display); font-size: 15px; font-weight: 700; color: var(--text-strong); }
+.set-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 0; border-top: 1px solid var(--stroke-base); }
+.set-tile-title + .set-row { border-top: 0; }
+.set-row-label { font-size: 13px; font-weight: 600; color: var(--text-strong); }
+.set-row-hint { margin-top: 2px; font-size: 12px; color: var(--text-faint); }
+.set-seg { flex-wrap: wrap; justify-content: flex-end; }
+.ui-seg button:disabled { cursor: not-allowed; color: var(--text-faint); }
+.set-step-btn { width: 32px; height: 30px; }
