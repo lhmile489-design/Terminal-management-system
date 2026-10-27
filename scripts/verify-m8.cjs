@@ -219,104 +219,72 @@ app.whenReady().then(async () => {
   // 任务太快可能在 stop 之前就成功了，那种情况不算失败，只是这一轮没测到
   check('用户中止 → stopped（不是 failed）', stoppedStatus !== 'failed', stoppedStatus)
 
-  console.log('\n=== 6. 界面：分类分区、筛选与编辑入口 ===')
+  console.log('\n=== 6. 界面：服务页类型与运行状态筛选（UI-REFACTOR §3.3）===')
   await js(`(()=>{const b=[...document.querySelector('nav').querySelectorAll('button')]
-    .find(x=>x.getAttribute('aria-label') === '前端启动台');b&&b.click();return true})()`)
+    .find(x=>x.getAttribute('aria-label') === '服务');b&&b.click();return true})()`)
   await sleep(1200)
+  const rows = () => js(`document.querySelectorAll('main .svc-row').length`)
+  const kinds = await js(`[...document.querySelectorAll('main .svc-row .svc-kind')].map(k=>k.textContent.trim())`)
+  check('服务页同时列出服务与任务', kinds.includes('服务') && kinds.includes('任务'), kinds.join(','))
+  const opts = await js(`[...document.querySelectorAll('select[aria-label="运行状态"] option')].map(o=>o.textContent.trim())`)
+  check('运行状态筛选为 全部状态/运行中/已停止/异常', opts.join(',') === '全部状态,运行中,已停止,异常', opts.join(','))
 
-  const sections = await js(`(()=>{
-    const areas=[...document.querySelectorAll('main [data-category-kind]')]
-      .map(s=>({kind:s.getAttribute('data-category-kind'),cards:s.querySelectorAll('article.surface-card').length}));
-    const groups=[...document.querySelectorAll('main [role="radiogroup"]')]
-      .map(g=>({label:g.getAttribute('aria-label'),
-        items:[...g.querySelectorAll('[role="radio"]')].map(r=>r.textContent.trim())}));
-    return {areas,groups,cards:document.querySelectorAll('main article.surface-card').length}})()`)
-  check('分类内展示服务与任务分区', sections.areas.some((area) => area.kind === 'service') &&
-    sections.areas.some((area) => area.kind === 'task'), JSON.stringify(sections.areas))
-  check('两区各有筛选组', sections.groups.length >= 2,
-    sections.groups.map((g) => g.label).join(' | '))
-  const svcGroup = sections.groups.find((g) => (g.label || '').includes('服务'))
-  const taskGroup = sections.groups.find((g) => (g.label || '').includes('任务'))
-  check('服务筛选为 全部/运行中/已停止/异常',
-    svcGroup && svcGroup.items.join(',') === '全部,运行中,已停止,异常',
-    svcGroup && svcGroup.items.join(','))
-  check('任务筛选为 全部/运行中/成功/失败/已取消',
-    taskGroup && taskGroup.items.join(',') === '全部,运行中,成功,失败,已取消',
-    taskGroup && taskGroup.items.join(','))
-
-  const pickFilter = (group, label) =>
-    js(`(()=>{const g=[...document.querySelectorAll('main [role="radiogroup"]')]
-      .find(x=>(x.getAttribute('aria-label')||'').includes(${JSON.stringify(group)}));
-      const r=[...g.querySelectorAll('[role="radio"]')].find(x=>x.textContent.trim()===${JSON.stringify(label)});
-      r.click();return true})()`)
-
-  const svcCards = () => js(`document.querySelectorAll(
-    'main [data-category-kind="service"] article.surface-card'
-  ).length`)
-
-  const allServices = await svcCards()
-  await pickFilter('服务', '运行中')
+  const pickStatus = (label) => js(`(()=>{const s=document.querySelector('select[aria-label="运行状态"]');
+    const o=[...s.options].find(x=>x.textContent.trim()===${JSON.stringify(label)});
+    const set=Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set;
+    set.call(s,o.value);s.dispatchEvent(new Event('change',{bubbles:true}));return true})()`)
+  const allRows = await rows()
+  await pickStatus('运行中')
   await sleep(500)
-  const runningOnly = await svcCards()
-  check('筛「运行中」后服务卡片减少', runningOnly < allServices,
-    `${allServices} → ${runningOnly}`)
+  const runningOnly = await rows()
+  check('筛「运行中」后行数减少', runningOnly < allRows, `${allRows} → ${runningOnly}`)
   check('筛出的空态给出提示而不是空白', runningOnly !== 0 ||
-    (await js(`Boolean(document.querySelector('[data-empty-service-filter]'))`)), String(runningOnly))
-
-  // 筛选生效时不给拖拽：reorder 收到的是筛后列表，会把隐藏的卡片推到末尾
-  const draggableWhenFiltered = await js(`([...document.querySelectorAll(
-    'main [data-category-kind="service"] article.surface-card'
-  )]).some(c=>c.draggable)`)
-  check('筛选生效时卡片不可拖拽', draggableWhenFiltered === false, String(draggableWhenFiltered))
-
-  await pickFilter('服务', '全部')
+    (await js(`[...document.querySelectorAll('main .svc-empty-row')].some(e=>e.textContent.includes('清除筛选'))`)), String(runningOnly))
+  await pickStatus('全部状态')
   await sleep(500)
-  const backToAll = await svcCards()
-  check('切回「全部」卡片复原', backToAll === allServices, `${backToAll} vs ${allServices}`)
-  const draggableAgain = await js(`([...document.querySelectorAll(
-    'main [data-category-kind="service"] article.surface-card'
-  )]).some(c=>c.draggable)`)
-  check('全部口径下恢复可拖拽', draggableAgain === true, String(draggableAgain))
+  const backToAll = await rows()
+  check('切回「全部状态」行数复原', backToAll === allRows, `${backToAll} vs ${allRows}`)
 
-  console.log('\n=== 7. 编辑面板 ===')
-  const openEdit = async () => {
-    await js(`(()=>{const c=document.querySelector('main article.surface-card');
-      const b=[...c.querySelectorAll('button')].find(x=>x.getAttribute('aria-label')==='编辑');
-      b&&b.click();return true})()`)
-    await sleep(600)
+  console.log('\n=== 7. 详情「配置」标签直接编辑（Q13）===')
+  const CFG = `document.querySelector('.svc-detail .svc-config')`
+  const openConfig = async () => {
+    await js(`(()=>{const r=document.querySelector('main .svc-row[data-entry-id="svc"]');r&&r.click();return !!r})()`)
+    await sleep(500)
+    await js(`(()=>{const t=[...document.querySelectorAll('.svc-detail [role="tab"]')].find(x=>x.textContent.includes('配置'));t&&t.click();return !!t})()`)
+    await sleep(500)
   }
-  await openEdit()
-  const panel = await js(`(()=>{const d=[...document.querySelectorAll('[role="dialog"]')]
-    .find(x=>(x.getAttribute('aria-labelledby')||'')==='edit-entry-title');
-    if(!d)return null;
-    const inputs=[...d.querySelectorAll('input,select')];
-    return {title:d.querySelector('#edit-entry-title').textContent.trim(),
-      fields:inputs.length,disabled:inputs.filter(i=>i.disabled).length,
-      hasStop:!![...d.querySelectorAll('button')].find(b=>b.textContent.includes('停止服务'))}})()`)
-  check('编辑面板打开且为模态', !!panel, panel ? panel.title : '未找到')
+  const formState = () => js(`(()=>{const d=${CFG};if(!d)return null;
+    const inputs=[...d.querySelectorAll('input:not([type=file]),select')];
+    const nameInput=d.querySelector('input');
+    const categoryInput=d.querySelector('[data-entry-category-input]');
+    return {fields:inputs.length,disabled:inputs.filter(i=>i.disabled).length,
+      draft:nameInput?nameInput.value:null,
+      nameEditable:!!nameInput&&!nameInput.disabled,
+      categoryEditable:!!categoryInput&&!categoryInput.disabled,
+      hasStop:!![...d.querySelectorAll('button')].find(b=>b.textContent.includes('停止服务')),
+      lockNote:d.textContent.includes('需先停止')}})()`)
+  const typeName = (v) => js(`(()=>{const i=${CFG}.querySelector('input');
+    const setter=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set;
+    setter.call(i,${JSON.stringify(v)});i.dispatchEvent(new Event('input',{bubbles:true}));return true})()`)
+
+  await openConfig()
+  const panel = await formState()
+  check('配置标签打开', !!panel, panel ? `${panel.fields} 个字段` : '未找到')
   if (panel) {
-    check('停止态下字段全部可编辑', panel.disabled === 0,
-      `${panel.disabled}/${panel.fields} 禁用`)
+    check('停止态下字段全部可编辑', panel.disabled === 0, `${panel.disabled}/${panel.fields} 禁用`)
     check('停止态不显示停止入口', panel.hasStop === false, String(panel.hasStop))
   }
 
-  // 面板内改名并保存，验证走的是同一条校验通道
-  await js(`(()=>{const d=[...document.querySelectorAll('[role="dialog"]')]
-    .find(x=>(x.getAttribute('aria-labelledby')||'')==='edit-entry-title');
-    const i=d.querySelector('input');
-    const setter=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set;
-    setter.call(i,'面板改的名字');i.dispatchEvent(new Event('input',{bubbles:true}));return true})()`)
+  // 改名并保存，验证走的是同一条校验通道
+  await typeName('面板改的名字')
   await sleep(300)
-  await js(`(()=>{const d=[...document.querySelectorAll('[role="dialog"]')]
-    .find(x=>(x.getAttribute('aria-labelledby')||'')==='edit-entry-title');
-    const b=[...d.querySelectorAll('button')].find(x=>x.textContent.trim()==='保存');
-    b.click();return true})()`)
+  await js(`(()=>{const b=[...document.querySelectorAll('.svc-savebar button')].find(x=>x.textContent.trim()==='保存');b&&b.click();return !!b})()`)
   await sleep(1200)
-  check('面板保存已落盘', onDisk().entries.some((e) => e.name === '面板改的名字'),
+  check('保存已落盘', onDisk().entries.some((e) => e.name === '面板改的名字'),
     onDisk().entries.map((e) => e.name).join(' | '))
-  check('保存后面板关闭', (await js(`!document.querySelector('[aria-labelledby="edit-entry-title"]')`)))
+  check('保存后保存条消失', await js(`!document.querySelector('.svc-savebar')`))
 
-  // 运行中打开：身份字段应禁用，且面板内给出停止入口
+  // 运行中：身份字段禁用，表单内给出停止入口
   await js(`window.mile.entry.start('svc')`)
   for (let i = 0; i < 40; i++) {
     const s = await js(`window.mile.entry.runtimes()
@@ -325,40 +293,20 @@ app.whenReady().then(async () => {
     await sleep(500)
   }
   await sleep(600)
-  await js(`(()=>{const c=[...document.querySelectorAll('main article.surface-card')]
-    .find(x=>x.dataset.entryId==='svc');
-    const b=[...c.querySelectorAll('button')].find(x=>x.getAttribute('aria-label')==='编辑');
-    b&&b.click();return true})()`)
-  await sleep(700)
-  const livePanel = await js(`(()=>{const d=[...document.querySelectorAll('[role="dialog"]')]
-    .find(x=>(x.getAttribute('aria-labelledby')||'')==='edit-entry-title');
-    if(!d)return null;
-    const inputs=[...d.querySelectorAll('input,select')];
-    const nameInput=inputs[0];
-    const categoryInput=d.querySelector('[data-entry-category-input]');
-    return {disabled:inputs.filter(i=>i.disabled).length,total:inputs.length,
-      nameEditable:!nameInput.disabled,
-      categoryEditable:!!categoryInput&&!categoryInput.disabled,
-      hasStop:!![...d.querySelectorAll('button')].find(b=>b.textContent.includes('停止服务')),
-      lockNote:d.textContent.includes('需先停止')}})()`)
-  check('运行中打开编辑面板', !!livePanel)
+  const livePanel = await formState()
+  check('运行中配置标签仍打开', !!livePanel)
   if (livePanel) {
     check('运行中名称仍可编辑', livePanel.nameEditable === true, String(livePanel.nameEditable))
     check('运行中分类仍可编辑', livePanel.categoryEditable === true, String(livePanel.categoryEditable))
-    check('运行中身份字段被禁用', livePanel.disabled > 0,
-      `${livePanel.disabled}/${livePanel.total} 禁用`)
-    check('面板内给出停止入口', livePanel.hasStop === true, String(livePanel.hasStop))
-    check('面板说明了为什么禁用', livePanel.lockNote === true, String(livePanel.lockNote))
+    check('运行中身份字段被禁用', livePanel.disabled > 0, `${livePanel.disabled}/${livePanel.fields} 禁用`)
+    check('表单内给出停止入口', livePanel.hasStop === true, String(livePanel.hasStop))
+    check('说明了为什么禁用', livePanel.lockNote === true, String(livePanel.lockNote))
   }
 
-  // 面板内停止：不关面板、不清草稿
-  await js(`(()=>{const d=[...document.querySelectorAll('[role="dialog"]')]
-    .find(x=>(x.getAttribute('aria-labelledby')||'')==='edit-entry-title');
-    const i=d.querySelector('input');
-    const setter=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set;
-    setter.call(i,'停止前填的草稿');i.dispatchEvent(new Event('input',{bubbles:true}));
-    const b=[...d.querySelectorAll('button')].find(x=>x.textContent.includes('停止服务'));
-    b.click();return true})()`)
+  // 表单内停止：不关详情、不清草稿
+  await typeName('停止前填的草稿')
+  await sleep(200)
+  await js(`(()=>{const b=[...${CFG}.querySelectorAll('button')].find(x=>x.textContent.includes('停止服务'));b&&b.click();return !!b})()`)
   // 停止要走归属校验 + 进程树终止，等到运行态真的落定再量，别用固定 sleep 赌
   let panelStopStatus = 'timeout'
   for (let i = 0; i < 40; i++) {
@@ -367,16 +315,10 @@ app.whenReady().then(async () => {
     if (panelStopStatus === 'stopped' || panelStopStatus === 'crashed') break
     await sleep(500)
   }
-  check('面板内停止真的停下了服务', panelStopStatus === 'stopped' || panelStopStatus === 'crashed',
-    panelStopStatus)
+  check('表单内停止真的停下了服务', panelStopStatus === 'stopped' || panelStopStatus === 'crashed', panelStopStatus)
   await sleep(500)
-  const afterStop = await js(`(()=>{const d=[...document.querySelectorAll('[role="dialog"]')]
-    .find(x=>(x.getAttribute('aria-labelledby')||'')==='edit-entry-title');
-    if(!d)return null;
-    const inputs=[...d.querySelectorAll('input,select')];
-    return {open:true,draft:inputs[0].value,disabled:inputs.filter(i=>i.disabled).length,
-      hasStop:!![...d.querySelectorAll('button')].find(b=>b.textContent.includes('停止服务'))}})()`)
-  check('停止后面板仍打开', !!afterStop && afterStop.open === true)
+  const afterStop = await formState()
+  check('停止后配置标签仍打开', !!afterStop)
   if (afterStop) {
     check('停止后草稿未被清空', afterStop.draft === '停止前填的草稿', afterStop.draft)
     check('停止后字段解锁', afterStop.disabled === 0, `${afterStop.disabled} 禁用`)
