@@ -357,16 +357,16 @@ app.whenReady().then(async () => {
   check('存在「应用后台」分区', heads.some((h) => h.includes('应用后台')), heads.join(' | '))
   check('存在「关注进程」分区', heads.some((h) => h.includes('关注进程')), heads.join(' | '))
 
-  const bg = await js(`(()=>{const t=[...document.querySelectorAll('main button[aria-expanded]')][0];
+  const bg = await js(`(()=>{const t=document.querySelector('section[aria-labelledby="background-heading"] button[aria-expanded]');
     return t?{expanded:t.getAttribute('aria-expanded'),text:t.textContent.trim()}:null})()`)
   check('后台分区默认折叠', bg && bg.expanded === 'false', bg && JSON.stringify(bg))
   check('折叠态给出后台进程条数而不是留白', bg && /\d/.test(bg.text), bg && bg.text)
 
   const beforeExpand = await js(`document.querySelectorAll('main .surface-card').length`)
-  await js(`(()=>{const t=[...document.querySelectorAll('main button[aria-expanded]')][0];
+  await js(`(()=>{const t=document.querySelector('section[aria-labelledby="background-heading"] button[aria-expanded]');
     t.click();return true})()`)
   await sleep(700)
-  const expanded = await js(`(()=>{const t=[...document.querySelectorAll('main button[aria-expanded]')][0];
+  const expanded = await js(`(()=>{const t=document.querySelector('section[aria-labelledby="background-heading"] button[aria-expanded]');
     return {expanded:t.getAttribute('aria-expanded'),
       cards:document.querySelectorAll('main .surface-card').length}})()`)
   check('点击后展开后台分区', expanded.expanded === 'true', expanded.expanded)
