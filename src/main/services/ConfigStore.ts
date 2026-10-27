@@ -29,6 +29,8 @@ export class ConfigStore {
   private readonly file = join(this.dir, 'config.json')
   /** 上一份良好版本，PRD §8。主文件写坏时从这里恢复 */
   private readonly backup = join(this.dir, 'config.json.bak')
+  /** 从备份恢复时，把解析失败的主文件挪到这里，供排查，不再参与读写 */
+  private readonly corrupt = join(this.dir, 'config.json.corrupt')
   private cache: AppConfig
   /**
    * 只读保护，PRD §8。主配置与备份都读不到、但文件确实存在时置位。
@@ -47,10 +49,17 @@ export class ConfigStore {
 
     const fallback = this.read(this.backup)
     if (fallback) {
-      // 从备份恢复要立刻写回主文件，否则下次启动还得再走一遍这条路
+      // 从备份恢复要立刻写回主文件，否则下次启动还得再走一遍这条路。
+      // 坏主文件先挪成 .corrupt 留给排查；这一次写入跳过「备份当前主文件」——
+      // 常规 persist() 会把坏主文件复制到 .bak，唯一的良好版本就没了。
+      try {
+        if (existsSync(this.file)) renameSync(this.file, this.corrupt)
+      } catch {
+        // 挪不走也无妨，下面 skipBackup 已保证 .bak 不被覆盖
+      }
       const migrated = this.migrate(fallback)
       this.cache = migrated
-      this.persist()
+      this.persist(true)
       return migrated
     }
 
@@ -173,11 +182,11 @@ export class ConfigStore {
    * 写入前先把当前良好版本留成 .bak，再临时文件 + rename 换上新版本。
    * 顺序不能颠倒 —— 先 rename 再备份就会把刚写的新内容备份成「上一份良好版本」。
    */
-  private persist(): void {
+  private persist(skipBackup = false): void {
     if (this.readOnly) return
     mkdirSync(this.dir, { recursive: true })
 
-    if (existsSync(this.file)) {
+    if (!skipBackup && existsSync(this.file)) {
       try {
         copyFileSync(this.file, this.backup)
       } catch {

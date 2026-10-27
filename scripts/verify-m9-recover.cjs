@@ -55,7 +55,9 @@ const GOOD = {
     closeToTray: false
   }
 }
-writeFileSync(CONFIG, '{ "entries": [ { "id": "svc"', 'utf8')
+const CORRUPT = join(SANDBOX, 'mile-terminal', 'config.json.corrupt')
+const BAD_CONTENT = '{ "entries": [ { "id": "svc"'
+writeFileSync(CONFIG, BAD_CONTENT, 'utf8')
 writeFileSync(BAK, JSON.stringify(GOOD, null, 2), 'utf8')
 
 require(join(ROOT, 'out', 'main', 'index.js'))
@@ -95,6 +97,19 @@ app.whenReady().then(async () => {
   check('迁移补出了 v2 的新字段',
     Array.isArray(disk.groupOverrides) && Array.isArray(disk.watchedKeywords),
     `${JSON.stringify(disk.groupOverrides)} / ${JSON.stringify(disk.watchedKeywords)}`)
+
+  // 恢复时不能走常规 persist 的「先把当前主文件备份成 .bak」—— 那时主文件正是坏的，
+  // 会把唯一的良好备份覆盖掉。这两条必须在下面的 settings.patch 之前量：
+  // 之后的常规写入会把（已恢复的）好主文件再轮转进 .bak，掩盖缺陷。
+  let bakAfter = null
+  try { bakAfter = JSON.parse(readFileSync(BAK, 'utf8')) } catch { /* 坏了就是 null */ }
+  check('恢复后 .bak 仍是良好版本（没被坏主文件覆盖）',
+    !!bakAfter && Array.isArray(bakAfter.entries) && bakAfter.entries[0]?.id === 'rescued',
+    bakAfter ? JSON.stringify(bakAfter.entries?.map((e) => e.id)) : '解析失败')
+  let corrupt = ''
+  try { corrupt = readFileSync(CORRUPT, 'utf8') } catch { /* 不存在 */ }
+  check('坏掉的主文件留存为 config.json.corrupt 供排查', corrupt === BAD_CONTENT,
+    corrupt ? `${corrupt.length} 字节` : '不存在')
 
   await js(`window.mile.settings.patch({ terminalFontSize: 17 })`)
   await new Promise((r) => setTimeout(r, 600))
