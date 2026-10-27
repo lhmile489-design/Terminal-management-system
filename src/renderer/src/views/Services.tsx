@@ -496,7 +496,7 @@ export function Services({
           <TextInput
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="名称、端口或路径"
+            placeholder="名称、分类、端口或路径"
             aria-label="搜索服务"
           />
         </div>

@@ -262,7 +262,7 @@ function EntryLine({
       </span>
       <span className="svc-row-name">
         <b>{entry.name}</b>
-        <span><em className="svc-kind" data-kind={entry.kind}>{entry.kind === 'task' ? '任务' : '服务'}</em>{sub}</span>
+        <span><em className="svc-kind" data-kind={entry.kind}>{entry.kind === 'task' ? '任务' : '服务'}</em>{entry.category && <em className="svc-cat" data-entry-category={entry.category} title={'分类：' + entry.category}>{entry.category}</em>}{sub}</span>
       </span>
       <span className="svc-row-port" data-shared={shared || undefined} title={shared ? sharedTip : undefined}>
         {livePort ? (

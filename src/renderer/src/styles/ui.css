@@ -986,3 +986,6 @@
 .svc-row[data-drop-at]::after { content: ''; position: absolute; left: 8px; right: 8px; height: 2px; border-radius: 2px; background: var(--btn-primary-bg); pointer-events: none; }
 .svc-row[data-drop-at='before']::after { top: -1px; }
 .svc-row[data-drop-at='after']::after { bottom: -1px; }
+
+/* 分类标签：行副标题里的次级标签，不参与分组（分组只按工作组） */
+.svc-cat { display: inline-block; max-width: 10em; margin-right: 6px; padding: 0 6px; border: 1px solid var(--stroke-strong); border-radius: var(--radius-pill); font-style: normal; font-size: 12px; font-weight: 500; line-height: 16px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; vertical-align: bottom; }

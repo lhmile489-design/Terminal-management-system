@@ -32,6 +32,7 @@ export function matchesQuery(entry: LaunchEntry, runtime: EntryRuntime | undefin
   return (
     entry.name.toLowerCase().includes(s) ||
     entry.path.toLowerCase().includes(s) ||
+    (entry.category ?? '').toLowerCase().includes(s) ||
     (port != null && String(port).includes(s))
   )
 }
