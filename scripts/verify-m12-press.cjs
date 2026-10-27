@@ -186,100 +186,62 @@ app.whenReady().then(async () => {
       return n.length >= 6 ? { scale: n[0], ty: n[5] } : { scale: 1, ty: 0 }
     }
 
-    console.log('\n=== 1. 卡片主按钮（.btn-primary）按下有位移 ===')
-    if (!(await goto('前端启动台'))) throw new Error('没能切到启动台')
+    console.log('\n=== 1. 主按钮按下缩到 0.96 并压一档底色 ===')
+    if (!(await goto('服务'))) throw new Error('没能切到服务页')
     await sleep(400)
 
-    const START = `[...document.querySelectorAll('main article')]
-      .find(a=>a.dataset.entryId==='a')
-      ?.querySelector('button[aria-label="启动"]')`
+    // UI-REFACTOR §4.4：按下只缩到 0.96，不再下沉 1px
+    const START = `document.querySelector('.svc-toolbar button.ui-btn[data-variant="primary"]')`
 
     const primary = await pressAndRead(START)
-    check('量到了启动按钮', primary !== null)
+    check('量到了主按钮（添加服务）', primary !== null)
     if (primary) {
-      // 基态对照：不按下时必须没有变形。基态就带变形的话，下面的断言不成立
       const idleT = decode(primary.idle.transform)
-      check(
-        '启动按钮基态无变形（对照）',
-        idleT.scale === 1 && Math.abs(idleT.ty) < 0.05,
-        primary.idle.transform
-      )
+      check('主按钮基态无变形（对照）', idleT.scale === 1 && Math.abs(idleT.ty) < 0.05, primary.idle.transform)
       check('按下时元素真的命中 :active（探针有效）', primary.down.active === true)
       const d = decode(primary.down.transform)
       check('按下时缩放到 0.96', Math.abs(d.scale - 0.96) < 0.005, `scale=${d.scale}`)
-      check('按下时下沉 1px（矩阵里为 0.96×1）', Math.abs(d.ty - 0.96) < 0.02, `ty=${d.ty}`)
+      check('按下时不下沉（只缩放）', Math.abs(d.ty) < 0.05, `ty=${d.ty}`)
       check('松开后弹回原位', decode(primary.up.transform).scale === 1, primary.up.transform)
-      // 松开后还卡在 :active 说明探针没真正松手，后面几节量到的都是按下态
       check('松开后解除 :active（探针没卡住）', primary.up.active === false)
-      /*
-       * 主按钮额外压一档底色。这条要跟基态比，不能只判「读到了颜色」——
-       * 那样无论有没有 :active 规则都会通过。
-       */
-      check(
-        '按下时底色与基态不同（额外压了一档）',
-        primary.down.bg !== primary.idle.bg,
-        `基态 ${primary.idle.bg} → 按下 ${primary.down.bg}`
-      )
+      check('按下时底色与基态不同（额外压了一档）', primary.down.bg !== primary.idle.bg,
+        `基态 ${primary.idle.bg} → 按下 ${primary.down.bg}`)
     }
 
-    console.log('\n=== 2. 次级图标按钮也有反馈 ===')
-    const DIAG = `[...document.querySelectorAll('main article')]
-      .find(a=>a.dataset.entryId==='a')
-      ?.querySelector('button[aria-label="诊断"]')`
-    const secondary = await pressAndRead(DIAG)
-    check('量到了诊断按钮', secondary !== null)
+    console.log('\n=== 2. 图标按钮也有反馈 ===')
+    const MORE = `document.querySelector('.svc-row[data-entry-id="a"] .ui-iconbtn')`
+    const secondary = await pressAndRead(MORE)
+    check('量到了行内「⋯」图标按钮', secondary !== null)
     if (secondary) {
-      check(
-        '诊断按钮基态无变形（对照）',
-        decode(secondary.idle.transform).scale === 1,
-        secondary.idle.transform
-      )
+      check('图标按钮基态无变形（对照）', decode(secondary.idle.transform).scale === 1, secondary.idle.transform)
       const d = decode(secondary.down.transform)
-      check('诊断按钮按下缩放到 0.96', Math.abs(d.scale - 0.96) < 0.005, `scale=${d.scale}`)
-      check('诊断按钮按下下沉 1px（矩阵里为 0.96×1）', Math.abs(d.ty - 0.96) < 0.02, `ty=${d.ty}`)
-      /*
-       * .pressable 是 transition 简写，会盖掉 Tailwind 的 transition-colors。
-       * 漏了配色属性的话按钮 hover 变色就成硬切了 —— 这条专防那次回归。
-       */
+      check('图标按钮按下缩放到 0.96', Math.abs(d.scale - 0.96) < 0.005, `scale=${d.scale}`)
       const props = secondary.idle.transition
-      check(
-        'transition 同时含 transform 与配色属性',
-        props.includes('transform') &&
-          props.includes('color') &&
-          props.includes('background-color'),
-        props
-      )
+      check('transition 同时含 transform 与配色属性',
+        props.includes('transform') && props.includes('color') && props.includes('background-color'), props)
     }
 
     console.log('\n=== 3. 禁用按钮不给按压反馈 ===')
-    const DISABLED = `[...document.querySelectorAll('main article')]
-      .find(a=>a.dataset.entryId==='z')
-      ?.querySelector('button[aria-label="启动"]')`
+    // 添加对话框没选目录时，提交按钮是禁用的
+    await js(`document.querySelector('.svc-toolbar button.ui-btn[data-variant="primary"]').click();true`)
+    await sleep(400)
+    const DISABLED = `[...document.querySelectorAll('.add-foot button')].find(b=>b.textContent.includes('添加服务'))`
     const off = await pressAndRead(DISABLED)
-    check(
-      '量到了禁用的启动按钮',
-      off !== null &&
-        (await js(`${DISABLED}?.disabled === true`)) === true,
-      off && off.idle.transform
-    )
+    check('量到了禁用的提交按钮', off !== null && (await js(`${DISABLED}?.disabled === true`)) === true,
+      off && off.idle.transform)
     if (off) {
-      check(
-        '禁用按钮按下无位移',
-        decode(off.down.transform).scale === 1 && Math.abs(decode(off.down.transform).ty) < 0.05,
-        off.down.transform
-      )
+      check('禁用按钮按下无位移', decode(off.down.transform).scale === 1, off.down.transform)
     }
+    await js(`document.body.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));true`)
+    await sleep(300)
 
-    console.log('\n=== 4. 宽条目用 pressable-flat，只下沉不缩放 ===')
-    const HINT = `[...document.querySelectorAll('button')]
-      .find(b=>b.className.includes('pressable-flat'))`
-    const flat = await pressAndRead(HINT)
-    check('量到了 pressable-flat 按钮', flat !== null)
-    if (flat) {
-      check('flat 基态无变形（对照）', decode(flat.idle.transform).scale === 1, flat.idle.transform)
-      const d = decode(flat.down.transform)
-      check('flat 按下不缩放', Math.abs(d.scale - 1) < 0.005, `scale=${d.scale}`)
-      check('flat 按下下沉 1px（无缩放，矩阵里就是 1）', Math.abs(d.ty - 1) < 0.02, `ty=${d.ty}`)
+    console.log('\n=== 4. 导航项按下同样缩放 ===')
+    const NAV = `document.querySelector('nav .ui-nav-item[aria-label="终端"]')`
+    const nav = await pressAndRead(NAV)
+    check('量到了导航项', nav !== null)
+    if (nav) {
+      check('导航项基态无变形（对照）', decode(nav.idle.transform).scale === 1, nav.idle.transform)
+      check('导航项按下缩放到 0.96', Math.abs(decode(nav.down.transform).scale - 0.96) < 0.005, nav.down.transform)
     }
 
     console.log('\n=== 5. 覆盖面：可见按钮都挂了按压反馈 ===')
@@ -386,7 +348,12 @@ app.whenReady().then(async () => {
         await sleep(100)
       }
       await sleep(500)
+      // 打开添加对话框：它的提交按钮在没选目录时是禁用的，禁用态对比度一起量
+      await js(`document.querySelector('.svc-toolbar button.ui-btn[data-variant="primary"]').click();true`)
+      await sleep(400)
       const rows = await js(CONTRAST)
+      await js(`document.body.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));true`)
+      await sleep(300)
       const bad = rows.filter((r) => r.ratio < 4.5)
       check(`${theme} 量到可见文字按钮`, rows.length >= 8, `${rows.length} 个`)
       check(

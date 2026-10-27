@@ -168,9 +168,11 @@
   font-weight: 600;
   color: var(--text-muted);
   white-space: nowrap;
-  transition: background-color 90ms var(--ease-out), color 90ms var(--ease-out), box-shadow 90ms var(--ease-out);
+  transition: background-color 90ms var(--ease-out), color 90ms var(--ease-out), box-shadow 90ms var(--ease-out), transform 200ms var(--ease-spring);
 }
 .ui-seg button:hover { color: var(--text-strong); }
+.ui-seg button:active { transform: scale(0.96); transition-duration: 70ms; }
+@media (prefers-reduced-motion: reduce) { .ui-seg button:active { transform: none; } }
 .ui-seg button[aria-checked='true'] {
   background: var(--surface-card);
   color: var(--text-strong);
