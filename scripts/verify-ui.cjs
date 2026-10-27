@@ -249,6 +249,10 @@ app.whenReady().then(async () => {
     // CSS 里直接写的 font-size 也要管：阶段 8 的扫描只认 Tailwind 写法，漏掉了 tokens.css 里的 10px 胶囊
     ['CSS 里小于 12px 的 font-size', /font-size:\s*(?:\d|1[01])(?:\.\d+)?px/g],
     ['任意值圆角 rounded-[Npx]', /rounded-\[\d+px\]/g],
+    // 2026-10-27 审查：以下三种写法绕过了上面的正则，同样违反 UI 约定
+    ['占位符文字色带透明度', /\bplaceholder-(?:ink[a-z-]*|live|warn|fault|accent|info)\/\d+/g],
+    ['任意值圆角 rounded-[var(...)]', /rounded-\[var\(/g],
+    ['禁用态压整块 opacity', /\bdisabled:opacity-\d+/g],
     ['window.confirm 调用', /window\.confirm\(/g],
     ['旧自绘图标 components/icons', /from ['"][./]*components\/icons['"]|from ['"]\.\/icons['"]/g]
   ]

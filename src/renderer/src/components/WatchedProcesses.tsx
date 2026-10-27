@@ -65,7 +65,7 @@ export function WatchedProcesses(): React.JSX.Element {
               title="添加关键字"
               onClick={submit}
               disabled={!draft.trim()}
-              className="pressable flex h-[26px] w-[26px] items-center justify-center rounded-control border border-line-strong bg-card text-ink-muted hover:text-ink-strong disabled:cursor-not-allowed disabled:opacity-45"
+              className="pressable flex h-[26px] w-[26px] items-center justify-center rounded-control border border-line-strong bg-card text-ink-muted hover:text-ink-strong disabled:cursor-not-allowed disabled:border-line disabled:bg-raised disabled:text-ink-faint"
             >
               <Plus size={12} weight="bold" />
             </button>

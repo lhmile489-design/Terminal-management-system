@@ -145,7 +145,7 @@ function GoalButton({
       onClick={onClick}
       disabled={disabled}
       title={`${def.description}\n${cmdHint}`}
-      className="pressable group flex items-center gap-1.5 rounded-control border border-line bg-raised/40 px-2.5 py-1.5 text-[12px] text-ink-muted transition-all duration-150 hover:border-line-strong hover:bg-raised hover:text-ink-strong disabled:cursor-not-allowed disabled:opacity-30"
+      className="pressable group flex items-center gap-1.5 rounded-control border border-line bg-raised/40 px-2.5 py-1.5 text-[12px] text-ink-muted transition-all duration-150 hover:border-line-strong hover:bg-raised hover:text-ink-strong disabled:cursor-not-allowed disabled:border-line disabled:bg-raised disabled:text-ink-faint"
     >
       <span className="shrink-0 transition-colors duration-150 group-hover:text-accent"><IconCmp size={12} weight="regular" aria-hidden /></span>
       {def.label}
@@ -176,7 +176,7 @@ function PackageButton({
       onClick={onClick}
       disabled={disabled}
       title={cmdHint}
-      className={`pressable flex items-center gap-1.5 rounded-control border px-2.5 py-1.5 text-[12px] font-medium transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-30 ${cls}`}
+      className={`pressable flex items-center gap-1.5 rounded-control border px-2.5 py-1.5 text-[12px] font-medium transition-all duration-150 disabled:cursor-not-allowed disabled:border-line disabled:bg-raised disabled:text-ink-faint ${cls}`}
     >
       <Package size={11} weight="bold" className="shrink-0" aria-hidden />
       {displayLabel}
@@ -206,7 +206,7 @@ function CtrlButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`pressable flex h-6 items-center gap-1 rounded-control px-2.5 text-[12px] font-medium transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-40 ${style}`}
+      className={`pressable flex h-6 items-center gap-1 rounded-control px-2.5 text-[12px] font-medium transition-all duration-150 disabled:cursor-not-allowed disabled:border-line disabled:bg-raised disabled:text-ink-faint ${style}`}
     >
       {icon}
       {label}
@@ -395,7 +395,7 @@ export function ConsolePanel({ entry }: { entry: LaunchEntry }): React.JSX.Eleme
               onChange={(e) => { void handleModeChange(e.target.value as SpringBootLaunchMode) }}
               disabled={live || busy}
               title={live ? '请先停止服务再切换启动方式' : '切换启动方式无需重启应用'}
-              className="w-full appearance-none rounded-control border border-line bg-raised/40 py-1 pl-2.5 pr-6 font-mono text-[12px] text-ink-muted transition-colors hover:border-line-strong hover:text-ink-strong disabled:cursor-not-allowed disabled:opacity-50"
+              className="w-full appearance-none rounded-control border border-line bg-raised/40 py-1 pl-2.5 pr-6 font-mono text-[12px] text-ink-muted transition-colors hover:border-line-strong hover:text-ink-strong disabled:cursor-not-allowed disabled:border-line disabled:bg-raised disabled:text-ink-faint"
             >
               <option value="" disabled>未设置（仅登记）</option>
               {springBootModes.map((m) => (
@@ -624,7 +624,7 @@ export function ConsolePanel({ entry }: { entry: LaunchEntry }): React.JSX.Eleme
                 void handleStart()
               })()}
               title={live ? '请先停止服务再切换' : '切换到此 jar 并立即启动'}
-              className="pressable flex items-center gap-1 rounded-control border border-live/25 bg-live/8 px-2 py-1 text-[12px] text-live transition-colors hover:bg-live/15 disabled:cursor-not-allowed disabled:opacity-40"
+              className="pressable flex items-center gap-1 rounded-control border border-live/25 bg-live/8 px-2 py-1 text-[12px] text-live transition-colors hover:bg-live/15 disabled:cursor-not-allowed disabled:border-line disabled:bg-raised disabled:text-ink-faint"
             >
               <Rocket size={10} weight="bold" aria-hidden />
               切换到此 jar 并启动

@@ -72,7 +72,7 @@ export function GroupDialog({ initial, onSubmit, onClose }: GroupDialogProps): R
               maxLength={40}
               placeholder="例：商城系统"
               autoFocus
-              className="w-full rounded-control border border-line bg-raised/50 px-2.5 py-1.5 text-[12.5px] text-ink-strong placeholder-ink-faint/40 outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20"
+              className="w-full rounded-control border border-line bg-raised/50 px-2.5 py-1.5 text-[12.5px] text-ink-strong placeholder-ink-faint outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20"
             />
           </div>
 
@@ -88,7 +88,7 @@ export function GroupDialog({ initial, onSubmit, onClose }: GroupDialogProps): R
               onChange={(e) => setDesc(e.target.value)}
               maxLength={120}
               placeholder="简短说明这个工作组的用途"
-              className="w-full rounded-control border border-line bg-raised/50 px-2.5 py-1.5 text-[12.5px] text-ink-strong placeholder-ink-faint/40 outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20"
+              className="w-full rounded-control border border-line bg-raised/50 px-2.5 py-1.5 text-[12.5px] text-ink-strong placeholder-ink-faint outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20"
             />
           </div>
 
@@ -136,7 +136,7 @@ export function GroupDialog({ initial, onSubmit, onClose }: GroupDialogProps): R
             <button
               type="submit"
               disabled={loading}
-              className="btn-primary pressable rounded-control px-4 py-1.5 text-[12px] disabled:cursor-not-allowed disabled:opacity-50"
+              className="btn-primary pressable rounded-control px-4 py-1.5 text-[12px] disabled:cursor-not-allowed disabled:border-line disabled:bg-raised disabled:text-ink-faint"
             >
               {loading ? '保存中…' : initial ? '保存' : '创建'}
             </button>
@@ -197,7 +197,7 @@ export function AssignGroupDialog({ group, entries, onClose }: AssignDialogProps
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="搜索条目名称…"
-          className="mb-3 w-full rounded-control border border-line bg-raised/50 px-2.5 py-1.5 text-[12px] text-ink-strong placeholder-ink-faint/40 outline-none focus:border-accent/50"
+          className="mb-3 w-full rounded-control border border-line bg-raised/50 px-2.5 py-1.5 text-[12px] text-ink-strong placeholder-ink-faint outline-none focus:border-accent/50"
         />
 
         <div className="flex max-h-[280px] flex-col gap-1 overflow-y-auto">
