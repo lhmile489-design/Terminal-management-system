@@ -59,6 +59,8 @@ app.whenReady().then(async () => {
   await waitFor(`!!document.querySelector('nav[aria-label="主导航"]')`, 30000)
   await js(`localStorage.removeItem('mile.nav.collapsed');true`)
 
+  await waitFor(`(document.querySelector('main h1')||{}).textContent==='总览'`)
+  check('打开应用默认是总览', (await h1()) === '总览', await h1())
   console.log('\n=== 1. 外框尺寸与导航 ===')
   const tb = await js(`document.querySelector('header.ui-titlebar').getBoundingClientRect().height`)
   check('标题栏 40px', tb === 40, `${tb}px`)
@@ -114,6 +116,9 @@ app.whenReady().then(async () => {
   check('折叠状态写进 localStorage', (await js(`localStorage.getItem('mile.nav.collapsed')`)) === '1')
   const allNamed = await js(`[...document.querySelectorAll('nav button')].every(b=>b.getAttribute('aria-label'))`)
   check('折叠后每个导航按钮都有可读名称', allNamed)
+  const icons = await js(`[...document.querySelectorAll('nav[aria-label="主导航"] .ui-nav-item')].map(b=>{const s=b.querySelector('svg').getBoundingClientRect(),r=b.getBoundingClientRect();return {w:Math.round(s.width),off:Math.round(Math.abs((s.left+s.width/2)-(r.left+r.width/2)))}})`)
+  check('折叠后每个图标 ≥ 16px', icons.every((i) => i.w >= 16), icons.map((i) => i.w).join(','))
+  check('折叠后图标水平居中', icons.every((i) => i.off <= 1), icons.map((i) => i.off).join(','))
   await click('nav [aria-label="展开导航"]')
   await sleep(350)
   const w3 = await js(`document.querySelector('nav[aria-label="主导航"]').getBoundingClientRect().width`)

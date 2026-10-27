@@ -741,9 +741,12 @@
 .ui-nav-item[data-sub='true'] svg { width: 16px; height: 16px; }
 .ui-nav-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; transition: opacity 120ms; }
 .ui-nav-kbd { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); font-weight: 500; transition: opacity 120ms; }
+.ui-nav-item svg { flex: none; }
+/* 折叠：标签与快捷键不再占位（只透明的话会把图标挤扁），图标在 36px 宽的项里居中 */
 .ui-nav[data-collapsed='true'] .ui-nav-label,
-.ui-nav[data-collapsed='true'] .ui-nav-kbd { opacity: 0; pointer-events: none; }
-.ui-nav[data-collapsed='true'] .ui-nav-item[data-sub='true'] { padding-left: 12px; }
+.ui-nav[data-collapsed='true'] .ui-nav-kbd { display: none; }
+.ui-nav[data-collapsed='true'] .ui-nav-item,
+.ui-nav[data-collapsed='true'] .ui-nav-item[data-sub='true'] { justify-content: center; padding: 0; }
 .ui-nav-sep { flex: 1; min-height: 8px; }
 .ui-nav-indicator {
   position: absolute;
@@ -885,3 +888,6 @@
 }
 .svc-savebar-msg { margin-right: auto; font-size: 13px; font-weight: 600; color: var(--text-strong); }
 @media (prefers-reduced-motion: reduce) { .svc-savebar { animation: none; } }
+/* 成员行的类型标记：服务 / 任务 */
+.svc-kind { display: inline-block; margin-right: 6px; padding: 0 6px; border-radius: var(--radius-pill); font-style: normal; font-size: 12px; font-weight: 600; line-height: 18px; background: var(--surface-raised); color: var(--text-muted); }
+.svc-kind[data-kind='task'] { background: var(--signal-accent-soft); color: color-mix(in srgb, var(--signal-accent) 72%, var(--text-strong)); }

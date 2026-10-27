@@ -3,7 +3,7 @@ import { XCircle, Play, Stop, ArrowClockwise, Terminal, CaretDown } from '@phosp
 import type { EntryRuntime, LaunchEntry } from '@shared/types'
 import { FRAMEWORK_LABEL, STATUS_META, isBusyStatus, isLiveStatus } from '../lib/entryMeta'
 import { StatusPill } from './StatusPill'
-import { EntryGlyph } from './EntryGlyph'
+import { launchCounts } from '../lib/launchStats'
 import { useEntries } from '../store/entries'
 
 /**
@@ -55,11 +55,6 @@ function ServiceRow({
 
   return (
     <li className="group flex items-center gap-3 border-b border-line px-4 py-2.5 last:border-b-0 hover:bg-raised/30 transition-colors duration-150 [transition-timing-function:cubic-bezier(0.25,0.46,0.45,0.94)]">
-      {/* 框架字标 / 图标 */}
-      <div className="shrink-0">
-        <EntryGlyph entry={entry} size={28} />
-      </div>
-
       {/* 名称 + 框架 */}
       <div className="min-w-0 flex-1">
         <p className="truncate text-[13px] font-medium text-ink-strong leading-tight" title={entry.name}>
@@ -201,6 +196,8 @@ export function MyServicesPanel({
   const restart = useEntries((s) => s.restart)
 
   const [collapsed, setCollapsed] = useState(false)
+  /** 默认只列最常打开的 5 个，点「查看更多」展开全部 */
+  const [showAll, setShowAll] = useState(false)
 
   const handleStart = useCallback((id: string) => { void start(id) }, [start])
   const handleStop = useCallback((id: string) => { void stop(id) }, [stop])
@@ -208,17 +205,14 @@ export function MyServicesPanel({
 
   if (entries.length === 0) return null
 
-  // 按运行状态排序：运行中 > 启动中/停止中 > 停止/空闲 > 异常
-  const sorted = [...entries].sort((a, b) => {
-    const statusOrder = (e: LaunchEntry): number => {
-      const s = (runtimes[e.id] ?? IDLE_RUNTIME(e.id)).status
-      if (s === 'running') return 0
-      if (s === 'starting' || s === 'stopping' || s === 'precheck') return 1
-      if (s === 'crashed' || s === 'failed') return 3
-      return 2
-    }
-    return statusOrder(a) - statusOrder(b)
-  })
+  // 按打开次数排序：次数多的在前，同次数按最近一次启动
+  const counts = launchCounts()
+  const sorted = [...entries].sort(
+    (x, y) => (counts[y.id] ?? 0) - (counts[x.id] ?? 0) || (y.lastStartedAt ?? 0) - (x.lastStartedAt ?? 0)
+  )
+  const LIMIT = 5
+  const shown = showAll ? sorted : sorted.slice(0, LIMIT)
+  const hidden = sorted.length - shown.length
 
   const runningCount = entries.filter((e) => isLiveStatus((runtimes[e.id] ?? IDLE_RUNTIME(e.id)).status)).length
 
@@ -258,15 +252,14 @@ export function MyServicesPanel({
       {!collapsed && (
         <div className="surface-card overflow-hidden">
           {/* 表头 */}
-          <div className="grid grid-cols-[auto_1fr_100px_auto] items-center gap-3 border-b border-line px-4 py-2 font-mono text-[10px] font-semibold tracking-[0.12em] text-ink-faint uppercase">
-            <span className="w-7" aria-hidden />
-            <span>服务名称</span>
+          <div className="grid grid-cols-[1fr_100px_auto] items-center gap-3 border-b border-line px-4 py-2 font-mono text-[10px] font-semibold tracking-[0.12em] text-ink-faint uppercase">
+                        <span>服务名称</span>
             <span>状态</span>
             <span className="sr-only">操作</span>
           </div>
 
           <ul>
-            {sorted.map((entry) => {
+            {shown.map((entry) => {
               const runtime = runtimes[entry.id] ?? IDLE_RUNTIME(entry.id)
               const isBusy = !!busy[entry.id]
               return (
@@ -286,6 +279,16 @@ export function MyServicesPanel({
               )
             })}
           </ul>
+          {(hidden > 0 || showAll) && sorted.length > LIMIT && (
+            <button
+              type="button"
+              aria-expanded={showAll}
+              onClick={() => setShowAll((v) => !v)}
+              className="pressable-flat flex w-full items-center justify-center gap-1.5 border-t border-line px-4 py-2.5 text-[13px] font-semibold text-ink-muted hover:bg-raised hover:text-ink-strong"
+            >
+              {showAll ? '收起' : `查看更多（${hidden}）`}
+            </button>
+          )}
         </div>
       )}
     </section>

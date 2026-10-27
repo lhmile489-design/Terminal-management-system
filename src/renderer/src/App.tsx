@@ -57,7 +57,7 @@ const TITLES: Record<
 
 export function App(): React.JSX.Element {
   // 打开应用默认进入服务页（Q11）：第一件事通常是启动工作组
-  const [view, setView] = useState<ViewId>('services')
+  const [view, setView] = useState<ViewId>('dashboard')
   const [events, setEvents] = useState<ActivityEvent[]>([])
   // 实时动态改为抽屉（UI-REFACTOR Q1）：关着时新事件计入未读，失败类让角标变红
   const [drawerOpen, setDrawerOpen] = useState(false)

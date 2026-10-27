@@ -1,3 +1,4 @@
+import { bumpLaunch } from '../lib/launchStats'
 import { create } from 'zustand'
 import type {
   EntryEdit,
@@ -111,6 +112,7 @@ export const useEntries = create<EntriesStore>((set, get) => ({
 
   start: async (id) => guard(set, id, async () => {
     const result = await window.mile.entry.start(id)
+    if (result.ok) bumpLaunch(id)
     return result.ok ? null : result.precheck
   }),
 

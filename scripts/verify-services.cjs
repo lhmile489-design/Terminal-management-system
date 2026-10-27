@@ -87,6 +87,9 @@ app.whenReady().then(async () => {
   await key('1', { ctrlKey: true })
   const onPage = await waitFor(`(document.querySelector('main h1')||{}).textContent==='服务'`)
   check('Ctrl+1 进入服务页', onPage)
+  await sleep(300)
+  const kinds = await js(`Object.fromEntries([...document.querySelectorAll('.svc-row')].map(r=>[r.dataset.entryId,(r.querySelector('.svc-kind')||{textContent:''}).textContent]))`)
+  check('每行标注任务或服务', kinds.d === '任务' && kinds.a === '服务' && kinds.b === '服务', JSON.stringify(kinds))
   await waitFor(`document.querySelectorAll('[data-group-id]').length>=3`)
   const tiles = await js(`[...document.querySelectorAll('[data-group-id]')].map(t=>t.getAttribute('aria-label'))`)
   check('两个工作组 + 未分组三块磁贴', tiles.length === 3, tiles.join('、'))
@@ -297,6 +300,16 @@ app.whenReady().then(async () => {
   }
   await press('.svc-detail', '关闭详情')
   await sleep(250)
+
+  console.log('\n=== 总览服务操作台：按打开次数排序、最多 5 个、无左侧图标 ===')
+  await js(`localStorage.setItem('mile.launchCount',JSON.stringify({b:9,e:5}));true`)
+  await key('2', { ctrlKey: true })
+  await waitFor(`!!document.querySelector('section[aria-labelledby="my-services-panel-heading"] li')`)
+  const ops = await js(`[...document.querySelectorAll('section[aria-labelledby="my-services-panel-heading"] li')].map(li=>({t:li.textContent,img:!!li.querySelector('img, [data-glyph], .entry-glyph')}))`)
+  check('打开次数最多的排第一', /公司文档站/.test(ops[0] && ops[0].t), ops.map((o) => o.t.slice(0, 6)).join('、'))
+  check('次多的排第二', /只登记/.test(ops[1] && ops[1].t))
+  check('最多显示 5 个', ops.length <= 5, `${ops.length} 个`)
+  check('列表项左侧不再有图标', ops.every((o) => !o.img))
 
   console.log(`\n结果：${pass} 通过，${fail} 失败`)
   try { rmSync(SANDBOX, { recursive: true, force: true }) } catch { console.log(`  (沙箱残留，交由系统清理：${SANDBOX})`) }
