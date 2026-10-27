@@ -125,7 +125,7 @@ app.whenReady().then(async () => {
     win.setBounds({ width: 1500, height: 940 })
 
     const navigate = await js(`(() => {
-      const button = document.querySelector('nav button[aria-label="前端启动台"]')
+      const button = document.querySelector('nav button[aria-label="服务"]')
       if (!button) return false
       button.click()
       return true
@@ -133,7 +133,7 @@ app.whenReady().then(async () => {
     check('launchpad navigation is available', navigate === true)
     check(
       'launchpad renders the service card',
-      Boolean(await waitFor('icons card', () => js(`Boolean(document.querySelector('article[data-entry-id="icons"]'))`)))
+      Boolean(await waitFor('icons card', () => js(`Boolean(document.querySelector('.svc-row[data-entry-id="icons"]'))`)))
     )
 
     console.log('\n=== 1. Select and persist an approved icon ===')
@@ -159,7 +159,7 @@ app.whenReady().then(async () => {
     const diskRocket = JSON.parse(readFileSync(CONFIG, 'utf8')).entries.find((item) => item.id === 'icons')
     check('approved icon persists in config.json', diskRocket?.icon === 'rocket')
     const renderedRocket = await waitFor('rocket card glyph', () =>
-      js(`Boolean(document.querySelector('article[data-entry-id="icons"] [data-card-icon="rocket"] svg'))`)
+      js(`Boolean(document.querySelector('.svc-row[data-entry-id="icons"] [data-card-icon="rocket"] svg'))`)
     )
     check('service card renders the selected icon', renderedRocket === true)
 
@@ -207,7 +207,7 @@ app.whenReady().then(async () => {
       })`)
     )
     check('live icon edit keeps the service running', cloudLive === true)
-    const renderedCloud = await js(`Boolean(document.querySelector('article[data-entry-id="icons"] [data-card-icon="cloud"] svg'))`)
+    const renderedCloud = await js(`Boolean(document.querySelector('.svc-row[data-entry-id="icons"] [data-card-icon="cloud"] svg'))`)
     check('card updates to the live selected icon', renderedCloud === true)
 
     console.log('\n=== 4. Restore automatic framework glyph ===')
@@ -229,7 +229,7 @@ app.whenReady().then(async () => {
     check('automatic selection clears the runtime icon value', reset === true)
     const diskReset = JSON.parse(readFileSync(CONFIG, 'utf8')).entries.find((item) => item.id === 'icons')
     check('automatic selection removes the persisted icon value', !Object.hasOwn(diskReset, 'icon'))
-    const renderedAuto = await js(`Boolean(document.querySelector('article[data-entry-id="icons"] [data-card-icon="auto"]'))`)
+    const renderedAuto = await js(`Boolean(document.querySelector('.svc-row[data-entry-id="icons"] [data-card-icon="auto"]'))`)
     check('card returns to its automatic framework glyph', renderedAuto === true)
   } catch (error) {
     console.log('HARNESS ERROR', error)
@@ -252,39 +252,55 @@ app.whenReady().then(async () => {
   app.exit(fail === 0 ? 0 : 1)
 })
 
+/** 服务页：选中行 → 「配置」标签 → 展开「高级」（图标选择器在高级里） */
 async function openEditor(js, id) {
-  const clicked = await js(`(() => {
-    const button = document.querySelector('article[data-entry-id=${JSON.stringify(id)}] button[aria-label="编辑"]')
-    if (!button) return false
-    button.click()
+  const clicked = await js(`(async () => {
+    const row = document.querySelector('.svc-row[data-entry-id=${JSON.stringify(id)}]')
+    if (!row) return false
+    row.click()
+    await new Promise((r) => setTimeout(r, 300))
+    const tab = [...document.querySelectorAll('.svc-detail [role="tab"]')].find((t) => t.textContent.includes('配置'))
+    if (!tab) return false
+    tab.click()
+    await new Promise((r) => setTimeout(r, 300))
+    const adv = document.querySelector('details.svc-adv')
+    if (adv) adv.open = true
     return true
   })()`)
   check(`${id} edit button is available`, clicked === true)
-  const opened = await waitFor(`${id} editor`, () => js(`Boolean(document.querySelector('[role="dialog"]'))`))
+  const opened = await waitFor(`${id} editor`, () => js(`Boolean(document.querySelector('.svc-detail .svc-config'))`))
   check(`${id} editor opens`, opened === true)
 }
 
+/** 保存走底部保存条；保存成功后保存条消失（表单仍留在配置标签里） */
 async function saveEditor(js) {
   const clicked = await js(`(() => {
-    const button = [...document.querySelectorAll('[role="dialog"] button')]
+    const button = [...document.querySelectorAll('.svc-savebar button')]
       .find(item => item.textContent.trim() === '保存')
     if (!button) return false
     button.click()
     return true
   })()`)
   check('editor save button is available', clicked === true)
-  const closed = await waitFor('editor save', () => js(`!document.querySelector('[role="dialog"]')`))
+  const closed = await waitFor('editor save', () => js(`!document.querySelector('.svc-savebar')`))
   check('editor closes after save', closed === true)
 }
 
+/** 不保存直接关闭详情：有未保存改动时会弹确认，选「放弃改动」 */
 async function closeEditor(js) {
   const clicked = await js(`(() => {
-    const button = document.querySelector('[role="dialog"] button[aria-label="关闭"]')
+    const button = document.querySelector('.svc-detail button[aria-label="关闭详情"]')
     if (!button) return false
     button.click()
     return true
   })()`)
   check('editor close button is available', clicked === true)
-  const closed = await waitFor('editor close', () => js(`!document.querySelector('[role="dialog"]')`))
+  await sleep(250)
+  await js(`(() => {
+    const b = [...document.querySelectorAll('[role="alertdialog"] button')].find((x) => x.textContent.trim() === '放弃改动')
+    b && b.click()
+    return true
+  })()`)
+  const closed = await waitFor('editor close', () => js(`!document.querySelector('.svc-detail')`))
   check('editor closes without saving', closed === true)
 }

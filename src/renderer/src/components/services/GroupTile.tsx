@@ -257,7 +257,7 @@ function EntryLine({
       onClick={() => actions.select(entry)}
     >
       <StatusDot tone={meta.tone} label={meta.label} />
-      <span className="svc-row-glyph">
+      <span className="svc-row-glyph" data-card-icon={entry.kind === 'service' ? (entry.icon ?? 'auto') : undefined}>
         <EntryGlyph entry={entry} imageUrl={image} size={18} glyphClass="text-[12px]" />
       </span>
       <span className="svc-row-name">
