@@ -1458,7 +1458,7 @@ export class EntryService extends EventEmitter {
 
     // 终止前重校验归属：从判定到执行之间 PID 可能被回收复用，PRD §6.3 步骤 4
     const table = await this.scanner.table([runtime.pid])
-    await this.ownership.assertKillable(runtime.pid, table)
+    await this.ownership.assertKillable(runtime.pid, table, runtime.sessionId)
 
     const watch = this.watches.get(runtime.sessionId)
     if (watch) watch.stoppedByUser = true

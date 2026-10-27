@@ -6,11 +6,20 @@ interface Tracked {
   sessionId: string
   rootPid: number
   runToken: string
-  /** 根进程创建时刻，用于识别 PID 复用 */
-  startedAt: number
+  /** 登记时刻。根进程由我们 spawn，它的 OS 创建时间只会早于这个时刻（留时钟抖动余量） */
+  registeredAt: number
+  /**
+   * 根进程的 OS 创建时间，首次在进程表里看到时钉住。之后同一 PID 的创建时间
+   * 变了，就是根进程已退出、PID 被系统分给了别的进程。
+   */
+  rootCreatedAt?: number
 }
 
 const MAX_ASCENT = 12
+/** 根进程创建时间可以比登记时刻晚多少（同机时钟的读数抖动） */
+const REGISTER_SLACK_MS = 5000
+/** 同一进程两次读出的创建时间允许的差（CIM 时间换算的精度） */
+const SAME_PROCESS_MS = 1000
 
 /**
  * 三重凭据归属识别，PRD §6。
@@ -29,7 +38,7 @@ export class OwnershipService {
   }
 
   register(sessionId: string, rootPid: number, runToken: string): void {
-    this.tracked.set(sessionId, { sessionId, rootPid, runToken, startedAt: Date.now() })
+    this.tracked.set(sessionId, { sessionId, rootPid, runToken, registeredAt: Date.now() })
   }
 
   unregister(sessionId: string): void {
@@ -65,16 +74,7 @@ export class OwnershipService {
     let cursor = pid
     for (let hop = 0; hop < MAX_ASCENT; hop++) {
       const hit = roots.get(cursor)
-      // 父链上溯可能撞到 PID 复用：登记时刻晚于目标进程启动时刻则不可能是其祖先
-      if (hit) {
-        const row = table.byPid.get(pid)
-        // 读不到目标进程的启动时间时，无法排除 PID 复用的可能性。
-        // 按「宁可不停也不误杀」的安全取向，此时保守地拒绝归属（返回 null），
-        // 而不是「读不到就信任」—— 后者会在 WMI 暂时失效时开放误杀窗口。
-        if (!row?.startedAt) return null
-        if (row.startedAt >= hit.startedAt - 60_000) return hit
-        return null
-      }
+      if (hit) return this.rootStillOurs(hit, pid, table) ? hit : null
       const row = table.byPid.get(cursor)
       if (!row || row.ppid <= 4 || row.ppid === cursor) return null
       cursor = row.ppid
@@ -83,13 +83,38 @@ export class OwnershipService {
   }
 
   /**
-   * 终止前重校验（PRD §6.3 步骤 4）。从判定到执行之间 PID 可能被回收复用，
-   * 不重校验就是误杀窗口。
+   * 命中的登记根是否仍是我们 spawn 的那个进程，且 pid 确实可能是它的后代。
+   * 读不到创建时间一律拒绝 —— 「读不到就信任」会在 CIM 暂时失效时开放误杀窗口。
    */
-  async assertKillable(pid: number, table: ProcessTable): Promise<OwnershipVerdict> {
+  private rootStillOurs(hit: Tracked, pid: number, table: ProcessTable): boolean {
+    const rootAt = table.byPid.get(hit.rootPid)?.startedAt
+    if (!rootAt) return false
+    if (hit.rootCreatedAt === undefined) {
+      // 首次观察：我们 spawn 的根进程不可能创建得比登记还晚
+      if (rootAt > hit.registeredAt + REGISTER_SLACK_MS) return false
+      hit.rootCreatedAt = rootAt
+    } else if (Math.abs(rootAt - hit.rootCreatedAt) > SAME_PROCESS_MS) {
+      // 同一 PID 的创建时间变了：根进程已退出，PID 被系统复用
+      return false
+    }
+    if (pid === hit.rootPid) return true
+    const at = table.byPid.get(pid)?.startedAt
+    // 后代不可能早于祖先创建；早于根的「子进程」只可能是 PPID 复用造成的巧合
+    return !!at && at >= hit.rootCreatedAt - SAME_PROCESS_MS
+  }
+
+  /**
+   * 终止前重校验（PRD §6.3 步骤 4）。从判定到执行之间 PID 可能被回收复用，
+   * 不重校验就是误杀窗口。传 sessionId 时还要求归属命中的就是这个会话 ——
+   * 停 A 会话不能因为 PID 恰好落在 B 会话的树里就被放行。
+   */
+  async assertKillable(pid: number, table: ProcessTable, sessionId?: string): Promise<OwnershipVerdict> {
     const verdict = this.verify(pid, table)
     if (verdict.ownership !== 'owned') {
       throw new Error(`拒绝终止 PID ${pid}：归属判定为 ${verdict.ownership}，非本应用启动`)
+    }
+    if (sessionId !== undefined && verdict.sessionId !== sessionId) {
+      throw new Error(`拒绝终止 PID ${pid}：它属于会话 ${verdict.sessionId}，不是要停的会话 ${sessionId}`)
     }
     return verdict
   }

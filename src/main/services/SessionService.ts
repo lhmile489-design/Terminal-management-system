@@ -191,7 +191,7 @@ export class SessionService extends EventEmitter {
     if (this.scanner) {
       try {
         const table = await this.scanner.table([pid])
-        await this.ownership.assertKillable(pid, table)
+        await this.ownership.assertKillable(pid, table, id)
       } catch {
         // 重校验拒绝（归属变化或 PID 已复用）：取消 kill，仅清理会话登记
         this.ownership.unregister(id)
