@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react'
-import { XCircle, Play, Stop, ArrowClockwise, Terminal, CaretDown } from '@phosphor-icons/react'
+import { Play, Stop, ArrowClockwise, Terminal, CaretDown } from '@phosphor-icons/react'
 import type { EntryRuntime, LaunchEntry } from '@shared/types'
-import { FRAMEWORK_LABEL, STATUS_META, isBusyStatus, isLiveStatus } from '../lib/entryMeta'
+import { FRAMEWORK_LABEL, STATUS_META, isLiveStatus } from '../lib/entryMeta'
 import { StatusPill } from './StatusPill'
 import { launchCounts } from '../lib/launchStats'
 import { useEntries } from '../store/entries'
@@ -9,11 +9,10 @@ import { useEntries } from '../store/entries'
 /**
  * Dashboard 上的「我的服务」卡片式列表面板。
  *
- * 和启动台不同，这里只做快捷操作：启动 / 停止 / 强制关闭，
+ * 和启动台不同，这里只做快捷操作：启动 / 停止 / 重启，
  * 不做复杂的编辑交互——那些留给启动台。
  *
- * 「强制关闭」=在运行中或卡住时直接发 stop()，用红色 X 与「强制关闭」标签区分于普通停止。
- * 用户说「不想要的服务可以强制关闭」，本质上就是对运行中服务的快速停止入口。
+ * 「停止」在运行中或卡住时都可见，是对运行中服务的快速停止入口。
  */
 
 const IDLE_RUNTIME = (id: string): EntryRuntime => ({
@@ -29,7 +28,6 @@ interface ServiceRowProps {
   onStart: () => void
   onStop: () => void
   onRestart: () => void
-  onForceStop: () => void
   onLogs: () => void
 }
 
@@ -40,18 +38,14 @@ function ServiceRow({
   onStart,
   onStop,
   onRestart,
-  onForceStop,
   onLogs
 }: ServiceRowProps): React.JSX.Element {
   const { status } = runtime
   const meta = STATUS_META[status]
   const isRunning = status === 'running'
   const isLive = isLiveStatus(status)
-  const isBusy = isBusyStatus(status)
   const canStart = !entry.registerOnly && !isLive && status !== 'precheck'
   const canStop = isLive
-  // 「强制关闭」：运行中或卡在 starting/stopping 状态时可用
-  const canForceStop = isRunning || isBusy
 
   return (
     <li className="group flex items-center gap-3 border-b border-line px-4 py-2.5 last:border-b-0 hover:bg-raised/30 transition-colors duration-150 [transition-timing-function:cubic-bezier(0.25,0.46,0.45,0.94)]">
@@ -102,16 +96,6 @@ function ServiceRow({
           />
         )}
 
-        {/* 普通停止：运行中或忙碌时显示 */}
-        {canStop && !canForceStop && (
-          <ActionBtn
-            icon={Stop}
-            label="停止"
-            onClick={onStop}
-            tone="warn"
-          />
-        )}
-
         {/* 重启：仅运行中时 */}
         {isRunning && (
           <ActionBtn
@@ -123,22 +107,20 @@ function ServiceRow({
         )}
       </div>
 
-      {/* 强制关闭：始终可见（当可用时），红色警示。
-          调用路径与普通停止相同（stop()→\x03→3s 后 taskkill），
-          区别在于：普通停止按钮在进程卡住（isBusy）时隐藏，强制关闭始终显示，
-          给用户一个"我知道后果，立刻停"的明确入口。
-          安全校验（归属三重验证）由主进程 OwnershipService 保证，此处不跳过。 */}
-      {canForceStop && (
+      {/* 停止：运行中、启动中、停止中都可见，不藏在 hover 里 —— 进程卡住时用户最需要它。
+          行为是 Ctrl+C，3 秒后仍未退出再终止进程树；归属三重校验由主进程把关。
+          以前这里有一个调用完全相同的「强制关闭」，名称与行为对不上，已合并。 */}
+      {canStop && (
         <button
           type="button"
-          aria-label={`强制关闭 ${entry.name}`}
-          title={`强制停止 ${entry.name}`}
+          aria-label={`停止 ${entry.name}`}
+          title="先发 Ctrl+C，3 秒后仍未退出则结束进程树"
           disabled={busy}
-          onClick={onForceStop}
-          className="pressable shrink-0 flex items-center gap-1 rounded-control border border-fault/30 bg-fault/8 px-2 py-1 font-mono text-[12px] text-fault hover:border-fault/60 hover:bg-fault/15 disabled:pointer-events-none disabled:opacity-40"
+          onClick={onStop}
+          className="pressable shrink-0 flex items-center gap-1 rounded-control border border-fault/30 bg-fault/8 px-2 py-1 font-mono text-[12px] text-fault hover:border-fault/60 hover:bg-fault/15 disabled:pointer-events-none disabled:border-line disabled:bg-raised disabled:text-ink-faint"
         >
-          <XCircle size={12} weight="bold" />
-          强制关闭
+          <Stop size={12} weight="bold" />
+          停止
         </button>
       )}
 
@@ -271,7 +253,6 @@ export function MyServicesPanel({
                   onStart={() => handleStart(entry.id)}
                   onStop={() => handleStop(entry.id)}
                   onRestart={() => handleRestart(entry.id)}
-                  onForceStop={() => handleStop(entry.id)}
                   onLogs={() => {
                     if (runtime.sessionId) onOpenLogs(runtime.sessionId)
                   }}
