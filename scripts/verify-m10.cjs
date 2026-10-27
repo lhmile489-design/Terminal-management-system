@@ -281,14 +281,13 @@ app.whenReady().then(async () => {
   check('新增框架全部通过条目校验', frameworks.length > 0 && rejected.length === 0, rejected.join(' | '))
   await js(`window.mile.entry.edit('svc', { framework: 'node' })`)
 
-  // 界面侧的映射表漏一项就会渲染出 undefined。这一段必须站在启动台上量 ——
-  // 工作台没有条目卡片，卡片找不到时 out[f] 会是 null，断言就会空过。
+  // 界面侧的映射表漏一项就会渲染出 undefined。这一段必须站在服务页上量 ——
+  // 行找不到时 out[f] 会是 null，断言就会空过。
   await js(`(()=>{const b=[...document.querySelector('nav').querySelectorAll('button')]
-    .find(x=>x.getAttribute('aria-label')==='前端启动台');b&&b.click();return true})()`)
+    .find(x=>x.getAttribute('aria-label')==='服务');b&&b.click();return true})()`)
   await sleep(1200)
-  const cardPresent = await js(`!![...document.querySelectorAll('main article.surface-card')]
-    .find(c=>c.dataset.entryId==='svc')`)
-  check('启动台上找到被测卡片', cardPresent === true, String(cardPresent))
+  const cardPresent = await js(`!!document.querySelector('.svc-row[data-entry-id="svc"]')`)
+  check('服务页上找到被测行', cardPresent === true, String(cardPresent))
 
   const labels = await js(`(async()=>{
     const list = ${JSON.stringify(frameworks)};
@@ -296,13 +295,12 @@ app.whenReady().then(async () => {
     for (const f of list) {
       await window.mile.entry.edit('svc', { framework: f });
       await new Promise(r=>setTimeout(r,120));
-      const card = [...document.querySelectorAll('main article.surface-card')]
-        .find(c=>c.dataset.entryId==='svc');
+      const card = document.querySelector('.svc-row[data-entry-id="svc"]');
       out[f] = card ? card.textContent.includes('undefined') : null;
     }
     return out })()`)
   const measured = Object.values(labels).filter((v) => v !== null).length
-  check('每个框架都量到了卡片文案', measured === frameworks.length,
+  check('每个框架都量到了行内文案', measured === frameworks.length,
     `${measured}/${frameworks.length}`)
   const undefinedLabels = Object.entries(labels).filter(([, bad]) => bad === true).map(([f]) => f)
   check('框架标签无 undefined 渲染', measured === frameworks.length && undefinedLabels.length === 0,
