@@ -120,46 +120,27 @@ app.whenReady().then(async () => {
     const disk1 = JSON.parse(readFileSync(CONFIG, 'utf8'))
     check('条目落盘含 imageId', disk1.entries.find((e) => e.id === taskId)?.imageId === imageId)
 
-    // ── 2. 两视图都显示（卡片 + 列表）──────────────────────────────────
-    console.log('\n=== 2. 卡片与列表都显示 ===')
-    // 切到启动台（与 m14 harness 同一导航选择器）
-    await js(`document.querySelector('nav button[aria-label="前端启动台"]')?.click(); true`)
+    // ── 2. 服务页的行与详情头都显示（旧版是卡片 + 列表两种视图，新服务页只有行）──
+    console.log('\n=== 2. 行与详情头都显示 ===')
+    await js(`document.querySelector('nav button[aria-label="服务"]')?.click(); true`)
     await sleep(400)
-    // 确保是卡片视图（默认即卡片，但保险起见点一下）
-    await js(`[...document.querySelectorAll('[role=radio]')].find(el => el.getAttribute('aria-label') === '卡片视图')?.click(); true`)
-    await sleep(400)
-    const cardImg = await (async (ms = 4000) => {
+    const pollImg = async (sel, ms = 4000) => {
       const deadline = Date.now() + ms
       while (Date.now() < deadline) {
-        const src = await js(`(() => {
-          const card = document.querySelector('section[data-category-kind="task"] article');
-          const img = card && card.querySelector('img');
-          return img ? img.src : null;
-        })()`)
+        const src = await js(`(() => { const el = document.querySelector(${JSON.stringify(sel)}); return el ? el.src : null })()`)
         if (src) return src
         await sleep(150)
       }
       return null
-    })()
-    check('卡片视图任务卡片显示图片', typeof cardImg === 'string' && cardImg.startsWith('data:image'), String(cardImg).slice(0, 24))
+    }
+    const rowImg = await pollImg(`.svc-row[data-entry-id="${taskId}"] .svc-row-glyph img`)
+    check('服务页任务行显示图片', typeof rowImg === 'string' && rowImg.startsWith('data:image'), String(rowImg).slice(0, 24))
 
-    // 切到列表视图：点「列表视图」radio
-    await js(`[...document.querySelectorAll('[role=radio],[aria-label]')].find(el => el.getAttribute('aria-label') === '列表视图')?.click?.(); true`)
-    await sleep(400)
-    const rowImg = await (async (ms = 4000) => {
-      const deadline = Date.now() + ms
-      while (Date.now() < deadline) {
-        const src = await js(`(() => {
-          const row = document.querySelector('section[data-category-kind="task"] [data-entry-row]');
-          const img = row && row.querySelector('img');
-          return img ? img.src : null;
-        })()`)
-        if (src) return src
-        await sleep(150)
-      }
-      return null
-    })()
-    check('列表视图任务行显示图片', typeof rowImg === 'string' && rowImg.startsWith('data:image'), String(rowImg).slice(0, 24))
+    await js(`document.querySelector(${JSON.stringify(`.svc-row[data-entry-id="${taskId}"]`)})?.click(); true`)
+    const headImg = await pollImg('.svc-detail-head img')
+    check('详情头显示同一张图片', typeof headImg === 'string' && headImg === rowImg, String(headImg).slice(0, 24))
+    await js(`document.querySelector('[aria-label="关闭详情"]')?.click(); true`)
+    await sleep(200)
 
     // ── 3. 安全：非法输入被拒 / 不越权读 ─────────────────────────────────
     console.log('\n=== 3. 安全 ===')
