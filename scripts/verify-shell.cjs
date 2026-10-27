@@ -69,7 +69,7 @@ app.whenReady().then(async () => {
   check('旧的常驻右栏已去掉', !(await js(`!!document.querySelector('aside')`)))
 
   console.log('\n=== 2. Ctrl+1..5 切换页面 ===')
-  const expect = { 1: '前端启动台', 2: '总览', 3: '终端', 4: '设置', 5: '关于' }
+  const expect = { 1: '服务', 2: '总览', 3: '终端', 4: '设置', 5: '关于' }
   for (const [n, title] of Object.entries(expect)) {
     await key(n, { ctrlKey: true })
     const ok = await waitFor(`(document.querySelector('main h1')||{textContent:''}).textContent.trim()===${JSON.stringify(title)}`, 2000)

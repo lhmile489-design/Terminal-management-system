@@ -303,7 +303,7 @@ function SectionLabel({
 
 // ─── 主控制台面板 ─────────────────────────────────────────────────────────────
 
-function ConsolePanel({ entry }: { entry: LaunchEntry }): React.JSX.Element {
+export function ConsolePanel({ entry }: { entry: LaunchEntry }): React.JSX.Element {
   const { runtimeOf, start, stop, restart, mavenRun, packageWithProfile, edit, error, clearError } = useEntries(
     useShallow((s) => ({
       runtimeOf: s.runtimeOf,

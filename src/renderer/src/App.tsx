@@ -10,6 +10,7 @@ import { hasOpenOverlay } from './lib/overlay'
 import { ICON } from './lib/icons'
 import { Dashboard } from './views/Dashboard'
 import { Launchpad } from './views/Launchpad'
+import { Services } from './views/Services'
 import { BackendConsole } from './views/BackendConsole'
 import { Workgroups } from './views/Workgroups'
 import { Diagnose } from './views/Diagnose'
@@ -31,6 +32,10 @@ const TITLES: Record<
   ViewId,
   { title: string; caption: string }
 > = {
+  services: {
+    title: '服务',
+    caption: '按工作组启停前端、后端与任务，点一个服务看详情'
+  },
   dashboard: {
     title: '总览',
     caption: '实时掌握本机监听端口与进程负载'
@@ -309,6 +314,7 @@ export function App(): React.JSX.Element {
                 onOpenLogs={openLogs}
               />
             )}
+            {view === 'services' && <Services onOpenLogs={openLogs} />}
             {view === 'launchpad' && (
               <Launchpad
                 onOpenLogs={openLogs}

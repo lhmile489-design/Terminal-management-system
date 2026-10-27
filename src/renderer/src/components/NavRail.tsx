@@ -14,6 +14,7 @@ import { ICON, ICON_SIZE } from '../lib/icons'
 import { useTheme } from '../store/theme'
 
 export type ViewId =
+  | 'services'
   | 'dashboard'
   | 'launchpad'
   | 'backend'
@@ -43,7 +44,7 @@ interface NavTop extends NavLeaf {
 /** 5 项一级导航，UI-REFACTOR Q9 / Q10 / Q19 */
 export const NAV_TOP: NavTop[] = [
   {
-    id: 'launchpad',
+    id: 'services',
     label: '服务',
     icon: ICON.navServices,
     key: 1,

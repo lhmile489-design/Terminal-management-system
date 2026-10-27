@@ -422,3 +422,13 @@
 留到后续阶段：
 - `verify-m12-press` / `verify-m7-visual` 的「禁用按钮对比度」量不到按钮：它只认按钮自己的直接文字节点，而 `EntryCard` 的文字包在 `<span>` 里。阶段 4 用新成员行替换 `EntryCard` 时一起改。
 - `verify-m7-visual` 其余 19 项失败断言的是旧设计（28px 主标、英文副标、44px 图标瓦片、KPI 三列），阶段 4、5 按新布局改写。
+
+### 阶段 4a（2026-10-27）：服务页骨架与详情分栏
+
+- 新增 `views/Services.tsx`、`components/services/GroupTile.tsx`、`components/services/EntryDetail.tsx`、`lib/services.ts`。导航「服务」现在打开新服务页，旧四页仍作为子项保留。
+- 工作组磁贴按 `groupId` 归组，「未分组」排最后；没开详情 2 列，开详情后 1 列叠在约 360px 列表里。类型切换和搜索（名称、端口、路径）只过滤段内成员。
+- 详情五个标签：概览、输出（复用 `TerminalView`）、诊断（复用 `PrecheckPanel` 与 `useEntryFix`）、构建（只对 spring-boot，暂时内嵌旧后端控制台的 `ConsolePanel`）、配置（暂时只读摘要 + 「编辑配置」打开旧 `EditEntryDialog`，4b 改为直接编辑）。上次用的标签会记住，不适用时回到概览。
+- 启动确认：prod 组任何条目都确认；sandbox 组的 spring-boot 条目也确认。后一条来自 PRD-WORKGROUPS §5.2.1，比 Q14 更严，按 PRD 保留。整组启动只确认一次，结束发一条汇总通知。
+- 发现：`LaunchEntry.groupId` 是单值，一个条目只能属于一个工作组，Q10 里「一个服务属于多个组时各出现一次」的情况不存在。
+- 实测：新增 `scripts/verify-services.cjs` 39/39；`verify-shell` 33/33（Ctrl+1 期望改为「服务」）；`verify-ui` 与基线比较通过；`verify-m4-ui`、`m6-palette`、`m6-settings`、`m10` 全部通过。
+- 4b 待做：配置标签直接编辑与未保存提醒、列表方向键 / Space / Enter、删除旧四页与 `EditEntryDialog` / `LaunchpadTerminalPanel`、默认首页改服务页、改写 `verify-m7` / `verify-m12` 的过时断言。
