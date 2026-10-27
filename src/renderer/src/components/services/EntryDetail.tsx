@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import type { EntryRuntime, LaunchEntry, PrecheckFixAction, PrecheckResult, ProjectGroup } from '@shared/types'
+import type { EntryDiagnosis, EntryRuntime, LaunchEntry, PrecheckFixAction, PrecheckResult, ProjectGroup } from '@shared/types'
 import { GROUP_ENV_LABEL } from '@shared/types'
 import { Button, IconButton, Pill, Tabs, tabPanelProps, type TabItem } from '../ui'
 import { EntryGlyph } from '../EntryGlyph'
@@ -12,7 +12,7 @@ import { useEntryImage } from '../../store/favicons'
 import { useScanner } from '../../store/scanner'
 import { ICON } from '../../lib/icons'
 import { FRAMEWORK_LABEL, STATUS_META, isLiveStatus } from '../../lib/entryMeta'
-import { formatBytes, formatPercent, formatUptime } from '../../lib/format'
+import { formatBytes, formatDuration, formatPercent, formatUptime } from '../../lib/format'
 import { RowToggle } from './GroupTile'
 
 export type DetailTab = 'overview' | 'output' | 'diagnose' | 'build' | 'config'
@@ -71,19 +71,28 @@ export function EntryDetail({
   const current = effectiveTab(entry, tab)
 
   const [precheck, setPrecheck] = useState<PrecheckResult | null>(runtime.precheck ?? null)
+  // 诊断报告：预检之外还有端口现状、会话回顾、环境快照、产物目录（原诊断页的五段）
+  const [report, setReport] = useState<EntryDiagnosis | null>(null)
   useEffect(() => {
     if (current !== 'diagnose') return
     let alive = true
     void window.mile.entry
-      .precheck(entry.id)
-      .then((r) => alive && setPrecheck(r))
-      .catch(() => alive && setPrecheck(null))
+      .diagnose(entry.id)
+      .then((r) => {
+        if (!alive) return
+        setReport(r)
+        setPrecheck(r.precheck)
+      })
+      .catch(() => alive && setReport(null))
     return () => {
       alive = false
     }
   }, [current, entry.id, refreshKey])
-  // 换条目时丢掉上一个的预检结果
-  useEffect(() => setPrecheck(runtime.precheck ?? null), [entry.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  // 换条目时丢掉上一个的预检结果和报告
+  useEffect(() => {
+    setPrecheck(runtime.precheck ?? null)
+    setReport(null)
+  }, [entry.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const fails = (precheck ?? runtime.precheck)?.items.filter((i) => i.level === 'fail').length ?? 0
   const items: TabItem<DetailTab>[] = [
@@ -136,7 +145,12 @@ export function EntryDetail({
           (precheck ? (
             <>
               <p className="svc-note">{precheck.ok ? '启动前检查全部通过' : `有 ${fails} 项需要处理，处理前启动会被拦下`}</p>
-              <PrecheckPanel result={precheck} onFix={onFix} />
+              <section aria-labelledby="diagnose-precheck-heading">
+                <h3 id="diagnose-precheck-heading" className="sr-only">预检复查</h3>
+                <PrecheckPanel result={precheck} onFix={onFix} />
+              </section>
+              {/* 报告属于当前条目才渲染，避免切换时短暂显示上一个条目的数据 */}
+              {report?.entryId === entry.id && <DiagnoseReport entry={entry} report={report} />}
             </>
           ) : (
             <p className="svc-note">正在检查…</p>
@@ -284,5 +298,86 @@ function CopyButton({ text, label }: { text: string; label: string }): React.JSX
       label={done ? '已复制' : label}
       onClick={() => void navigator.clipboard.writeText(text).then(() => setDone(true), () => setDone(true))}
     />
+  )
+}
+
+/**
+ * 诊断报告的其余四段，来自原诊断页（m5 守着它）：端口现状、会话回顾、环境快照、产物目录。
+ * 环境变量只显示键名，绝不显示值（安全红线）。产物目录只对任务型条目有意义。
+ */
+function DiagnoseReport({ entry, report }: { entry: LaunchEntry; report: EntryDiagnosis }): React.JSX.Element {
+  const exit = report.lastExitCode
+  return (
+    <>
+      <section className="svc-diag" aria-labelledby="diagnose-port-heading">
+        <h3 id="diagnose-port-heading" className="svc-diag-h">端口现状</h3>
+        <dl className="svc-kv">
+          {report.port === null ? (
+            <><dt>预期端口</dt><dd>未设置</dd></>
+          ) : report.portHolder === null ? (
+            <><dt>:{report.port}</dt><dd>当前空闲</dd></>
+          ) : (
+            <>
+              <dt>:{report.port}</dt><dd>被占用</dd>
+              <dt>占用进程</dt><dd><span className="mono">{report.portHolder.processName}</span></dd>
+              <dt>PID</dt><dd><span className="mono">{report.portHolder.pid}</span></dd>
+              <dt>归属</dt>
+              <dd>
+                <Pill tone={report.portHolder.ownership === 'owned' ? 'live' : 'warn'}>
+                  {report.portHolder.ownership === 'owned' ? '受控（本应用启动）' : '外部进程'}
+                </Pill>
+              </dd>
+            </>
+          )}
+        </dl>
+      </section>
+
+      <section className="svc-diag" aria-labelledby="diagnose-session-heading">
+        <h3 id="diagnose-session-heading" className="svc-diag-h">会话回顾</h3>
+        <dl className="svc-kv">
+          <dt>上次退出码</dt>
+          <dd>
+            {exit === undefined ? '未运行过' : <Pill tone={exit === 0 ? 'live' : 'fault'} mono>{exit}</Pill>}
+          </dd>
+          <dt>上次启动</dt>
+          <dd><span className="mono">{report.lastStartedAt ? new Date(report.lastStartedAt).toLocaleString('zh-CN', { hour12: false }) : '—'}</span></dd>
+          <dt>上次运行时长</dt>
+          <dd><span className="mono">{report.lastRunMs === undefined ? '—' : formatDuration(report.lastRunMs)}</span></dd>
+          <dt>首个错误行</dt>
+          <dd><span className="mono" title={report.firstErrorLine}>{report.firstErrorLine ?? '未捕获到错误关键字'}</span></dd>
+        </dl>
+      </section>
+
+      <section className="svc-diag" aria-labelledby="diagnose-env-heading">
+        <h3 id="diagnose-env-heading" className="svc-diag-h">环境快照</h3>
+        <dl className="svc-kv">
+          <dt>Node</dt><dd><span className="mono">{report.node}</span></dd>
+          <dt>包管理器</dt>
+          <dd><span className="mono" title={report.packageManagerPath ?? undefined}>{report.packageManager}{report.packageManagerPath ? '' : '（PATH 中找不到）'}</span></dd>
+          <dt>环境变量</dt>
+          <dd>{report.envKeys.length ? <span className="mono">{report.envKeys.join('、')}</span> : '无'}</dd>
+        </dl>
+        <p className="svc-diag-note">只显示键名，不显示值</p>
+      </section>
+
+      {entry.kind === 'task' && (
+        <section className="svc-diag" aria-labelledby="diagnose-output-heading">
+          <h3 id="diagnose-output-heading" className="svc-diag-h">产物目录</h3>
+          <dl className="svc-kv">
+            <dt>路径</dt>
+            <dd>
+              {report.outputDir ? (
+                <>
+                  <span className="svc-diag-path">{report.outputDir}</span>
+                  <Button size="sm" icon={ICON.openFolder} onClick={() => window.mile.shell.openPath(report.outputDir as string)}>打开产物目录</Button>
+                </>
+              ) : (
+                '还没有产物，运行成功后出现'
+              )}
+            </dd>
+          </dl>
+        </section>
+      )}
+    </>
   )
 }

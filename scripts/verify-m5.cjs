@@ -266,15 +266,25 @@ async function checks(win) {
   console.log('\n=== 界面：诊断视图渲染五段 ===')
   await waitFor(() => win.webContents.executeJavaScript(`!!document.querySelector('nav')`), 30_000, '外壳挂载')
   const navigated = await win.webContents.executeJavaScript(
-    `(() => {
-      const b = [...document.querySelector('nav').querySelectorAll('button')].find((x) => x.getAttribute('aria-label') === '诊断');
+    `(async () => {
+      const b = [...document.querySelector('nav').querySelectorAll('button')].find((x) => x.getAttribute('aria-label') === '服务');
       if (!b) return false;
       b.click();
+      await new Promise((s) => setTimeout(s, 500));
+      return (async () => {
+      const r = document.querySelector('.svc-row[data-entry-id="m5-service"]');
+      if (!r) return false;
+      r.click();
+      await new Promise((s) => setTimeout(s, 300));
+      const tab = [...document.querySelectorAll('.svc-detail [role="tab"]')].find((x) => x.textContent.includes('诊断'));
+      if (!tab) return false;
+      tab.click();
       return true;
+    })();
     })()`,
     true
   )
-  check('导航到诊断视图', navigated)
+  check('服务页里打开诊断标签', navigated)
 
   // 服务型条目只有四段（产物目录对服务无意义），这是设计如此。
   // 先验服务型的四段，再切到任务型条目验第五段 —— 否则「五段」这个断言
@@ -282,14 +292,14 @@ async function checks(win) {
   const serviceSections = await waitFor(
     () =>
       win.webContents.executeJavaScript(
-        `document.querySelectorAll('section[aria-labelledby^="diagnose-"]').length >= 5`,
+        `document.querySelectorAll('section[aria-labelledby^="diagnose-"]').length >= 4`,
         true
       ),
     25_000,
     '服务型条目的四段 + 选择器'
   )
   const serviceHeadings = await win.webContents.executeJavaScript(
-    `[...document.querySelectorAll('section[aria-labelledby^="diagnose-"] h2')].map((h) => h.textContent.trim())`,
+    `[...document.querySelectorAll('section[aria-labelledby^="diagnose-"] h3')].map((h) => h.textContent.trim())`,
     true
   )
   check('服务型条目渲染四段（无产物目录）', serviceSections, JSON.stringify(serviceHeadings))
@@ -309,10 +319,14 @@ async function checks(win) {
 
   // 切到任务型条目，验第五段真的会出现，且打开按钮带标签
   const switched = await win.webContents.executeJavaScript(
-    `(() => {
-      const b = [...document.querySelectorAll('button')].find((x) => x.textContent.includes('Fixture Build'));
-      if (!b) return false;
-      b.click();
+    `(async () => {
+      const r = document.querySelector('.svc-row[data-entry-id="m5-task"]');
+      if (!r) return false;
+      r.click();
+      await new Promise((s) => setTimeout(s, 300));
+      const tab = [...document.querySelectorAll('.svc-detail [role="tab"]')].find((x) => x.textContent.includes('诊断'));
+      if (!tab) return false;
+      tab.click();
       return true;
     })()`,
     true
@@ -322,14 +336,14 @@ async function checks(win) {
   const taskSections = await waitFor(
     () =>
       win.webContents.executeJavaScript(
-        `[...document.querySelectorAll('section[aria-labelledby^="diagnose-"] h2')].some((h) => h.textContent.includes('产物目录'))`,
+        `[...document.querySelectorAll('section[aria-labelledby^="diagnose-"] h3')].some((h) => h.textContent.includes('产物目录'))`,
         true
       ),
     25_000,
     '任务型条目的产物目录段'
   )
   const taskHeadings = await win.webContents.executeJavaScript(
-    `[...document.querySelectorAll('section[aria-labelledby^="diagnose-"] h2')].map((h) => h.textContent.trim())`,
+    `[...document.querySelectorAll('section[aria-labelledby^="diagnose-"] h3')].map((h) => h.textContent.trim())`,
     true
   )
   check('任务型条目渲染五段（含产物目录）', taskSections, JSON.stringify(taskHeadings))
@@ -352,11 +366,12 @@ async function checks(win) {
   const clipped = await win.webContents.executeJavaScript(
     `(() => {
       const secs = [...document.querySelectorAll('section[aria-labelledby^="diagnose-"]')];
-      return secs.flatMap((s) => [...s.querySelectorAll('*')]).filter((el) => el.scrollWidth > el.clientWidth + 1).length;
+      const bad = secs.flatMap((s) => [...s.querySelectorAll('*')]).filter((el) => !el.closest('.sr-only') && el.scrollWidth > el.clientWidth + 1);
+      return bad.map((el) => el.tagName + '.' + String(el.className).slice(0, 40) + ' ' + el.scrollWidth + '>' + el.clientWidth + ' ' + (el.textContent || '').trim().slice(0, 30));
     })()`,
     true
   )
-  check('诊断区块无文字截断', clipped === 0, `${clipped} 个溢出元素`)
+  check('诊断区块无文字截断', clipped.length === 0, clipped.join(' | ') || '0 个溢出元素')
 
   const unlabeled = await win.webContents.executeJavaScript(
     `[...document.querySelectorAll('button')].filter((b) => !b.getAttribute('aria-label') && !b.textContent.trim() && !b.getAttribute('title')).length`,
