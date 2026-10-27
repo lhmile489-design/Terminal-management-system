@@ -1,7 +1,6 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import {
-  ListMagnifyingGlass,
   Monitor,
   type Icon
 } from '@phosphor-icons/react'
@@ -13,7 +12,6 @@ export type ViewId =
   | 'services'
   | 'dashboard'
   | 'terminal'
-  | 'logs'
   | 'settings'
   | 'about'
 
@@ -47,8 +45,7 @@ export const NAV_TOP: NavTop[] = [
     id: 'terminal',
     label: '终端',
     icon: ICON.navTerminal,
-    key: 3,
-    children: [{ id: 'logs', label: '日志', icon: ListMagnifyingGlass }]
+    key: 3
   },
   { id: 'settings', label: '设置', icon: ICON.navSettings, key: 4 },
   { id: 'about', label: '关于', icon: ICON.navAbout, key: 5 }

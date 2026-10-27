@@ -25,7 +25,7 @@ const EMPTY: LogResult = { lines: [], total: 0, dropped: 0, capacity: 0, sources
  * 筛选条件整体交给主进程，界面只渲染回来的那一屏 —— 不在渲染层缓存全量再本地过滤，
  * 否则「显示的」和「主进程里有的」会随时间偏离。
  */
-export function LogCenter(): React.JSX.Element {
+export function LogCenter({ onJump }: { onJump?: (sessionId: string) => void } = {}): React.JSX.Element {
   const [level, setLevel] = useState<LogLevel | 'all'>('all')
   const [sessionId, setSessionId] = useState<string>('all')
   const [text, setText] = useState('')
@@ -75,7 +75,7 @@ export function LogCenter(): React.JSX.Element {
     <div className="flex min-h-0 flex-1 flex-col gap-4">
       <section aria-labelledby="log-filter-heading" className="flex flex-col gap-3">
         <h2 id="log-filter-heading" className="eyebrow">
-          Filters · 筛选
+          筛选
         </h2>
 
         <div className="flex flex-wrap items-center gap-2.5">
@@ -95,7 +95,7 @@ export function LogCenter(): React.JSX.Element {
           </div>
 
           <label className="flex items-center gap-2 text-[12px] text-ink-muted">
-            <span className="font-mono text-[11px] text-ink-faint">会话</span>
+            <span className="text-[12px] text-ink-faint">会话</span>
             <select
               aria-label="按会话筛选"
               value={sessionId}
@@ -159,7 +159,7 @@ export function LogCenter(): React.JSX.Element {
       <section aria-labelledby="log-stream-heading" className="flex min-h-0 flex-1 flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 id="log-stream-heading" className="eyebrow eyebrow-tight">
-            Stream · 日志流
+            日志流
             <span className="ml-2 font-mono text-ink-faint">
               {result.lines.length}
               {result.total > result.lines.length && ` / ${result.total}`}
@@ -176,7 +176,7 @@ export function LogCenter(): React.JSX.Element {
               aria-pressed={follow}
               onClick={() => setFollow(true)}
               title={follow ? '正在跟随最新输出' : '点击回到底部并继续跟随'}
-              className={`pressable rounded-[6px] border px-2 py-1 font-mono text-[10px] font-bold ${
+              className={`pressable rounded-[6px] border px-2 py-1 text-[12px] font-semibold ${
                 follow
                   ? 'border-line-strong bg-raised text-ink-strong'
                   : 'border-line-strong bg-card text-ink-muted hover:text-ink-strong'
@@ -205,11 +205,12 @@ export function LogCenter(): React.JSX.Element {
               {result.lines.map((line) => (
                 <li
                   key={line.seq}
-                  className="grid grid-cols-[auto_auto_1fr] items-baseline gap-x-2.5 rounded-[4px] px-1.5 py-0.5 hover:bg-raised"
+                  data-session-id={line.sessionId}
+                  className="grid grid-cols-[auto_auto_minmax(0,9rem)_1fr] items-baseline gap-x-2.5 rounded-[4px] px-1.5 py-0.5 hover:bg-raised"
                 >
                   <time
                     dateTime={new Date(line.ts).toISOString()}
-                    className="font-mono text-[10.5px] text-ink-faint"
+                    className="font-mono text-[12px] text-ink-faint"
                   >
                     {clock(line.ts)}
                   </time>
@@ -221,8 +222,18 @@ export function LogCenter(): React.JSX.Element {
                       dot={false}
                     />
                   </span>
+                  {/* 点来源跳到那个会话的终端（Q18） */}
+                  <button
+                    type="button"
+                    className="log-src"
+                    title={onJump ? `在终端里查看「${line.title}」` : line.title}
+                    onClick={() => onJump?.(line.sessionId)}
+                    disabled={!onJump}
+                  >
+                    {line.title}
+                  </button>
                   {/* 日志正文一律等宽 + 保留空白：缩进和对齐本身就是输出的一部分 */}
-                  <span className="font-mono text-[11.5px] break-all whitespace-pre-wrap text-ink">
+                  <span className="font-mono text-[12.5px] break-all whitespace-pre-wrap text-ink">
                     {line.text}
                   </span>
                 </li>
@@ -232,7 +243,7 @@ export function LogCenter(): React.JSX.Element {
         </div>
 
         {result.dropped > 0 && (
-          <p className="text-[11px] text-ink-faint">
+          <p className="text-[12px] text-ink-faint">
             只保留最近 {result.capacity} 行，已滚掉 {result.dropped} 行。完整输出请到终端视图查看。
           </p>
         )}

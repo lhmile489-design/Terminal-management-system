@@ -530,7 +530,12 @@ app.whenReady().then(async () => {
     js(`(()=>{const b=[...document.querySelector('nav').querySelectorAll('button')]
       .find(x=>x.getAttribute('aria-label')===${JSON.stringify(label)});
       if(!b)return false;b.click();return true})()`)
-  check('导航轨有「日志」入口', (await navTo('日志')) === true)
+  // UI-REFACTOR Q18：日志页并入终端页的「全部输出」标签
+  check('导航轨有「终端」入口', (await navTo('终端')) === true)
+  await sleep(600)
+  check('终端页有「全部输出」标签', await js(`(()=>{const b=[...document.querySelectorAll('main [role="radio"]')]
+    .find(x=>x.textContent.trim().startsWith('全部输出'));if(!b)return false;b.click();return true})()`))
+  check('导航轨不再有独立的「日志」入口', !(await js(`!!document.querySelector('nav [aria-label="日志"]')`)))
   await sleep(1500)
 
   const ui = await js(`(()=>{

@@ -11,7 +11,6 @@ import { ICON } from './lib/icons'
 import { Dashboard } from './views/Dashboard'
 import { Services } from './views/Services'
 import { TerminalWorkspace } from './views/TerminalWorkspace'
-import { LogCenter } from './views/LogCenter'
 import { Settings } from './views/Settings'
 import { About } from './views/About'
 import { CommandPalette, type PaletteAction } from './components/CommandPalette'
@@ -39,11 +38,7 @@ const TITLES: Record<
   },
   terminal: {
     title: '终端',
-    caption: '会话输出、输入与历史回看'
-  },
-  logs: {
-    title: '日志',
-    caption: '跨会话汇总输出，按级别与关键字检索'
+    caption: '自建终端、服务会话与全部输出检索'
   },
   settings: {
     title: '设置',
@@ -310,7 +305,6 @@ export function App(): React.JSX.Element {
               />
             )}
             {view === 'terminal' && <TerminalWorkspace />}
-            {view === 'logs' && <LogCenter />}
             {view === 'settings' && <Settings />}
             {view === 'about' && <About />}
           </div>

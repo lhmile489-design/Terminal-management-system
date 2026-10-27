@@ -148,6 +148,22 @@ app.whenReady().then(async () => {
   const gone = await waitFor(`window.mile.group.list().then(l=>l.length===0)`, 3000)
   check('确认后工作组被删除', gone)
 
+  console.log('\n=== 7. 终端页：会话分段、全部输出并入（§3.5）===')
+  const navLabels = await js(`[...document.querySelectorAll('nav[aria-label="主导航"] button')].map(b=>b.getAttribute('aria-label'))`)
+  check('导航上不再有单独的「日志」', !navLabels.includes('日志'), navLabels.join('、'))
+  await key('3', { ctrlKey: true })
+  check('Ctrl+3 进入终端页', await waitFor(`(document.querySelector('main h1')||{}).textContent==='终端'`))
+  await click('button[aria-label="新建终端会话"]')
+  check('新建的 PowerShell 出现在「我的终端」段', await waitFor(`(()=>{const h=[...document.querySelectorAll('.term-sec')].find(x=>x.textContent==='我的终端');return !!h&&!!h.parentElement.querySelector('.term-sess')})()`, 8000))
+  check('会话项不再把停止按钮嵌在按钮里', await js(`!document.querySelector('.term-sess button button')`))
+  check('有「终端 / 全部输出」切换', await js(`[...document.querySelectorAll('main [role="radio"]')].map(r=>r.textContent).join('|').includes('全部输出')`))
+  await js(`[...document.querySelectorAll('main [role="radio"]')].find(r=>r.textContent.includes('全部输出')).click();true`)
+  check('全部输出标签里有日志流', await waitFor(`!!document.querySelector('main [role="log"]')`))
+  const jumped = await waitFor(`window.mile.session.list().then(list=>{const live=new Set(list.map(s=>s.id));const li=[...document.querySelectorAll('main [role="log"] li')].find(x=>live.has(x.dataset.sessionId));const b=li&&li.querySelector('button:not([disabled])');if(!b)return false;b.click();return true})`, 8000)
+  check('日志行可点', jumped)
+  check('点日志行回到终端标签', await waitFor(`!document.querySelector('main [role="log"]') && !!document.querySelector('.term-sess[aria-current="true"]')`, 3000))
+  await js(`(async()=>{const l=await window.mile.session.list();for(const s of l)await window.mile.session.stop(s.id).catch(()=>{});return true})()`).catch(() => null)
+
   console.log(`\n结果：${pass} 通过，${fail} 失败`)
   try { rmSync(SANDBOX, { recursive: true, force: true }) } catch { console.log(`  (沙箱残留，交由系统清理：${SANDBOX})`) }
   app.exit(fail === 0 ? 0 : 1)

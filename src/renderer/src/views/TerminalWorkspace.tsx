@@ -1,97 +1,140 @@
-import { Plus, Terminal as TerminalIcon, Stop } from '@phosphor-icons/react'
+import { useMemo, useState } from 'react'
+import type { SessionMeta, SessionStatus } from '@shared/types'
 import { TerminalView } from '../components/TerminalView'
+import { IconButton, Segmented, StatusDot, Tile, TileHeader, toast } from '../components/ui'
+import { LogCenter } from './LogCenter'
 import { useSessions } from '../store/sessions'
+import { useEntries } from '../store/entries'
+import { useGroups } from '../store/groups'
+import { ICON } from '../lib/icons'
+import type { Tone } from '../lib/entryMeta'
 
-/** 会话圆点与卡片状态共用 .status-dot，色值走 --glow */
-const DOT: Record<string, string> = {
-  starting: 'var(--signal-warn)',
-  running: 'var(--signal-live)',
-  building: 'var(--signal-info)',
-  stopped: 'var(--signal-idle)',
-  crashed: 'var(--signal-fault)'
+const TONE: Record<SessionStatus, Tone> = {
+  starting: 'warn',
+  running: 'live',
+  building: 'warn',
+  stopped: 'idle',
+  crashed: 'fault'
+}
+const LABEL: Record<SessionStatus, string> = {
+  starting: '启动中',
+  running: '运行中',
+  building: '构建中',
+  stopped: '已退出',
+  crashed: '异常退出'
 }
 
+type Tab = 'term' | 'logs'
+
+/**
+ * 终端页，UI-REFACTOR Q18。左侧会话列表分「我的终端」（自建 PowerShell）与
+ * 「服务会话」（按工作组归类）；顶部「终端 / 全部输出」，原日志页并入「全部输出」，
+ * 点一条日志跳到它所在的会话。
+ */
 export function TerminalWorkspace(): React.JSX.Element {
-  const { sessions, activeId, openShell, select, stop } = useSessions()
+  const { sessions, activeId, openShell, select, stop, focus } = useSessions()
+  const entries = useEntries((s) => s.entries)
+  const groups = useGroups((s) => s.groups)
+  const [tab, setTab] = useState<Tab>('term')
+
+  const sections = useMemo(() => {
+    const shells = sessions.filter((s) => !s.projectId)
+    const groupName = (s: SessionMeta): string => {
+      const entry = entries.find((e) => e.id === s.projectId)
+      return (entry?.groupId && groups.find((g) => g.id === entry.groupId)?.name) || '未分组'
+    }
+    const byGroup = new Map<string, SessionMeta[]>()
+    for (const s of sessions.filter((x) => x.projectId)) {
+      const k = groupName(s)
+      byGroup.set(k, [...(byGroup.get(k) ?? []), s])
+    }
+    return { shells, byGroup: [...byGroup.entries()] }
+  }, [sessions, entries, groups])
+
+  /**
+   * 从日志行跳到会话。先刷新会话列表（日志里的会话可能还没进本地列表）；
+   * 会话已经结束、不在列表里时不跳到别的会话冒充，给一条提示。
+   */
+  const jumpTo = (sessionId: string): void => {
+    void window.mile.session.list().then((list) => {
+      if (!list.some((s) => s.id === sessionId)) {
+        toast({ tone: 'info', title: '这个会话已经结束', body: '它的输出仍在「全部输出」里，可以按会话筛选查看' })
+        return
+      }
+      void focus(sessionId).then(() => setTab('term'))
+    })
+  }
+
+  const row = (s: SessionMeta): React.JSX.Element => (
+    <div key={s.id} className="term-sess" aria-current={s.id === activeId} data-session-id={s.id}>
+      <button type="button" className="term-sess-main" onClick={() => select(s.id)} aria-label={`打开 ${s.title}`}>
+        <StatusDot tone={TONE[s.status]} label={LABEL[s.status]} />
+        <span className="term-sess-name">
+          <b>{s.title}</b>
+          <span>PID {s.pid} · {LABEL[s.status]}</span>
+        </span>
+      </button>
+      <IconButton
+        icon={ICON.stop}
+        label={`停止 ${s.title}`}
+        tone="danger"
+        disabled={s.status === 'stopped' || s.status === 'crashed'}
+        onClick={() => void stop(s.id)}
+      />
+    </div>
+  )
 
   return (
-    <div className="flex min-h-0 flex-1 gap-4">
-      <div className="surface-card flex w-60 shrink-0 flex-col overflow-hidden">
-        <div className="flex items-center justify-between border-b border-line px-4 py-3">
-          <h2 className="eyebrow">Sessions</h2>
-          <button
-            type="button"
-            aria-label="新建终端会话"
-            onClick={() => void openShell()}
-            className="pressable flex h-6 w-6 items-center justify-center rounded-[5px] text-ink-faint hover:bg-raised hover:text-ink"
-          >
-            <Plus size={13} weight="bold" />
-          </button>
-        </div>
+    <div className="term-page" data-terminal-page>
+      <Segmented<Tab>
+        label="终端视图"
+        value={tab}
+        onChange={setTab}
+        options={[
+          { value: 'term', label: '终端', count: sessions.length },
+          { value: 'logs', label: '全部输出' }
+        ]}
+      />
 
-        <div className="min-h-0 flex-1 overflow-y-auto p-2">
-          {sessions.length === 0 ? (
-            <p className="px-2 py-1.5 text-[12.5px] leading-relaxed text-ink-faint">
-              暂无会话。点击加号新建一个 PowerShell 终端。
-            </p>
-          ) : (
-            sessions.map((s) => (
-              <button
-                key={s.id}
-                type="button"
-                onClick={() => select(s.id)}
-                aria-current={s.id === activeId}
-                className={`pressable-flat group flex w-full items-center gap-2.5 rounded-[6px] px-2.5 py-2 text-left ${
-                  s.id === activeId ? 'bg-raised' : 'hover:bg-raised'
-                }`}
-              >
-                <span
-                  className="status-dot"
-                  data-halo={s.status === 'running' || s.status === 'building' || undefined}
-                  style={
-                    { '--glow': DOT[s.status] ?? 'var(--signal-idle)' } as React.CSSProperties
-                  }
-                  aria-hidden
-                />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[13px] text-ink">{s.title}</span>
-                  <span className="block truncate font-mono text-[10.5px] text-ink-faint">
-                    PID {s.pid} · {s.status}
-                  </span>
-                </span>
-                <span
-                  role="button"
-                  tabIndex={0}
-                  aria-label={`停止 ${s.title}`}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    void stop(s.id)
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key !== 'Enter' && e.key !== ' ') return
-                    e.stopPropagation()
-                    void stop(s.id)
-                  }}
-                  className="text-ink-faint opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 hover:text-fault"
-                >
-                  <Stop size={13} weight="fill" />
-                </span>
-              </button>
-            ))
-          )}
-        </div>
-      </div>
+      {tab === 'logs' ? (
+        <LogCenter onJump={jumpTo} />
+      ) : (
+        <div className="term-layout">
+          <Tile className="term-sessions" aria-label="会话">
+            <TileHeader
+              title="会话"
+              level={2}
+              actions={<IconButton icon={ICON.add} label="新建终端会话" onClick={() => void openShell()} />}
+            />
+            <div className="term-list">
+              <h3 className="term-sec">我的终端</h3>
+              {sections.shells.length ? sections.shells.map(row) : (
+                <p className="term-note">还没有自建终端，点右上角「+」新建一个 PowerShell</p>
+              )}
+              <h3 className="term-sec">服务会话</h3>
+              {sections.byGroup.length ? sections.byGroup.map(([name, list]) => (
+                <div key={name} role="group" aria-label={name}>
+                  <p className="term-note">{name}</p>
+                  {list.map(row)}
+                </div>
+              )) : (
+                <p className="term-note">服务启动后，它的输出会出现在这里</p>
+              )}
+            </div>
+          </Tile>
 
-      <div className="surface-card flex min-w-0 flex-1 overflow-hidden">
-        {activeId ? (
-          <TerminalView key={activeId} sessionId={activeId} />
-        ) : (
-          <div className="flex flex-1 flex-col items-center justify-center gap-3 text-ink-faint">
-            <TerminalIcon size={26} weight="bold" />
-            <p className="text-[13px]">选择或新建一个会话以查看终端输出</p>
-          </div>
-        )}
-      </div>
+          <Tile className="term-main" aria-label="终端输出">
+            {activeId ? (
+              <TerminalView key={activeId} sessionId={activeId} />
+            ) : (
+              <div className="term-empty">
+                <ICON.output size={28} aria-hidden />
+                <p>选择或新建一个会话以查看终端输出</p>
+              </div>
+            )}
+          </Tile>
+        </div>
+      )}
     </div>
   )
 }
