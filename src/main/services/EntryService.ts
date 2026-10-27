@@ -302,18 +302,45 @@ export class EntryService extends EventEmitter {
     return this.config.get().entries.find((e) => e.id === id) ?? null
   }
 
-  add(input: NewLaunchEntry): LaunchEntry {
+  /**
+   * 新建条目，入参来自渲染层，校验口径与 edit() 相同：逐字段走 sanitizeEdit，
+   * 白名单外的键（id、order、lastStartedAt…）静默丢弃。以前这里直接铺开入参，
+   * 绝对路径的 outputDir 能借此进 knownPath() 的 openPath 白名单，PRD §11。
+   */
+  async add(input: NewLaunchEntry): Promise<LaunchEntry> {
+    if (input === null || typeof input !== 'object') throw new Error('条目内容必须是对象')
+    const base: LaunchEntry = {
+      id: '', kind: 'service', name: '', path: '', framework: 'unknown', packageManager: 'npm',
+      script: null, scripts: {}, env: {}, registerOnly: false, pinned: false, order: 0, createdAt: 0
+    }
+    const clean = this.sanitizeEdit(base, input as EntryEdit)
+
+    for (const key of ['kind', 'name', 'path', 'framework', 'packageManager'] as const) {
+      if (clean[key] === undefined) throw new Error(`缺少必填字段：${fieldLabel(key)}`)
+    }
+    if (!(await isDirectory(clean.path as string))) throw new Error(`目录不存在：${clean.path}`)
+
+    const scripts = clean.scripts ?? {}
+    const script = clean.script ?? null
+    if (script !== null) {
+      if (!SAFE_SCRIPT.test(script)) throw new Error(`脚本名含非法字符：${script}`)
+      if (typeof scripts[script] !== 'string') throw new Error(`${script} 不在该项目的 scripts 中`)
+    }
+
     const entries = this.config.get().entries
-    const { category: rawCategory, ...rest } = input
-    const category = normalizeCategory(rawCategory)
     const entry: LaunchEntry = {
-      ...rest,
-      ...(category ? { category } : {}),
+      ...base,
+      ...clean,
+      script,
+      scripts,
+      env: clean.env ?? {},
       id: randomUUID(),
-      pinned: input.pinned ?? false,
-      registerOnly: input.registerOnly ?? false,
       order: entries.length,
       createdAt: Date.now()
+    }
+    // sanitizeEdit 用 undefined 表示「清空」，新条目里没必要留这些空键
+    for (const k of Object.keys(entry) as (keyof LaunchEntry)[]) {
+      if (entry[k] === undefined) delete entry[k]
     }
     this.commit([...entries, entry])
     return entry
@@ -623,7 +650,7 @@ export class EntryService extends EventEmitter {
       const cwd = resolveCwd(e)
       if (normalizePath(cwd) === want) return true
       const out = e.outputDir
-      return !!out && normalizePath(isAbsolute(out) ? out : join(cwd, out)) === want
+      return !!out && isSafeRelative(out) && normalizePath(join(cwd, out)) === want
     })
   }
 
@@ -720,8 +747,10 @@ export class EntryService extends EventEmitter {
     if (!entry) return null
     const cwd = resolveCwd(entry)
 
+    // 旧配置里可能留着绝对路径或带 .. 的 outputDir（add 以前不校验）：读侧同样不信它
+    if (entry.outputDir && !isSafeRelative(entry.outputDir)) return null
     const candidates = entry.outputDir
-      ? [isAbsolute(entry.outputDir) ? entry.outputDir : join(cwd, entry.outputDir)]
+      ? [join(cwd, entry.outputDir)]
       : OUTPUT_DIR_CANDIDATES.map((d) => join(cwd, d))
 
     for (const dir of candidates) {
@@ -1716,6 +1745,11 @@ function stripAnsi(text: string): string {
 
 function sleep(ms: number): Promise<void> {
   return new Promise((done) => setTimeout(done, ms))
+}
+
+/** 相对项目根、不含 .. 的路径。写侧 sanitizeEdit 已这样收，读侧再验一次兜住旧配置 */
+function isSafeRelative(p: string): boolean {
+  return !isAbsolute(p) && !p.split(/[\\/]/).includes('..')
 }
 
 /** Windows 路径比较：大小写不敏感，且要消掉 `a\b\..\b` 这类等价写法 */
