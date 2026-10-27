@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useOverlay } from '../lib/overlay'
 import { ArrowRight, MagnifyingGlass } from '@phosphor-icons/react'
 import type { LaunchEntry, ListenerSnapshot, ThemePreference } from '@shared/types'
 import { STATUS_META } from '../lib/entryMeta'
@@ -35,7 +36,7 @@ const VIEW_LABEL: Record<string, string> = {
   settings: '设置'
 }
 
-export function CommandPalette({
+function PaletteBody({
   open,
   entries,
   listeners,
@@ -87,14 +88,9 @@ export function CommandPalette({
     [onClose, onRun]
   )
 
-  if (!open) return null
+  const panelRef = useOverlay<HTMLDivElement>(onClose, { initialFocus: inputRef })
 
   const onKeyDown = (e: React.KeyboardEvent): void => {
-    if (e.key === 'Escape') {
-      e.preventDefault()
-      onClose()
-      return
-    }
     if (e.key === 'ArrowDown') {
       e.preventDefault()
       setCursor((c) => (candidates.length === 0 ? 0 : (c + 1) % candidates.length))
@@ -120,6 +116,7 @@ export function CommandPalette({
       className="dlg-scrim fixed inset-0 z-50 flex items-start justify-center pt-[12vh]"
     >
       <div
+        ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-label="命令面板"
@@ -287,3 +284,8 @@ const BUILTINS: Omit<Candidate, 'group'>[] = [
     action: { type: 'goto' as const, view }
   }))
 ]
+
+/** 面板体只在打开时挂载，这样浮层栈的入栈 / 出栈与打开 / 关闭一一对应 */
+export function CommandPalette(props: Parameters<typeof PaletteBody>[0]): React.JSX.Element | null {
+  return props.open ? <PaletteBody {...props} /> : null
+}

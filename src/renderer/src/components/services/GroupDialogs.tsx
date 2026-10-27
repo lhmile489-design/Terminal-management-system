@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo } from 'react'
+import { useOverlay } from '../../lib/overlay'
 import { Users, Warning, CheckCircle } from '@phosphor-icons/react'
 import type { GroupEnvironment, LaunchEntry, ProjectGroup } from '@shared/types'
 import { GROUP_ENV_LABEL } from '@shared/types'
@@ -46,12 +47,13 @@ export function GroupDialog({ initial, onSubmit, onClose }: GroupDialogProps): R
     }
   }
 
+  const panelRef = useOverlay<HTMLDivElement>(onClose)
   return (
     <div
       className="dlg-scrim fixed inset-0 z-50 flex items-center justify-center"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="dlg-panel w-full max-w-[400px] p-5">
+      <div ref={panelRef} role="dialog" aria-modal="true" aria-label={initial ? '编辑工作组' : '新建工作组'} className="dlg-panel w-full max-w-[400px] p-5">
         <h2 className="mb-4 dlg-title">
           {initial ? '编辑工作组' : '新建工作组'}
         </h2>
@@ -178,12 +180,13 @@ export function AssignGroupDialog({ group, entries, onClose }: AssignDialogProps
     }
   }, [group.id, patchEntry])
 
+  const panelRef = useOverlay<HTMLDivElement>(onClose)
   return (
     <div
       className="dlg-scrim fixed inset-0 z-50 flex items-center justify-center"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="dlg-panel w-full max-w-[440px] p-5">
+      <div ref={panelRef} role="dialog" aria-modal="true" aria-label={`分配条目到「${group.name}」`} className="dlg-panel w-full max-w-[440px] p-5">
         <div className="mb-3 flex items-center gap-2">
           <Users size={14} weight="regular" className="shrink-0 text-accent/70" aria-hidden />
           <h2 className="dlg-title">分配条目到「{group.name}」</h2>

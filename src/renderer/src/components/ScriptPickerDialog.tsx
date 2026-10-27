@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
+import { useOverlay } from '../lib/overlay'
 import { X } from '@phosphor-icons/react'
 import type { LaunchEntry } from '@shared/types'
 
@@ -19,18 +20,12 @@ export function ScriptPickerDialog({
   const [selected, setSelected] = useState(entry.script ?? names[0] ?? '')
   const closeRef = useRef<HTMLButtonElement>(null)
 
-  useEffect(() => {
-    closeRef.current?.focus()
-    const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') onClose()
-    }
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [onClose])
+  const panelRef = useOverlay<HTMLDivElement>(onClose, { initialFocus: closeRef })
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center dlg-scrim px-6">
       <div
+        ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="script-picker-heading"

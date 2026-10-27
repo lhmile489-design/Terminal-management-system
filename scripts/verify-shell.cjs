@@ -164,6 +164,17 @@ app.whenReady().then(async () => {
   check('点日志行回到终端标签', await waitFor(`!document.querySelector('main [role="log"]') && !!document.querySelector('.term-sess[aria-current="true"]')`, 3000))
   await js(`(async()=>{const l=await window.mile.session.list();for(const s of l)await window.mile.session.stop(s.id).catch(()=>{});return true})()`).catch(() => null)
 
+  console.log('\n=== 8. 命令面板走统一浮层栈 ===')
+  await js(`document.activeElement&&document.activeElement.blur();true`)
+  await key('k', { ctrlKey: true })
+  check('Ctrl+K 打开命令面板', await waitFor(`!!document.querySelector('[role="dialog"][aria-label="命令面板"]')`, 2000))
+  check('焦点在搜索框里', await waitFor(`!!(document.activeElement&&document.activeElement.closest('[aria-label="命令面板"]')&&document.activeElement.tagName==='INPUT')`, 1500))
+  // Tab 被困在面板内，不会跑到背后的页面
+  for (let i = 0; i < 6; i++) await js(`document.activeElement.dispatchEvent(new KeyboardEvent('keydown',{key:'Tab',bubbles:true,cancelable:true}));true`)
+  check('Tab 不离开面板', await js(`!!(document.activeElement&&document.activeElement.closest('[aria-label="命令面板"]'))`))
+  await js(`document.activeElement.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true}));true`)
+  check('Esc 关闭命令面板', await waitFor(`!document.querySelector('[aria-label="命令面板"]')`, 1500))
+
   console.log(`\n结果：${pass} 通过，${fail} 失败`)
   try { rmSync(SANDBOX, { recursive: true, force: true }) } catch { console.log(`  (沙箱残留，交由系统清理：${SANDBOX})`) }
   app.exit(fail === 0 ? 0 : 1)

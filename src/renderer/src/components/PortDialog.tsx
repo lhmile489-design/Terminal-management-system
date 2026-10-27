@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
+import { useOverlay } from '../lib/overlay'
 import { X } from '@phosphor-icons/react'
 import type { Framework } from '@shared/types'
 
@@ -25,14 +26,8 @@ export function PortDialog({
   const inputRef = useRef<HTMLInputElement>(null)
   const isNext = framework === 'next'
 
-  useEffect(() => {
-    inputRef.current?.focus()
-    const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') onClose()
-    }
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [onClose])
+  // 统一浮层栈：Esc 只关最上层、焦点困在面板内、关闭后还给打开者
+  const panelRef = useOverlay<HTMLDivElement>(onClose, { initialFocus: inputRef })
 
   const port = Number(value)
   const valid = Number.isInteger(port) && port >= 1 && port <= 65535
@@ -40,6 +35,7 @@ export function PortDialog({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center dlg-scrim px-6">
       <div
+        ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="port-dialog-heading"

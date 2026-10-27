@@ -98,6 +98,7 @@ app.whenReady().then(async () => {
     // 提交按钮只在对话框底部找，工具条上也有一个「添加服务」
     check('提交', await js(`(()=>{const b=[...document.querySelectorAll('.add-dialog .add-foot button')].find(x=>x.textContent.trim()==='添加服务');if(!b||b.disabled)return false;b.click();return true})()`))
     check('对话框已关闭', await waitFor(`!document.querySelector('.add-dialog')`))
+    check('添加后自动打开新条目的详情', await waitFor(`!!document.querySelector('.svc-detail') && !!document.querySelector('.svc-row[aria-selected="true"]')`))
 
     console.log('\n=== 2. 列表里只有一条 ===')
     // 断言带计数，空选择器不能静默通过
