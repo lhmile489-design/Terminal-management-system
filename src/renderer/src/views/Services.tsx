@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { EntryKind, EntryRuntime, LaunchEntry, NewLaunchEntry, ProjectGroup } from '@shared/types'
 import { GROUP_ENV_LABEL } from '@shared/types'
 import { Button, Segmented, TextInput, SplitPane, type MenuItem } from '../components/ui'
 import { GroupTile, type RowActions } from '../components/services/GroupTile'
-import { EntryDetail, effectiveTab, type DetailTab } from '../components/services/EntryDetail'
+import { EntryDetail, effectiveTab, hasBuildTab, type DetailTab } from '../components/services/EntryDetail'
+import { hasOpenOverlay } from '../lib/overlay'
 import { AddEntryDialog } from '../components/AddEntryDialog'
 import { AssignGroupDialog, GroupDialog } from '../components/GroupsPanel'
 import { useEntries } from '../store/entries'
@@ -14,6 +15,7 @@ import { isLiveStatus } from '../lib/entryMeta'
 import {
   classOf,
   forceStop,
+  isGroupStartable,
   matchesQuery,
   openOutput,
   removeEntry,
@@ -168,6 +170,8 @@ export function Services({
 
   const toggle = async (entry: LaunchEntry): Promise<void> => {
     const rt = runtimes[entry.id]
+    // 停止中再按一次不能再发一次 stop：行按钮此时是禁用的，键盘路径要守同一条规则
+    if (rt?.status === 'stopping') return
     if (isLiveStatus(rt?.status ?? 'idle')) {
       await stop(entry.id)
       return
@@ -242,8 +246,86 @@ export function Services({
     }
   ]
 
+  /*
+   * 列表键盘操作（Q15）：方向键移动、Enter 打开详情、Space 启停（组头上是整组）、
+   * Esc 先退出最大化再关详情、Ctrl+Tab 切标签。焦点在输入框、终端、按钮或自带方向键的
+   * 控件（分段、标签、菜单、分隔条）里时让给它们；有浮层时浮层优先。
+   */
+  const [cursorId, setCursorId] = useState<string | null>(null)
+  useEffect(() => {
+    if (selectedId) setCursorId(selectedId)
+  }, [selectedId])
+
+  const keyRef = useRef<(e: KeyboardEvent) => void>(() => {})
+  keyRef.current = (e: KeyboardEvent): void => {
+    if (e.defaultPrevented || hasOpenOverlay() || e.altKey || e.metaKey) return
+    const t = e.target as HTMLElement | null
+    const typing = !!t?.closest('input, textarea, select, [contenteditable="true"], .xterm')
+    const ownKeys = !!t?.closest('[role="tablist"], [role="radiogroup"], [role="menu"], [role="separator"]')
+
+    if (e.ctrlKey && e.key === 'Tab' && selected) {
+      e.preventDefault()
+      const order: DetailTab[] = ['overview', 'output', 'diagnose', ...(hasBuildTab(selected) ? (['build'] as DetailTab[]) : []), 'config']
+      const i = order.indexOf(effectiveTab(selected, tab))
+      setTab(order[(i + (e.shiftKey ? -1 : 1) + order.length) % order.length])
+      return
+    }
+    if (e.ctrlKey || typing) return
+
+    if (e.key === 'Escape') {
+      if (maximized) { e.preventDefault(); setMaximized(false) }
+      else if (selectedId) { e.preventDefault(); void pick(null) }
+      // 详情已关时再按 Esc 清掉键盘光标，回到「什么都没选」
+      else if (cursorId) { e.preventDefault(); setCursorId(null) }
+      return
+    }
+    if (ownKeys) return
+
+    const nav: string[] = []
+    for (const s of sections) {
+      nav.push(`g:${s.group?.id ?? 'none'}`)
+      for (const m of s.members) nav.push(m.id)
+    }
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      if (!nav.length) return
+      e.preventDefault()
+      const i = cursorId ? nav.indexOf(cursorId) : -1
+      const next = nav[i < 0 ? 0 : Math.min(nav.length - 1, Math.max(0, i + (e.key === 'ArrowDown' ? 1 : -1)))]
+      setCursorId(next)
+      // 详情开着时跟着换服务（Q8）
+      if (selectedId && !next.startsWith('g:')) void pick(next)
+      document.querySelector(next.startsWith('g:') ? `[data-group-id="${next.slice(2)}"]` : `[data-entry-id="${next}"]`)?.scrollIntoView({ block: 'nearest' })
+      return
+    }
+    // Enter / Space 落在按钮上时走按钮自己的点击，不重复触发
+    if ((e.key === 'Enter' || e.key === ' ') && t?.closest('button, a[href]')) return
+    if (e.key === 'Enter' && cursorId && !cursorId.startsWith('g:')) {
+      e.preventDefault()
+      void pick(cursorId)
+      return
+    }
+    if (e.key === ' ' && cursorId) {
+      e.preventDefault()
+      if (cursorId.startsWith('g:')) {
+        const sec = sections.find((s) => `g:${s.group?.id ?? 'none'}` === cursorId)
+        if (!sec?.group) return
+        const startable = sec.all.filter(isGroupStartable)
+        const allOn = startable.length > 0 && startable.every((m) => runtimes[m.id]?.status === 'running')
+        void (allOn ? stopGroup(sec.group, sec.all) : startGroup(sec.group, sec.all, { onBlocked: (b) => openDiagnose(b) }))
+        return
+      }
+      const entry = entries.find((x) => x.id === cursorId)
+      if (entry && !entry.registerOnly && entry.framework !== 'uniapp') void toggle(entry)
+    }
+  }
+  useEffect(() => {
+    const on = (e: KeyboardEvent): void => keyRef.current(e)
+    document.addEventListener('keydown', on)
+    return () => document.removeEventListener('keydown', on)
+  }, [])
+
   const actions: RowActions = {
-    select: (e) => void pick(e.id),
+    select: (e) => { setCursorId(e.id); void pick(e.id) },
     toggle: (e) => void toggle(e),
     menu: rowMenu
   }
@@ -284,7 +366,7 @@ export function Services({
             all={s.all}
             runtimes={runtimes}
             selectedId={selectedId}
-            cursorId={null}
+            cursorId={cursorId}
             compact={!!selected}
             failedId={failedId}
             actions={actions}

@@ -54,6 +54,7 @@ app.whenReady().then(async () => {
   const win = BrowserWindow.getAllWindows()[0]
   await new Promise((r) => win.webContents.once('did-finish-load', r))
   win.setBounds({ width: 1180, height: 760 })
+  win.webContents.on('console-message', (e) => { const m = e.message || ''; if (/error|Error|Uncaught/.test(m)) console.log('  [renderer] ' + m.slice(0, 300)) })
   const js = (code) => win.webContents.executeJavaScript(code, true)
   const waitFor = async (code, ms = 6000) => {
     for (let t = 0; t < ms; t += 100) { if (await js(code)) return true; await sleep(100) }
@@ -212,6 +213,60 @@ app.whenReady().then(async () => {
   check('保存后写进主进程配置', saved)
   check('保存后保存条消失', await waitFor(`!document.querySelector('.svc-savebar')`))
   check('列表行显示新名称', await waitFor(`document.querySelector('[data-entry-id="a"]').textContent.includes('个人博客-改')`))
+
+  console.log('\n=== 列表键盘操作（Q15）===')
+  // 回到干净状态：关掉详情、焦点离开按钮，单键快捷键才会生效
+  await press('.svc-detail', '关闭详情')
+  await sleep(300)
+  await js(`document.activeElement&&document.activeElement.blur();true`)
+  await key('Escape')
+  await sleep(150)
+  check('详情已关时 Esc 清掉键盘光标', !(await js(`!!document.querySelector('[data-cursor]')`)))
+  const cursor = () => js(`(()=>{const r=document.querySelector('.svc-row[data-cursor]');if(r)return r.dataset.entryId;
+    const h=document.querySelector('.svc-group-head[data-cursor]');return h?'g:'+h.closest('[data-group-id]').dataset.groupId:null})()`)
+  await key('ArrowDown')
+  await sleep(150)
+  check('↓ 先落到第一个组头', (await cursor()) === `g:${ids.mall}`, await cursor())
+  await key('ArrowDown')
+  await sleep(150)
+  check('再 ↓ 落到组内第一个成员', (await cursor()) === 'a', await cursor())
+  await key('ArrowDown')
+  await key('ArrowUp')
+  await sleep(150)
+  check('↑ 回到上一行', (await cursor()) === 'a', await cursor())
+  await key('Enter')
+  await waitFor(`!!document.querySelector('.svc-detail')`)
+  check('Enter 打开详情', await js(`!!document.querySelector('.svc-detail')`))
+  await key('ArrowDown')
+  await sleep(250)
+  check('详情打开时方向键换服务，详情跟随', (await js(`(document.querySelector('.svc-detail-title')||{textContent:''}).textContent.trim()`)) === '清理构建缓存',
+    await js(`(document.querySelector('.svc-detail-title')||{textContent:''}).textContent.trim()`))
+  const tabNow = () => js(`(document.querySelector('.svc-detail [role="tab"][aria-selected="true"]')||{textContent:''}).textContent.trim()`)
+  const before = await tabNow()
+  await key('Tab', { ctrlKey: true })
+  await sleep(200)
+  check('Ctrl+Tab 切到下一个标签', (await tabNow()) !== before, `${before} → ${await tabNow()}`)
+  await key('ArrowUp')
+  await sleep(250)
+  // 前面的点击测试停过 a，等它真正停下（停止中按 Space 不会再发一次停止）
+  const dotA = `(document.querySelector('[data-entry-id="a"] .ui-dot')||{dataset:{}}).dataset.tone`
+  await waitFor(`${dotA}==='idle'`, 10000)
+  await key(' ')
+  const spaceOk = await waitFor(`${dotA}==='live'`, 8000)
+  check('Space 启动选中的服务', spaceOk, await js(dotA))
+  await key(' ')
+  check('再按 Space 停止', await waitFor(`(document.querySelector('[data-entry-id="a"] .ui-dot')||{dataset:{}}).dataset.tone!=='live'`, 8000))
+  await key('Escape')
+  await sleep(250)
+  check('Esc 关闭详情', !(await js(`!!document.querySelector('.svc-detail')`)))
+  // 焦点在搜索框里时方向键交给输入框
+  await js(`document.querySelector('input[aria-label="搜索服务"]').focus();true`)
+  const c0 = await cursor()
+  // 真实按键的 target 是焦点元素，这里同样派发到 activeElement
+  await js(`document.activeElement.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true,cancelable:true}));true`)
+  await sleep(150)
+  check('焦点在搜索框里时方向键不移动光标', (await cursor()) === c0, `${c0} → ${await cursor()}`)
+  await js(`document.activeElement.blur();true`)
 
   console.log(`\n结果：${pass} 通过，${fail} 失败`)
   try { rmSync(SANDBOX, { recursive: true, force: true }) } catch { console.log(`  (沙箱残留，交由系统清理：${SANDBOX})`) }
