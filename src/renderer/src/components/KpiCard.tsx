@@ -22,10 +22,18 @@ export interface KpiCardProps {
   tone?: Tone
   trend?: number[]
   live?: boolean
-  /** 交错入场索引：KPI 网格按此计算 animation-delay，0-based */
+  /** 便当网格里占两列的「主磁贴」，UI-REFACTOR §3.4 */
+  wide?: boolean
+  /** 0–100，主磁贴底部的占比条 */
+  ratio?: number
+  /** 交错入场索引：按此计算 animation-delay，0-based */
   index?: number
 }
 
+/**
+ * 总览统计磁贴。数字用 Manrope + tabular-nums（§4.2），刷新时不左右跳。
+ * 状态色只进图标块和占比条，不染磁贴底色（§4.6）。
+ */
 export function KpiCard({
   icon: IconCmp,
   label,
@@ -36,60 +44,49 @@ export function KpiCard({
   tone = 'neutral',
   trend,
   live,
+  wide,
+  ratio,
   index = 0
 }: KpiCardProps): React.JSX.Element {
   return (
     <article
       data-kpi-card
-      className="item-enter surface-card flex min-w-0 flex-col px-3.5 py-3"
+      data-wide={wide || undefined}
+      className="item-enter kpi-tile"
       style={{ '--glow': TONE_VAR[tone], '--i': index } as React.CSSProperties}
     >
-      {/* 顶部：图标瓦片 + 标签 + 趋势图 */}
-      <div className="flex min-w-0 items-center justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-2.5">
-          <span className="icon-tile icon-tile-sm h-8 w-8 shrink-0" aria-hidden>
-            <IconCmp size={15} weight="bold" />
-          </span>
-          <div className="min-w-0">
-            <h3 className="flex items-center gap-1.5 truncate text-[11px] font-semibold text-ink-muted leading-none">
-              {label}
-              {live && (
-                <span
-                  className="h-1.5 w-1.5 shrink-0 rounded-full bg-live shadow-[0_0_0_2px_color-mix(in_srgb,var(--signal-live)_22%,transparent)]"
-                  aria-hidden
-                />
-              )}
-            </h3>
-            {hint && (
-              <p className="mt-0.5 truncate text-[10px] text-ink-faint/70 leading-none" title={hint}>
-                {hint}
-              </p>
-            )}
-          </div>
+      <div className="kpi-tile-top">
+        <span className="kpi-tile-icon" aria-hidden>
+          <IconCmp size={20} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h3 className="kpi-tile-label">
+            {label}
+            {live && <span className="ui-dot" data-tone="live" aria-hidden />}
+          </h3>
+          {hint && (
+            <p className="kpi-tile-hint truncate" title={hint}>
+              {hint}
+            </p>
+          )}
         </div>
         {trend && <Sparkline points={trend} tone={TONE_VAR[tone]} />}
       </div>
 
-      {/* 主读数 */}
-      <div className="mt-2.5 flex items-baseline gap-1">
-        <span className="font-mono text-[26px] font-bold leading-none text-ink-strong tabular-nums">
-          {value}
-        </span>
-        {unit && (
-          <span className="font-mono text-[12px] font-semibold text-ink-faint/60 leading-none">
-            {unit}
-          </span>
-        )}
-      </div>
+      <p className="kpi-tile-value">
+        <span>{value}</span>
+        {unit && <span className="kpi-tile-unit">{unit}</span>}
+      </p>
 
-      {/* 底部详情行 */}
+      {ratio != null && (
+        <span className="kpi-tile-bar" aria-hidden>
+          <span style={{ width: `${Math.max(0, Math.min(100, ratio))}%` }} />
+        </span>
+      )}
+
       {detail && (
-        <p
-          data-kpi-detail
-          className="mt-auto pt-2.5 flex items-center gap-1.5 border-t border-line font-mono text-[10px] text-ink-faint/70 mt-2.5"
-        >
-          <span className="h-1 w-1 shrink-0 rounded-full bg-[var(--glow)]" aria-hidden />
-          <span className="truncate">{detail}</span>
+        <p data-kpi-detail className="kpi-tile-detail">
+          <span className="truncate" title={detail}>{detail}</span>
         </p>
       )}
     </article>

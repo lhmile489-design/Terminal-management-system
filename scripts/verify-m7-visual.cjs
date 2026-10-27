@@ -141,6 +141,41 @@ app.whenReady().then(async () => {
       .map(el=>el.className&&el.className.baseVal===undefined?String(el.className).split(' ')[0]:el.tagName)`)
     const offenders = grads.filter((c) => !/ui-brand-mark/.test(c))
     check('除品牌标识外没有渐变背景', offenders.length === 0, offenders.join(' | ') || `只有 ${grads.length} 处品牌`)
+
+    console.log('\n=== 6. 总览便当网格（§3.4）===')
+    await setTheme('light')
+    check('进入总览', await goto('总览'))
+    await waitFor(`document.querySelectorAll('[data-kpi-card]').length===6`, 6000)
+    const kpi = await js(`(()=>{const g=document.querySelector('.dash-kpi');if(!g)return null;
+      const tiles=[...g.querySelectorAll('[data-kpi-card]')];const gs=getComputedStyle(g);
+      const cols=gs.gridTemplateColumns.split(' ').filter(Boolean).length;
+      const one=tiles.find(t=>t.dataset.wide!=='true');const wide=tiles.filter(t=>t.dataset.wide==='true');
+      const v=one.querySelector('.kpi-tile-value');const vs=getComputedStyle(v);const ic=one.querySelector('.kpi-tile-icon').getBoundingClientRect();
+      const ts=getComputedStyle(one);const bar=g.querySelector('.kpi-tile-bar');
+      const unit=one.querySelector('.kpi-tile-unit')||g.querySelector('.kpi-tile-unit');
+      return {n:tiles.length,cols,wide:wide.length,wideW:wide.map(t=>Math.round(t.getBoundingClientRect().width)),
+        oneW:Math.round(one.getBoundingClientRect().width),fs:parseFloat(vs.fontSize),ff:vs.fontFamily,num:vs.fontVariantNumeric,
+        icon:Math.round(ic.width)+'x'+Math.round(ic.height),br:ts.borderRadius,shadow:ts.boxShadow,bar:!!bar,
+        unitFs:unit?parseFloat(getComputedStyle(unit).fontSize):null}})()`)
+    check('统计磁贴 6 张', kpi && kpi.n === 6, kpi && `${kpi.n} 张`)
+    if (kpi) {
+      check('1500px 下 4 列', kpi.cols === 4, `${kpi.cols} 列`)
+      check('两张主磁贴跨 2 列', kpi.wide === 2 && kpi.wideW.every((w) => w > kpi.oneW * 1.8), `${kpi.wideW.join('/')} vs ${kpi.oneW}`)
+      check('读数 30px Manrope 等宽数字', kpi.fs === 30 && /Manrope/.test(kpi.ff) && /tabular-nums/.test(kpi.num), `${kpi.fs}px ${kpi.ff.split(',')[0]} ${kpi.num}`)
+      check('单位字号 ≥ 12px', kpi.unitFs == null || kpi.unitFs >= 12, String(kpi.unitFs))
+      check('图标块 36×36', kpi.icon === '36x36', kpi.icon)
+      check('磁贴圆角 16px', kpi.br === '16px', kpi.br)
+      check('浅色：磁贴有静态阴影', kpi.shadow !== 'none', kpi.shadow.slice(0, 40))
+      check('「我的服务」带运行占比条', kpi.bar)
+    }
+    const heads = await js(`[...document.querySelectorAll('main h2')].map(h=>h.textContent.trim())`)
+    check('区块标题去掉了英文前缀', heads.length > 0 && heads.every((h) => !/[A-Za-z]{3,} ·/.test(h)), heads.join(' | '))
+    const eb = await js(`(()=>{const h=document.querySelector('main h2.eyebrow');if(!h)return null;const s=getComputedStyle(h);
+      return {tt:s.textTransform,ff:s.fontFamily,fs:parseFloat(s.fontSize),before:getComputedStyle(h,'::before').content}})()`)
+    check('区块标题用 Manrope、不大写、无方块', eb && /Manrope/.test(eb.ff) && eb.tt === 'none' && (eb.before === 'none' || eb.before === 'normal'), eb && JSON.stringify(eb))
+    const ops = await js(`(()=>{const o=document.querySelector('.dash-ops');if(!o)return null;
+      return getComputedStyle(o).gridTemplateColumns.split(' ').filter(Boolean).length})()`)
+    check('服务操作台与侧栏两列并排', ops === 2, String(ops))
   } catch (err) {
     console.log('HARNESS ERROR', err)
     fail++

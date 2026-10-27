@@ -1001,3 +1001,50 @@
 .svc-diag .svc-kv dd { flex-wrap: wrap; }
 .svc-diag .svc-kv dd .mono, .svc-diag-path { font-family: var(--font-mono); white-space: normal; overflow: visible; text-overflow: clip; word-break: break-all; }
 .svc-diag-path { flex: 1 1 100%; }
+
+/* ── 总览：统计磁贴与便当网格（阶段 5，UI-REFACTOR §3.4）────────── */
+.dash { display: flex; flex-direction: column; gap: 16px; container-type: inline-size; }
+.dash-kpi { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.dash-kpi .kpi-tile[data-wide='true'] { grid-column: span 2; }
+.dash-ops { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 16px; align-items: start; }
+.dash-side { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+@container (max-width: 56rem) {
+  .dash-kpi { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dash-ops { grid-template-columns: minmax(0, 1fr); }
+}
+@container (max-width: 34rem) {
+  .dash-kpi { grid-template-columns: minmax(0, 1fr); }
+  .dash-kpi .kpi-tile[data-wide='true'] { grid-column: auto; }
+}
+
+.kpi-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-card);
+  background: var(--surface-card);
+  box-shadow: var(--shadow-lift);
+}
+[data-theme='dark'] .kpi-tile { border-color: var(--stroke-base); }
+.kpi-tile-top { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.kpi-tile-icon {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-control);
+  background: color-mix(in srgb, var(--glow) 14%, var(--surface-card));
+  color: color-mix(in srgb, var(--glow) 72%, var(--text-strong));
+}
+.kpi-tile-label { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--text-muted); }
+.kpi-tile-hint { margin-top: 2px; font-size: 12px; color: var(--text-faint); }
+.kpi-tile-value { display: flex; align-items: baseline; gap: 4px; font-family: var(--font-display); font-size: 30px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; color: var(--text-strong); font-variant-numeric: tabular-nums; }
+.kpi-tile[data-wide='true'] .kpi-tile-value { font-size: 36px; }
+.kpi-tile-unit { font-size: 15px; font-weight: 700; letter-spacing: 0; color: var(--text-faint); }
+.kpi-tile-bar { display: block; height: 6px; border-radius: var(--radius-pill); background: var(--surface-raised); overflow: hidden; }
+.kpi-tile-bar > span { display: block; height: 100%; border-radius: inherit; background: var(--signal-live); transition: width 200ms var(--ease-out); }
+.kpi-tile-detail { margin-top: auto; padding-top: 10px; border-top: 1px solid var(--stroke-base); display: flex; min-width: 0; font-size: 12px; color: var(--text-faint); }

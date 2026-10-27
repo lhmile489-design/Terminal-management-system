@@ -76,7 +76,9 @@ export function Dashboard({
       hint: entries.length ? `运行占比 ${runningRatio}%` : '启动台暂无条目',
       detail: entries.length ? `${stoppedEntries} 项待启动 · ${entries.length} 项已纳管` : '从启动台添加常用项目',
       tone: 'live',
-      live: runningEntries > 0
+      live: runningEntries > 0,
+      wide: true,
+      ratio: runningRatio
     },
     {
       icon: Broadcast,
@@ -111,7 +113,7 @@ export function Dashboard({
       label: '端口冲突',
       value: String(portConflicts),
       hint: portConflicts ? '预期端口被占用' : '无冲突',
-      detail: portConflicts ? '打开诊断可定位占用进程' : '登记服务的预期端口均可用',
+      detail: portConflicts ? '在服务详情的「诊断」里可定位占用进程' : '登记服务的预期端口均可用',
       tone: portConflicts ? 'fault' : 'neutral'
     },
     {
@@ -120,31 +122,39 @@ export function Dashboard({
       value: formatClock(failed ? lastSuccessAt : at),
       hint: failed ? '采集失败，显示上次成功时间' : '采集正常',
       detail: failed ? '保留最近成功快照供排障' : '监听与负载数据已同步',
-      tone: failed ? 'warn' : 'neutral'
+      tone: failed ? 'warn' : 'neutral',
+      wide: true
     }
   ]
+  // 4 列便当网格：第一行 我的服务(2) + CPU + 内存，第二行 外部监听 + 端口冲突 + 采集(2)。
+  // 数组顺序不动（m4-ui 等按「第一张是我的服务」量），只调渲染顺序
+  const order = [0, 2, 3, 1, 4, 5]
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="dash flex flex-col gap-5">
       <section aria-labelledby="kpi-heading">
-        <h2 id="kpi-heading" className="eyebrow mb-2.5">
-          Overview
+        <h2 id="kpi-heading" className="sr-only">
+          本机概况
         </h2>
-        <div className="kpi-grid">
-          {cards.map((card, i) => (
-            <KpiCard key={card.label} {...card} index={i} />
+        <div className="dash-kpi">
+          {order.map((i, n) => (
+            <KpiCard key={cards[i].label} {...cards[i]} index={n} />
           ))}
         </div>
       </section>
 
-      <DiscoveredListeners onRequestAdd={onRequestAdd} />
-
-      {/* 服务操作台：启动台条目，支持快速启停与强制关闭 */}
-      <MyServicesPanel onOpenLogs={onOpenLogs ?? (() => {})} />
+      {/* 服务操作台在左（主操作），新发现端口与关注进程叠在右侧 */}
+      <div className="dash-ops">
+        <MyServicesPanel onOpenLogs={onOpenLogs ?? (() => {})} />
+        <div className="dash-side">
+          <DiscoveredListeners onRequestAdd={onRequestAdd} />
+          <WatchedProcesses />
+        </div>
+      </div>
 
       <section aria-labelledby="listeners-heading">
         <h2 id="listeners-heading" className="eyebrow mb-2.5">
-          My Services · 我的服务
+          我的服务端口
         </h2>
         {/* 定位端口只交给真正持有那一行的表：两张表都拿到的话，没命中的那张
             会先跑完 2 秒计时把高亮消掉，命中的那张还没滚过去 */}
@@ -160,7 +170,7 @@ export function Dashboard({
       <section aria-labelledby="background-heading">
         <div className="mb-2.5 flex items-center gap-2">
           <h2 id="background-heading" className="eyebrow">
-            Background · 应用后台
+            应用后台
           </h2>
           <button
             type="button"
@@ -191,8 +201,6 @@ export function Dashboard({
           </p>
         )}
       </section>
-
-      <WatchedProcesses />
     </div>
   )
 }

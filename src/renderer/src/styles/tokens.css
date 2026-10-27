@@ -599,39 +599,18 @@ section[aria-labelledby='kpi-heading'] {
   区块标签：等宽小号大写 + 前置实心方块 + 尾随发丝线。
   方块用 accent 而非 currentColor —— 标签文字本身要弱，方块要是那一点强调。
 */
+/* 区块标题，UI-REFACTOR §4.2：Manrope 15px，不再用等宽大写、方块与发丝线 */
 .eyebrow {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-family: var(--font-display);
+  font-size: 15px;
   font-weight: 700;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--text-muted);
+  letter-spacing: -0.01em;
+  color: var(--text-strong);
 }
-
-.eyebrow::before {
-  content: '';
-  flex: none;
-  width: 6px;
-  height: 6px;
-  background: var(--signal-accent);
-}
-
-/* 尾随发丝线填满剩余宽度，把区块标题横向锚住 */
-.eyebrow::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  min-width: 12px;
-  background: var(--stroke-base);
-}
-
-/* 行内使用（侧栏窄栏、卡片内）不要那条线 */
-.eyebrow-tight::after {
-  display: none;
-}
+.eyebrow-tight { font-size: 13px; }
 
 /*
   展示型标题（不再用于 ViewHeader，保留给内容页中的大型强调区）：

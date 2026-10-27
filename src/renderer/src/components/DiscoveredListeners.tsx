@@ -17,7 +17,7 @@ export function DiscoveredListeners({
   return (
     <section aria-labelledby="discovered-heading">
       <h2 id="discovered-heading" className="eyebrow mb-3">
-        Discovered · 发现新的监听端口
+        新发现的监听端口
       </h2>
 
       <ul className="flex flex-col gap-2">

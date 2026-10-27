@@ -25,7 +25,7 @@ export function WatchedProcesses(): React.JSX.Element {
   return (
     <section aria-labelledby="watched-heading">
       <h2 id="watched-heading" className="eyebrow mb-3">
-        Watched · 关注进程
+        关注进程
       </h2>
 
       <div className="surface-card flex flex-col gap-3 px-4 py-3.5">

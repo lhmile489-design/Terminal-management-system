@@ -221,7 +221,7 @@ export function MyServicesPanel({
       {/* 区块标题栏 */}
       <div className="mb-2.5 flex items-center gap-2">
         <h2 id="my-services-panel-heading" className="eyebrow">
-          My Services · 服务操作台
+          服务操作台
         </h2>
         {runningCount > 0 && (
           <span className="flex items-center gap-1 rounded-full border border-live/25 bg-live/10 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-live">
