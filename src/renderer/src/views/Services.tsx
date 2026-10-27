@@ -352,7 +352,8 @@ export function Services({
       if (entry) { e.preventDefault(); shiftEntry(entry, e.key === 'ArrowUp' ? -1 : 1) }
       return
     }
-    if (e.ctrlKey && e.key === 'Tab' && selected) {
+    // 输入框里的 Ctrl+Tab 让给它：配置表单里切走标签会让人以为改动丢了
+    if (e.ctrlKey && !typing && e.key === 'Tab' && selected) {
       e.preventDefault()
       const order: DetailTab[] = ['overview', 'output', 'diagnose', ...(hasBuildTab(selected) ? (['build'] as DetailTab[]) : []), 'config']
       const i = order.indexOf(effectiveTab(selected, tab))
