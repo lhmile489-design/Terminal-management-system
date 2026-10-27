@@ -187,7 +187,7 @@ app.whenReady().then(async () => {
     }
 
     console.log('\n=== 1. 卡片主按钮（.btn-primary）按下有位移 ===')
-    if (!(await goto('启动台'))) throw new Error('没能切到启动台')
+    if (!(await goto('前端启动台'))) throw new Error('没能切到启动台')
     await sleep(400)
 
     const START = `[...document.querySelectorAll('main article')]

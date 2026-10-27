@@ -25,6 +25,7 @@ import { TerminalView } from './TerminalView'
 import { StatusPill } from './StatusPill'
 import { isLiveStatus, STATUS_META } from '../lib/entryMeta'
 import type { EntryCardActions } from './EntryCard'
+import { confirm } from './ui'
 
 // ─── 环境色调 ──────────────────────────────────────────────────────────────────
 
@@ -498,7 +499,13 @@ export function GroupsPanel({ actionsFor, onOpenLogs }: GroupPanelProps): React.
 
   const handleDelete = useCallback(
     async (group: ProjectGroup) => {
-      if (!window.confirm(`确认删除工作组「${group.name}」？此操作不可恢复，组内条目不会被删除。`)) return
+      const ok = await confirm({
+        title: `删除工作组「${group.name}」？`,
+        body: '工作组删除后不能恢复。组里的条目不会被删除，会回到「未分组」。',
+        okLabel: '删除工作组',
+        danger: true
+      })
+      if (!ok) return
       await remove(group.id)
       if (selectedId === group.id) setSelectedId(groups.find((g) => g.id !== group.id)?.id ?? null)
     },

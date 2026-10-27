@@ -297,7 +297,7 @@ async function checks(win) {
     await sleep(1200)
     check(
       '端口定位切到工作台',
-      await js(win, `document.querySelector('h1').textContent.trim().startsWith('工作台')`),
+      await js(win, `document.querySelector('h1').textContent.trim().startsWith('总览')`),
       await js(win, `document.querySelector('h1').textContent.trim()`)
     )
     check(

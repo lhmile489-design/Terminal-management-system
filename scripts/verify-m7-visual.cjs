@@ -84,7 +84,7 @@ app.whenReady().then(async () => {
   }
 
   console.log('\n=== 1. 展示型页头 ===')
-  await goto('启动台')
+  await goto('前端启动台')
 
   const head = await js(`(()=>{const h=document.querySelector('h1');const s=getComputedStyle(h);
     const r=h.querySelector('.romanized');const rs=r?getComputedStyle(r):null;
@@ -174,7 +174,7 @@ app.whenReady().then(async () => {
     hover.before)
 
   console.log('\n=== 3. 工作台 KPI 概览 ===')
-  await goto('工作台')
+  await goto('总览')
   const kpiGrid = await js(`(()=>{
     const heading=document.querySelector('#kpi-heading');
     const grid=heading?.nextElementSibling;
@@ -298,7 +298,7 @@ app.whenReady().then(async () => {
   }
 
   // 页头在每个视图都成立
-  for (const label of ['工作台', '启动台', '诊断', '设置', '终端']) {
+  for (const label of ['总览', '前端启动台', '诊断', '设置', '终端']) {
     await goto(label)
     const ok = await js(`(()=>{const h=document.querySelector('h1');
       return !!h && !!h.querySelector('.romanized') && parseFloat(getComputedStyle(h).fontSize)>=28})()`)
@@ -308,7 +308,7 @@ app.whenReady().then(async () => {
   console.log('\n=== 7. 浅色主题成立 ===')
   await js(`window.mile.settings.patch({theme:'light'})`)
   await sleep(1200)
-  await goto('启动台')
+  await goto('前端启动台')
   const light = await js(`(()=>{const c=document.querySelector('article.surface-card');
     const s=getComputedStyle(c);const b=getComputedStyle(document.body);
     const t=c.querySelector('.icon-tile');
@@ -368,7 +368,7 @@ app.whenReady().then(async () => {
       await sleep(100)
     }
     await sleep(500)
-    await goto('启动台')
+    await goto('前端启动台')
     const rows = await js(CONTRAST)
     const bad = rows.filter((r) => r.ratio < 4.5)
     // 空数组上跑 filter 会得到空数组，看着像通过 —— 先要求真的量到了按钮

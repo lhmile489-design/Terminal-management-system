@@ -573,3 +573,226 @@
   .ui-tab-ink[data-ready='true'],
   .ui-switch::after { transition: none; }
 }
+
+/* ══ 外框（阶段 3，UI-REFACTOR §3.2）════════════════════════════ */
+
+/* 标题栏 40px：品牌 · 搜索 · 动态 · 窗口控件 */
+.ui-titlebar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 40px;
+  flex: none;
+  padding-left: 14px;
+  border-bottom: 1px solid var(--stroke-base);
+  background: color-mix(in srgb, var(--surface-canvas) 85%, transparent);
+  backdrop-filter: blur(14px);
+  position: relative;
+  z-index: 30;
+}
+.ui-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--text-strong);
+  user-select: none;
+}
+.ui-brand-mark {
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  /* 全应用唯一允许渐变的地方：品牌标识（§4.3） */
+  background: linear-gradient(135deg, #2563eb, #6e3ff3);
+  display: grid;
+  place-items: center;
+}
+.ui-brand-mark img { width: 14px; height: 14px; }
+.ui-search-trigger {
+  margin: 0 auto;
+  width: 360px;
+  max-width: 40vw;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  border: 1px solid var(--stroke-base);
+  border-radius: var(--radius-control);
+  background: var(--surface-card);
+  color: var(--text-faint);
+  font-size: 13px;
+}
+.ui-search-trigger:hover { border-color: var(--stroke-strong); color: var(--text-muted); }
+/* 标题栏可点项与按钮同一套按压反馈（4.4 节）；窗口控件贴边，按压只换底色 */
+.ui-search-trigger,
+.ui-bell {
+  transition:
+    background-color 90ms var(--ease-out),
+    border-color 90ms var(--ease-out),
+    color 90ms var(--ease-out),
+    box-shadow 90ms var(--ease-out),
+    transform 200ms var(--ease-spring);
+}
+.ui-search-trigger:active { transform: scale(0.98); transition-duration: 70ms; }
+.ui-bell:active { transform: scale(0.96); transition-duration: 70ms; }
+@media (prefers-reduced-motion: reduce) {
+  .ui-search-trigger:active,
+  .ui-bell:active { transform: none; }
+}
+.ui-kbd {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 18px;
+  padding: 0 6px;
+  border: 1px solid var(--stroke-strong);
+  border-radius: 6px;
+  background: var(--surface-raised);
+  color: var(--text-muted);
+}
+.ui-tb-right { display: flex; align-items: center; height: 100%; }
+.ui-bell {
+  position: relative;
+  width: 36px;
+  height: 30px;
+  margin-right: 6px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-control);
+  color: var(--text-muted);
+}
+.ui-bell:hover { background: var(--surface-raised); color: var(--text-strong); }
+.ui-bell-badge {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: var(--radius-pill);
+  background: var(--btn-primary-bg);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.ui-bell-badge[data-fault='true'] { background: var(--ui-danger-bg); }
+.ui-chrome {
+  width: 46px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  color: var(--text-muted);
+  transition: background-color 90ms var(--ease-out), color 90ms var(--ease-out);
+}
+.ui-chrome:hover { background: var(--surface-raised); color: var(--text-strong); }
+.ui-chrome[data-close='true']:hover { background: #c42b1c; color: #fff; }
+
+/* 导航轨：展开 184px，折叠 56px */
+.ui-nav {
+  position: relative;
+  width: 184px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 10px;
+  border-right: 1px solid var(--stroke-base);
+  background: var(--surface-panel);
+  overflow-x: hidden;
+  overflow-y: auto;
+  transition: width 200ms var(--ease-out);
+}
+.ui-nav[data-collapsed='true'] { width: 56px; }
+.ui-nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 38px;
+  flex: none;
+  padding: 0 8px 0 10px;
+  border-radius: var(--radius-control);
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background-color 90ms var(--ease-out), color 90ms var(--ease-out), transform 200ms var(--ease-spring);
+}
+.ui-nav-item:hover { background: var(--surface-raised); color: var(--text-strong); }
+.ui-nav-item:active { transform: scale(0.96); transition-duration: 70ms; }
+.ui-nav-item[aria-current='page'],
+.ui-nav-item[data-group-active='true'] { color: var(--text-strong); }
+.ui-nav-item[aria-current='page'] {
+  background: var(--signal-accent-soft);
+  /* 品牌蓝混入最强文字色：浅色压深、深色提亮，在浅蓝底上 ≥ 4.5:1 */
+  color: color-mix(in srgb, var(--signal-accent) 80%, var(--text-strong));
+}
+.ui-nav-item[data-sub='true'] { height: 32px; padding-left: 34px; font-weight: 500; }
+.ui-nav-item[data-sub='true'] svg { width: 16px; height: 16px; }
+.ui-nav-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; transition: opacity 120ms; }
+.ui-nav-kbd { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); font-weight: 500; transition: opacity 120ms; }
+.ui-nav[data-collapsed='true'] .ui-nav-label,
+.ui-nav[data-collapsed='true'] .ui-nav-kbd { opacity: 0; pointer-events: none; }
+.ui-nav[data-collapsed='true'] .ui-nav-item[data-sub='true'] { padding-left: 12px; }
+.ui-nav-sep { flex: 1; min-height: 8px; }
+.ui-nav-indicator {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 3px;
+  height: 20px;
+  border-radius: 0 3px 3px 0;
+  background: var(--btn-primary-bg);
+  pointer-events: none;
+}
+.ui-nav-indicator[data-ready='true'] { transition: transform 200ms var(--ease-spring); }
+/* 折叠时的悬停提示：fixed 定位，不被导航的 overflow 截掉 */
+.ui-nav-tip {
+  position: fixed;
+  z-index: 60;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: var(--text-strong);
+  color: var(--surface-canvas);
+  font-size: 12px;
+  pointer-events: none;
+  white-space: nowrap;
+  animation: ui-fade 120ms var(--ease-out);
+}
+
+/* 视图头：标题 Manrope 22px + 一行说明 + 右侧主操作，随内容滚动 */
+.ui-view-head { display: flex; align-items: flex-end; gap: 16px; flex: none; }
+.ui-view-title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--text-strong);
+}
+.ui-view-caption { margin-top: 2px; font-size: 13px; color: var(--text-muted); }
+.ui-view-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; flex: none; }
+
+/* 快捷键一览 */
+.ui-keys { display: grid; grid-template-columns: 1fr auto; gap: 8px 16px; align-items: center; }
+.ui-keys dt { color: var(--text-primary); }
+.ui-keys dd { display: flex; gap: 4px; justify-content: flex-end; }
+.ui-keys .ui-kbd { margin-left: 0; }
+
+/* 实时动态抽屉内容 */
+.ui-act-section { padding: 14px 16px; }
+.ui-act-section + .ui-act-section { border-top: 1px solid var(--stroke-base); }
+.ui-act-h { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 13px; font-weight: 700; color: var(--text-strong); }
+.ui-act-h > :last-child { margin-left: auto; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-nav, .ui-nav-indicator[data-ready='true'] { transition: none; }
+  .ui-nav-item:active { transform: none; }
+}

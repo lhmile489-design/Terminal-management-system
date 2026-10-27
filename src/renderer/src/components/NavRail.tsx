@@ -1,28 +1,87 @@
+import { useLayoutEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import {
-  Gauge,
-  Rocket,
-  Terminal,
-  ListMagnifyingGlass,
-  Stethoscope,
-  Gear,
-  BookOpen,
-  TreeStructure,
   Folders,
+  ListMagnifyingGlass,
+  Monitor,
+  Rocket,
+  Stethoscope,
+  TreeStructure,
   type Icon
 } from '@phosphor-icons/react'
-import { ThemeToggle } from './ThemeToggle'
+import type { ThemePreference } from '@shared/types'
+import { ICON, ICON_SIZE } from '../lib/icons'
+import { useTheme } from '../store/theme'
 
-export type ViewId = 'dashboard' | 'launchpad' | 'backend' | 'workgroups' | 'terminal' | 'logs' | 'diagnose' | 'settings' | 'about'
+export type ViewId =
+  | 'dashboard'
+  | 'launchpad'
+  | 'backend'
+  | 'workgroups'
+  | 'terminal'
+  | 'logs'
+  | 'diagnose'
+  | 'settings'
+  | 'about'
 
-const NAV: { id: ViewId; label: string; icon: Icon }[] = [
-  { id: 'dashboard', label: '工作台', icon: Gauge },
-  { id: 'launchpad', label: '前端启动台', icon: Rocket },
-  { id: 'backend', label: '后端控制台', icon: TreeStructure },
-  { id: 'workgroups', label: '工作组', icon: Folders },
-  { id: 'terminal', label: '终端', icon: Terminal },
-  { id: 'logs', label: '日志', icon: ListMagnifyingGlass },
-  { id: 'diagnose', label: '诊断', icon: Stethoscope }
+interface NavLeaf {
+  id: ViewId
+  label: string
+  icon: Icon
+}
+
+interface NavTop extends NavLeaf {
+  /** Ctrl+N 快捷键，UI-REFACTOR §5.2 */
+  key: number
+  /**
+   * 过渡期子项：旧页面在阶段 4 / 6 合并进新页面之前，挂在对应一级项下面。
+   * aria-label 保留旧名，既有 harness 按名称导航不受影响。
+   */
+  children?: NavLeaf[]
+}
+
+/** 5 项一级导航，UI-REFACTOR Q9 / Q10 / Q19 */
+export const NAV_TOP: NavTop[] = [
+  {
+    id: 'launchpad',
+    label: '服务',
+    icon: ICON.navServices,
+    key: 1,
+    children: [
+      { id: 'launchpad', label: '前端启动台', icon: Rocket },
+      { id: 'backend', label: '后端控制台', icon: TreeStructure },
+      { id: 'workgroups', label: '工作组', icon: Folders },
+      { id: 'diagnose', label: '诊断', icon: Stethoscope }
+    ]
+  },
+  { id: 'dashboard', label: '总览', icon: ICON.navOverview, key: 2 },
+  {
+    id: 'terminal',
+    label: '终端',
+    icon: ICON.navTerminal,
+    key: 3,
+    children: [{ id: 'logs', label: '日志', icon: ListMagnifyingGlass }]
+  },
+  { id: 'settings', label: '设置', icon: ICON.navSettings, key: 4 },
+  { id: 'about', label: '关于', icon: ICON.navAbout, key: 5 }
 ]
+
+/** Ctrl+1..5 对应的视图 */
+export const NAV_HOTKEYS: Record<number, ViewId> = Object.fromEntries(NAV_TOP.map((t) => [t.key, t.id]))
+
+const COLLAPSE_KEY = 'mile.nav.collapsed'
+
+const THEME_CYCLE: ThemePreference[] = ['light', 'dark', 'system']
+const THEME_META: Record<ThemePreference, { icon: Icon; label: string }> = {
+  light: { icon: ICON.themeLight, label: '浅色' },
+  dark: { icon: ICON.themeDark, label: '深色' },
+  system: { icon: Monitor, label: '跟随系统' }
+}
+
+function groupOf(view: ViewId): ViewId {
+  const top = NAV_TOP.find((t) => t.id === view || t.children?.some((c) => c.id === view))
+  return top?.id ?? view
+}
 
 export function NavRail({
   active,
@@ -31,82 +90,115 @@ export function NavRail({
   active: ViewId
   onChange: (id: ViewId) => void
 }): React.JSX.Element {
-  return (
-    <nav
-      aria-label="主导航"
-      className="flex w-12 shrink-0 flex-col items-center gap-0.5 border-r border-line bg-panel py-2"
-    >
-      {NAV.map((item) => (
-        <RailButton
-          key={item.id}
-          {...item}
-          active={active === item.id}
-          onClick={() => onChange(item.id)}
-        />
-      ))}
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSE_KEY) === '1')
+  const [tip, setTip] = useState<{ label: string; top: number; left: number } | null>(null)
+  const navRef = useRef<HTMLElement>(null)
+  const indRef = useRef<HTMLSpanElement>(null)
+  const [indReady, setIndReady] = useState(false)
+  const preference = useTheme((s) => s.preference)
+  const setTheme = useTheme((s) => s.set)
 
-      <div className="mt-auto flex flex-col items-center gap-0.5">
-        <RailButton
-          id="about"
-          label="关于"
-          icon={BookOpen}
-          active={active === 'about'}
-          onClick={() => onChange('about')}
-        />
-        <ThemeToggle />
-        <RailButton
-          id="settings"
-          label="设置"
-          icon={Gear}
-          active={active === 'settings'}
-          onClick={() => onChange('settings')}
-        />
-      </div>
-    </nav>
-  )
-}
+  const group = groupOf(active)
+  const topBar = NAV_TOP.filter((t) => t.key <= 3)
+  const bottom = NAV_TOP.filter((t) => t.key > 3)
 
-function RailButton({
-  label,
-  icon: IconCmp,
-  active,
-  onClick
-}: {
-  id: ViewId
-  label: string
-  icon: Icon
-  active: boolean
-  onClick: () => void
-}): React.JSX.Element {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label={label}
-      aria-current={active ? 'page' : undefined}
-      className={`pressable group relative flex h-9 w-9 items-center justify-center rounded-[7px] transition-[background-color,color] duration-200 [transition-timing-function:cubic-bezier(0.25,0.46,0.45,0.94)] ${
-        active
-          ? 'bg-raised text-ink-strong'
-          : 'text-ink-faint/70 hover:bg-raised/60 hover:text-ink'
-      }`}
-    >
-      <IconCmp size={16} weight={active ? 'fill' : 'regular'} />
+  // 指示条滑到当前页那一项：首次只定位，之后才开过渡
+  useLayoutEffect(() => {
+    const el = navRef.current?.querySelector<HTMLElement>('[aria-current="page"]')
+    const ind = indRef.current
+    if (!el || !ind) return
+    ind.style.transform = `translateY(${el.offsetTop + (el.offsetHeight - 20) / 2}px)`
+    if (!indReady) requestAnimationFrame(() => setIndReady(true))
+  }, [active, collapsed, indReady])
 
-      {/* 选中指示线：spring 淡入缩放，从左侧弹出 */}
-      {active && (
-        <span
-          className="absolute top-1/2 -left-[3px] h-4 w-[2px] -translate-y-1/2 rounded-r-full bg-accent [animation:slide-in-right_220ms_cubic-bezier(0.34,1.56,0.64,1)_both]"
-          aria-hidden
-        />
-      )}
+  const toggleCollapsed = (): void => {
+    setCollapsed((v) => {
+      localStorage.setItem(COLLAPSE_KEY, v ? '0' : '1')
+      return !v
+    })
+    setTip(null)
+  }
 
-      {/* 悬停 tooltip：升级为 spring 滑入（translateX + opacity），比纯淡入有方向感 */}
-      <span
-        role="tooltip"
-        className="pointer-events-none absolute left-[calc(100%+8px)] z-50 rounded-[5px] border border-line bg-card px-2 py-1 font-mono text-[11px] whitespace-nowrap text-ink opacity-0 transition-[opacity,transform] duration-200 [transition-timing-function:cubic-bezier(0.34,1.56,0.64,1)] -translate-x-1 group-hover:translate-x-0 group-hover:opacity-100 shadow-[var(--shadow-lift)]"
+  const showTip = (label: string) => (e: React.SyntheticEvent<HTMLElement>) => {
+    if (!collapsed) return
+    const r = e.currentTarget.getBoundingClientRect()
+    setTip({ label, top: r.top + r.height / 2 - 13, left: r.right + 8 })
+  }
+  const tipHandlers = (label: string): React.HTMLAttributes<HTMLElement> => ({
+    onMouseEnter: showTip(label),
+    onFocus: showTip(label),
+    onMouseLeave: () => setTip(null),
+    onBlur: () => setTip(null)
+  })
+
+  const item = (leaf: NavLeaf, opts: { kbd?: number; sub?: boolean; groupActive?: boolean }): React.JSX.Element => {
+    // 一级项与某个子项同 id 时（服务 → 前端启动台），当前页标记只给子项，避免两处同时 aria-current
+    const shadowedByChild = !opts.sub && !!NAV_TOP.find((t) => t.id === leaf.id)?.children?.some((c) => c.id === leaf.id)
+    const current = active === leaf.id && !shadowedByChild
+    const IconCmp = leaf.icon
+    return (
+      <button
+        key={`${opts.sub ? 'sub' : 'top'}-${leaf.label}`}
+        type="button"
+        className="ui-nav-item"
+        aria-label={leaf.label}
+        aria-current={current ? 'page' : undefined}
+        data-group-active={opts.groupActive || undefined}
+        data-sub={opts.sub || undefined}
+        onClick={() => onChange(leaf.id)}
+        {...tipHandlers(opts.kbd ? `${leaf.label}  Ctrl ${opts.kbd}` : leaf.label)}
       >
-        {label}
-      </span>
-    </button>
+        <IconCmp size={opts.sub ? ICON_SIZE.inline : ICON_SIZE.title} weight={current ? 'fill' : 'regular'} aria-hidden />
+        <span className="ui-nav-label">{leaf.label}</span>
+        {opts.kbd && <span className="ui-nav-kbd" aria-hidden>Ctrl {opts.kbd}</span>}
+      </button>
+    )
+  }
+
+  const top = (t: NavTop): React.JSX.Element[] => [
+    item(t, { kbd: t.key, groupActive: !!t.children && group === t.id }),
+    ...(t.children ?? []).map((c) => item(c, { sub: true }))
+  ]
+
+  const theme = THEME_META[preference]
+  const nextTheme = THEME_CYCLE[(THEME_CYCLE.indexOf(preference) + 1) % THEME_CYCLE.length]
+  const ThemeIcon = theme.icon
+  const collapseLabel = collapsed ? '展开导航' : '折叠导航'
+
+  return (
+    <nav ref={navRef} aria-label="主导航" className="ui-nav" data-collapsed={collapsed || undefined}>
+      <span ref={indRef} className="ui-nav-indicator" data-ready={indReady || undefined} aria-hidden />
+      {topBar.flatMap(top)}
+      <div className="ui-nav-sep" />
+      {bottom.flatMap(top)}
+      <button
+        type="button"
+        className="ui-nav-item"
+        aria-label={`主题：${theme.label}，点击切换为${THEME_META[nextTheme].label}`}
+        onClick={() => void setTheme(nextTheme)}
+        {...tipHandlers(`主题：${theme.label}`)}
+      >
+        <ThemeIcon size={ICON_SIZE.title} aria-hidden />
+        <span className="ui-nav-label">主题 · {theme.label}</span>
+      </button>
+      <button
+        type="button"
+        className="ui-nav-item"
+        aria-label={collapseLabel}
+        aria-expanded={!collapsed}
+        onClick={toggleCollapsed}
+        {...tipHandlers(collapseLabel)}
+      >
+        <ICON.collapseNav size={ICON_SIZE.title} aria-hidden />
+        <span className="ui-nav-label">折叠导航</span>
+      </button>
+      {tip &&
+        createPortal(
+          <span role="tooltip" className="ui-nav-tip" style={{ top: tip.top, left: tip.left }}>
+            {tip.label}
+          </span>,
+          document.body
+        )}
+    </nav>
   )
 }

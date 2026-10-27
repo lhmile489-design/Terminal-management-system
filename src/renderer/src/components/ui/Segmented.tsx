@@ -5,6 +5,8 @@ export interface SegmentOption<T extends string | number> {
   label: React.ReactNode
   /** 选项后的计数，如「前端 4」 */
   count?: number
+  /** 可见文字是缩写时给读屏的完整名称，如「CPU」→「按 CPU 排序」 */
+  ariaLabel?: string
 }
 
 /**
@@ -47,6 +49,7 @@ export function Segmented<T extends string | number>({
           type="button"
           role="radio"
           aria-checked={i === current}
+          aria-label={o.ariaLabel}
           tabIndex={i === current ? 0 : -1}
           onClick={() => onChange(o.value)}
         >

@@ -2,7 +2,7 @@
   "measuredAt": "2026-10-26T17:22:40.107Z",
   "window": "1180x760",
   "views": {
-    "light/工作台": {
+    "light/总览": {
       "lowContrast": 23,
       "veryLowContrast": 18,
       "smallText": 50,
@@ -74,7 +74,7 @@
       "titleBarH": 36,
       "navW": 48
     },
-    "dark/工作台": {
+    "dark/总览": {
       "lowContrast": 23,
       "veryLowContrast": 5,
       "smallText": 50,

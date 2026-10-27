@@ -349,7 +349,7 @@ app.whenReady().then(async () => {
 
   console.log('\n=== 8. 界面：分组分区、来源列与关注面板 ===')
   await js(`(()=>{const b=[...document.querySelector('nav').querySelectorAll('button')]
-    .find(x=>x.getAttribute('aria-label')==='工作台');b&&b.click();return true})()`)
+    .find(x=>x.getAttribute('aria-label')==='总览');b&&b.click();return true})()`)
   await sleep(1200)
 
   const heads = await js(`[...document.querySelectorAll('main h2')].map(h=>h.textContent.trim())`)

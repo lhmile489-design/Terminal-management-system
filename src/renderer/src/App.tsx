@@ -1,9 +1,13 @@
-import { useCallback, useEffect, useState } from 'react'
-import { ArrowsClockwise, Command, MagnifyingGlass, Plus } from '@phosphor-icons/react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { ArrowsClockwise, Command } from '@phosphor-icons/react'
 import { ViewHeader } from './components/ViewHeader'
 import { TitleBar } from './components/TitleBar'
-import { NavRail, type ViewId } from './components/NavRail'
-import { ActivitySidebar, type ActivityEvent } from './components/ActivitySidebar'
+import { NavRail, NAV_HOTKEYS, type ViewId } from './components/NavRail'
+import { ActivityDrawer, type ActivityEvent } from './components/ActivityDrawer'
+import { ShortcutOverlay } from './components/ShortcutOverlay'
+import { Button, ConfirmHost, ToastHost, toast } from './components/ui'
+import { hasOpenOverlay } from './lib/overlay'
+import { ICON } from './lib/icons'
 import { Dashboard } from './views/Dashboard'
 import { Launchpad } from './views/Launchpad'
 import { BackendConsole } from './views/BackendConsole'
@@ -25,60 +29,42 @@ import { STATUS_META } from './lib/entryMeta'
 
 const TITLES: Record<
   ViewId,
-  { eyebrow: string; title: string; romanized: string; caption: string }
+  { title: string; caption: string }
 > = {
   dashboard: {
-    eyebrow: 'Dashboard',
-    title: '工作台',
-    romanized: 'DASHBOARD',
+    title: '总览',
     caption: '实时掌握本机监听端口与进程负载'
   },
   launchpad: {
-    eyebrow: 'Launchpad',
     title: '前端启动台',
-    romanized: 'LAUNCHPAD',
     caption: '一键启动与管理你的本地前端服务和批处理任务'
   },
   backend: {
-    eyebrow: 'Backend',
     title: '后端控制台',
-    romanized: 'BACKEND',
     caption: 'Spring Boot 项目管理：启停服务、Maven/Gradle 构建操作'
   },
   workgroups: {
-    eyebrow: 'Workgroups',
     title: '工作组',
-    romanized: 'WORKGROUPS',
     caption: '按项目组合管理前端与后端服务，统一环境控制'
   },
   terminal: {
-    eyebrow: 'Terminal',
     title: '终端',
-    romanized: 'TERMINAL',
     caption: '会话输出、输入与历史回看'
   },
   logs: {
-    eyebrow: 'Logs',
     title: '日志',
-    romanized: 'LOGS',
     caption: '跨会话汇总输出，按级别与关键字检索'
   },
   diagnose: {
-    eyebrow: 'Diagnose',
     title: '诊断',
-    romanized: 'DIAGNOSE',
     caption: '预检、端口占用与会话回顾'
   },
   settings: {
-    eyebrow: 'Settings',
     title: '设置',
-    romanized: 'SETTINGS',
     caption: '采集周期、主题与终端偏好'
   },
   about: {
-    eyebrow: 'About',
     title: '关于',
-    romanized: 'ABOUT',
     caption: '版本信息、使用教程与项目介绍'
   }
 }
@@ -86,6 +72,15 @@ const TITLES: Record<
 export function App(): React.JSX.Element {
   const [view, setView] = useState<ViewId>('dashboard')
   const [events, setEvents] = useState<ActivityEvent[]>([])
+  // 实时动态改为抽屉（UI-REFACTOR Q1）：关着时新事件计入未读，失败类让角标变红
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const drawerOpenRef = useRef(false)
+  drawerOpenRef.current = drawerOpen
+  const [unread, setUnread] = useState(0)
+  const [unreadFault, setUnreadFault] = useState(false)
+  const [keysOpen, setKeysOpen] = useState(false)
+  /** 每个条目上一次的状态，只在「进入」失败态时弹通知，同一状态重复推送不再弹 */
+  const lastStatus = useRef(new Map<string, string>())
   const [pendingAdd, setPendingAdd] = useState<{ path: string; name: string } | null>(null)
   const [diagnoseId, setDiagnoseId] = useState<string | null>(null)
   const [paletteOpen, setPaletteOpen] = useState(false)
@@ -129,6 +124,10 @@ export function App(): React.JSX.Element {
     setEvents((prev) =>
       [{ id: `${Date.now()}-${Math.random()}`, at: Date.now(), level, text }, ...prev].slice(0, 100)
     )
+    if (!drawerOpenRef.current) {
+      setUnread((n) => n + 1)
+      if (level === 'fault') setUnreadFault(true)
+    }
   }, [])
 
   useEffect(
@@ -140,8 +139,27 @@ export function App(): React.JSX.Element {
           meta.tone === 'fault' ? 'fault' : meta.tone === 'warn' ? 'warn' : 'info',
           `条目状态：${meta.label}${runtime.port ? ` · :${runtime.port}` : ''}`
         )
+
+        // 失败通知条常驻到手动关闭（Q14）。阶段 4 有详情面板后，「查看输出」改为打开详情的输出标签
+        const prev = lastStatus.current.get(runtime.entryId)
+        lastStatus.current.set(runtime.entryId, runtime.status)
+        if (meta.tone === 'fault' && prev !== runtime.status) {
+          const name = useEntries.getState().entries.find((e) => e.id === runtime.entryId)?.name ?? '条目'
+          const sid = runtime.sessionId
+          const blocked = runtime.status === 'blocked'
+          toast({
+            tone: 'fault',
+            title: `${name}：${meta.label}`,
+            body: blocked ? '启动前检查没通过，诊断里有原因和修复入口' : '输出里能看到退出前的最后几行',
+            action: blocked
+              ? { label: '查看诊断', run: () => { setDiagnoseId(runtime.entryId); setView('diagnose') } }
+              : sid
+                ? { label: '查看输出', run: () => { void focusSession(sid); setView('terminal') } }
+                : undefined
+          })
+        }
       }),
-    [setRuntime, pushEvent]
+    [setRuntime, pushEvent, focusSession]
   )
 
   useEffect(() => window.mile.entry.onWarning((text) => pushEvent('warn', text)), [pushEvent])
@@ -191,6 +209,23 @@ export function App(): React.JSX.Element {
       if (e.ctrlKey && !e.altKey && (e.key === 'k' || e.key === 'K')) {
         e.preventDefault()
         setPaletteOpen((v) => !v)
+        return
+      }
+      // Ctrl+1..5 切换导航（UI-REFACTOR §5.2）。xterm 不占用这组键，终端里也能切
+      if (e.ctrlKey && !e.altKey && !e.shiftKey && /^[1-5]$/.test(e.key)) {
+        const target = NAV_HOTKEYS[Number(e.key)]
+        if (target) {
+          e.preventDefault()
+          setView(target)
+        }
+        return
+      }
+      // 单键快捷键：焦点在输入框或终端里时不生效，避免打字误触发
+      const el = e.target as HTMLElement | null
+      const typing = !!el?.closest?.('input, textarea, select, [contenteditable="true"], .xterm')
+      if (e.key === '?' && !e.ctrlKey && !e.altKey && !typing && !hasOpenOverlay()) {
+        e.preventDefault()
+        setKeysOpen(true)
       }
     }
     document.addEventListener('keydown', onKey, true)
@@ -239,37 +274,33 @@ export function App(): React.JSX.Element {
   )
 
   const clearEvents = useCallback(() => setEvents([]), [])
+  const openDrawer = useCallback(() => {
+    setDrawerOpen((v) => !v)
+    setUnread(0)
+    setUnreadFault(false)
+  }, [])
   const meta = TITLES[view]
 
   return (
     <div className="flex h-full flex-col bg-canvas">
-      <TitleBar />
+      <TitleBar
+        onSearch={() => setPaletteOpen(true)}
+        onActivity={openDrawer}
+        unread={unread}
+        unreadFault={unreadFault}
+      />
 
       <div className="flex min-h-0 flex-1">
         <NavRail active={view} onChange={setView} />
 
         <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
-          {/* ─── 固定顶栏 ─── */}
-          <div className="shrink-0 border-b border-line bg-panel px-6 py-3">
-            {/* key=view 让标题在切视图时触发 header-enter 重播 */}
-            <div key={view} className="header-enter">
-              <ViewHeader
-                eyebrow={meta.eyebrow}
-                title={meta.title}
-                romanized={meta.romanized}
-                caption={meta.caption}
-                actions={
-                  <>
-                    <PaletteHint onOpen={() => setPaletteOpen(true)} />
-                    <QuickActions view={view} onAdd={setPaletteAdd} />
-                  </>
-                }
-              />
-            </div>
-          </div>
-
-          {/* ─── 滚动内容区：key=view 切换时触发 view-enter 重播 ─── */}
-          <div key={view} className="view-enter flex-1 overflow-y-auto px-6 py-5">
+          {/* 视图头随内容滚动，只有标题栏吸顶（UI-REFACTOR §3.2）。key=view 切换时重播 view-enter */}
+          <div key={view} className="view-enter flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-6">
+            <ViewHeader
+              title={meta.title}
+              caption={meta.caption}
+              actions={<QuickActions view={view} onAdd={setPaletteAdd} />}
+            />
             {view === 'dashboard' && (
               <Dashboard
                 onRequestAdd={requestAdd}
@@ -306,7 +337,6 @@ export function App(): React.JSX.Element {
           </div>
         </main>
 
-        <ActivitySidebar events={events} onClear={clearEvents} />
       </div>
 
       <CommandPalette
@@ -319,34 +349,19 @@ export function App(): React.JSX.Element {
       />
 
       {dialogs}
+
+      {drawerOpen && (
+        <ActivityDrawer events={events} onClear={clearEvents} onClose={() => setDrawerOpen(false)} />
+      )}
+      {keysOpen && <ShortcutOverlay onClose={() => setKeysOpen(false)} />}
+      <ConfirmHost />
+      <ToastHost />
     </div>
   )
 }
 
 
-/**
- * 页头的搜索入口。点开即命令面板 —— 不做第二套搜索实现，
- * 否则「页头搜到的」和「Ctrl+K 搜到的」会是两套结果。
- */
-function PaletteHint({ onOpen }: { onOpen: () => void }): React.JSX.Element {
-  return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className="pressable-flat flex w-[260px] max-w-full items-center gap-2 rounded-[6px] border border-line bg-raised/50 px-2.5 py-1.5 text-left text-ink-faint hover:border-line-strong hover:text-ink-muted"
-    >
-      <MagnifyingGlass size={12} weight="bold" className="shrink-0 text-ink-faint/60" aria-hidden />
-      <span className="min-w-0 flex-1 truncate text-[11.5px]">
-        搜索服务、端口、命令…
-      </span>
-      <kbd className="shrink-0 rounded-[3px] border border-line px-1 font-mono text-[9.5px] text-ink-faint/60">
-        ^K
-      </kbd>
-    </button>
-  )
-}
-
-/** 页头右下的常用动作。只在与当前视图相关时出现，避免每页都摆一排无关按钮 */
+/** 视图头右侧的常用动作。只在与当前视图相关时出现，避免每页都摆一排无关按钮 */
 function QuickActions({
   view,
   onAdd
@@ -356,35 +371,16 @@ function QuickActions({
 }): React.JSX.Element | null {
   if (view !== 'launchpad' && view !== 'dashboard') return null
   return (
-    <div className="flex items-center gap-1.5">
-      <HeaderAction icon={Plus} label="添加服务" onClick={() => onAdd('service')} />
-      <HeaderAction icon={Command} label="添加任务" onClick={() => onAdd('task')} />
-      <HeaderAction
-        icon={ArrowsClockwise}
-        label="刷新状态"
-        onClick={() => window.mile.scanner.refresh()}
-      />
-    </div>
-  )
-}
-
-function HeaderAction({
-  icon: IconCmp,
-  label,
-  onClick
-}: {
-  icon: React.ComponentType<{ size?: number; weight?: 'bold' }>
-  label: string
-  onClick: () => void
-}): React.JSX.Element {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="pressable flex items-center gap-1.5 rounded-[6px] border border-line bg-raised/50 px-2.5 py-1.5 text-[11.5px] text-ink-muted hover:border-line-strong hover:bg-raised hover:text-ink-strong"
-    >
-      <IconCmp size={12} weight="bold" />
-      {label}
-    </button>
+    <>
+      <Button variant="ghost" icon={ArrowsClockwise} onClick={() => window.mile.scanner.refresh()}>
+        刷新状态
+      </Button>
+      <Button variant="secondary" icon={Command} onClick={() => onAdd('task')}>
+        添加任务
+      </Button>
+      <Button variant="primary" icon={ICON.add} onClick={() => onAdd('service')}>
+        添加服务
+      </Button>
+    </>
   )
 }

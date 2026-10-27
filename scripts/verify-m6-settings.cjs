@@ -301,7 +301,10 @@ async function checks(win) {
   )
 
   console.log('\n=== 侧栏：负载指标可切 ===')
-  await goto(win, '工作台')
+  await goto(win, '总览')
+  // UI-REFACTOR Q1：实时动态从常驻右栏改为标题栏按钮打开的抽屉，先打开再量
+  await js(win, `(() => { const b = [...document.querySelectorAll('header button')].find((x) => (x.getAttribute('aria-label') || '').startsWith('实时动态')); b && b.click(); return !!b })()`)
+  await sleep(400)
   check(
     '负载指标有 radiogroup 语义',
     await js(win, `!!document.querySelector('[role="radiogroup"][aria-label="负载指标"]')`)

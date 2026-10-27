@@ -134,7 +134,7 @@ async function checks(win) {
   // 切到启动台
   const navigated = await run(
     win,
-    clickByLabel(`document.querySelector('nav')`, '启动台')
+    clickByLabel(`document.querySelector('nav')`, '前端启动台')
   )
   check('导航到启动台', navigated)
 
@@ -267,7 +267,7 @@ async function checks(win) {
   )
 
   console.log('\n=== KPI 与事件流联动 ===')
-  const dashOk = await run(win, clickByLabel(`document.querySelector('nav')`, '工作台'))
+  const dashOk = await run(win, clickByLabel(`document.querySelector('nav')`, '总览'))
   check('回到工作台', dashOk)
   const kpi = await run(
     win,
@@ -288,6 +288,9 @@ async function checks(win) {
   check('被截断的说明行都有 title 可悬停看全', kpi.untitledHint === 0, `${kpi.untitledHint} 处缺 title`)
   check('我的服务按启动台条目计数', /1\s*\/\s*2/.test(kpi.mine ?? ''), kpi.mine)
 
+  // UI-REFACTOR Q1：实时动态改为标题栏按钮打开的抽屉，先打开再读
+  await run(win, `(() => { const b = document.querySelector('[aria-label^="实时动态"]'); b && b.click(); return !!b })()`)
+  await new Promise((r) => setTimeout(r, 400))
   const events = await run(
     win,
     `(() => {
@@ -321,8 +324,9 @@ async function checks(win) {
   )
 
   for (const [theme, expect] of [
-    ['light', 'rgb(246, 247, 249)'],
-    ['dark', 'rgb(11, 15, 20)']
+    // UI-REFACTOR §4.1 画布色：浅 #F6F7FB，深 #0F1219
+    ['light', 'rgb(246, 247, 251)'],
+    ['dark', 'rgb(15, 18, 25)']
   ]) {
     await run(win, `window.mile.theme.set('${theme}')`)
     // 等两帧再断言，否则会把「读取早于重绘」误判成主题没生效
@@ -336,7 +340,7 @@ async function checks(win) {
   }
 
   console.log('\n=== 清理 ===')
-  await run(win, clickByLabel(`document.querySelector('nav')`, '启动台'))
+  await run(win, clickByLabel(`document.querySelector('nav')`, '前端启动台'))
   await run(
     win,
     `(() => {
