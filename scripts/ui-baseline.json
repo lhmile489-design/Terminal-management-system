@@ -1,0 +1,150 @@
+{
+  "measuredAt": "2026-10-26T17:22:40.107Z",
+  "window": "1180x760",
+  "views": {
+    "light/工作台": {
+      "lowContrast": 23,
+      "veryLowContrast": 18,
+      "smallText": 50,
+      "tinyTargets": 0,
+      "titleBarH": 36,
+      "navW": 48
+    },
+    "light/前端启动台": {
+      "lowContrast": 18,
+      "veryLowContrast": 7,
+      "smallText": 62,
+      "tinyTargets": 2,
+      "titleBarH": 36,
+      "navW": 48
+    },
+    "light/后端控制台": {
+      "lowContrast": 8,
+      "veryLowContrast": 6,
+      "smallText": 22,
+      "tinyTargets": 0,
+      "titleBarH": 36,
+      "navW": 48
+    },
+    "light/工作组": {
+      "lowContrast": 5,
+      "veryLowContrast": 3,
+      "smallText": 20,
+      "tinyTargets": 0,
+      "titleBarH": 36,
+      "navW": 48
+    },
+    "light/终端": {
+      "lowContrast": 5,
+      "veryLowContrast": 3,
+      "smallText": 21,
+      "tinyTargets": 0,
+      "titleBarH": 36,
+      "navW": 48
+    },
+    "light/日志": {
+      "lowContrast": 6,
+      "veryLowContrast": 3,
+      "smallText": 31,
+      "tinyTargets": 1,
+      "titleBarH": 36,
+      "navW": 48
+    },
+    "light/诊断": {
+      "lowContrast": 9,
+      "veryLowContrast": 3,
+      "smallText": 44,
+      "tinyTargets": 0,
+      "titleBarH": 36,
+      "navW": 48
+    },
+    "light/设置": {
+      "lowContrast": 5,
+      "veryLowContrast": 3,
+      "smallText": 42,
+      "tinyTargets": 2,
+      "titleBarH": 36,
+      "navW": 48
+    },
+    "light/关于": {
+      "lowContrast": 5,
+      "veryLowContrast": 3,
+      "smallText": 31,
+      "tinyTargets": 0,
+      "titleBarH": 36,
+      "navW": 48
+    },
+    "dark/工作台": {
+      "lowContrast": 23,
+      "veryLowContrast": 5,
+      "smallText": 50,
+      "tinyTargets": 0,
+      "titleBarH": 36,
+      "navW": 48
+    },
+    "dark/前端启动台": {
+      "lowContrast": 18,
+      "veryLowContrast": 6,
+      "smallText": 62,
+      "tinyTargets": 2,
+      "titleBarH": 36,
+      "navW": 48
+    },
+    "dark/后端控制台": {
+      "lowContrast": 8,
+      "veryLowContrast": 3,
+      "smallText": 22,
+      "tinyTargets": 0,
+      "titleBarH": 36,
+      "navW": 48
+    },
+    "dark/工作组": {
+      "lowContrast": 5,
+      "veryLowContrast": 2,
+      "smallText": 20,
+      "tinyTargets": 0,
+      "titleBarH": 36,
+      "navW": 48
+    },
+    "dark/终端": {
+      "lowContrast": 5,
+      "veryLowContrast": 2,
+      "smallText": 21,
+      "tinyTargets": 0,
+      "titleBarH": 36,
+      "navW": 48
+    },
+    "dark/日志": {
+      "lowContrast": 6,
+      "veryLowContrast": 2,
+      "smallText": 31,
+      "tinyTargets": 1,
+      "titleBarH": 36,
+      "navW": 48
+    },
+    "dark/诊断": {
+      "lowContrast": 9,
+      "veryLowContrast": 5,
+      "smallText": 44,
+      "tinyTargets": 0,
+      "titleBarH": 36,
+      "navW": 48
+    },
+    "dark/设置": {
+      "lowContrast": 5,
+      "veryLowContrast": 2,
+      "smallText": 42,
+      "tinyTargets": 2,
+      "titleBarH": 36,
+      "navW": 48
+    },
+    "dark/关于": {
+      "lowContrast": 5,
+      "veryLowContrast": 2,
+      "smallText": 31,
+      "tinyTargets": 0,
+      "titleBarH": 36,
+      "navW": 48
+    }
+  }
+}

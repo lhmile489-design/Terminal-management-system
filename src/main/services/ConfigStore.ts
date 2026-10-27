@@ -12,7 +12,8 @@ const DEFAULTS: AppConfig = {
   watchedKeywords: [],
   settings: {
     scanIntervalMs: 2000,
-    theme: 'system',
+    // UI 重构 Q16：先打磨浅色，新配置默认浅色。已保存的偏好由 {...DEFAULTS.settings, ...raw.settings} 保留
+    theme: 'light',
     externalTerminal: 'wt',
     terminalFontSize: 13,
     scrollback: 5000,

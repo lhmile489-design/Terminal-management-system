@@ -115,7 +115,8 @@ app.whenReady().then(async () => {
       tw:ts.width,th:ts.height,tbr:ts.borderRadius,
       tbg:ts.backgroundColor,tone:c.dataset.tone||null,interactive:c.dataset.interactive||null,
       pageBg:getComputedStyle(document.body).backgroundColor,cardBg:s.backgroundColor}})()`)
-  check('卡片圆角 12px', card.br === '12px', card.br)
+  // UI-REFACTOR §4.3：卡片圆角 12px → 16px
+  check('卡片圆角 16px', card.br === '16px', card.br)
   // 边框量的是设备像素：dpr 1.75 下 1px CSS 边框被报成 0.571429px（正好一个设备像素），
   // 直接比 '1px' 会在缩放屏上假失败 —— 又一次「先确认自己量的是不是那个东西」
   check('卡片边框为 1 设备像素', Math.abs(card.bw - 1) < 0.02, `${card.bw.toFixed(3)}dp @dpr${card.dpr}`)

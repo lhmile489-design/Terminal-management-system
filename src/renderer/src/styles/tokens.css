@@ -13,6 +13,8 @@
   --color-panel: var(--surface-panel);
   --color-card: var(--surface-card);
   --color-raised: var(--surface-raised);
+  /* 卡片内的凹陷块（迷你统计、诊断项、发现条目），比 card 略深 */
+  --color-sunken: var(--surface-sunken);
 
   --color-line: var(--stroke-base);
   --color-line-strong: var(--stroke-strong);
@@ -42,11 +44,24 @@
   --color-accent-soft: var(--signal-accent-soft);
   --color-on-accent: var(--signal-on-accent);
 
-  --font-sans: 'Segoe UI Variable Display', 'Segoe UI', 'Microsoft YaHei UI', system-ui, sans-serif;
+  --font-sans: 'Segoe UI Variable Text', 'Segoe UI', 'Microsoft YaHei UI', system-ui, sans-serif;
+  /* 标题、数字、品牌。Manrope 没有中文字形，中文自然回落到雅黑 */
+  --font-display: 'Manrope', 'Segoe UI Variable Display', 'Segoe UI', 'Microsoft YaHei UI', sans-serif;
   --font-mono: 'Cascadia Code', 'JetBrains Mono', Consolas, ui-monospace, monospace;
 
-  --radius-card: 12px;
-  --radius-control: 6px;
+  /* UI-REFACTOR §4.3：卡片 16 / 控件 10 / 胶囊 999 */
+  --radius-card: 16px;
+  --radius-control: 10px;
+  --radius-pill: 999px;
+
+  /* 阴影三档：静态 / 悬停 / 浮层。深色主题前两档为空，靠表面逐级变亮 + 描边 */
+  --shadow-tile: var(--shadow-lift);
+  --shadow-hover: var(--shadow-lift-lg);
+  --shadow-float: var(--shadow-float-raw);
+
+  /* 微交互时长与曲线，UI-REFACTOR §4.4 */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out: cubic-bezier(0.32, 0.72, 0.32, 1);
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -63,45 +78,42 @@
    ══════════════════════════════════════════════════════════════════════════ */
 :root,
 [data-theme='light'] {
-  /* ── 表面层次 ── */
-  --surface-canvas: #f2f4f7;        /* 略带蓝调的中性浅灰 */
+  /* ── 表面层次（v2.0 便当网格：中性浅底 + 纯白磁贴） ── */
+  --surface-canvas: #f6f7fb;
   --surface-panel:  #ffffff;
   --surface-card:   #ffffff;
-  --surface-raised: #eaedf2;        /* 比 canvas 稍深，用于 badge/segmented 底 */
+  --surface-raised: #eef1f6;        /* 分段控件底、悬停底 */
+  --surface-sunken: #f1f3f8;        /* 磁贴内的凹陷块 */
 
   /* ── 描边 ── */
-  --stroke-base:   #e2e6ec;
-  --stroke-strong: #cdd2da;
+  --stroke-base:   #e3e7ee;
+  --stroke-strong: #cbd2dd;
 
-  /* ── 文字层次 ──
-     strong: 深蓝灰而非近黑，在白底上约 12:1，内敛有层次
-     primary: 主文字，约 7:1
-     muted: 次要信息，约 4.6:1
-     faint: KPI 标签，恰好满足 AA 4.5:1，不再往下压
+  /* ── 文字层次（白底对比度：16 / 12.7 / 7.8 / 5.7）──
+     规则：文字色禁止再加透明度。faint 是最弱一档，本身在 raised 上也 ≥ 4.5:1
   */
-  --text-primary:  #374151;
-  --text-strong:   #1e2736;
-  --text-muted:    #606878;
-  --text-faint:    #65717f;
+  --text-primary:  #2b3142;
+  --text-strong:   #1b1f2e;
+  --text-muted:    #4c5265;
+  --text-faint:    #5f6678;
   --text-inverse:  #ffffff;
-  /* 浅色下主按钮是品牌蓝底，字用纯白 */
   --text-on-ink:   #ffffff;
 
-  /* ── 信号色：浅底上加深满足 4.5:1 ── */
-  --signal-live:   #166534;        /* 深绿，更沉稳 */
-  --signal-warn:   #854d0e;        /* 深琥珀 */
-  --signal-fault:  #be123c;        /* 深玫红，比纯红更精致 */
-  --signal-info:   #1d4ed8;        /* 深蓝 */
+  /* ── 信号色：白底上都 ≥ 5:1 ── */
+  --signal-live:   #15803d;
+  --signal-warn:   #92400e;
+  --signal-fault:  #b91c1c;
+  --signal-info:   #1d4ed8;
   --signal-idle:   #6b7280;
 
   --signal-live-soft:  #dcfce7;
   --signal-warn-soft:  #fef3c7;
-  --signal-fault-soft: #ffe4e6;
+  --signal-fault-soft: #fee2e2;
   --signal-info-soft:  #dbeafe;
 
   /* ── Accent：品牌蓝，与主按钮同色相 ── */
   --signal-accent:      #2563eb;
-  --signal-accent-soft: #dbeafe;
+  --signal-accent-soft: #e3ecff;
   --signal-on-accent:   #ffffff;
 
   /* ── 主按钮专用（浅色模式）：品牌蓝底 + 白字，替代极黑底 ── */
@@ -111,63 +123,65 @@
   --btn-primary-fg:        #ffffff;
   --btn-primary-border:    transparent;
 
-  /* ── 投影：极轻，minimalist-ui 不透明度 < 0.05 ── */
-  --shadow-lift:    0 1px 3px rgb(15 23 42 / 0.06);
-  --shadow-lift-lg: 0 10px 28px rgb(15 23 42 / 0.10);
+  /* ── 投影三档：静态 / 悬停 / 浮层 ── */
+  --shadow-lift:      0 4px 14px rgb(20 28 48 / 0.07);
+  --shadow-lift-lg:   0 8px 22px rgb(20 28 48 / 0.12);
+  --shadow-float-raw: 0 16px 40px rgb(20 28 48 / 0.16);
 
   --terminal-bg:   #ffffff;
   --scroll-thumb:  #c1c8d2;
   color-scheme: light;
 }
 
-/* 深空蓝黑 —— 深色（v1.6 配色优化：去掉刺眼近白，降强调亮度至内敛层次） */
+/*
+  深色 —— v2.0 先保证可用（Q16：先打磨浅色，深色只要求不劣于基线，后续再微调）。
+  不用阴影表现层次：canvas → panel → card → raised 逐级变亮，再加 1px 描边。
+  soft 底用 color-mix 混成不透明色，避免叠在不同底上颜色不一。
+*/
 [data-theme='dark'] {
-  --surface-canvas: #0b0f14;
-  --surface-panel: #111720;
-  --surface-card: #18202b;
-  --surface-raised: #222c3a;
+  --surface-canvas: #0f1219;
+  --surface-panel: #151a23;
+  --surface-card: #1b212c;
+  --surface-raised: #232a37;
+  --surface-sunken: #171c26;
 
-  --stroke-base: #222c3a;
-  --stroke-strong: #303c4d;
+  --stroke-base: #2a3240;
+  --stroke-strong: #3a4556;
 
-  --text-primary: #c9d3e0;
-  /* 改：#f0f4f9 → #dce4ee，降约 8% L，仍满足 AAA 但去掉发光感 */
-  --text-strong: #dce4ee;
-  --text-muted: #8b97a8;
-  /* 深色卡片 #18202b 上需 ≥4.5:1 */
-  --text-faint: #8390a1;
-  --text-inverse: #0b0f14;
-  /* 深色下主按钮改为中调蓝灰底，字用柔蓝白 —— 不再是近纯白底黑字的强烈反差 */
-  --text-on-ink: #c8dcf5;
+  --text-primary: #e4e8f0;
+  --text-strong: #f1f4f9;
+  --text-muted: #a3acbc;
+  /* card #1b212c 上约 5.2:1，raised 上约 4.7:1 */
+  --text-faint: #8a94a6;
+  --text-inverse: #0f1219;
+  --text-on-ink: #0f1219;
 
-  --signal-live: #3dc951;
-  /* 改：降饱和度，去霓虹感 */
-  --signal-warn: #cc9a22;
-  --signal-fault: #f25b53;
-  --signal-info: #5aaeff;
-  --signal-idle: #6e7681;
+  --signal-live: #4ade80;
+  --signal-warn: #fbbf24;
+  --signal-fault: #f87171;
+  --signal-info: #7aa7ff;
+  --signal-idle: #8a94a6;
 
-  /* 改：soft 背景全部压深，防止深底上背景色"透光" */
-  --signal-live-soft: #0f2318;
-  --signal-warn-soft: #271e0e;
-  --signal-fault-soft: #2b1315;
-  --signal-info-soft: #101e35;
+  --signal-live-soft: color-mix(in srgb, #22c55e 15%, #1b212c);
+  --signal-warn-soft: color-mix(in srgb, #f59e0b 15%, #1b212c);
+  --signal-fault-soft: color-mix(in srgb, #ef4444 15%, #1b212c);
+  --signal-info-soft: color-mix(in srgb, #2563eb 18%, #1b212c);
 
-  --signal-accent: #5b9dff;
-  --signal-accent-soft: #0f1e35;
-  /* 改：accent 底色变深后，前景字改为亮色 */
-  --signal-on-accent: #ddf0ff;
+  /* 深色下 accent 作文字色要提亮；作底时前景用深色 */
+  --signal-accent: #7aa7ff;
+  --signal-accent-soft: color-mix(in srgb, #2563eb 20%, #1b212c);
+  --signal-on-accent: #0f1219;
 
-  /* 主按钮专用底色（深色模式专属，浅色模式不使用） */
-  --btn-primary-bg: #253040;
-  --btn-primary-bg-hover: #2d3a4e;
-  --btn-primary-bg-active: #1e2838;
-  --btn-primary-fg: #a8c8f0;
-  --btn-primary-border: #3d5270;
+  /* 主按钮两套主题同为品牌蓝底白字（白字 5.2:1） */
+  --btn-primary-bg: #2563eb;
+  --btn-primary-bg-hover: #3b74f0;
+  --btn-primary-bg-active: #1d4ed8;
+  --btn-primary-fg: #ffffff;
+  --btn-primary-border: transparent;
 
-  /* 改：加深投影，深底上轮廓更清晰 */
-  --shadow-lift: 0 1px 3px rgb(0 0 0 / 0.12);
-  --shadow-lift-lg: 0 12px 30px rgb(0 0 0 / 0.28);
+  --shadow-lift: 0 0 0 transparent;
+  --shadow-lift-lg: 0 0 0 transparent;
+  --shadow-float-raw: 0 16px 40px rgb(0 0 0 / 0.45);
   --terminal-bg: #0f1419;
   --scroll-thumb: #303c4d;
   color-scheme: dark;
@@ -196,10 +210,10 @@ button {
   cursor: default;
 }
 
+/* 焦点环：3px 品牌蓝，偏移 2px（UI-REFACTOR §4.4） */
 *:focus-visible {
-  outline: 2px solid var(--signal-info);
+  outline: 3px solid var(--btn-primary-bg);
   outline-offset: 2px;
-  border-radius: 4px;
 }
 
 ::-webkit-scrollbar {
@@ -228,13 +242,18 @@ button {
 */
 .surface-card {
   --glow: var(--signal-accent);
-  border-radius: 12px;
+  border-radius: var(--radius-card);
   border: 1px solid var(--stroke-base);
   background: var(--surface-card);
+  box-shadow: var(--shadow-lift);
   transition:
-    transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1),
-    border-color 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
-    box-shadow 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform 90ms var(--ease-out),
+    border-color 90ms var(--ease-out),
+    box-shadow 90ms var(--ease-out);
+}
+/* 浅色下磁贴靠阴影浮在画布上，描边弱化到透明；深色靠描边分层 */
+:root:not([data-theme='dark']) .surface-card:not([data-tone]) {
+  border-color: transparent;
 }
 
 /* 状态只染边框，不改底色 —— 大面积语义色会盖过内容 */
@@ -249,8 +268,8 @@ button {
 }
 
 .surface-card[data-interactive='true']:hover {
-  /* spring：translateY 从 0 → -3px，轻微过冲后落在 -2px 附近，比硬到 -2px 更有厚度 */
-  transform: translateY(-3px);
+  /* 上浮 1px + 阴影升一档。不用模板的 scale(1.02)：密集信息放大会让文字发虚 */
+  transform: translateY(-1px);
   border-color: var(--stroke-strong);
   box-shadow: var(--shadow-lift-lg);
 }
@@ -337,7 +356,9 @@ section[aria-labelledby='kpi-heading'] {
   border-radius: 99px;
   border: 1px solid color-mix(in srgb, var(--glow) 45%, transparent);
   background: color-mix(in srgb, var(--glow) 10%, transparent);
-  color: var(--glow);
+  /* 字色混入 28% 最强文字色：浅色下压暗、深色下提亮，保证在自身浅底上 ≥ 4.5:1。
+     直接用 --glow 时，#15803D 在 10% 浅底上只有 4.37:1（阶段 1 实测） */
+  color: color-mix(in srgb, var(--glow) 72%, var(--text-strong));
   font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 700;
@@ -687,7 +708,7 @@ section[aria-labelledby='kpi-heading'] {
   width: 3px;
   background: var(--glow, transparent);
   opacity: 0;
-  border-radius: 12px 0 0 12px;
+  border-radius: var(--radius-card) 0 0 var(--radius-card);
   transition: opacity 200ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
