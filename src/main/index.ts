@@ -68,6 +68,10 @@ function createWindow(): void {
 
   mainWindow = win
   win.once('ready-to-show', () => win.show())
+  // 窗口销毁后必须放掉引用：采集、会话输出仍在推送，往已销毁的 webContents 发会抛错
+  win.on('closed', () => {
+    if (mainWindow === win) mainWindow = null
+  })
 
   const notifyMaximize = (): void =>
     win.webContents.send(Channels.windowMaximizeChanged, win.isMaximized())
@@ -138,6 +142,13 @@ function createTray(): void {
   )
   tray.on('click', show)
   tray.on('double-click', show)
+}
+
+/** 主进程 → 渲染层推送。窗口没了或正在销毁时静默丢弃，推送方不必各自判断 */
+function sendToRenderer(channel: string, ...args: unknown[]): void {
+  const wc = mainWindow?.webContents
+  if (!mainWindow || mainWindow.isDestroyed() || !wc || wc.isDestroyed()) return
+  wc.send(channel, ...args)
 }
 
 /**
@@ -300,15 +311,15 @@ function registerIpc(): void {
   ipc.handle(Channels.entryImage, (_e, id: unknown) =>
     typeof id === 'string' ? entries.imageDataUrl(id) : null
   )
-  entries.on('changed', (list) => mainWindow?.webContents.send(Channels.entryChanged, list))
+  entries.on('changed', (list) => sendToRenderer(Channels.entryChanged, list))
   entries.on('runtime', (runtime) =>
-    mainWindow?.webContents.send(Channels.entryRuntimeChanged, runtime)
+    sendToRenderer(Channels.entryRuntimeChanged, runtime)
   )
   entries.on('taskDone', notifyTaskDone)
   // 这条以前没人订阅：「端口 5 秒未释放」只在主进程 emit 一下就没了，
   // 而重启后端口还被占着恰恰是用户最需要知道的那一刻
   entries.on('warning', (text: string) =>
-    mainWindow?.webContents.send(Channels.entryWarning, text)
+    sendToRenderer(Channels.entryWarning, text)
   )
 
   // ── 工作组 IPC，PRD-WORKGROUPS §4 ──────────────────────────────────────────
@@ -337,7 +348,7 @@ function registerIpc(): void {
     groups.reorder(ids as string[])
   })
 
-  groups.on('changed', (list) => mainWindow?.webContents.send(Channels.groupChanged, list))
+  groups.on('changed', (list) => sendToRenderer(Channels.groupChanged, list))
 
   // entry:revealLastJar：路径由主进程从 EntryRuntime.lastBuiltJar 构造，渲染层只给 id，PRD §11
   ipc.handle(Channels.entryRevealLastJar, async (_e, id: unknown) => {
@@ -374,7 +385,7 @@ function registerIpc(): void {
     if (next.theme !== undefined) theme.set(next.theme)
     // 任务栏可见性即时生效：托盘常驻，隐藏后窗口仍能从托盘唤出
     if (next.hideFromTaskbar !== undefined) mainWindow?.setSkipTaskbar(next.hideFromTaskbar)
-    mainWindow?.webContents.send(Channels.settingsChanged, updated)
+    sendToRenderer(Channels.settingsChanged, updated)
     return updated
   })
 
@@ -410,11 +421,13 @@ function registerIpc(): void {
   ipc.handle(Channels.scannerWatchedSet, (_e, keywords: unknown) =>
     scanner.setWatchedKeywords(keywords)
   )
-  scanner.on('diff', (diff) => mainWindow?.webContents.send(Channels.scannerDiff, diff))
+  scanner.on('diff', (diff) => sendToRenderer(Channels.scannerDiff, diff))
+  // 采集失败已由 failed 增量告知界面，这里只留一行日志供排查
+  scanner.on('error', (err) => console.error('[scanner] 采集失败：', err))
 
   ipc.handle(Channels.themeGet, () => theme.state())
   ipc.handle(Channels.themeSet, (_e, preference: ThemePreference) => theme.set(preference))
-  theme.on('changed', (state) => mainWindow?.webContents.send(Channels.themeChanged, state))
+  theme.on('changed', (state) => sendToRenderer(Channels.themeChanged, state))
 
   ipc.handle(Channels.windowIsMaximized, () => mainWindow?.isMaximized() ?? false)
   ipc.handle(Channels.appInfo, () => ({ version: app.getVersion(), name: app.getName() }))
@@ -425,8 +438,8 @@ function registerIpc(): void {
   })
   ipc.on('window:close', () => mainWindow?.close())
 
-  sessions.on('data', (payload) => mainWindow?.webContents.send(Channels.sessionData, payload))
-  sessions.on('exit', (payload) => mainWindow?.webContents.send(Channels.sessionExit, payload))
+  sessions.on('data', (payload) => sendToRenderer(Channels.sessionData, payload))
+  sessions.on('exit', (payload) => sendToRenderer(Channels.sessionExit, payload))
 }
 
 app.whenReady().then(() => {

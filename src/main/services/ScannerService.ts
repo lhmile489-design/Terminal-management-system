@@ -170,8 +170,10 @@ export class ScannerService extends EventEmitter {
       const meta = await this.resolveMeta(listens)
       await this.publish(this.build({ ...meta, listens }))
     } catch (err) {
-      this.emit('error', err)
+      // 先推失败态，再报错误：没有 'error' 监听器时 emit 会同步抛出，
+      // 排在前面就会让 publishFailure() 永远跑不到，界面继续显示旧数据
       this.publishFailure()
+      if (this.listenerCount('error') > 0) this.emit('error', err)
     } finally {
       this.running = false
     }
