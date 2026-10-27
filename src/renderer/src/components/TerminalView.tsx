@@ -96,12 +96,16 @@ export function TerminalView({ sessionId }: { sessionId: string }): React.JSX.El
       // WebGL 不可用时回退到 canvas 渲染
     }
 
+    // 切换会话或卸载后 term 已 dispose，迟到的 history 回执不能再写它、也不能 resize
+    let disposed = false
     const sync = (): void => {
+      if (disposed) return
       fit.fit()
       window.mile.session.resize(sessionId, term.cols, term.rows)
     }
 
     void window.mile.session.history(sessionId).then((history) => {
+      if (disposed) return
       if (history) term.write(history)
       sync()
     })
@@ -120,6 +124,7 @@ export function TerminalView({ sessionId }: { sessionId: string }): React.JSX.El
     observer.observe(host)
 
     return () => {
+      disposed = true
       observer.disconnect()
       inputDisposable.dispose()
       offData()
