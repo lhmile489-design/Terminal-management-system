@@ -714,6 +714,9 @@
   position: relative;
   display: flex;
   align-items: center;
+  /* <button> 默认文字居中，导航项要靠左 */
+  justify-content: flex-start;
+  text-align: left;
   gap: 10px;
   height: 38px;
   flex: none;
@@ -806,6 +809,11 @@
 .svc-groups { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-content: start; padding: 2px; }
 .ui-split[data-open='true'] .svc-groups { grid-template-columns: minmax(0, 1fr); }
 @container (max-width: 56rem) { .svc-groups { grid-template-columns: minmax(0, 1fr); } }
+/* 组头：图标 · 组名 · 环境 · 计数 · 右侧整组按钮与「⋯」，同一行，左右留出磁贴内边距 */
+.svc-group-head { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 14px 12px 8px 16px; border-radius: var(--radius-card) var(--radius-card) 0 0; }
+.svc-group-head[data-cursor='true'] { box-shadow: inset 0 0 0 2px var(--btn-primary-bg); }
+.svc-group-acts { margin-left: auto; display: flex; align-items: center; gap: 4px; flex: none; }
+.svc-toolbar-acts { display: flex; align-items: center; gap: 8px; flex: none; }
 .svc-group-head .ui-tile-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .svc-count { font-size: 12px; font-weight: 600; color: var(--text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .svc-env { display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: var(--radius-pill); font-family: var(--font-mono); font-size: 12px; font-weight: 700; flex: none; }
@@ -839,6 +847,8 @@
 }
 .svc-row-ind[data-ready='true'] { transition: transform 200ms var(--ease-spring); }
 .svc-empty-row { padding: 8px 12px; color: var(--text-faint); }
+.ui-tile.svc-empty-row { display: flex; align-items: center; gap: 12px; padding: 16px; }
+.ui-tile.svc-empty-row > :last-child:not(:first-child) { margin-left: auto; }
 
 .svc-detail { display: flex; flex-direction: column; min-height: 0; flex: 1; overflow: hidden; }
 .svc-detail-head { display: flex; align-items: center; gap: 12px; padding: 16px 16px 12px; }
@@ -857,9 +867,9 @@
 .svc-mini .k { font-size: 12px; font-weight: 600; color: var(--text-faint); }
 .svc-term { flex: 1; min-height: 260px; border-radius: 12px; overflow: hidden; background: var(--terminal-bg); border: 1px solid var(--stroke-base); }
 .svc-note { margin-bottom: 12px; color: var(--text-muted); }
-.svc-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
 
 /* 配置标签的保存条（Q13）：有改动才出现，贴在详情底部 */
+.svc-config { display: flex; flex-direction: column; min-width: 0; }
 .svc-savebar {
   position: sticky;
   bottom: -16px;

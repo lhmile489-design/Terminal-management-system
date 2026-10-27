@@ -237,7 +237,7 @@ export function EntryConfigForm({
           <div
             data-tone="warn"
             style={{ '--glow': 'var(--signal-warn)' } as React.CSSProperties}
-            className="flex items-center gap-3 border-b border-line bg-warn-soft px-5 py-2.5"
+            className="mb-4 flex items-center gap-3 rounded-[var(--radius-control)] bg-warn-soft px-4 py-2.5"
           >
             <Lock size={14} weight="bold" className="shrink-0 text-warn" aria-hidden />
             <p className="min-w-0 flex-1 text-[12px] text-warn">
@@ -254,7 +254,7 @@ export function EntryConfigForm({
           </div>
         )}
 
-        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-5 py-4">
+        <div className="flex flex-col gap-4">
           {error && (
             <p role="alert" className="rounded-[6px] bg-fault-soft px-3 py-2 text-[12px] text-fault">
               {error}

@@ -71,7 +71,7 @@ export function GroupTile({
           </span>
         )}
         {startable.length > 0 && <span className="svc-count">{live}/{startable.length} 运行中</span>}
-        <div className="svc-acts">
+        <div className="svc-group-acts">
           {group && startable.length > 0 && (allOn ? (
             <Button size="sm" icon={ICON.stop} onClick={onStopGroup} aria-label={compact ? '全部停止' : undefined} title={compact ? '全部停止' : undefined}>
               {compact ? null : '全部停止'}
@@ -182,8 +182,8 @@ function EntryLine({
         <EntryGlyph entry={entry} imageUrl={image} size={18} glyphClass="text-[12px]" />
       </span>
       <span className="svc-row-name">
-        {entry.name}
-        <small>{sub}</small>
+        <b>{entry.name}</b>
+        <span>{sub}</span>
       </span>
       <span className="svc-row-port">{port ? `:${port}` : ''}</span>
       <span onClick={(e) => e.stopPropagation()}>

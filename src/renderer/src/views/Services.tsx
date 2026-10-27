@@ -420,7 +420,7 @@ export function Services({
             aria-label="搜索服务"
           />
         </div>
-        <div className="svc-acts">
+        <div className="svc-toolbar-acts">
           <Button icon={ICON.group} onClick={() => setGroupDialog({})}>新建工作组</Button>
           <Button variant="primary" icon={ICON.add} onClick={() => setAddDialog({ kind: 'service' })}>添加服务</Button>
         </div>

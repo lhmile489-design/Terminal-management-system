@@ -268,6 +268,36 @@ app.whenReady().then(async () => {
   check('焦点在搜索框里时方向键不移动光标', (await cursor()) === c0, `${c0} → ${await cursor()}`)
   await js(`document.activeElement.blur();true`)
 
+  console.log('\n=== 布局：控件不贴边、组头一行、名称与副标题分行 ===')
+  await js(`document.activeElement&&document.activeElement.blur();true`)
+  await key('Escape'); await key('Escape'); await sleep(250)
+  const TIGHT = `(()=>{const out=[];for(const el of document.querySelectorAll('main button, main input, main select, main [role="tab"]')){
+    if(!el.getClientRects().length)continue;const tile=el.closest('.ui-tile');if(!tile)continue;
+    const a=el.getBoundingClientRect(),b=tile.getBoundingClientRect();
+    // 滚出可视区的控件不算贴边：它被滚动容器裁掉了，看不见
+    let sc=el.parentElement,cut=false,vclip=false;while(sc&&sc!==tile){const o=getComputedStyle(sc).overflowY;if(o==='auto'||o==='scroll'){const c=sc.getBoundingClientRect();if(a.bottom<=c.top||a.top>=c.bottom)cut=true;else if(a.top<c.top||a.bottom>c.bottom)vclip=true;break}sc=sc.parentElement}
+    if(cut)continue;
+    const d=vclip?Math.min(a.left-b.left,b.right-a.right):Math.min(a.left-b.left,b.right-a.right,a.top-b.top,b.bottom-a.bottom);
+    if(d<8)out.push(((el.getAttribute('aria-label')||el.textContent||el.tagName).trim().slice(0,12))+'='+Math.round(d))}return out})()`
+  const t0 = await js(TIGHT)
+  check('列表视图没有贴边控件（≥ 8px）', t0.length === 0, t0.join('，') || '0 个')
+  const head = await js(`(()=>{const h=document.querySelector('[data-group-id="${ids.mall}"] .svc-group-head');const t=h.querySelector('.ui-tile-title').getBoundingClientRect();
+    const b=h.querySelector('button').getBoundingClientRect();const r=h.getBoundingClientRect();
+    return {h:Math.round(r.height),dy:Math.round(Math.abs((t.top+t.height/2)-(b.top+b.height/2))),left:Math.round(t.left-r.left)}})()`)
+  check('组头一行：标题与整组按钮垂直居中对齐', head.dy <= 4 && head.h <= 56, JSON.stringify(head))
+  const nm = await js(`(()=>{const n=document.querySelector('[data-entry-id="a"] .svc-row-name');const b=n.querySelector('b').getBoundingClientRect(),s=n.querySelector('span').getBoundingClientRect();return {nameBottom:Math.round(b.bottom),subTop:Math.round(s.top)}})()`)
+  check('成员行名称与副标题分两行', nm.subTop >= nm.nameBottom - 1, JSON.stringify(nm))
+  await js(`document.querySelector('[data-entry-id="a"]').click();true`)
+  await waitFor(`!!document.querySelector('.svc-detail')`)
+  for (const t of ['概览', '输出', '诊断', '配置']) {
+    await js(`[...document.querySelectorAll('.svc-detail [role="tab"]')].find(x=>x.textContent.includes('${t}')).click();true`)
+    await sleep(400)
+    const tt = await js(TIGHT)
+    check(`详情「${t}」没有贴边控件`, tt.length === 0, tt.join('，') || '0 个')
+  }
+  await press('.svc-detail', '关闭详情')
+  await sleep(250)
+
   console.log(`\n结果：${pass} 通过，${fail} 失败`)
   try { rmSync(SANDBOX, { recursive: true, force: true }) } catch { console.log(`  (沙箱残留，交由系统清理：${SANDBOX})`) }
   app.exit(fail === 0 ? 0 : 1)

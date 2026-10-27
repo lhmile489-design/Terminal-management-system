@@ -140,6 +140,18 @@ const MEASURE = `(() => {
     .filter((el) => !el.closest('.xterm') && visible(el))
   const tiny = targets.filter((el) => { const r = el.getBoundingClientRect(); return r.width < 24 || r.height < 24 })
 
+  // ---- 贴边：磁贴里的可点控件离磁贴内缘不足 8px（UI-REFACTOR §4.3 留白）----
+  const tight = targets.filter((el) => {
+    const tile = el.closest('.ui-tile, .surface-card')
+    if (!tile) return false
+    const a = el.getBoundingClientRect(), b = tile.getBoundingClientRect()
+    return Math.min(a.left - b.left, b.right - a.right, a.top - b.top, b.bottom - a.bottom) < 8
+  })
+  // ---- 导航文字靠左：标签左缘离按钮左缘不超过 48px（图标 + 间距）----
+  const navOff = [...document.querySelectorAll('.ui-nav-item')].filter((b) => visible(b)).filter((b) => {
+    const l = b.querySelector('.ui-nav-label'); if (!l || !visible(l)) return false
+    const s = getComputedStyle(b); return s.textAlign === 'center' || l.getBoundingClientRect().left - b.getBoundingClientRect().left > (b.dataset.sub ? 64 : 48)
+  })
   const box = (sel) => { const e = document.querySelector(sel); if (!e) return null; const r = e.getBoundingClientRect(); return { w: Math.round(r.width), h: Math.round(r.height) } }
   const sample = (arr, f) => arr.slice().sort(f).slice(0, 5)
 
@@ -156,6 +168,9 @@ const MEASURE = `(() => {
     main: box('main'),
     worstContrast: sample(lowContrast, (a, b) => a.ratio - b.ratio).map((t) => name(t.el) + '=' + t.ratio),
     worstSmall: sample(small, (a, b) => a.size - b.size).map((t) => name(t.el) + '=' + t.size + 'px'),
+    edgeTight: tight.length,
+    navMisaligned: navOff.length,
+    worstTight: tight.slice(0, 5).map((el) => name(el)),
     worstTargets: tiny.slice(0, 5).map((el) => { const r = el.getBoundingClientRect(); return name(el) + '=' + Math.round(r.width) + '×' + Math.round(r.height) }),
     // UI_DUMP=<主题/视图> 时打印全部低对比度文字，用来定位回归
     allLow: lowContrast.map((t) => name(t.el) + '=' + t.ratio + ' [' + (t.el.className && t.el.className.baseVal == null ? String(t.el.className).slice(0, 60) : t.el.tagName) + ']')
@@ -224,6 +239,10 @@ app.whenReady().then(async () => {
   }
 
   let fail = navFailures
+  for (const [k, r] of Object.entries(results)) {
+    if (r.edgeTight > 0) { fail++; console.log(`  FAIL  ${k} 贴边控件 ${r.edgeTight} 个：${r.worstTight.join('，')}`) }
+    if (r.navMisaligned > 0) { fail++; console.log(`  FAIL  ${k} 导航文字没靠左 ${r.navMisaligned} 项`) }
+  }
   if (MODE === 'write') {
     const slim = Object.fromEntries(Object.entries(results).map(([k, r]) =>
       [k, Object.fromEntries(GATED.map((g) => [g, r[g]]).concat([['titleBarH', r.titleBar && r.titleBar.h], ['navW', r.nav && r.nav.w]]))]))
