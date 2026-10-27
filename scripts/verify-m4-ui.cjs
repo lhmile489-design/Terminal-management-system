@@ -1,5 +1,5 @@
 /**
- * 启动台界面验证：真实主进程 + 真实构建产物，通过 executeJavaScript 驱动渲染层。
+ * 服务页界面验证（原启动台，UI-REFACTOR 阶段 4 迁到服务页）：真实主进程 + 真实构建产物，通过 executeJavaScript 驱动渲染层。
  *
  * 不 mock 数据 —— 要证明的是「主进程推来的真实条目与状态能正确渲染」。
  * 预置两个条目：一个可启动的夹具，一个目录不存在的（走预检 fail 分支）。
@@ -127,68 +127,61 @@ const clickByLabel = (scope, label) => `
   })()
 `
 
+
+/** 服务页成员行（UI-REFACTOR §3.3），按名称定位 */
+const ROW = (name) => `[...document.querySelectorAll('.svc-row')].find((r) => r.textContent.includes(${JSON.stringify(name)}))`
+const pressIn = (scope, text) => `(() => {
+  const r = ${scope};
+  if (!r) return false;
+  const b = [...r.querySelectorAll('button')].find((x) => (x.getAttribute('aria-label') || x.textContent || '').trim() === ${JSON.stringify(text)});
+  if (!b || b.disabled) return false;
+  b.click();
+  return true;
+})()`
+
 async function checks(win) {
-  console.log('=== 启动台视图 ===')
+  console.log('=== 服务页 ===')
   await waitUntil(win, `!!document.querySelector('nav')`, 30_000, '外壳挂载')
 
-  // 切到启动台
-  const navigated = await run(
-    win,
-    clickByLabel(`document.querySelector('nav')`, '前端启动台')
-  )
-  check('导航到启动台', navigated)
+  const navigated = await run(win, clickByLabel(`document.querySelector('nav')`, '服务'))
+  check('导航到服务页', navigated)
 
-  const cardsReady = await waitUntil(
+  const rowsReady = await waitUntil(win, `document.querySelectorAll('.svc-row').length === 2`, 20_000, '两个成员行')
+  const rowInfo = await run(
     win,
-    `document.querySelectorAll('section[data-category-kind="service"] article, section[data-category-kind="task"] article').length === 2`,
-    20_000,
-    '两张条目卡片'
+    `[...document.querySelectorAll('.svc-row')].map((r) => ({
+      name: r.querySelector('.svc-row-name b')?.textContent.trim(),
+      kind: r.querySelector('.svc-kind')?.textContent.trim(),
+      status: r.querySelector('.ui-dot')?.getAttribute('aria-label'),
+      clipped: [...r.querySelectorAll('*')].filter((el) => getComputedStyle(el).textOverflow !== 'ellipsis' && el.scrollWidth > el.clientWidth + 1).length
+    }))`
   )
-  const cardInfo = await run(
-    win,
-    `(() => {
-      const arts = [...document.querySelectorAll('section[data-category-kind="service"] article, section[data-category-kind="task"] article')];
-      return arts.map((a) => ({
-        title: a.querySelector('h3 span')?.textContent?.trim(),
-        badges: [...a.querySelectorAll('span')].map((s) => s.textContent.trim()).filter((t) => ['服务','任务','未启动','运行中','启动中','已停止','异常退出','已完成','失败','预检未通过'].includes(t)),
-        clipped: [...a.querySelectorAll('*')].filter((el) => el.scrollWidth > el.clientWidth + 1).length
-      }));
-    })()`
-  )
-  check('渲染两张真实条目卡片', cardsReady, JSON.stringify(cardInfo))
+  check('渲染两个真实条目行', rowsReady, JSON.stringify(rowInfo))
   check(
-    '卡片含类型与状态文字标签（不只靠颜色）',
-    cardInfo.every((c) => c.badges.includes('服务') || c.badges.includes('任务')) &&
-      cardInfo.every((c) => c.badges.some((b) => b === '未启动')),
-    cardInfo.map((c) => c.badges.join('+')).join(' | ')
+    '行内有类型与状态文字（不只靠颜色）',
+    rowInfo.every((r) => (r.kind === '服务' || r.kind === '任务') && r.status === '未启动'),
+    rowInfo.map((r) => `${r.kind}+${r.status}`).join(' | ')
   )
 
   console.log('\n=== 预检 fail 分支渲染 ===')
-  const brokenClicked = await run(
-    win,
-    `(() => {
-      const arts = [...document.querySelectorAll('section[data-category-kind="service"] article, section[data-category-kind="task"] article')];
-      const target = arts.find((a) => a.textContent.includes('目录不存在的任务'));
-      if (!target) return false;
-      // 任务的启动按钮叫「运行」——一次性命令没有「停止运行中的服务」那层含义
-      const btn = [...target.querySelectorAll('button')].find((b) => b.getAttribute('aria-label') === '运行');
-      if (!btn || btn.disabled) return false;
-      btn.click();
-      return true;
-    })()`
-  )
-  check('点击目录不存在条目的启动', brokenClicked)
+  // 任务的启动按钮叫「运行」——一次性命令没有「停止运行中的服务」那层含义
+  const brokenClicked = await run(win, pressIn(ROW('目录不存在的任务'), '运行'))
+  check('点击目录不存在条目的运行', brokenClicked)
 
+  // 被预检拦下时服务页打开该条目详情的「诊断」标签（UI-REFACTOR §3.3）
   const panelUp = await waitUntil(
     win,
-    `!!document.querySelector('section[aria-labelledby="precheck-heading"]')`,
+    `(() => {
+      const tab = document.querySelector('.svc-detail [role="tab"][aria-selected="true"]');
+      return !!tab && tab.textContent.includes('诊断') && document.querySelectorAll('.svc-detail-body li').length > 0;
+    })()`,
     20_000,
-    '预检面板'
+    '诊断标签'
   )
   const panel = await run(
     win,
     `(() => {
-      const sec = document.querySelector('section[aria-labelledby="precheck-heading"]');
+      const sec = document.querySelector('.svc-detail-body');
       if (!sec) return null;
       return {
         items: sec.querySelectorAll('li').length,
@@ -197,74 +190,46 @@ async function checks(win) {
       };
     })()`
   )
-  check('预检未通过时渲染面板', panelUp, panel ? `${panel.items} 项` : '')
-  check('面板给出修复入口按钮', !!panel?.hasFix, panel?.text)
-  check('状态转为预检未通过', await run(win, `document.body.textContent.includes('预检未通过')`))
+  check('预检未通过时打开详情的诊断标签', panelUp, panel ? `${panel.items} 项` : '')
+  check('诊断里给出修复入口按钮', !!panel?.hasFix, panel?.text)
+  check('状态转为预检未通过', await run(win, `(${ROW('目录不存在的任务')})?.querySelector('.ui-dot')?.getAttribute('aria-label') === '预检未通过'`))
 
   console.log('\n=== 启动真实服务并回填端口 ===')
-  const startClicked = await run(
-    win,
-    `(() => {
-      const arts = [...document.querySelectorAll('section[data-category-kind="service"] article, section[data-category-kind="task"] article')];
-      const target = arts.find((a) => a.textContent.includes('Fixture Dev'));
-      const btn = [...target.querySelectorAll('button')].find((b) => b.getAttribute('aria-label') === '启动');
-      if (!btn || btn.disabled) return false;
-      btn.click();
-      return true;
-    })()`
-  )
+  const startClicked = await run(win, pressIn(ROW('Fixture Dev'), '启动'))
   check('点击启动 Fixture Dev', startClicked)
 
   const running = await waitUntil(
     win,
-    `(() => {
-      const arts = [...document.querySelectorAll('section[data-category-kind="service"] article, section[data-category-kind="task"] article')];
-      const t = arts.find((a) => a.textContent.includes('Fixture Dev'));
-      return !!t && t.textContent.includes('运行中');
-    })()`,
+    `(${ROW('Fixture Dev')})?.querySelector('.ui-dot')?.getAttribute('aria-label') === '运行中'`,
     60_000,
     '状态转运行中'
   )
-  check('卡片状态转运行中', running)
+  check('行状态转运行中', running)
 
   const portShown = await waitUntil(
     win,
-    `(() => {
-      const arts = [...document.querySelectorAll('section[data-category-kind="service"] article, section[data-category-kind="task"] article')];
-      const t = arts.find((a) => a.textContent.includes('Fixture Dev'));
-      if (!t) return false;
-      // 端口在页头当作「打开 localhost」的按钮，不再是 dl 里的一行
-      return [...t.querySelectorAll('button')].some((b) => /^:\\d{2,5}$/.test(b.textContent.trim()));
-    })()`,
+    `/^:\\d{2,5}$/.test(((${ROW('Fixture Dev')})?.querySelector('.svc-row-port')?.textContent || '').trim())`,
     30_000,
     '端口渲染'
   )
-  const portText = await run(
+  const portText = await run(win, `((${ROW('Fixture Dev')})?.querySelector('.svc-row-port')?.textContent || '无端口').trim()`)
+  check('行内渲染捕获到的端口', portShown, portText)
+
+  // 「移除」在「⋯」菜单里，运行中禁用
+  const menu = await run(
     win,
-    `(() => {
-      const arts = [...document.querySelectorAll('section[data-category-kind="service"] article, section[data-category-kind="task"] article')];
-      const t = arts.find((a) => a.textContent.includes('Fixture Dev'));
-      const port = [...t.querySelectorAll('button')].find((b) => /^:\\d{2,5}$/.test(b.textContent.trim()));
-      return [port ? port.textContent.trim() + ' → ' + (port.getAttribute('title') || '') : '无端口按钮']
-        .concat([...t.querySelectorAll('dd')].map((d) => d.textContent.trim())).join(' | ');
+    `(async () => {
+      const r = ${ROW('Fixture Dev')};
+      const stop = [...r.querySelectorAll('button')].find((b) => b.textContent.trim() === '停止');
+      r.querySelector('button[aria-label$="更多操作"]').click();
+      await new Promise((res) => setTimeout(res, 200));
+      const rm = [...document.querySelectorAll('[role="menu"] [role="menuitem"]')].find((b) => b.textContent.trim() === '移除');
+      const out = { stop: !!stop, remove: !!rm, disabled: !!rm && rm.disabled };
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      return out;
     })()`
   )
-  check('卡片渲染捕获到的端口', portShown, portText)
-
-  check(
-    '运行中时按钮切为停止且移除被禁用',
-    await run(
-      win,
-      `(() => {
-        const arts = [...document.querySelectorAll('section[data-category-kind="service"] article, section[data-category-kind="task"] article')];
-        const t = arts.find((a) => a.textContent.includes('Fixture Dev'));
-        const btns = [...t.querySelectorAll('button')];
-        const stop = btns.find((b) => b.getAttribute('aria-label') === '停止');
-        const remove = btns.find((b) => b.getAttribute('aria-label') === '移除条目');
-        return !!stop && !!remove && remove.disabled;
-      })()`
-    )
-  )
+  check('运行中时按钮切为停止且移除被禁用', menu.stop && menu.remove && menu.disabled, JSON.stringify(menu))
 
   console.log('\n=== KPI 与事件流联动 ===')
   const dashOk = await run(win, clickByLabel(`document.querySelector('nav')`, '总览'))
@@ -340,28 +305,16 @@ async function checks(win) {
   }
 
   console.log('\n=== 清理 ===')
-  await run(win, clickByLabel(`document.querySelector('nav')`, '前端启动台'))
-  await run(
+  await run(win, clickByLabel(`document.querySelector('nav')`, '服务'))
+  await waitUntil(win, `!!(${ROW('Fixture Dev')})`, 10_000, '服务页')
+  await run(win, pressIn(ROW('Fixture Dev'), '停止'))
+  const stopped = await waitUntil(
     win,
-    `(() => {
-      const arts = [...document.querySelectorAll('section[data-category-kind="service"] article, section[data-category-kind="task"] article')];
-      const t = arts.find((a) => a.textContent.includes('Fixture Dev'));
-      const btn = [...t.querySelectorAll('button')].find((b) => b.getAttribute('aria-label') === '停止');
-      if (btn) btn.click();
-      return true;
-    })()`
-  )
-  await waitUntil(
-    win,
-    `(() => {
-      const arts = [...document.querySelectorAll('section[data-category-kind="service"] article, section[data-category-kind="task"] article')];
-      const t = arts.find((a) => a.textContent.includes('Fixture Dev'));
-      return !!t && !t.textContent.includes('运行中');
-    })()`,
+    `(${ROW('Fixture Dev')})?.querySelector('.ui-dot')?.getAttribute('aria-label') !== '运行中'`,
     25_000,
     '停止生效'
   )
-  check('界面上可停止受控服务', true)
+  check('界面上可停止受控服务', stopped)
 
   console.log(`\n===== 界面结果：PASS ${pass} / FAIL ${fail} =====`)
 }
