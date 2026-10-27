@@ -94,7 +94,9 @@ app.whenReady().then(async () => {
   const before = diffs.length
   const callsBefore = netstatCalls
   failNetstat = true
-  for (let i = 0; i < 40 && !diffs.slice(before).some((d) => d.failed); i++) await sleep(250)
+  // 等到「netstat 又被调了」且「推出了 failed」：tick 有互斥锁，上一轮若卡在 CIM 进程查询
+  // （负载高时数秒）就不会起新一轮。全套连跑时 10 秒窗口内实测出现过 0 次调用，所以放宽到 30 秒
+  for (let i = 0; i < 120 && !(netstatCalls > callsBefore && diffs.slice(before).some((d) => d.failed)); i++) await sleep(250)
   const failedDiffs = diffs.slice(before).filter((d) => d.failed)
   check('失败期间确实又调用了 netstat（前提成立）', netstatCalls > callsBefore, `${netstatCalls - callsBefore} 次`)
   check('推送了 failed: true 的增量', failedDiffs.length > 0, `${failedDiffs.length} 条`)
@@ -104,7 +106,7 @@ app.whenReady().then(async () => {
   console.log('\n=== 3. 恢复后采集继续 ===')
   failNetstat = false
   const after = diffs.length
-  for (let i = 0; i < 40 && !diffs.slice(after).some((d) => !d.failed); i++) await sleep(250)
+  for (let i = 0; i < 120 && !diffs.slice(after).some((d) => !d.failed); i++) await sleep(250)
   check('netstat 恢复后又推送成功的采集（调度没断）', diffs.slice(after).some((d) => !d.failed))
 
   console.log(`\n结果：${pass} 通过，${fail} 失败`)
