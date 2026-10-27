@@ -404,6 +404,33 @@ app.whenReady().then(async () => {
   await press('[data-entry-id="a"]', '停止')
   await waitFor(`(document.querySelector('[data-entry-id="a"] .ui-dot')||{dataset:{}}).dataset.tone!=='live'`, 8000)
 
+  console.log('\n=== 组内拖动排序 ===')
+  await js(`document.activeElement&&document.activeElement.blur();true`)
+  await key('Escape'); await key('Escape'); await sleep(200)
+  const mallOrder = () => js(`[...document.querySelectorAll('[data-group-id="${ids.mall}"] .svc-row')].map(r=>r.dataset.entryId).join(',')`)
+  const before0 = await mallOrder()
+  // d 放到 a 上半部 → 排到 a 前面
+  await js(`window.__dt2=new DataTransfer();document.querySelector('[data-entry-id="d"]').dispatchEvent(new DragEvent('dragstart',{bubbles:true,dataTransfer:window.__dt2}));true`)
+  await js(`(()=>{const t=document.querySelector('[data-group-id="${ids.mall}"] [data-entry-id="a"]');const r=t.getBoundingClientRect();
+    t.dispatchEvent(new DragEvent('dragover',{bubbles:true,cancelable:true,clientX:r.left+20,clientY:r.top+4,dataTransfer:window.__dt2}));return true})()`)
+  await sleep(150)
+  const line = await js(`(document.querySelector('[data-entry-id="a"]')||{dataset:{}}).dataset.dropAt||''`)
+  check('悬停在行上半部时显示插入线（在前）', line === 'before', line)
+  await js(`(()=>{const t=document.querySelector('[data-group-id="${ids.mall}"] [data-entry-id="a"]');const r=t.getBoundingClientRect();
+    t.dispatchEvent(new DragEvent('drop',{bubbles:true,cancelable:true,clientX:r.left+20,clientY:r.top+4,dataTransfer:window.__dt2}));
+    document.querySelector('[data-entry-id="d"]').dispatchEvent(new DragEvent('dragend',{bubbles:true,dataTransfer:window.__dt2}));return true})()`)
+  const reordered = await waitFor(`window.mile.entry.list().then(l=>{const m=l.filter(e=>e.groupId==='${ids.mall}').sort((x,y)=>x.order-y.order).map(e=>e.id);return m.indexOf('d')<m.indexOf('a')})`)
+  check('放下后顺序写进主进程（d 在 a 前）', reordered, `${before0} → ${await mallOrder()}`)
+  check('页面顺序同步', /^d,a/.test(await mallOrder()), await mallOrder())
+  check('放下后插入线消失', !(await js(`!!document.querySelector('[data-drop-at]')`)))
+  // 键盘替代：「下移」把 d 换回 a 后面
+  await js(`document.querySelector('[data-entry-id="d"] [aria-label$="更多操作"]').click();true`)
+  await sleep(200)
+  const upDis = await js(`(()=>{const b=[...document.querySelectorAll('[role="menu"] [role="menuitem"]')].find(x=>x.textContent.trim()==='上移');return b?b.disabled:null})()`)
+  check('排第一时「上移」不可用', upDis === true, String(upDis))
+  await js(`[...document.querySelectorAll('[role="menu"] [role="menuitem"]')].find(x=>x.textContent.trim()==='下移').click();true`)
+  check('「下移」恢复原顺序', await waitFor(`window.mile.entry.list().then(l=>{const m=l.filter(e=>e.groupId==='${ids.mall}').sort((x,y)=>x.order-y.order).map(e=>e.id);return m.indexOf('a')<m.indexOf('d')})`))
+
   console.log(`\n结果：${pass} 通过，${fail} 失败`)
   try { rmSync(SANDBOX, { recursive: true, force: true }) } catch { console.log(`  (沙箱残留，交由系统清理：${SANDBOX})`) }
   app.exit(fail === 0 ? 0 : 1)

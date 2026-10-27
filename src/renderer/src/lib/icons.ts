@@ -7,6 +7,8 @@
  */
 import {
   ArrowClockwise,
+  ArrowDown,
+  ArrowUp,
   ArrowsIn,
   ArrowsOut,
   ArrowSquareOut,
@@ -59,6 +61,8 @@ export const ICON = {
   openExternal: ArrowSquareOut,
   remove: Trash,
   more: DotsThree,
+  moveUp: ArrowUp,
+  moveDown: ArrowDown,
   maximize: ArrowsOut,
   restore: ArrowsIn,
   close: X,

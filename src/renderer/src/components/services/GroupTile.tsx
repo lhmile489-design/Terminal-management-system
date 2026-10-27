@@ -17,10 +17,14 @@ export interface RowActions {
   menu: (entry: LaunchEntry) => MenuItem[]
   /** 拖到另一个工作组：groupId 为 null 表示移到「未分组」 */
   move: (entryId: string, groupId: string | null) => void
+  /** 放到另一行之前（before）或之后；跨组时同时换组 */
+  place: (dragId: string, targetId: string, before: boolean) => void
 }
 
 /** 拖拽载荷的 MIME。只带条目 id，归组改动仍走 entry.edit，由主进程校验 */
 const DRAG_MIME = 'application/x-mile-entry'
+/** dragover 读不到 dataTransfer 的数据，只能读类型；拖的是谁记在这里 */
+let draggingId: string | null = null
 
 /**
  * 工作组磁贴，UI-REFACTOR Q10 / Q12。头部：组名、环境、「N/M 运行中」、整组启停、「⋯」。
@@ -70,7 +74,7 @@ export function GroupTile({
   // 只接受本应用的条目拖拽；拖到它本来所在的组不算移动
   const accepts = (e: React.DragEvent): boolean => e.dataTransfer.types.includes(DRAG_MIME)
   const onDragOver = (e: React.DragEvent): void => {
-    if (!accepts(e)) return
+    if (!accepts(e) || all.some((m) => m.id === draggingId)) return
     e.preventDefault()
     e.dataTransfer.dropEffect = 'move'
     if (!dropOver) setDropOver(true)
@@ -211,6 +215,7 @@ function EntryLine({
   )
   const sub = entry.kind === 'task' ? entry.script ?? '任务' : FRAMEWORK_LABEL[entry.framework]
   const [dragging, setDragging] = useState(false)
+  const [dropAt, setDropAt] = useState<'before' | 'after' | null>(null)
   const sharedTip = `:${port} 有多个条目在监听，localhost:${port} 只会打开其中一个。改掉一边的端口才能同时访问`
 
   return (
@@ -224,10 +229,31 @@ function EntryLine({
       draggable
       onDragStart={(e) => {
         e.dataTransfer.setData(DRAG_MIME, entry.id)
+        draggingId = entry.id
         e.dataTransfer.effectAllowed = 'move'
         setDragging(true)
       }}
-      onDragEnd={() => setDragging(false)}
+      onDragEnd={() => { setDragging(false); draggingId = null; setDropAt(null) }}
+      data-drop-at={dropAt ?? undefined}
+      onDragOver={(e) => {
+        if (!e.dataTransfer.types.includes(DRAG_MIME) || draggingId === entry.id) return
+        e.preventDefault()
+        e.stopPropagation()
+        e.dataTransfer.dropEffect = 'move'
+        const r = e.currentTarget.getBoundingClientRect()
+        const at = e.clientY < r.top + r.height / 2 ? 'before' : 'after'
+        if (at !== dropAt) setDropAt(at)
+      }}
+      onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDropAt(null) }}
+      onDrop={(e) => {
+        const id = e.dataTransfer.getData(DRAG_MIME)
+        const at = dropAt
+        setDropAt(null)
+        if (!id || id === entry.id || !at) return
+        e.preventDefault()
+        e.stopPropagation()
+        actions.place(id, entry.id, at === 'before')
+      }}
       onClick={() => actions.select(entry)}
     >
       <StatusDot tone={meta.tone} label={meta.label} />

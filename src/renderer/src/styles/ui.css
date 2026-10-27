@@ -981,3 +981,8 @@
 .svc-port-btn:active { transform: scale(0.96); transition-duration: 70ms; }
 .svc-row-port[data-shared='true'] .svc-port-btn { color: color-mix(in srgb, var(--signal-warn) 72%, var(--text-strong)); }
 @media (prefers-reduced-motion: reduce) { .svc-port-btn:active { transform: none; } }
+
+/* 组内拖动排序：放下位置显示一条品牌蓝插入线 */
+.svc-row[data-drop-at]::after { content: ''; position: absolute; left: 8px; right: 8px; height: 2px; border-radius: 2px; background: var(--btn-primary-bg); pointer-events: none; }
+.svc-row[data-drop-at='before']::after { top: -1px; }
+.svc-row[data-drop-at='after']::after { bottom: -1px; }

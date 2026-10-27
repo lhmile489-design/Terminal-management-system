@@ -63,6 +63,7 @@ export function Services({
   const clearError = useEntries((s) => s.clearError)
   const add = useEntries((s) => s.add)
   const edit = useEntries((s) => s.edit)
+  const reorder = useEntries((s) => s.reorder)
   const stop = useEntries((s) => s.stop)
   const restart = useEntries((s) => s.restart)
   const groups = useGroups((s) => s.groups)
@@ -150,6 +151,37 @@ export function Services({
     void edit(id, { groupId }).then((ok) => {
       if (ok) toast({ tone: 'live', title: `已把「${entry.name}」移到「${target ?? '工作组'}」` })
     })
+  }
+
+  /**
+   * 放到另一行的前面或后面。目标在别的组时先换组再排位。
+   * 主进程 reorder 收的是完整 id 序列（没列出的会被推到末尾），所以这里排的是全部条目。
+   */
+  function placeEntry(dragId: string, targetId: string, before: boolean): void {
+    if (dragId === targetId) return
+    const drag = entries.find((e) => e.id === dragId)
+    const target = entries.find((e) => e.id === targetId)
+    if (!drag || !target) return
+    const ids = [...entries].sort((a, b) => a.order - b.order).map((e) => e.id).filter((id) => id !== dragId)
+    const at = ids.indexOf(targetId) + (before ? 0 : 1)
+    ids.splice(at, 0, dragId)
+    const sameGroup = (drag.groupId ?? null) === (target.groupId ?? null)
+    void (async () => {
+      if (!sameGroup && !(await edit(dragId, { groupId: target.groupId ?? null }))) return
+      await reorder(ids)
+      if (!sameGroup) {
+        const name = target.groupId ? groups.find((g) => g.id === target.groupId)?.name : '未分组'
+        toast({ tone: 'live', title: `已把「${drag.name}」移到「${name ?? '工作组'}」` })
+      }
+    })()
+  }
+
+  /** 上移 / 下移：拖拽的键盘替代，只在本组成员之间换位 */
+  function shiftEntry(entry: LaunchEntry, dir: -1 | 1): void {
+    const sib = entries.filter((e) => (e.groupId ?? null) === (entry.groupId ?? null)).sort((a, b) => a.order - b.order)
+    const i = sib.findIndex((e) => e.id === entry.id)
+    const other = sib[i + dir]
+    if (other) placeEntry(entry.id, other.id, dir < 0)
   }
 
   const flashFail = (id: string): void => {
@@ -243,6 +275,13 @@ export function Services({
     if (entry.framework === 'uniapp') {
       items.push({ label: '用 HBuilderX 打开', icon: ICON.openExternal, onSelect: () => void window.mile.entry.openInHBuilderX(entry.id) })
     }
+    const sib = entries.filter((e) => (e.groupId ?? null) === (entry.groupId ?? null)).sort((a, b) => a.order - b.order)
+    const pos = sib.findIndex((e) => e.id === entry.id)
+    items.push(
+      { sep: true },
+      { label: '上移', icon: ICON.moveUp, disabled: pos <= 0, onSelect: () => shiftEntry(entry, -1) },
+      { label: '下移', icon: ICON.moveDown, disabled: pos < 0 || pos >= sib.length - 1, onSelect: () => shiftEntry(entry, 1) }
+    )
     // 拖拽的键盘替代：移到其他工作组 / 移出到未分组
     const targets = groups.filter((g) => g.id !== entry.groupId)
     if (targets.length || entry.groupId) items.push({ sep: true })
@@ -367,7 +406,8 @@ export function Services({
     select: (e) => { setCursorId(e.id); void pick(e.id) },
     toggle: (e) => void toggle(e),
     menu: rowMenu,
-    move: (id, gid) => moveEntry(id, gid)
+    move: (id, gid) => moveEntry(id, gid),
+    place: (dragId, targetId, before) => placeEntry(dragId, targetId, before)
   }
 
   const categories = useMemo(
