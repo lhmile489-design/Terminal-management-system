@@ -18,7 +18,7 @@ export type PaletteAction =
   | { type: 'addEntry'; kind: 'service' | 'task' }
   | { type: 'refresh' }
   | { type: 'setTheme'; preference: ThemePreference }
-  | { type: 'goto'; view: 'dashboard' | 'launchpad' | 'backend' | 'terminal' | 'diagnose' | 'settings' }
+  | { type: 'goto'; view: 'services' | 'dashboard' | 'terminal' | 'settings' }
 
 interface Candidate {
   id: string
@@ -29,11 +29,9 @@ interface Candidate {
 }
 
 const VIEW_LABEL: Record<string, string> = {
-  dashboard: '工作台',
-  launchpad: '前端启动台',
-  backend: '后端控制台',
+  services: '服务',
+  dashboard: '总览',
   terminal: '终端',
-  diagnose: '诊断',
   settings: '设置'
 }
 
@@ -283,7 +281,7 @@ const BUILTINS: Omit<Candidate, 'group'>[] = [
   { id: 'theme-light', label: '主题：浅色', action: { type: 'setTheme', preference: 'light' } },
   { id: 'theme-dark', label: '主题：深色', action: { type: 'setTheme', preference: 'dark' } },
   { id: 'theme-system', label: '主题：跟随系统', action: { type: 'setTheme', preference: 'system' } },
-  ...(['dashboard', 'launchpad', 'backend', 'terminal', 'diagnose', 'settings'] as const).map((view) => ({
+  ...(['services', 'dashboard', 'terminal', 'settings'] as const).map((view) => ({
     id: `goto-${view}`,
     label: `前往${VIEW_LABEL[view]}`,
     action: { type: 'goto' as const, view }

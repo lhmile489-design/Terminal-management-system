@@ -11,7 +11,6 @@ import {
   Archive,
   Eraser,
   CheckCircle,
-  TreeStructure,
   Warning,
   Circle,
   Cube,
@@ -32,13 +31,13 @@ import {
   isLiveStatus,
   SPRING_BOOT_LAUNCH_MODE_LABEL,
   FRAMEWORK_LAUNCH_MODES
-} from '../lib/entryMeta'
-import { StatusPill } from '../components/StatusPill'
-import { TerminalView } from '../components/TerminalView'
-import { PrecheckPanel } from '../components/PrecheckPanel'
-import { useEntries } from '../store/entries'
-import { useGroups } from '../store/groups'
-import { useEntryFix } from '../lib/useEntryFix'
+} from '../../lib/entryMeta'
+import { StatusPill } from '../StatusPill'
+import { TerminalView } from '../TerminalView'
+import { PrecheckPanel } from '../PrecheckPanel'
+import { useEntries } from '../../store/entries'
+import { useGroups } from '../../store/groups'
+import { useEntryFix } from '../../lib/useEntryFix'
 
 // ─── 构建目标定义 ─────────────────────────────────────────────────────────────
 
@@ -128,59 +127,6 @@ const PROFILE_LABEL: Record<ReturnType<typeof classifyProfile>, string> = {
   prod: '生产', sandbox: '沙箱', dev: '本地', custom: ''
 }
 
-// ─── 左侧：单个项目条目 ──────────────────────────────────────────────────────
-
-function ProjectItem({
-  entry,
-  active,
-  onClick
-}: {
-  entry: LaunchEntry
-  active: boolean
-  onClick: () => void
-}): React.JSX.Element {
-  const runtimeOf = useEntries((s) => s.runtimeOf)
-  const runtime = runtimeOf(entry.id)
-  const live = isLiveStatus(runtime.status)
-  const statusMeta = STATUS_META[runtime.status]
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-current={active ? 'true' : undefined}
-      className={[
-        'pressable-flat group flex w-full min-w-0 items-center gap-2 rounded-[5px] px-2.5 py-2 text-left transition-colors duration-150',
-        active
-          ? 'bg-accent/10 text-ink-strong'
-          : 'text-ink-muted hover:bg-raised/60 hover:text-ink-strong'
-      ].join(' ')}
-    >
-      {/* 运行状态点 */}
-      <span
-        className={[
-          'flex h-1.5 w-1.5 shrink-0 rounded-full transition-all duration-300',
-          live
-            ? 'bg-live shadow-[0_0_0_2.5px_color-mix(in_srgb,var(--signal-live)_22%,transparent)]'
-            : active ? 'bg-accent/50' : 'bg-stroke-strong/60'
-        ].join(' ')}
-        aria-hidden
-      />
-      <span className="min-w-0 flex-1 truncate text-[12px] font-medium leading-none">
-        {entry.name}
-      </span>
-      {active && (
-        <span
-          className="shrink-0 rounded-[3px] bg-accent/15 px-1 font-mono text-[9px] font-bold text-accent"
-          aria-hidden
-        >
-          {statusMeta.label}
-        </span>
-      )}
-    </button>
-  )
-}
-
 // ─── 构建目标按钮 ─────────────────────────────────────────────────────────────
 
 function GoalButton({
@@ -235,21 +181,6 @@ function PackageButton({
       <Package size={11} weight="bold" className="shrink-0" aria-hidden />
       {displayLabel}
     </button>
-  )
-}
-
-// ─── 空状态 ──────────────────────────────────────────────────────────────────
-
-function ConsolePanelEmpty(): React.JSX.Element {
-  return (
-    <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
-      <div className="flex h-10 w-10 items-center justify-center rounded-[10px] border border-line bg-raised">
-        <TreeStructure size={18} weight="regular" className="text-ink-faint/50" aria-hidden />
-      </div>
-      <p className="text-[12px] text-ink-faint/70 leading-snug">
-        从左侧选择一个<br />Spring Boot 项目
-      </p>
-    </div>
   )
 }
 
@@ -791,73 +722,6 @@ export function ConsolePanel({ entry }: { entry: LaunchEntry }): React.JSX.Eleme
             </div>
           )}
         </div>
-      </div>
-    </div>
-  )
-}
-
-// ─── 主视图 ──────────────────────────────────────────────────────────────────
-
-export function BackendConsole(): React.JSX.Element {
-  const entries = useEntries((s) => s.entries)
-  const springBootEntries = entries.filter((e) => e.framework === 'spring-boot')
-
-  const [selectedId, setSelectedId] = useState<string | null>(
-    () => springBootEntries[0]?.id ?? null
-  )
-  const selectedEntry = springBootEntries.find((e) => e.id === selectedId) ?? null
-
-  return (
-    <div className="-mx-6 -my-5 flex min-h-0 flex-1 overflow-hidden">
-
-      {/* ── 左侧导航栏 ── */}
-      <div className="flex w-48 shrink-0 flex-col border-r border-line bg-panel">
-        {/* 侧栏头部 */}
-        <div className="shrink-0 border-b border-line px-3 py-2.5">
-          <div className="flex items-center gap-1.5">
-            <Cube size={11} weight="regular" className="shrink-0 text-ink-faint/60" aria-hidden />
-            <span className="font-mono text-[9px] font-bold uppercase tracking-[0.18em] text-ink-faint/70">
-              Java 项目
-            </span>
-            {springBootEntries.length > 0 && (
-              <span className="ml-auto rounded-[3px] bg-raised px-1.5 font-mono text-[8.5px] text-ink-faint/60">
-                {springBootEntries.length}
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* 项目列表 */}
-        <div className="flex-1 overflow-y-auto px-2 py-2">
-          {springBootEntries.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 py-8 text-center">
-              <TreeStructure size={18} weight="regular" className="text-ink-faint/30" aria-hidden />
-              <p className="text-[10.5px] text-ink-faint/50 leading-snug">
-                在启动台添加<br />Spring Boot 项目
-              </p>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-0.5">
-              {springBootEntries.map((entry) => (
-                <ProjectItem
-                  key={entry.id}
-                  entry={entry}
-                  active={entry.id === selectedId}
-                  onClick={() => setSelectedId(entry.id)}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* ── 右侧控制台 ── */}
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden bg-canvas">
-        {selectedEntry ? (
-          <ConsolePanel key={selectedEntry.id} entry={selectedEntry} />
-        ) : (
-          <ConsolePanelEmpty />
-        )}
       </div>
     </div>
   )

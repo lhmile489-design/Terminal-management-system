@@ -6,7 +6,7 @@ import { GroupTile, type RowActions } from '../components/services/GroupTile'
 import { EntryDetail, effectiveTab, hasBuildTab, type DetailTab } from '../components/services/EntryDetail'
 import { hasOpenOverlay } from '../lib/overlay'
 import { AddEntryDialog } from '../components/AddEntryDialog'
-import { AssignGroupDialog, GroupDialog } from '../components/GroupsPanel'
+import { AssignGroupDialog, GroupDialog } from '../components/services/GroupDialogs'
 import { useEntries } from '../store/entries'
 import { useGroups } from '../store/groups'
 import { useEntryFix } from '../lib/useEntryFix'
@@ -44,13 +44,16 @@ export function Services({
   pendingAdd,
   onPendingConsumed,
   pendingKind,
-  onPendingKindConsumed
+  onPendingKindConsumed,
+  focus
 }: {
   onOpenLogs: (sessionId: string) => void
   pendingAdd?: { path: string; name: string } | null
   onPendingConsumed?: () => void
   pendingKind?: EntryKind | null
   onPendingKindConsumed?: () => void
+  /** 外部要求打开某个服务的某个标签（失败通知、命令面板、总览）。nonce 变化才触发，同一请求不重复执行 */
+  focus?: { id: string; tab: DetailTab; nonce: number } | null
 }): React.JSX.Element {
   const entries = useEntries((s) => s.entries)
   const runtimes = useEntries((s) => s.runtimes)
@@ -159,6 +162,21 @@ export function Services({
   const pickTab = (id: string, t: DetailTab): void => {
     void pick(id).then((ok) => ok && setTab(t))
   }
+
+  // 外部定位请求：只认 nonce，等条目加载到了再执行
+  const focusDone = useRef(0)
+  useEffect(() => {
+    if (!focus || focus.nonce === focusDone.current) return
+    if (!entries.some((e) => e.id === focus.id)) return
+    focusDone.current = focus.nonce
+    setCursorId(focus.id)
+    void pick(focus.id).then((ok) => {
+      if (!ok) return
+      setTab(focus.tab)
+      if (focus.tab === 'diagnose') setRefreshKey((n) => n + 1)
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focus, entries])
 
   const openDiagnose = (entry: LaunchEntry): void => {
     void pick(entry.id).then((ok) => {

@@ -1,12 +1,8 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import {
-  Folders,
   ListMagnifyingGlass,
   Monitor,
-  Rocket,
-  Stethoscope,
-  TreeStructure,
   type Icon
 } from '@phosphor-icons/react'
 import type { ThemePreference } from '@shared/types'
@@ -16,12 +12,8 @@ import { useTheme } from '../store/theme'
 export type ViewId =
   | 'services'
   | 'dashboard'
-  | 'launchpad'
-  | 'backend'
-  | 'workgroups'
   | 'terminal'
   | 'logs'
-  | 'diagnose'
   | 'settings'
   | 'about'
 
@@ -47,13 +39,7 @@ export const NAV_TOP: NavTop[] = [
     id: 'services',
     label: '服务',
     icon: ICON.navServices,
-    key: 1,
-    children: [
-      { id: 'launchpad', label: '前端启动台', icon: Rocket },
-      { id: 'backend', label: '后端控制台', icon: TreeStructure },
-      { id: 'workgroups', label: '工作组', icon: Folders },
-      { id: 'diagnose', label: '诊断', icon: Stethoscope }
-    ]
+    key: 1
   },
   { id: 'dashboard', label: '总览', icon: ICON.navOverview, key: 2 },
   {

@@ -5,7 +5,7 @@ import { Button, IconButton, Pill, Tabs, tabPanelProps, type TabItem } from '../
 import { EntryGlyph } from '../EntryGlyph'
 import { PrecheckPanel } from '../PrecheckPanel'
 import { TerminalView } from '../TerminalView'
-import { ConsolePanel } from '../../views/BackendConsole'
+import { ConsolePanel } from './BuildPanel'
 import { EntryConfigForm } from '../EntryConfigForm'
 import { useEntries } from '../../store/entries'
 import { useEntryImage } from '../../store/favicons'

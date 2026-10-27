@@ -432,3 +432,13 @@
 - 发现：`LaunchEntry.groupId` 是单值，一个条目只能属于一个工作组，Q10 里「一个服务属于多个组时各出现一次」的情况不存在。
 - 实测：新增 `scripts/verify-services.cjs` 39/39；`verify-shell` 33/33（Ctrl+1 期望改为「服务」）；`verify-ui` 与基线比较通过；`verify-m4-ui`、`m6-palette`、`m6-settings`、`m10` 全部通过。
 - 4b 待做：配置标签直接编辑与未保存提醒、列表方向键 / Space / Enter、删除旧四页与 `EditEntryDialog` / `LaunchpadTerminalPanel`、默认首页改服务页、改写 `verify-m7` / `verify-m12` 的过时断言。
+
+### 阶段 4d（2026-10-27）删除旧页面
+
+- 删除：前端启动台、后端控制台、工作组、诊断四个视图，`EditEntryDialog`、`EntryCard`、`EntryRow`、`LaunchpadTerminalPanel`、`useCardSort`、`ThemeToggle`、`components/icons/`（自绘图标，Q17）。
+- 保留并搬家：`ConsolePanel` → `components/services/BuildPanel.tsx`（构建标签），`GroupDialog` / `AssignGroupDialog` → `components/services/GroupDialogs.tsx`。
+- 默认首页改为服务页（Q11）。失败通知的「查看诊断」、命令面板的启动 / 添加 / 前往都改走服务页；命令面板启动也走服务页的环境确认。
+- 导航「服务」下的过渡子项去掉；「终端」下的「日志」子项保留到阶段 6。
+- `verify-ui.cjs` 视图表改为新页面；「服务」的基线取旧四页的最大值（浅 18/7/62/2，深 18/6/62/2），没有放宽。
+- 结果：`verify-services` 61/61、`verify-shell` 33/33（删除工作组的入口改为服务页组菜单）、`verify-ui` PASS。
+- 待迁移：16 个旧 harness 仍按旧页面导航或查旧卡片结构（m4-ui、m6-sort、m7、m8、m10、m11-add、m11-dual、m11-port、m12-port-config、m12-press、m13-icon、m14-categories、m14-favicon、m15-uniapp、m17-image、m9）。逐个改成在服务页上测同样的行为，每改一个跑一遍。

@@ -2,7 +2,7 @@
  * 阶段 3 外框校验，docs/UI/UI-REFACTOR.md §3.2 / §5。
  *
  * 只量真实 DOM 与焦点：标题栏高度、5 项导航、Ctrl+1..5、`?` 快捷键一览、
- * 动态抽屉的焦点进出与未读数、导航折叠与记忆、删除工作组的应用内确认弹窗。
+ * 动态抽屉的焦点进出与未读数、导航折叠与记忆、删除工作组的应用内确认弹窗（入口在服务页组菜单）。
  *
  *   npm run build
  *   npx electron scripts/verify-shell.cjs
@@ -121,9 +121,15 @@ app.whenReady().then(async () => {
 
   console.log('\n=== 6. 删除工作组用应用内确认弹窗 ===')
   await js(`window.mile.group.add({name:'验收组'})`)
-  await click('nav [aria-label="工作组"]')
-  await waitFor(`!!document.querySelector('[aria-label="删除工作组"]')`, 4000)
-  await click('[aria-label="删除工作组"]')
+  // 工作组页已并入服务页（阶段 4）：删除入口在组磁贴的「⋯」菜单里
+  const openDelete = async () => {
+    await click('nav [aria-label="服务"]')
+    await waitFor(`!!document.querySelector('[aria-label="验收组 更多操作"]')`, 4000)
+    await click('[aria-label="验收组 更多操作"]')
+    await waitFor(`!!document.querySelector('[role="menu"]')`, 1500)
+    await js(`(()=>{const b=[...document.querySelectorAll('[role="menu"] [role="menuitem"]')].find(x=>x.textContent.trim()==='删除工作组');if(!b)return false;b.click();return true})()`)
+  }
+  await openDelete()
   check('弹出 alertdialog', await waitFor(`!!document.querySelector('[role="alertdialog"]')`, 1500))
   check('默认焦点在「取消」', (await js(`document.activeElement.textContent.trim()`)) === '取消',
     await js(`document.activeElement.textContent.trim()`))
@@ -131,7 +137,7 @@ app.whenReady().then(async () => {
   await sleep(300)
   check('Esc 取消后弹窗消失', !(await js(`!!document.querySelector('[role="alertdialog"]')`)))
   check('取消后工作组还在', (await js(`window.mile.group.list().then(l=>l.length)`)) === 1)
-  await click('[aria-label="删除工作组"]')
+  await openDelete()
   await waitFor(`!!document.querySelector('[role="alertdialog"]')`, 1500)
   await js(`[...document.querySelectorAll('[role="alertdialog"] button')].find(b=>b.textContent.trim()==='删除工作组').click();true`)
   const gone = await waitFor(`window.mile.group.list().then(l=>l.length===0)`, 3000)

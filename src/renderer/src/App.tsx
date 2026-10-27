@@ -9,17 +9,14 @@ import { Button, ConfirmHost, ToastHost, toast } from './components/ui'
 import { hasOpenOverlay } from './lib/overlay'
 import { ICON } from './lib/icons'
 import { Dashboard } from './views/Dashboard'
-import { Launchpad } from './views/Launchpad'
 import { Services } from './views/Services'
-import { BackendConsole } from './views/BackendConsole'
-import { Workgroups } from './views/Workgroups'
-import { Diagnose } from './views/Diagnose'
 import { TerminalWorkspace } from './views/TerminalWorkspace'
 import { LogCenter } from './views/LogCenter'
 import { Settings } from './views/Settings'
 import { About } from './views/About'
 import { CommandPalette, type PaletteAction } from './components/CommandPalette'
-import { useEntryFix } from './lib/useEntryFix'
+import { startEntry as startWithConfirm } from './lib/services'
+import type { DetailTab } from './components/services/EntryDetail'
 import { useSessions } from './store/sessions'
 import type { EntryKind } from '@shared/types'
 import { useScanner } from './store/scanner'
@@ -40,18 +37,6 @@ const TITLES: Record<
     title: '总览',
     caption: '实时掌握本机监听端口与进程负载'
   },
-  launchpad: {
-    title: '前端启动台',
-    caption: '一键启动与管理你的本地前端服务和批处理任务'
-  },
-  backend: {
-    title: '后端控制台',
-    caption: 'Spring Boot 项目管理：启停服务、Maven/Gradle 构建操作'
-  },
-  workgroups: {
-    title: '工作组',
-    caption: '按项目组合管理前端与后端服务，统一环境控制'
-  },
   terminal: {
     title: '终端',
     caption: '会话输出、输入与历史回看'
@@ -59,10 +44,6 @@ const TITLES: Record<
   logs: {
     title: '日志',
     caption: '跨会话汇总输出，按级别与关键字检索'
-  },
-  diagnose: {
-    title: '诊断',
-    caption: '预检、端口占用与会话回顾'
   },
   settings: {
     title: '设置',
@@ -75,7 +56,8 @@ const TITLES: Record<
 }
 
 export function App(): React.JSX.Element {
-  const [view, setView] = useState<ViewId>('dashboard')
+  // 打开应用默认进入服务页（Q11）：第一件事通常是启动工作组
+  const [view, setView] = useState<ViewId>('services')
   const [events, setEvents] = useState<ActivityEvent[]>([])
   // 实时动态改为抽屉（UI-REFACTOR Q1）：关着时新事件计入未读，失败类让角标变红
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -87,7 +69,12 @@ export function App(): React.JSX.Element {
   /** 每个条目上一次的状态，只在「进入」失败态时弹通知，同一状态重复推送不再弹 */
   const lastStatus = useRef(new Map<string, string>())
   const [pendingAdd, setPendingAdd] = useState<{ path: string; name: string } | null>(null)
-  const [diagnoseId, setDiagnoseId] = useState<string | null>(null)
+  /** 从通知条、命令面板、总览跳进服务页并打开某个服务的某个标签；nonce 让同一目标能重复触发 */
+  const [svcFocus, setSvcFocus] = useState<{ id: string; tab: DetailTab; nonce: number } | null>(null)
+  const focusService = useCallback((id: string, tab: DetailTab) => {
+    setSvcFocus({ id, tab, nonce: Date.now() })
+    setView('services')
+  }, [])
   const [paletteOpen, setPaletteOpen] = useState(false)
   /** 命令面板发起的「添加服务/任务」，交给启动台弹出既有的识别对话框 */
   const [paletteAdd, setPaletteAdd] = useState<EntryKind | null>(null)
@@ -157,7 +144,7 @@ export function App(): React.JSX.Element {
             title: `${name}：${meta.label}`,
             body: blocked ? '启动前检查没通过，诊断里有原因和修复入口' : '输出里能看到退出前的最后几行',
             action: blocked
-              ? { label: '查看诊断', run: () => { setDiagnoseId(runtime.entryId); setView('diagnose') } }
+              ? { label: '查看诊断', run: () => focusService(runtime.entryId, 'diagnose') }
               : sid
                 ? { label: '查看输出', run: () => { void focusSession(sid); setView('terminal') } }
                 : undefined
@@ -169,9 +156,6 @@ export function App(): React.JSX.Element {
 
   useEffect(() => window.mile.entry.onWarning((text) => pushEvent('warn', text)), [pushEvent])
 
-  // 修复动作可能经过对话框异步完成，用计数器通知诊断面板重新收集
-  const [fixNonce, setFixNonce] = useState(0)
-  const { runFix, dialogs } = useEntryFix(useCallback(() => setFixNonce((n) => n + 1), []))
 
   const openLogs = useCallback(
     (sessionId: string) => {
@@ -183,7 +167,7 @@ export function App(): React.JSX.Element {
 
   const requestAdd = useCallback((path: string, name: string) => {
     setPendingAdd({ path, name })
-    setView('launchpad')
+    setView('services')
   }, [])
 
   // 主进程的 minimize/restore 覆盖不了「窗口被其他窗口完全遮挡」，这里补一层
@@ -241,10 +225,11 @@ export function App(): React.JSX.Element {
     async (action: PaletteAction): Promise<void> => {
       switch (action.type) {
         case 'startEntry': {
-          setView('launchpad')
-          const blocked = await startEntry(action.entry.id)
-          // 预检拦下时跳到启动台，修复入口在那里
-          if (blocked) pushEvent('warn', `${action.entry.name} 预检未通过，请在启动台修复`)
+          // 与服务页同一套规则：prod / sandbox 先确认；预检拦下时打开该服务的「诊断」标签
+          setView('services')
+          await startWithConfirm(action.entry, useGroups.getState().groupOf(action.entry.groupId ?? ''), {
+            onBlocked: (e) => focusService(e.id, 'diagnose')
+          })
           return
         }
         case 'stopEntry':
@@ -262,7 +247,7 @@ export function App(): React.JSX.Element {
         }
         case 'addEntry':
           setPaletteAdd(action.kind)
-          setView('launchpad')
+          setView('services')
           return
         case 'refresh':
           window.mile.scanner.refresh()
@@ -304,7 +289,7 @@ export function App(): React.JSX.Element {
             <ViewHeader
               title={meta.title}
               caption={meta.caption}
-              actions={<QuickActions view={view} onAdd={setPaletteAdd} />}
+              actions={<QuickActions view={view} onAdd={(k) => { setPaletteAdd(k); setView('services') }} />}
             />
             {view === 'dashboard' && (
               <Dashboard
@@ -314,30 +299,18 @@ export function App(): React.JSX.Element {
                 onOpenLogs={openLogs}
               />
             )}
-            {view === 'services' && <Services onOpenLogs={openLogs} />}
-            {view === 'launchpad' && (
-              <Launchpad
+            {view === 'services' && (
+              <Services
                 onOpenLogs={openLogs}
+                focus={svcFocus}
                 pendingAdd={pendingAdd}
                 onPendingConsumed={() => setPendingAdd(null)}
                 pendingKind={paletteAdd}
                 onPendingKindConsumed={() => setPaletteAdd(null)}
               />
             )}
-            {view === 'backend' && <BackendConsole />}
-            {view === 'workgroups' && (
-              <Workgroups onOpenLogs={openLogs} />
-            )}
             {view === 'terminal' && <TerminalWorkspace />}
             {view === 'logs' && <LogCenter />}
-            {view === 'diagnose' && (
-              <Diagnose
-                selectedId={diagnoseId}
-                onSelect={setDiagnoseId}
-                onFix={runFix}
-                refreshKey={fixNonce}
-              />
-            )}
             {view === 'settings' && <Settings />}
             {view === 'about' && <About />}
           </div>
@@ -354,7 +327,6 @@ export function App(): React.JSX.Element {
         onRun={(action) => void runPalette(action)}
       />
 
-      {dialogs}
 
       {drawerOpen && (
         <ActivityDrawer events={events} onClear={clearEvents} onClose={() => setDrawerOpen(false)} />
@@ -375,7 +347,7 @@ function QuickActions({
   view: ViewId
   onAdd: (kind: EntryKind) => void
 }): React.JSX.Element | null {
-  if (view !== 'launchpad' && view !== 'dashboard') return null
+  if (view !== 'dashboard') return null
   return (
     <>
       <Button variant="ghost" icon={ArrowsClockwise} onClick={() => window.mile.scanner.refresh()}>

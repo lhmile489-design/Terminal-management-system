@@ -61,7 +61,7 @@ require(join(ROOT, 'out', 'main', 'index.js'))
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
 /** 导航顺序 = 视图清单。label 与 NavRail 的 aria-label 一致 */
-const VIEWS = ['总览', '前端启动台', '后端控制台', '工作组', '终端', '日志', '诊断', '设置', '关于']
+const VIEWS = ['服务', '总览', '终端', '日志', '设置', '关于']
 const THEMES = ['light', 'dark']
 
 /** 在页面里执行的测量函数，返回单个视图的全部指标 */
