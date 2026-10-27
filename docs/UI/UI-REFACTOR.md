@@ -385,3 +385,12 @@
 - `verify-m7-visual.cjs`：卡片圆角断言改为 16px 后通过。其余 25 项失败和第 7 节卡死在 HEAD 构建上同样出现（主标 28px、罗马字副标、44px 图标瓦片、`article.surface-card` 选择器等），是 m7 早已过期的断言，不是本阶段引起的。按第 9 节风险条目，阶段 3、4 重写视图时把 m7 改写成新外框和新服务页的断言。
 
 剩下的低对比度全部来自外框（罗马字副标、`^K`、eyebrow、标题栏字标），阶段 3 换外框时一起消失。
+
+### 阶段 2（2026-10-27）
+
+新增 `components/ui/`（Button、IconButton、Pill、StatusDot、Segmented、Tabs、Field、TextInput、Select、Switch、Stepper、DialogShell、Drawer、confirm / ConfirmHost、toast / ToastHost、MenuButton、SplitPane、BentoGrid、Tile、TileHeader、TileBody、StatValue）、`lib/icons.ts`（含义 → 图标对照表）、`lib/overlay.ts`（浮层栈：Esc 只关最上层、焦点陷阱、关闭后还焦点）、`styles/ui.css`（全部 `ui-` 前缀，无 `@layer`）。
+
+- `npm run typecheck`、`npm run build` 通过；`verify-ui.cjs` 与基线比较全部持平或下降。
+- 组件本阶段还没有接入任何视图，交互行为（焦点、Esc、拖宽、通知计时）在阶段 3 接入外框后用 harness 实测。
+- 便当网格的跨度用固定整数（`span 2` / `span 3`），列数由容器查询切换，不用 `span min(...)`：Chromium 对网格跨度里的数学函数支持不确定，写错会被整条丢弃。
+- 危险按钮底色单独定义 `--ui-danger-bg`：深色主题的 `--signal-fault` 是提亮的文字色，直接作白字按钮底对比度不够。

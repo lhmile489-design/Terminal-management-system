@@ -7,6 +7,7 @@ import '@fontsource/manrope/latin-600.css'
 import '@fontsource/manrope/latin-700.css'
 import '@fontsource/manrope/latin-800.css'
 import './styles/tokens.css'
+import './styles/ui.css'
 
 // 首帧前落定主题，避免明暗闪烁
 await useTheme.getState().init()
