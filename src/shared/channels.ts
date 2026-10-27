@@ -46,6 +46,8 @@ export const Channels = {
   dialogPickDirectory: 'dialog:pickDirectory',
   shellOpenLocalhost: 'shell:openLocalhost',
   shellOpenPath: 'shell:openPath',
+  /** 只接受 PROJECT_LINKS 的键名，URL 由主进程查表，渲染层给不出任意地址 */
+  shellOpenProjectLink: 'shell:openProjectLink',
   scannerSnapshot: 'scanner:snapshot',
   scannerDiff: 'scanner:diff',
   scannerRefresh: 'scanner:refresh',

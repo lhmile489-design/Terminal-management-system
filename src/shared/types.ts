@@ -232,6 +232,17 @@ export interface Settings {
 /** 当前配置结构版本。加字段就要加迁移，见 ConfigStore.migrate */
 export const CONFIG_VERSION = 9
 
+/**
+ * 关于页可打开的外部链接。渲染层只传键名，地址只在这里定义、由主进程查表打开 ——
+ * 这样外链白名单只有这两个固定地址，不放宽「只允许 localhost」的总口径。
+ */
+export const PROJECT_LINKS = {
+  repo: 'https://github.com/lhmile489-design/Terminal-management-system',
+  issues: 'https://github.com/lhmile489-design/Terminal-management-system/issues'
+} as const
+
+export type ProjectLink = keyof typeof PROJECT_LINKS
+
 /** 用户手动改过分组的进程，PRD §5.2。按进程名而非 PID —— PID 每次重启都换 */
 export interface GroupOverride {
   processName: string

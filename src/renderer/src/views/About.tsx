@@ -3,7 +3,7 @@ import { ArrowSquareOut, GithubLogo, ShieldCheck, type Icon } from '@phosphor-ic
 import { ICON } from '../lib/icons'
 import logoUrl from '../assets/logo.png'
 
-const GITHUB_URL = 'https://github.com/lhmile489-design/Terminal-management-system'
+// 外链地址写死在主进程 PROJECT_LINKS：window.open 会被窗口守卫按 localhost-only 拦下，点了没反应
 
 /** 使用教程：按现在的页面结构写（总览 / 服务 / 终端），UI-REFACTOR §3 */
 const GUIDE_STEPS: { icon: Icon; title: string; desc: string }[] = [
@@ -86,10 +86,10 @@ export function About(): React.JSX.Element {
           按工作组启停前后端、看端口占用、跨会话回看输出、启动前诊断。
         </p>
         <div className="about-actions">
-          <button type="button" className="ui-btn" data-variant="primary" onClick={() => window.open(GITHUB_URL, '_blank')}>
+          <button type="button" className="ui-btn" data-variant="primary" onClick={() => window.mile.shell.openProjectLink('repo')}>
             <GithubLogo size={16} aria-hidden />GitHub 仓库<ArrowSquareOut size={16} aria-hidden />
           </button>
-          <button type="button" className="ui-btn" data-variant="secondary" onClick={() => window.open(`${GITHUB_URL}/issues`, '_blank')}>
+          <button type="button" className="ui-btn" data-variant="secondary" onClick={() => window.mile.shell.openProjectLink('issues')}>
             提交 Issue<ArrowSquareOut size={16} aria-hidden />
           </button>
         </div>

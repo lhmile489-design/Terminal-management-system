@@ -24,7 +24,8 @@ import type {
   SessionExitEvent,
   SessionMeta,
   ThemePreference,
-  ThemeState
+  ThemeState,
+  ProjectLink
 } from '@shared/types'
 
 const api = {
@@ -109,7 +110,9 @@ const api = {
   },
   shell: {
     openLocalhost: (port: number): void => ipcRenderer.send(Channels.shellOpenLocalhost, port),
-    openPath: (target: string): void => ipcRenderer.send(Channels.shellOpenPath, target)
+    openPath: (target: string): void => ipcRenderer.send(Channels.shellOpenPath, target),
+    openProjectLink: (key: ProjectLink): void =>
+      ipcRenderer.send(Channels.shellOpenProjectLink, key)
   },
   scanner: {
     snapshot: (): Promise<ScanSnapshot | null> => ipcRenderer.invoke(Channels.scannerSnapshot),

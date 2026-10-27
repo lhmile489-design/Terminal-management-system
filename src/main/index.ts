@@ -11,8 +11,10 @@ import type {
   NewLaunchEntry,
   NewProjectGroup,
   Settings,
-  ThemePreference
+  ThemePreference,
+  ProjectLink
 } from '@shared/types'
+import { PROJECT_LINKS } from '@shared/types'
 import { SessionService } from './services/SessionService'
 import { ConfigStore } from './services/ConfigStore'
 import { ThemeService } from './services/ThemeService'
@@ -195,6 +197,12 @@ function registerIpc(): void {
   ipc.on(Channels.shellOpenLocalhost, (_e, port: unknown) => {
     if (!Number.isInteger(port) || (port as number) < 1 || (port as number) > 65535) return
     void shell.openExternal(`http://localhost:${port as number}`)
+  })
+
+  // 关于页的两个外链：渲染层只给键名，地址写死在主进程。不放行任意外部 URL，PRD §11
+  ipc.on(Channels.shellOpenProjectLink, (_e, key: unknown) => {
+    if (typeof key !== 'string' || !Object.hasOwn(PROJECT_LINKS, key)) return
+    void shell.openExternal(PROJECT_LINKS[key as ProjectLink])
   })
 
   ipc.on(Channels.shellOpenPath, (_e, target: unknown) => {
