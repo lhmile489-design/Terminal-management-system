@@ -88,9 +88,14 @@ src/shared/     两侧共用的类型与 IPC 频道名
 
 - `runToken` 永不发给渲染层。
 - 诊断面板只显示环境变量的**键名**，从不显示值。
-- `shell:openExternal` 只允许 http/https 且 host 为 localhost/127.0.0.1。
-- `shell:openPath` 只接受白名单路径。`outputDir` 因此必须是相对路径且不含 `..` —— 它会进那个白名单。
+- 外链只有两条路：`shell:openLocalhost`（只收 1–65535 的端口整数）与 `shell:openProjectLink`（只收 `PROJECT_LINKS` 的键名，URL 写死在 `src/shared/types.ts`）。`setWindowOpenHandler` 只放行 localhost。**不要加接受任意 URL 的通道。**
+- `shell:openPath` 只接受白名单路径。`outputDir` 因此必须是相对路径且不含 `..` —— 它会进那个白名单。读取侧（`knownPath`、`outputDir()`）同样用 `isSafeRelative` 再验一次，兜住旧配置里留下的绝对路径。
 - 新增 IPC 一律在 `index.ts` 里写 `sanitize*` 校形函数，白名单外的键静默丢弃，非法值抛错且**不落盘**。
+- **IPC 注册一律走 `ipc.handle` / `ipc.on` 包装器，不直接调 `ipcMain`。** 包装器只认主窗口主框架（`isTrustedSender`）。harness 绕过渲染层直调 `ipcMain._invokeHandlers` 时，要传 `{ sender: wc, senderFrame: wc.mainFrame }`，传 `{}` 会被拒（m5 / m6-palette / m6-settings 的 `callIpc` 有现成写法）。
+- **`session:create` 只走 `SessionService.createShell`**：只认 `kind: 'shell'` 和标题，可执行文件、参数、目录由主进程定。`create(CreateSessionInput)` 是主进程内部入口，只给 EntryService 用固定模板构造的规格，**绝不能接到 IPC 上**。
+- **`entry:add` 与 `entry:edit` 共用 `sanitizeEdit`。** 新增可编辑字段时只改那一处，两个入口一起生效；别在 `add()` 里另写一套铺开入参的逻辑。
+- 往渲染层推送用 `sendToRenderer(channel, ...)`，不要写 `mainWindow?.webContents.send`：窗口销毁后采集与会话输出仍在推，直接 send 会抛 `Object has been destroyed`。
+- `OwnershipService.assertKillable(pid, table, sessionId)` 的第三个参数要传：PID 命中的会话必须就是要停的那个会话。
 
 ---
 
@@ -223,5 +228,7 @@ spring 曲线的 `y2 = 1.56` 超过 1，产生轻微过冲后落回终态，用�
 
 - **Node 20.19。`electron-builder` 打包前需升到 22 LTS**（长期待办，从 M1 挂到现在）。
 - 平台 Windows 11。shell 用 bash 语法（`/dev/null`、正斜杠路径）。
-- 配置落在 `%APPDATA%/mile-terminal/config.json`，`.bak` 是上一份良好版本。当前 `CONFIG_VERSION = 8`。
+- 应用版本 2.0.0（`package.json`）。版本记录写在 `README.md` 的「版本记录」一节。
+- 配置落在 `%APPDATA%/mile-terminal/config.json`，`.bak` 是上一份良好版本。当前 `CONFIG_VERSION = 9`（v9 加了工作组 `groups` 与条目的 `groupId`）。从 `.bak` 恢复时坏主文件另存为 `config.json.corrupt`，且那次写入走 `persist(true)` 跳过「备份当前主文件」—— 常规 `persist()` 会把坏文件复制到 `.bak`，唯一的良好版本就没了。
+- 退出清理：`before-quit` 在 `killOwnedOnQuit` 开启且还有活会话时先 `preventDefault`，等 `sessions.disposeAll()`（每个 taskkill 返回才 resolve）或 6 秒上限，再 `app.quit()`。`SessionService.kill()` 返回 Promise，普通调用方不必等，退出流程要等。
 - **改 `CONFIG_VERSION` 时**：迁移写显式版本分支，不要用 `{...DEFAULTS, ...raw}` 铺开 —— 那样 `version` 会永远停在旧值，每次启动都重跑迁移。harness 里不要写死版本号，从 `src/shared/types.ts` 读。
