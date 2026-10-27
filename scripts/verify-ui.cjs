@@ -239,6 +239,24 @@ app.whenReady().then(async () => {
   }
 
   let fail = navFailures
+
+  // ---- 源码清零门禁（UI-REFACTOR 阶段 8）：这几类写法出现一次就判失败 ----
+  const { readdirSync, statSync } = require('node:fs')
+  const walk = (d) => readdirSync(d).flatMap((n) => { const p = join(d, n); return statSync(p).isDirectory() ? walk(p) : /\.(tsx?|css)$/.test(n) ? [p] : [] })
+  const RULES = [
+    ['文字色带透明度', /\btext-(?:ink[a-z-]*|live|warn|fault|accent|info)\/\d+/g],
+    ['小于 12px 的任意字号', /text-\[(?:\d|1[01])(?:\.\d+)?px\]/g],
+    ['任意值圆角 rounded-[Npx]', /rounded-\[\d+px\]/g],
+    ['window.confirm 调用', /window\.confirm\(/g],
+    ['旧自绘图标 components/icons', /from ['"][./]*components\/icons['"]|from ['"]\.\/icons['"]/g]
+  ]
+  console.log('\n源码清零检查：')
+  const srcFiles = walk(join(ROOT, 'src', 'renderer', 'src'))
+  for (const [label, re] of RULES) {
+    const hits = srcFiles.flatMap((f) => (readFileSync(f, 'utf8').match(re) || []).map((m) => `${f.split(/[\\/]src[\\/]/).pop()}:${m}`))
+    if (hits.length) { fail++; console.log(`  FAIL  ${label} ${hits.length} 处：${hits.slice(0, 5).join('，')}`) }
+    else console.log(`  PASS  ${label} 0 处`)
+  }
   for (const [k, r] of Object.entries(results)) {
     if (r.edgeTight > 0) { fail++; console.log(`  FAIL  ${k} 贴边控件 ${r.edgeTight} 个：${r.worstTight.join('，')}`) }
     if (r.navMisaligned > 0) { fail++; console.log(`  FAIL  ${k} 导航文字没靠左 ${r.navMisaligned} 项`) }

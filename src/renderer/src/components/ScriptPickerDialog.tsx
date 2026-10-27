@@ -41,7 +41,7 @@ export function ScriptPickerDialog({
             aria-label="关闭"
             title="关闭"
             onClick={onClose}
-            className="pressable flex h-7 w-7 items-center justify-center rounded-[6px] text-ink-faint hover:bg-raised hover:text-ink"
+            className="pressable flex h-7 w-7 items-center justify-center rounded-control text-ink-faint hover:bg-raised hover:text-ink"
           >
             <X size={14} weight="bold" />
           </button>
@@ -57,7 +57,7 @@ export function ScriptPickerDialog({
               {names.map((name) => (
                 <li key={name}>
                   <label
-                    className={`pressable-flat flex cursor-pointer items-start gap-3 rounded-[8px] border px-3 py-2 ${
+                    className={`pressable-flat flex cursor-pointer items-start gap-3 rounded-control border px-3 py-2 ${
                       selected === name
                         ? 'border-line-strong bg-raised'
                         : 'border-line bg-card hover:border-line-strong'
@@ -88,7 +88,7 @@ export function ScriptPickerDialog({
           <button
             type="button"
             onClick={onClose}
-            className="pressable rounded-[6px] border border-line-strong bg-card px-3 py-1.5 text-[12px] text-ink-muted hover:text-ink-strong"
+            className="pressable rounded-control border border-line-strong bg-card px-3 py-1.5 text-[12px] text-ink-muted hover:text-ink-strong"
           >
             取消
           </button>

@@ -60,10 +60,10 @@ function ServiceRow({
         <p className="truncate text-[13px] font-medium text-ink-strong leading-tight" title={entry.name}>
           {entry.name}
         </p>
-        <p className="text-[11px] text-ink-faint leading-tight mt-0.5 font-mono">
+        <p className="text-[12px] text-ink-faint leading-tight mt-0.5 font-mono">
           {FRAMEWORK_LABEL[entry.framework]}
           {entry.expectedPort && (
-            <span className="ml-1.5 text-ink-faint/70">:{entry.expectedPort}</span>
+            <span className="ml-1.5 text-ink-faint">:{entry.expectedPort}</span>
           )}
           {runtime.port && runtime.port !== entry.expectedPort && (
             <span className="ml-1 text-accent">:{runtime.port}</span>
@@ -135,7 +135,7 @@ function ServiceRow({
           title={`强制停止 ${entry.name}`}
           disabled={busy}
           onClick={onForceStop}
-          className="pressable shrink-0 flex items-center gap-1 rounded-[5px] border border-fault/30 bg-fault/8 px-2 py-1 font-mono text-[10px] text-fault hover:border-fault/60 hover:bg-fault/15 disabled:pointer-events-none disabled:opacity-40"
+          className="pressable shrink-0 flex items-center gap-1 rounded-control border border-fault/30 bg-fault/8 px-2 py-1 font-mono text-[12px] text-fault hover:border-fault/60 hover:bg-fault/15 disabled:pointer-events-none disabled:opacity-40"
         >
           <XCircle size={12} weight="bold" />
           强制关闭
@@ -144,7 +144,7 @@ function ServiceRow({
 
       {/* 仅登记提示 */}
       {entry.registerOnly && (
-        <span className="shrink-0 rounded-[4px] bg-raised px-1.5 py-0.5 font-mono text-[10px] text-ink-faint">
+        <span className="shrink-0 rounded-pill bg-raised px-1.5 py-0.5 font-mono text-[12px] text-ink-faint">
           仅监控
         </span>
       )}
@@ -176,7 +176,7 @@ function ActionBtn({
       aria-label={label}
       title={label}
       onClick={onClick}
-      className={`pressable flex h-6 w-6 items-center justify-center rounded-[5px] border bg-card ${toneClass}`}
+      className={`pressable flex h-6 w-6 items-center justify-center rounded-control border bg-card ${toneClass}`}
     >
       <IconCmp size={12} weight="bold" />
     </button>
@@ -224,12 +224,12 @@ export function MyServicesPanel({
           服务操作台
         </h2>
         {runningCount > 0 && (
-          <span className="flex items-center gap-1 rounded-full border border-live/25 bg-live/10 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-live">
+          <span className="flex items-center gap-1 rounded-full border border-live/25 bg-live/10 px-1.5 py-0.5 font-mono text-[12px] font-semibold text-live">
             <span className="h-1.5 w-1.5 animate-ping rounded-full bg-live opacity-75" aria-hidden />
             {runningCount} 运行中
           </span>
         )}
-        <span className="text-[11px] text-ink-faint font-mono ml-auto">
+        <span className="text-[12px] text-ink-faint font-mono ml-auto">
           {entries.length} 项
         </span>
         <button
@@ -237,7 +237,7 @@ export function MyServicesPanel({
           aria-expanded={!collapsed}
           aria-label={collapsed ? '展开服务列表' : '折叠服务列表'}
           onClick={() => setCollapsed((v) => !v)}
-          className="pressable flex items-center gap-1 rounded-[5px] border border-line bg-raised/50 px-1.5 py-0.5 font-mono text-[10px] text-ink-muted hover:border-line-strong hover:text-ink-strong"
+          className="pressable flex items-center gap-1 rounded-control border border-line bg-raised/50 px-1.5 py-0.5 font-mono text-[12px] text-ink-muted hover:border-line-strong hover:text-ink-strong"
         >
           <CaretDown
             size={9}
@@ -252,7 +252,7 @@ export function MyServicesPanel({
       {!collapsed && (
         <div className="surface-card overflow-hidden">
           {/* 表头 */}
-          <div className="grid grid-cols-[1fr_100px_auto] items-center gap-3 border-b border-line px-4 py-2 font-mono text-[10px] font-semibold tracking-[0.12em] text-ink-faint uppercase">
+          <div className="grid grid-cols-[1fr_100px_auto] items-center gap-3 border-b border-line px-4 py-2 font-mono text-[12px] font-semibold tracking-[0.12em] text-ink-faint uppercase">
                         <span>服务名称</span>
             <span>状态</span>
             <span className="sr-only">操作</span>

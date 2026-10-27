@@ -246,7 +246,7 @@ export function EntryConfigForm({
             <button
               type="button"
               onClick={onStop}
-              className="pressable flex shrink-0 items-center gap-1.5 rounded-[6px] border border-warn/40 px-2.5 py-1 text-[12px] text-warn hover:bg-warn/15 hover:text-warn"
+              className="pressable flex shrink-0 items-center gap-1.5 rounded-control border border-warn/40 px-2.5 py-1 text-[12px] text-warn hover:bg-warn/15 hover:text-warn"
             >
               <Stop size={12} weight="fill" />
               停止服务
@@ -256,7 +256,7 @@ export function EntryConfigForm({
 
         <div className="flex flex-col gap-4">
           {error && (
-            <p role="alert" className="rounded-[6px] bg-fault-soft px-3 py-2 text-[12px] text-fault">
+            <p role="alert" className="rounded-control bg-fault-soft px-3 py-2 text-[12px] text-fault">
               {error}
             </p>
           )}
@@ -266,7 +266,7 @@ export function EntryConfigForm({
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-[6px] border border-line bg-card px-2.5 py-1.5 text-[13px] text-ink-strong outline-none focus:border-accent"
+              className="w-full rounded-control border border-line bg-card px-2.5 py-1.5 text-[13px] text-ink-strong outline-none focus:border-accent"
             />
           </Field>
 
@@ -278,7 +278,7 @@ export function EntryConfigForm({
               maxLength={40}
               placeholder="未分类（可输入新分类）"
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full rounded-[6px] border border-line bg-card px-2.5 py-1.5 text-[13px] text-ink-strong outline-none focus:border-accent"
+              className="w-full rounded-control border border-line bg-card px-2.5 py-1.5 text-[13px] text-ink-strong outline-none focus:border-accent"
             />
             <datalist id="launchpad-category-options">
               {categories.map((item) => (
@@ -294,7 +294,7 @@ export function EntryConfigForm({
                   value={launchMode}
                   disabled={live}
                   onChange={(e) => setLaunchMode(e.target.value as LaunchMode | '')}
-                  className="w-full rounded-[6px] border border-line bg-card px-2.5 py-1.5 font-mono text-[12px] text-ink-strong outline-none focus:border-accent disabled:opacity-45"
+                  className="w-full rounded-control border border-line bg-card px-2.5 py-1.5 font-mono text-[12px] text-ink-strong outline-none focus:border-accent disabled:opacity-45"
                 >
                   <option value="">不设置（仅登记）</option>
                   {launchModeOptions.map((m) => (
@@ -316,7 +316,7 @@ export function EntryConfigForm({
                     disabled={live}
                     placeholder={PATH_HINT[launchMode]?.placeholder ?? ''}
                     onChange={(e) => setJarPath(e.target.value)}
-                    className="w-full rounded-[6px] border border-line bg-card px-2.5 py-1.5 font-mono text-[12px] text-ink-strong outline-none focus:border-accent disabled:opacity-45"
+                    className="w-full rounded-control border border-line bg-card px-2.5 py-1.5 font-mono text-[12px] text-ink-strong outline-none focus:border-accent disabled:opacity-45"
                   />
                 </Field>
               )}
@@ -334,7 +334,7 @@ export function EntryConfigForm({
                   value={script}
                   disabled={live}
                   onChange={(e) => setScript(e.target.value)}
-                  className="w-full rounded-[6px] border border-line bg-card px-2.5 py-1.5 font-mono text-[12px] text-ink-strong outline-none focus:border-accent disabled:opacity-45"
+                  className="w-full rounded-control border border-line bg-card px-2.5 py-1.5 font-mono text-[12px] text-ink-strong outline-none focus:border-accent disabled:opacity-45"
                 >
                   <option value="">不设置（仅登记）</option>
                   {scriptNames.map((s) => (
@@ -357,7 +357,7 @@ export function EntryConfigForm({
                 value={port}
                 disabled={live}
                 onChange={(e) => setPort(e.target.value)}
-                className="w-full rounded-[6px] border border-line bg-card px-2.5 py-1.5 font-mono text-[12.5px] text-ink-strong outline-none focus:border-accent disabled:opacity-45"
+                className="w-full rounded-control border border-line bg-card px-2.5 py-1.5 font-mono text-[12.5px] text-ink-strong outline-none focus:border-accent disabled:opacity-45"
               />
             </Field>
           )}
@@ -386,7 +386,7 @@ export function EntryConfigForm({
             <Field label="项目目录" locked={live}>
               <div className="flex items-center gap-2">
                 <span
-                  className="min-w-0 flex-1 truncate rounded-[6px] border border-line bg-card px-2.5 py-1.5 font-mono text-[12px] text-ink-muted"
+                  className="min-w-0 flex-1 truncate rounded-control border border-line bg-card px-2.5 py-1.5 font-mono text-[12px] text-ink-muted"
                   title={path}
                 >
                   {path}
@@ -395,7 +395,7 @@ export function EntryConfigForm({
                   type="button"
                   disabled={live || redetecting}
                   onClick={() => void pick()}
-                  className="pressable flex shrink-0 items-center gap-1.5 rounded-[6px] border border-line-strong bg-card px-2.5 py-1.5 text-[12px] text-ink-muted hover:text-ink-strong disabled:cursor-not-allowed disabled:opacity-45"
+                  className="pressable flex shrink-0 items-center gap-1.5 rounded-control border border-line-strong bg-card px-2.5 py-1.5 text-[12px] text-ink-muted hover:text-ink-strong disabled:cursor-not-allowed disabled:opacity-45"
                 >
                   <FolderOpen size={13} weight="bold" />
                   {redetecting ? '识别中' : '更换'}
@@ -409,7 +409,7 @@ export function EntryConfigForm({
                 disabled={live}
                 placeholder="packages/web"
                 onChange={(e) => setCwd(e.target.value)}
-                className="w-full rounded-[6px] border border-line bg-card px-2.5 py-1.5 font-mono text-[12px] text-ink-strong outline-none focus:border-accent disabled:opacity-45"
+                className="w-full rounded-control border border-line bg-card px-2.5 py-1.5 font-mono text-[12px] text-ink-strong outline-none focus:border-accent disabled:opacity-45"
               />
             </Field>
 
@@ -434,7 +434,7 @@ export function EntryConfigForm({
                       aria-label={`环境变量名称 ${index + 1}`}
                       placeholder="NAME"
                       onChange={(e) => updateEnvRow(row.id, 'key', e.target.value)}
-                      className="min-w-0 flex-1 rounded-[6px] border border-line bg-card px-2.5 py-1.5 font-mono text-[12px] text-ink-strong outline-none focus:border-accent disabled:opacity-45"
+                      className="min-w-0 flex-1 rounded-control border border-line bg-card px-2.5 py-1.5 font-mono text-[12px] text-ink-strong outline-none focus:border-accent disabled:opacity-45"
                     />
                     <input
                       data-env-value
@@ -445,7 +445,7 @@ export function EntryConfigForm({
                       aria-label={`环境变量值 ${index + 1}`}
                       placeholder="value"
                       onChange={(e) => updateEnvRow(row.id, 'value', e.target.value)}
-                      className="min-w-0 flex-1 rounded-[6px] border border-line bg-card px-2.5 py-1.5 font-mono text-[12px] text-ink-strong outline-none focus:border-accent disabled:opacity-45"
+                      className="min-w-0 flex-1 rounded-control border border-line bg-card px-2.5 py-1.5 font-mono text-[12px] text-ink-strong outline-none focus:border-accent disabled:opacity-45"
                     />
                     <button
                       type="button"
@@ -453,7 +453,7 @@ export function EntryConfigForm({
                       title="删除环境变量"
                       disabled={live}
                       onClick={() => removeEnvRow(row.id)}
-                      className="pressable flex h-8 w-8 shrink-0 items-center justify-center rounded-[6px] border border-line text-ink-faint hover:border-fault/50 hover:text-fault disabled:cursor-not-allowed disabled:opacity-45"
+                      className="pressable flex h-8 w-8 shrink-0 items-center justify-center rounded-control border border-line text-ink-faint hover:border-fault/50 hover:text-fault disabled:cursor-not-allowed disabled:opacity-45"
                     >
                       <Trash size={14} weight="bold" />
                     </button>
@@ -465,7 +465,7 @@ export function EntryConfigForm({
                   title="添加环境变量"
                   disabled={live}
                   onClick={addEnvRow}
-                  className="pressable flex h-8 w-8 items-center justify-center rounded-[6px] border border-line-strong bg-card text-ink-muted hover:text-ink-strong disabled:cursor-not-allowed disabled:opacity-45"
+                  className="pressable flex h-8 w-8 items-center justify-center rounded-control border border-line-strong bg-card text-ink-muted hover:text-ink-strong disabled:cursor-not-allowed disabled:opacity-45"
                 >
                   <Plus size={14} weight="bold" />
                 </button>
@@ -478,7 +478,7 @@ export function EntryConfigForm({
                   value={outputDir}
                   placeholder="dist"
                   onChange={(e) => setOutputDir(e.target.value)}
-                  className="w-full rounded-[6px] border border-line bg-card px-2.5 py-1.5 font-mono text-[12px] text-ink-strong outline-none focus:border-accent"
+                  className="w-full rounded-control border border-line bg-card px-2.5 py-1.5 font-mono text-[12px] text-ink-strong outline-none focus:border-accent"
                 />
               </Field>
             )}
@@ -496,12 +496,13 @@ export function EntryConfigForm({
                   {imageUrl ? (
                     <img
                       src={imageUrl}
-                      className="h-9 w-9 rounded-[4px] object-contain"
+                      className="h-9 w-9 object-contain"
+                      style={{ borderRadius: 8 }}
                       alt=""
                       draggable={false}
                     />
                   ) : (
-                    <span className="font-mono text-[11px] text-ink-faint">无</span>
+                    <span className="font-mono text-[12px] text-ink-faint">无</span>
                   )}
                 </span>
                 <input
@@ -515,7 +516,7 @@ export function EntryConfigForm({
                   type="button"
                   disabled={imageBusy}
                   onClick={() => fileInputRef.current?.click()}
-                  className="pressable rounded-[6px] border border-line-strong bg-card px-2.5 py-1.5 text-[12px] text-ink-muted hover:text-ink-strong disabled:opacity-45"
+                  className="pressable rounded-control border border-line-strong bg-card px-2.5 py-1.5 text-[12px] text-ink-muted hover:text-ink-strong disabled:opacity-45"
                 >
                   {imageBusy ? '处理中…' : hasImage ? '更换图片' : '上传图片'}
                 </button>
@@ -524,7 +525,7 @@ export function EntryConfigForm({
                     type="button"
                     disabled={imageBusy}
                     onClick={() => void onRemoveImage()}
-                    className="pressable rounded-[6px] border border-line-strong bg-card px-2.5 py-1.5 text-[12px] text-ink-muted hover:text-ink-strong disabled:opacity-45"
+                    className="pressable rounded-control border border-line-strong bg-card px-2.5 py-1.5 text-[12px] text-ink-muted hover:text-ink-strong disabled:opacity-45"
                   >
                     移除
                   </button>
@@ -550,7 +551,7 @@ export function EntryConfigForm({
                     title="自动（框架图标）"
                     aria-pressed={icon === null}
                     onClick={() => setIcon(null)}
-                    className={`pressable flex h-9 w-full items-center justify-center rounded-[6px] border text-ink-muted hover:text-ink-strong ${
+                    className={`pressable flex h-9 w-full items-center justify-center rounded-control border text-ink-muted hover:text-ink-strong ${
                       icon === null
                         ? 'border-accent bg-accent-soft text-accent'
                         : 'border-line-strong bg-card'
@@ -570,7 +571,7 @@ export function EntryConfigForm({
                         title={label}
                         aria-pressed={selected}
                         onClick={() => setIcon(option)}
-                        className={`pressable flex h-9 w-full items-center justify-center rounded-[6px] border text-ink-muted hover:text-ink-strong ${
+                        className={`pressable flex h-9 w-full items-center justify-center rounded-control border text-ink-muted hover:text-ink-strong ${
                           selected
                             ? 'border-accent bg-accent-soft text-accent'
                             : 'border-line-strong bg-card'

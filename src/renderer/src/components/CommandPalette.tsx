@@ -137,7 +137,7 @@ function PaletteBody({
             aria-controls="palette-results"
             className="min-w-0 flex-1 bg-transparent text-[13.5px] text-ink-strong placeholder:text-ink-faint focus:outline-none"
           />
-          <kbd className="shrink-0 rounded-[4px] border border-line-strong px-1.5 py-0.5 font-mono text-[12px] text-ink-faint">
+          <kbd className="shrink-0 rounded-pill border border-line-strong px-1.5 py-0.5 font-mono text-[12px] text-ink-faint">
             Esc
           </kbd>
         </div>

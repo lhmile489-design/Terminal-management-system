@@ -11,9 +11,9 @@ import { useEntries } from '../../store/entries'
  */
 
 const ENV_BADGE: Record<GroupEnvironment, string> = {
-  dev:     'bg-live/10 text-live/90 border border-live/20',
-  sandbox: 'bg-warn/10 text-warn/90 border border-warn/20',
-  prod:    'bg-fault/10 text-fault/90 border border-fault/20'
+  dev:     'bg-live/10 text-live border border-live/20',
+  sandbox: 'bg-warn/10 text-warn border border-warn/20',
+  prod:    'bg-fault/10 text-fault border border-fault/20'
 }
 
 // ─── 工作组对话框（创建 / 编辑）────────────────────────────────────────────────
@@ -61,7 +61,7 @@ export function GroupDialog({ initial, onSubmit, onClose }: GroupDialogProps): R
         <form onSubmit={(e) => void handleSubmit(e)} className="flex flex-col gap-3">
           {/* 名称 */}
           <div>
-            <label htmlFor="group-name" className="mb-1 block font-mono text-[9px] font-bold uppercase tracking-[0.15em] text-ink-faint/60">
+            <label htmlFor="group-name" className="mb-1 block font-mono text-[12px] font-bold uppercase tracking-[0.15em] text-ink-faint">
               名称 <span className="text-fault">*</span>
             </label>
             <input
@@ -72,13 +72,13 @@ export function GroupDialog({ initial, onSubmit, onClose }: GroupDialogProps): R
               maxLength={40}
               placeholder="例：商城系统"
               autoFocus
-              className="w-full rounded-[6px] border border-line bg-raised/50 px-2.5 py-1.5 text-[12.5px] text-ink-strong placeholder-ink-faint/40 outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20"
+              className="w-full rounded-control border border-line bg-raised/50 px-2.5 py-1.5 text-[12.5px] text-ink-strong placeholder-ink-faint/40 outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20"
             />
           </div>
 
           {/* 描述 */}
           <div>
-            <label htmlFor="group-desc" className="mb-1 block font-mono text-[9px] font-bold uppercase tracking-[0.15em] text-ink-faint/60">
+            <label htmlFor="group-desc" className="mb-1 block font-mono text-[12px] font-bold uppercase tracking-[0.15em] text-ink-faint">
               描述（可选）
             </label>
             <input
@@ -88,13 +88,13 @@ export function GroupDialog({ initial, onSubmit, onClose }: GroupDialogProps): R
               onChange={(e) => setDesc(e.target.value)}
               maxLength={120}
               placeholder="简短说明这个工作组的用途"
-              className="w-full rounded-[6px] border border-line bg-raised/50 px-2.5 py-1.5 text-[12.5px] text-ink-strong placeholder-ink-faint/40 outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20"
+              className="w-full rounded-control border border-line bg-raised/50 px-2.5 py-1.5 text-[12.5px] text-ink-strong placeholder-ink-faint/40 outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20"
             />
           </div>
 
           {/* 环境 */}
           <div>
-            <span className="mb-1.5 block font-mono text-[9px] font-bold uppercase tracking-[0.15em] text-ink-faint/60">
+            <span className="mb-1.5 block font-mono text-[12px] font-bold uppercase tracking-[0.15em] text-ink-faint">
               初始环境
             </span>
             <div className="flex gap-2">
@@ -104,7 +104,7 @@ export function GroupDialog({ initial, onSubmit, onClose }: GroupDialogProps): R
                   type="button"
                   onClick={() => setEnv(e)}
                   className={[
-                    'pressable flex-1 rounded-[6px] border py-1.5 text-[12px] font-medium transition-all duration-150',
+                    'pressable flex-1 rounded-control border py-1.5 text-[12px] font-medium transition-all duration-150',
                     env === e
                       ? ENV_BADGE[e]
                       : 'border-line bg-raised/40 text-ink-faint hover:bg-raised hover:text-ink-muted'
@@ -118,7 +118,7 @@ export function GroupDialog({ initial, onSubmit, onClose }: GroupDialogProps): R
 
           {/* 错误 */}
           {err && (
-            <div className="flex items-center gap-1.5 rounded-[5px] border border-fault/25 bg-fault/8 px-2.5 py-1.5">
+            <div className="flex items-center gap-1.5 rounded-control border border-fault/25 bg-fault/8 px-2.5 py-1.5">
               <Warning size={11} weight="bold" className="shrink-0 text-fault" />
               <p className="text-[12px] text-fault">{err}</p>
             </div>
@@ -129,14 +129,14 @@ export function GroupDialog({ initial, onSubmit, onClose }: GroupDialogProps): R
             <button
               type="button"
               onClick={onClose}
-              className="pressable rounded-[6px] border border-line bg-raised/40 px-3.5 py-1.5 text-[12px] text-ink-muted hover:border-line-strong hover:text-ink-strong"
+              className="pressable rounded-control border border-line bg-raised/40 px-3.5 py-1.5 text-[12px] text-ink-muted hover:border-line-strong hover:text-ink-strong"
             >
               取消
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="btn-primary pressable rounded-[6px] px-4 py-1.5 text-[12px] disabled:cursor-not-allowed disabled:opacity-50"
+              className="btn-primary pressable rounded-control px-4 py-1.5 text-[12px] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading ? '保存中…' : initial ? '保存' : '创建'}
             </button>
@@ -188,7 +188,7 @@ export function AssignGroupDialog({ group, entries, onClose }: AssignDialogProps
     >
       <div ref={panelRef} role="dialog" aria-modal="true" aria-label={`分配条目到「${group.name}」`} className="dlg-panel w-full max-w-[440px] p-5">
         <div className="mb-3 flex items-center gap-2">
-          <Users size={14} weight="regular" className="shrink-0 text-accent/70" aria-hidden />
+          <Users size={14} weight="regular" className="shrink-0 text-accent" aria-hidden />
           <h2 className="dlg-title">分配条目到「{group.name}」</h2>
         </div>
 
@@ -197,12 +197,12 @@ export function AssignGroupDialog({ group, entries, onClose }: AssignDialogProps
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="搜索条目名称…"
-          className="mb-3 w-full rounded-[6px] border border-line bg-raised/50 px-2.5 py-1.5 text-[12px] text-ink-strong placeholder-ink-faint/40 outline-none focus:border-accent/50"
+          className="mb-3 w-full rounded-control border border-line bg-raised/50 px-2.5 py-1.5 text-[12px] text-ink-strong placeholder-ink-faint/40 outline-none focus:border-accent/50"
         />
 
         <div className="flex max-h-[280px] flex-col gap-1 overflow-y-auto">
           {filtered.length === 0 && (
-            <p className="py-4 text-center text-[12px] text-ink-faint/60">没有匹配的条目</p>
+            <p className="py-4 text-center text-[12px] text-ink-faint">没有匹配的条目</p>
           )}
           {filtered.map((entry) => {
             const inGroup = entry.groupId === group.id
@@ -214,7 +214,7 @@ export function AssignGroupDialog({ group, entries, onClose }: AssignDialogProps
                 disabled={loading}
                 onClick={() => void toggle(entry)}
                 className={[
-                  'pressable-flat flex min-w-0 items-center gap-2.5 rounded-[5px] border px-3 py-2 text-left transition-colors',
+                  'pressable-flat flex min-w-0 items-center gap-2.5 rounded-control border px-3 py-2 text-left transition-colors',
                   inGroup
                     ? 'border-accent/25 bg-accent/8'
                     : inOther
@@ -229,7 +229,7 @@ export function AssignGroupDialog({ group, entries, onClose }: AssignDialogProps
                 )}
                 <span className="min-w-0 flex-1 truncate text-[12px] font-medium text-ink-strong">{entry.name}</span>
                 {inOther && (
-                  <span className="shrink-0 text-[9.5px] text-ink-faint/60">已在其他工作组</span>
+                  <span className="shrink-0 text-[12px] text-ink-faint">已在其他工作组</span>
                 )}
               </button>
             )
@@ -240,7 +240,7 @@ export function AssignGroupDialog({ group, entries, onClose }: AssignDialogProps
           <button
             type="button"
             onClick={onClose}
-            className="pressable rounded-[6px] border border-line bg-raised/40 px-4 py-1.5 text-[12px] text-ink-muted hover:border-line-strong hover:text-ink-strong"
+            className="pressable rounded-control border border-line bg-raised/40 px-4 py-1.5 text-[12px] text-ink-muted hover:border-line-strong hover:text-ink-strong"
           >
             完成
           </button>

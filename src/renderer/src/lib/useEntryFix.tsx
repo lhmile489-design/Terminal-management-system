@@ -150,12 +150,12 @@ export function useEntryFix(onAfterFix: (entryId: string) => void): {
         {nodeNotice && (
           <div
             role="alert"
-            className="flex items-start gap-3 rounded-[12px] border border-warn/40 bg-warn-soft px-4 py-3"
+            className="flex items-start gap-3 rounded-card border border-warn/40 bg-warn-soft px-4 py-3"
           >
             <Warning size={15} weight="bold" className="mt-0.5 shrink-0 text-warn" aria-hidden />
             <div className="min-w-0 flex-1">
               <p className="text-[13px] break-words text-warn">{nodeNotice}</p>
-              <p className="mt-1 text-[11px] text-ink-faint">
+              <p className="mt-1 text-[12px] text-ink-faint">
                 不代为安装或切换 Node 版本，请自行用 nvm / fnm 等工具切换后重试。
               </p>
             </div>

@@ -37,8 +37,9 @@ export function EntryGlyph({
     return (
       <img
         src={imageUrl}
-        style={{ width: px, height: px }}
-        className="rounded-[4px] object-contain"
+        // 圆角按尺寸取约 22%，小图标不会被统一的 10px 控件圆角裁成圆
+        style={{ width: px, height: px, borderRadius: Math.round(size * 0.22) }}
+        className="object-contain"
         alt=""
         aria-hidden
         draggable={false}

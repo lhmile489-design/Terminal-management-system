@@ -56,7 +56,7 @@ export function ListenerTable({
   return (
     <div className="surface-card overflow-hidden">
       <div
-        className={`${COLS} border-b border-line px-4 py-2.5 font-mono text-[10px] font-semibold tracking-[0.12em] text-ink-faint uppercase`}
+        className={`${COLS} border-b border-line px-4 py-2.5 font-mono text-[12px] font-semibold tracking-[0.12em] text-ink-faint uppercase`}
       >
         <span>名称</span>
         <span>PID</span>
@@ -93,7 +93,7 @@ export function ListenerTable({
             </span>
 
             <span
-              className="truncate font-mono text-[11px] text-ink-faint"
+              className="truncate font-mono text-[12px] text-ink-faint"
               title={l.cwd ?? '未知目录'}
             >
               {l.cwd ? ellipsisPath(l.cwd) : '—'}
@@ -120,7 +120,7 @@ function PortChip({ port }: { port: number }): React.JSX.Element {
       type="button"
       title={`在浏览器打开 http://localhost:${port}`}
       onClick={() => window.mile.shell.openLocalhost(port)}
-      className="pressable rounded-[4px] border border-line-strong px-1.5 font-mono text-[11px] font-bold text-accent hover:bg-accent/15 hover:text-accent"
+      className="pressable rounded-control border border-line-strong px-1.5 font-mono text-[12px] font-bold text-accent hover:bg-accent/15 hover:text-accent"
     >
       {port}
     </button>
@@ -159,7 +159,7 @@ function SourceBadge({ listener }: { listener: ListenerSnapshot }): React.JSX.El
   return (
     <span
       data-source={listener.launchSource}
-      className="truncate rounded-[4px] bg-raised px-1.5 py-0.5 text-center font-mono text-[10px] font-semibold text-ink-muted"
+      className="truncate rounded-pill bg-raised px-1.5 py-0.5 text-center font-mono text-[12px] font-semibold text-ink-muted"
       title={`推断的启动来源：${LAUNCH_SOURCE_LABEL[listener.launchSource]}。仅供参考，不参与启停权限判定`}
     >
       {LAUNCH_SOURCE_LABEL[listener.launchSource]}
@@ -208,7 +208,7 @@ function GroupToggle({
       title={`${label}。按进程名生效，同名进程一并归入${listener.groupOverridden ? '（当前分组由你指定）' : ''}`}
       onClick={() => onSetGroup(listener.processName, toMine ? 'mine' : 'background')}
       data-overridden={listener.groupOverridden || undefined}
-      className="pressable flex h-6 w-6 items-center justify-center rounded-[5px] border border-line-strong bg-card text-ink-faint hover:text-ink-strong"
+      className="pressable flex h-6 w-6 items-center justify-center rounded-control border border-line-strong bg-card text-ink-faint hover:text-ink-strong"
     >
       <Icon size={12} weight="bold" />
     </button>

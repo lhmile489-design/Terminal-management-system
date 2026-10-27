@@ -33,7 +33,7 @@ export function WatchedProcesses(): React.JSX.Element {
           {keywords.map((k) => (
             <span
               key={k}
-              className="flex items-center gap-1 rounded-[5px] border border-line-strong bg-raised py-0.5 pr-0.5 pl-2 font-mono text-[11px] text-ink-muted"
+              className="flex items-center gap-1 rounded-control border border-line-strong bg-raised py-0.5 pr-0.5 pl-2 font-mono text-[12px] text-ink-muted"
             >
               {k}
               <button
@@ -41,7 +41,7 @@ export function WatchedProcesses(): React.JSX.Element {
                 aria-label={`移除关键字 ${k}`}
                 title={`移除关键字 ${k}`}
                 onClick={() => void removeKeyword(k)}
-                className="pressable flex h-4 w-4 items-center justify-center rounded-[3px] text-ink-faint hover:bg-card hover:text-fault"
+                className="pressable flex h-4 w-4 items-center justify-center rounded-control text-ink-faint hover:bg-card hover:text-fault"
               >
                 <X size={9} weight="bold" />
               </button>
@@ -57,7 +57,7 @@ export function WatchedProcesses(): React.JSX.Element {
               onKeyDown={(e) => {
                 if (e.key === 'Enter') submit()
               }}
-              className="w-[132px] rounded-[5px] border border-line bg-card px-2 py-1 font-mono text-[11px] text-ink-strong outline-none focus:border-accent"
+              className="w-[132px] rounded-control border border-line bg-card px-2 py-1 font-mono text-[12px] text-ink-strong outline-none focus:border-accent"
             />
             <button
               type="button"
@@ -65,7 +65,7 @@ export function WatchedProcesses(): React.JSX.Element {
               title="添加关键字"
               onClick={submit}
               disabled={!draft.trim()}
-              className="pressable flex h-[26px] w-[26px] items-center justify-center rounded-[5px] border border-line-strong bg-card text-ink-muted hover:text-ink-strong disabled:cursor-not-allowed disabled:opacity-45"
+              className="pressable flex h-[26px] w-[26px] items-center justify-center rounded-control border border-line-strong bg-card text-ink-muted hover:text-ink-strong disabled:cursor-not-allowed disabled:opacity-45"
             >
               <Plus size={12} weight="bold" />
             </button>
@@ -88,25 +88,25 @@ export function WatchedProcesses(): React.JSX.Element {
                 <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                   <p className="flex min-w-0 items-baseline gap-2">
                     <span className="truncate text-[12.5px] text-ink-strong">{w.processName}</span>
-                    <span className="shrink-0 rounded-[4px] bg-raised px-1.5 font-mono text-[10px] text-ink-muted">
+                    <span className="shrink-0 rounded-pill bg-raised px-1.5 font-mono text-[12px] text-ink-muted">
                       {w.keyword}
                     </span>
                   </p>
                   <p
-                    className="truncate font-mono text-[10.5px] text-ink-faint"
+                    className="truncate font-mono text-[12px] text-ink-faint"
                     title={w.commandLine ?? ''}
                   >
                     {w.commandLine ?? '命令行不可读'}
                   </p>
                 </div>
-                <span className="shrink-0 font-mono text-[11px] text-ink-muted">PID {w.pid}</span>
-                <span className="w-[52px] shrink-0 text-right font-mono text-[11px] text-ink-muted">
+                <span className="shrink-0 font-mono text-[12px] text-ink-muted">PID {w.pid}</span>
+                <span className="w-[52px] shrink-0 text-right font-mono text-[12px] text-ink-muted">
                   {w.cpu === null ? '—' : `${w.cpu.toFixed(1)}%`}
                 </span>
-                <span className="w-[64px] shrink-0 text-right font-mono text-[11px] text-ink-muted">
+                <span className="w-[64px] shrink-0 text-right font-mono text-[12px] text-ink-muted">
                   {formatBytes(w.memory)}
                 </span>
-                <span className="w-[60px] shrink-0 text-right font-mono text-[11px] text-ink-muted">
+                <span className="w-[60px] shrink-0 text-right font-mono text-[12px] text-ink-muted">
                   {formatUptime(w.startedAt)}
                 </span>
               </li>

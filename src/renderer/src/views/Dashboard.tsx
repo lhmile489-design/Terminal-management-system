@@ -176,7 +176,7 @@ export function Dashboard({
             type="button"
             aria-expanded={showBackground}
             onClick={() => setShowBackground((v) => !v)}
-            className="pressable flex items-center gap-1 rounded-[5px] border border-line bg-raised/50 px-1.5 py-0.5 font-mono text-[10px] text-ink-muted hover:border-line-strong hover:text-ink-strong"
+            className="pressable flex items-center gap-1 rounded-control border border-line bg-raised/50 px-1.5 py-0.5 font-mono text-[12px] text-ink-muted hover:border-line-strong hover:text-ink-strong"
           >
             <CaretRight
               size={9}

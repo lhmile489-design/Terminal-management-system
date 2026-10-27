@@ -37,11 +37,11 @@ export function DiscoveredListeners({
                 <span className="truncate text-[13px] font-semibold text-ink-strong">
                   {u.guessedName}
                 </span>
-                <span className="shrink-0 rounded-[4px] border border-line-strong px-1.5 font-mono text-[10px] font-bold text-accent">
+                <span className="shrink-0 rounded-pill border border-line-strong px-1.5 font-mono text-[12px] font-bold text-accent">
                   :{u.port}
                 </span>
               </p>
-              <p className="truncate font-mono text-[11px] text-ink-muted">
+              <p className="truncate font-mono text-[12px] text-ink-muted">
                 {u.processName} · PID {u.pid} · 已运行 {formatUptime(u.startedAt)}
                 {u.cwd ? ` · ${ellipsisPath(u.cwd, 34)}` : ''}
               </p>
@@ -92,7 +92,7 @@ function Action({
       onClick={onClick}
       disabled={disabled}
       title={hint ?? label}
-      className={`pressable flex items-center gap-1.5 rounded-[6px] px-2.5 py-1.5 text-[12px] ${
+      className={`pressable flex items-center gap-1.5 rounded-control px-2.5 py-1.5 text-[12px] ${
         primary
           ? 'btn-primary'
           : 'border border-line-strong bg-card text-ink-muted hover:text-ink-strong disabled:cursor-not-allowed disabled:border-line disabled:text-ink-faint'

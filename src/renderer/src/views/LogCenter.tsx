@@ -100,7 +100,7 @@ export function LogCenter({ onJump }: { onJump?: (sessionId: string) => void } =
               aria-label="按会话筛选"
               value={sessionId}
               onChange={(e) => setSessionId(e.target.value)}
-              className="rounded-[6px] border border-line-strong bg-card px-2 py-1.5 text-[12px] text-ink"
+              className="rounded-control border border-line-strong bg-card px-2 py-1.5 text-[12px] text-ink"
             >
               <option value="all">全部会话（{result.sources.length}）</option>
               {result.sources.map((s) => (
@@ -111,7 +111,7 @@ export function LogCenter({ onJump }: { onJump?: (sessionId: string) => void } =
             </select>
           </label>
 
-          <div className="flex min-w-[220px] flex-1 items-center gap-2 rounded-[6px] border border-line-strong bg-card px-2.5 py-1.5">
+          <div className="flex min-w-[220px] flex-1 items-center gap-2 rounded-control border border-line-strong bg-card px-2.5 py-1.5">
             <MagnifyingGlass size={13} weight="bold" className="shrink-0 text-ink-faint" />
             <input
               type="search"
@@ -137,7 +137,7 @@ export function LogCenter({ onJump }: { onJump?: (sessionId: string) => void } =
           <button
             type="button"
             onClick={() => void load()}
-            className="pressable flex items-center gap-1.5 rounded-[6px] border border-line-strong bg-card px-2.5 py-1.5 text-[12px] text-ink-muted hover:text-ink-strong"
+            className="pressable flex items-center gap-1.5 rounded-control border border-line-strong bg-card px-2.5 py-1.5 text-[12px] text-ink-muted hover:text-ink-strong"
           >
             <ArrowsClockwise size={13} weight="bold" />
             刷新
@@ -148,7 +148,7 @@ export function LogCenter({ onJump }: { onJump?: (sessionId: string) => void } =
               window.mile.log.clear()
               void load()
             }}
-            className="pressable flex items-center gap-1.5 rounded-[6px] border border-line-strong bg-card px-2.5 py-1.5 text-[12px] text-ink-muted hover:text-ink-strong"
+            className="pressable flex items-center gap-1.5 rounded-control border border-line-strong bg-card px-2.5 py-1.5 text-[12px] text-ink-muted hover:text-ink-strong"
           >
             <Broom size={13} weight="bold" />
             清空日志
@@ -176,7 +176,7 @@ export function LogCenter({ onJump }: { onJump?: (sessionId: string) => void } =
               aria-pressed={follow}
               onClick={() => setFollow(true)}
               title={follow ? '正在跟随最新输出' : '点击回到底部并继续跟随'}
-              className={`pressable rounded-[6px] border px-2 py-1 text-[12px] font-semibold ${
+              className={`pressable rounded-control border px-2 py-1 text-[12px] font-semibold ${
                 follow
                   ? 'border-line-strong bg-raised text-ink-strong'
                   : 'border-line-strong bg-card text-ink-muted hover:text-ink-strong'
@@ -206,7 +206,7 @@ export function LogCenter({ onJump }: { onJump?: (sessionId: string) => void } =
                 <li
                   key={line.seq}
                   data-session-id={line.sessionId}
-                  className="grid grid-cols-[auto_auto_minmax(0,9rem)_1fr] items-baseline gap-x-2.5 rounded-[4px] px-1.5 py-0.5 hover:bg-raised"
+                  className="grid grid-cols-[auto_auto_minmax(0,9rem)_1fr] items-baseline gap-x-2.5 rounded-control px-1.5 py-0.5 hover:bg-raised"
                 >
                   <time
                     dateTime={new Date(line.ts).toISOString()}

@@ -51,7 +51,7 @@ export function PortDialog({
             aria-label="关闭"
             title="关闭"
             onClick={onClose}
-            className="pressable flex h-7 w-7 items-center justify-center rounded-[6px] text-ink-faint hover:bg-raised hover:text-ink"
+            className="pressable flex h-7 w-7 items-center justify-center rounded-control text-ink-faint hover:bg-raised hover:text-ink"
           >
             <X size={14} weight="bold" />
           </button>
@@ -77,7 +77,7 @@ export function PortDialog({
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && valid) onSubmit?.(port)
                 }}
-                className="rounded-[6px] border border-line-strong bg-card px-2.5 py-1.5 font-mono text-[12.5px] text-ink-strong outline-none focus:border-info"
+                className="rounded-control border border-line-strong bg-card px-2.5 py-1.5 font-mono text-[12.5px] text-ink-strong outline-none focus:border-info"
               />
             </label>
           ) : (
@@ -96,7 +96,7 @@ export function PortDialog({
           <button
             type="button"
             onClick={onClose}
-            className="pressable rounded-[6px] border border-line-strong bg-card px-3 py-1.5 text-[12px] text-ink-muted hover:text-ink-strong"
+            className="pressable rounded-control border border-line-strong bg-card px-3 py-1.5 text-[12px] text-ink-muted hover:text-ink-strong"
           >
             {isNext ? '取消' : '关闭'}
           </button>

@@ -145,7 +145,7 @@ function GoalButton({
       onClick={onClick}
       disabled={disabled}
       title={`${def.description}\n${cmdHint}`}
-      className="pressable group flex items-center gap-1.5 rounded-[5px] border border-line bg-raised/40 px-2.5 py-1.5 text-[11px] text-ink-muted transition-all duration-150 hover:border-line-strong hover:bg-raised hover:text-ink-strong disabled:cursor-not-allowed disabled:opacity-30"
+      className="pressable group flex items-center gap-1.5 rounded-control border border-line bg-raised/40 px-2.5 py-1.5 text-[12px] text-ink-muted transition-all duration-150 hover:border-line-strong hover:bg-raised hover:text-ink-strong disabled:cursor-not-allowed disabled:opacity-30"
     >
       <span className="shrink-0 transition-colors duration-150 group-hover:text-accent"><IconCmp size={12} weight="regular" aria-hidden /></span>
       {def.label}
@@ -176,7 +176,7 @@ function PackageButton({
       onClick={onClick}
       disabled={disabled}
       title={cmdHint}
-      className={`pressable flex items-center gap-1.5 rounded-[5px] border px-2.5 py-1.5 text-[11px] font-medium transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-30 ${cls}`}
+      className={`pressable flex items-center gap-1.5 rounded-control border px-2.5 py-1.5 text-[12px] font-medium transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-30 ${cls}`}
     >
       <Package size={11} weight="bold" className="shrink-0" aria-hidden />
       {displayLabel}
@@ -206,7 +206,7 @@ function CtrlButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`pressable flex h-6 items-center gap-1 rounded-[5px] px-2.5 text-[11px] font-medium transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-40 ${style}`}
+      className={`pressable flex h-6 items-center gap-1 rounded-control px-2.5 text-[12px] font-medium transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-40 ${style}`}
     >
       {icon}
       {label}
@@ -224,7 +224,7 @@ function SectionLabel({
 }): React.JSX.Element {
   return (
     <div className="mb-1.5 flex items-center gap-1.5">
-      <span className="font-mono text-[9px] font-bold uppercase tracking-[0.18em] text-ink-faint/60">
+      <span className="font-mono text-[12px] font-bold uppercase tracking-[0.18em] text-ink-faint">
         {children}
       </span>
       {badge}
@@ -359,7 +359,7 @@ export function ConsolePanel({ entry }: { entry: LaunchEntry }): React.JSX.Eleme
         <div className="flex min-w-0 items-start gap-3">
           {/* 图标 */}
           <div
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[7px] border"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-control border"
             style={{
               background: `color-mix(in srgb, var(--signal-${live ? 'live' : 'accent'}) 12%, var(--surface-raised))`,
               borderColor: `color-mix(in srgb, var(--signal-${live ? 'live' : 'accent'}) 30%, var(--stroke-base))`
@@ -375,7 +375,7 @@ export function ConsolePanel({ entry }: { entry: LaunchEntry }): React.JSX.Eleme
             <h2 className="truncate text-[13px] font-semibold text-ink-strong leading-tight">
               {entry.name}
             </h2>
-            <p className="mt-0.5 font-mono text-[10px] text-ink-faint/70">
+            <p className="mt-0.5 font-mono text-[12px] text-ink-faint">
               {FRAMEWORK_LABEL[entry.framework]}
             </p>
           </div>
@@ -386,7 +386,7 @@ export function ConsolePanel({ entry }: { entry: LaunchEntry }): React.JSX.Eleme
 
         {/* 启动方式选择器 */}
         <div className="mt-2.5 flex items-center gap-2">
-          <span className="shrink-0 font-mono text-[9px] text-ink-faint/50 uppercase tracking-[0.12em]">
+          <span className="shrink-0 font-mono text-[12px] text-ink-faint uppercase tracking-[0.12em]">
             启动方式
           </span>
           <div className="relative flex-1">
@@ -395,17 +395,17 @@ export function ConsolePanel({ entry }: { entry: LaunchEntry }): React.JSX.Eleme
               onChange={(e) => { void handleModeChange(e.target.value as SpringBootLaunchMode) }}
               disabled={live || busy}
               title={live ? '请先停止服务再切换启动方式' : '切换启动方式无需重启应用'}
-              className="w-full appearance-none rounded-[5px] border border-line bg-raised/40 py-1 pl-2.5 pr-6 font-mono text-[11px] text-ink-muted transition-colors hover:border-line-strong hover:text-ink-strong disabled:cursor-not-allowed disabled:opacity-50"
+              className="w-full appearance-none rounded-control border border-line bg-raised/40 py-1 pl-2.5 pr-6 font-mono text-[12px] text-ink-muted transition-colors hover:border-line-strong hover:text-ink-strong disabled:cursor-not-allowed disabled:opacity-50"
             >
               <option value="" disabled>未设置（仅登记）</option>
               {springBootModes.map((m) => (
                 <option key={m} value={m}>{SPRING_BOOT_LAUNCH_MODE_LABEL[m]}</option>
               ))}
             </select>
-            <CaretDown size={9} weight="bold" className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-ink-faint/50" aria-hidden />
+            <CaretDown size={9} weight="bold" className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-ink-faint" aria-hidden />
           </div>
           {live && (
-            <span className="shrink-0 font-mono text-[9px] text-warn/70">运行中·停止后可切换</span>
+            <span className="shrink-0 font-mono text-[12px] text-warn">运行中·停止后可切换</span>
           )}
         </div>
 
@@ -423,7 +423,7 @@ export function ConsolePanel({ entry }: { entry: LaunchEntry }): React.JSX.Eleme
             disabled={busy || entry.registerOnly || !live}
           />
           {sessionId && (
-            <span className="ml-auto font-mono text-[9.5px] text-ink-faint/40 select-none">
+            <span className="ml-auto font-mono text-[12px] text-ink-faint select-none">
               #{sessionId.slice(0, 6)}
             </span>
           )}
@@ -434,7 +434,7 @@ export function ConsolePanel({ entry }: { entry: LaunchEntry }): React.JSX.Eleme
       {showEnvWarning && entryGroup && (envLevel === 'sandbox' || envLevel === 'prod') && (
         <div
           className={[
-            'mx-4 mt-2 shrink-0 rounded-[5px] border px-3 py-2.5',
+            'mx-4 mt-2 shrink-0 rounded-control border px-3 py-2.5',
             envLevel === 'prod'
               ? 'border-fault/30 bg-fault/8'
               : 'border-warn/30 bg-warn/8'
@@ -454,7 +454,7 @@ export function ConsolePanel({ entry }: { entry: LaunchEntry }): React.JSX.Eleme
                 }
               </p>
               {envLevel === 'prod' && (
-                <p className="mt-0.5 text-[11px] text-fault/80">生产环境启动将影响真实业务数据，请确认操作。</p>
+                <p className="mt-0.5 text-[12px] text-fault">生产环境启动将影响真实业务数据，请确认操作。</p>
               )}
             </div>
           </div>
@@ -463,7 +463,7 @@ export function ConsolePanel({ entry }: { entry: LaunchEntry }): React.JSX.Eleme
               type="button"
               onClick={() => void handleStart()}
               className={[
-                'pressable flex items-center gap-1 rounded-[4px] border px-3 py-1 text-[11.5px] font-medium transition-colors',
+                'pressable flex items-center gap-1 rounded-control border px-3 py-1 text-[12px] font-medium transition-colors',
                 envLevel === 'prod'
                   ? 'border-fault/30 bg-fault/10 text-fault hover:bg-fault/18'
                   : 'border-warn/30 bg-warn/10 text-warn hover:bg-warn/18'
@@ -475,7 +475,7 @@ export function ConsolePanel({ entry }: { entry: LaunchEntry }): React.JSX.Eleme
             <button
               type="button"
               onClick={() => setShowEnvWarning(false)}
-              className="pressable flex items-center gap-1 rounded-[4px] border border-line bg-raised/40 px-3 py-1 text-[11.5px] text-ink-muted transition-colors hover:bg-raised hover:text-ink-strong"
+              className="pressable flex items-center gap-1 rounded-control border border-line bg-raised/40 px-3 py-1 text-[12px] text-ink-muted transition-colors hover:bg-raised hover:text-ink-strong"
             >
               取消
             </button>
@@ -489,11 +489,11 @@ export function ConsolePanel({ entry }: { entry: LaunchEntry }): React.JSX.Eleme
           {/* 错误文本 */}
           <div className="flex items-start gap-2 rounded-t-[5px] border border-b-0 border-fault/25 bg-fault/7 px-2.5 py-2">
             <Warning size={11} weight="bold" className="mt-px shrink-0 text-fault" aria-hidden />
-            <p className="flex-1 text-[11px] leading-relaxed text-fault">{error}</p>
+            <p className="flex-1 text-[12px] leading-relaxed text-fault">{error}</p>
             <button
               type="button"
               onClick={clearError}
-              className="shrink-0 text-[10px] text-fault/50 hover:text-fault transition-colors"
+              className="shrink-0 text-[12px] text-fault hover:text-fault transition-colors"
               aria-label="关闭错误"
             >
               ✕
@@ -503,8 +503,8 @@ export function ConsolePanel({ entry }: { entry: LaunchEntry }): React.JSX.Eleme
           {suggestions.length > 0 && (
             <div className="rounded-b-[5px] border border-t border-fault/15 bg-raised/60 px-2.5 py-2">
               <div className="mb-1.5 flex items-center gap-1">
-                <LightbulbFilament size={10} weight="bold" className="text-accent/70" aria-hidden />
-                <span className="font-mono text-[9px] font-bold uppercase tracking-[0.12em] text-ink-faint/60">修复建议</span>
+                <LightbulbFilament size={10} weight="bold" className="text-accent" aria-hidden />
+                <span className="font-mono text-[12px] font-bold uppercase tracking-[0.12em] text-ink-faint">修复建议</span>
               </div>
               <div className="flex flex-col gap-1">
                 {suggestions.map((s, i) => (
@@ -512,20 +512,20 @@ export function ConsolePanel({ entry }: { entry: LaunchEntry }): React.JSX.Eleme
                     key={i}
                     type="button"
                     onClick={() => void handleSuggestion(s)}
-                    className="pressable-flat flex min-w-0 items-center gap-2 rounded-[4px] px-2 py-1.5 text-left transition-colors hover:bg-raised"
+                    className="pressable-flat flex min-w-0 items-center gap-2 rounded-control px-2 py-1.5 text-left transition-colors hover:bg-raised"
                   >
-                    <span className="shrink-0 text-accent/70">
+                    <span className="shrink-0 text-accent">
                       {s.action === 'switch-mode' ? <ArrowRight size={10} weight="bold" aria-hidden /> : <Copy size={10} weight="bold" aria-hidden />}
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block text-[11px] font-medium text-ink-strong">{s.label}</span>
-                      <span className="block text-[10px] text-ink-faint/70 leading-tight mt-0.5">{s.hint}</span>
+                      <span className="block text-[12px] font-medium text-ink-strong">{s.label}</span>
+                      <span className="block text-[12px] text-ink-faint leading-tight mt-0.5">{s.hint}</span>
                     </span>
                   </button>
                 ))}
               </div>
               {copiedHint && (
-                <p className="mt-1.5 text-[10px] text-live/80">✓ 已复制：{copiedHint}</p>
+                <p className="mt-1.5 text-[12px] text-live">✓ 已复制：{copiedHint}</p>
               )}
             </div>
           )}
@@ -546,7 +546,7 @@ export function ConsolePanel({ entry }: { entry: LaunchEntry }): React.JSX.Eleme
           <SectionLabel
             badge={
               tool !== 'unknown' && (
-                <span className="rounded-[3px] bg-raised px-1.5 font-mono text-[8.5px] text-ink-faint/70">
+                <span className="rounded-pill bg-raised px-1.5 font-mono text-[12px] text-ink-faint">
                   {tool === 'maven' ? 'Maven' : 'Gradle'}
                 </span>
               )
@@ -564,7 +564,7 @@ export function ConsolePanel({ entry }: { entry: LaunchEntry }): React.JSX.Eleme
             <SectionLabel
               badge={
                 profiles.length > 0 && (
-                  <span className="rounded-[3px] bg-raised px-1.5 font-mono text-[8.5px] text-ink-faint/70">
+                  <span className="rounded-pill bg-raised px-1.5 font-mono text-[12px] text-ink-faint">
                     {profiles.length} 个 profile
                   </span>
                 )
@@ -599,10 +599,10 @@ export function ConsolePanel({ entry }: { entry: LaunchEntry }): React.JSX.Eleme
 
       {/* ── 打包完成操作横幅（当 runtime.lastBuiltJar 非空时出现）── */}
       {runtime.lastBuiltJar && (
-        <div className="mx-4 mt-2 shrink-0 rounded-[5px] border border-live/25 bg-live/7 px-3 py-2">
+        <div className="mx-4 mt-2 shrink-0 rounded-control border border-live/25 bg-live/7 px-3 py-2">
           <div className="flex items-center gap-2">
             <CheckCircle size={11} weight="bold" className="shrink-0 text-live" aria-hidden />
-            <span className="min-w-0 flex-1 truncate font-mono text-[10.5px] text-live/90">
+            <span className="min-w-0 flex-1 truncate font-mono text-[12px] text-live">
               打包完成：{runtime.lastBuiltJar.replace('target/', '')}
             </span>
           </div>
@@ -610,7 +610,7 @@ export function ConsolePanel({ entry }: { entry: LaunchEntry }): React.JSX.Eleme
             <button
               type="button"
               onClick={() => void window.mile.entry.revealLastJar(entry.id)}
-              className="pressable flex items-center gap-1 rounded-[4px] border border-live/25 bg-live/8 px-2 py-1 text-[10.5px] text-live/90 transition-colors hover:bg-live/15"
+              className="pressable flex items-center gap-1 rounded-control border border-live/25 bg-live/8 px-2 py-1 text-[12px] text-live transition-colors hover:bg-live/15"
             >
               <FolderOpen size={10} weight="bold" aria-hidden />
               在资源管理器中打开
@@ -624,7 +624,7 @@ export function ConsolePanel({ entry }: { entry: LaunchEntry }): React.JSX.Eleme
                 void handleStart()
               })()}
               title={live ? '请先停止服务再切换' : '切换到此 jar 并立即启动'}
-              className="pressable flex items-center gap-1 rounded-[4px] border border-live/25 bg-live/8 px-2 py-1 text-[10.5px] text-live/90 transition-colors hover:bg-live/15 disabled:cursor-not-allowed disabled:opacity-40"
+              className="pressable flex items-center gap-1 rounded-control border border-live/25 bg-live/8 px-2 py-1 text-[12px] text-live transition-colors hover:bg-live/15 disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Rocket size={10} weight="bold" aria-hidden />
               切换到此 jar 并启动
@@ -639,7 +639,7 @@ export function ConsolePanel({ entry }: { entry: LaunchEntry }): React.JSX.Eleme
           <SectionLabel
             badge={
               jars.length > 0 && (
-                <span className="rounded-[3px] bg-raised px-1.5 font-mono text-[8.5px] text-ink-faint/70">
+                <span className="rounded-pill bg-raised px-1.5 font-mono text-[12px] text-ink-faint">
                   {jars.length} 个 jar
                 </span>
               )
@@ -650,13 +650,13 @@ export function ConsolePanel({ entry }: { entry: LaunchEntry }): React.JSX.Eleme
 
           {/* 当前已选 */}
           {entry.jarPath ? (
-            <div className="mb-2 flex items-center gap-1.5 rounded-[4px] bg-raised/50 px-2 py-1.5">
-              <FileJpg size={11} weight="regular" className="shrink-0 text-accent/70" aria-hidden />
-              <span className="min-w-0 flex-1 truncate font-mono text-[10px] text-ink-muted">{entry.jarPath}</span>
-              <span className="shrink-0 rounded-[3px] bg-accent/12 px-1 font-mono text-[8.5px] text-accent">当前</span>
+            <div className="mb-2 flex items-center gap-1.5 rounded-control bg-raised/50 px-2 py-1.5">
+              <FileJpg size={11} weight="regular" className="shrink-0 text-accent" aria-hidden />
+              <span className="min-w-0 flex-1 truncate font-mono text-[12px] text-ink-muted">{entry.jarPath}</span>
+              <span className="shrink-0 rounded-pill bg-accent/12 px-1 font-mono text-[12px] text-accent">当前</span>
             </div>
           ) : (
-            <p className="mb-2 text-[11px] text-ink-faint/60">未配置 jar 路径，请先 Package 打包后从下方选择</p>
+            <p className="mb-2 text-[12px] text-ink-faint">未配置 jar 路径，请先 Package 打包后从下方选择</p>
           )}
 
           {/* 扫描到的 jar 列表 */}
@@ -670,7 +670,7 @@ export function ConsolePanel({ entry }: { entry: LaunchEntry }): React.JSX.Eleme
                   onClick={() => void edit(entry.id, { jarPath: j, launchMode: 'jar' })}
                   title={live ? '请先停止再切换 jar 文件' : `使用 ${j}`}
                   className={[
-                    'pressable-flat flex items-center gap-2 rounded-[4px] border px-2 py-1.5 text-left text-[11px] transition-colors',
+                    'pressable-flat flex items-center gap-2 rounded-control border px-2 py-1.5 text-left text-[12px] transition-colors',
                     entry.jarPath === j
                       ? 'border-accent/25 bg-accent/8 text-accent'
                       : 'border-line bg-raised/30 text-ink-muted hover:border-line-strong hover:bg-raised hover:text-ink-strong',
@@ -678,17 +678,17 @@ export function ConsolePanel({ entry }: { entry: LaunchEntry }): React.JSX.Eleme
                   ].join(' ')}
                 >
                   <FileJpg size={11} weight="regular" className="shrink-0" aria-hidden />
-                  <span className="min-w-0 flex-1 truncate font-mono text-[10px]">
+                  <span className="min-w-0 flex-1 truncate font-mono text-[12px]">
                     {j.replace('target/', '')}
                   </span>
                   {entry.jarPath !== j && (
-                    <span className="shrink-0 text-[9px] text-ink-faint/50">使用</span>
+                    <span className="shrink-0 text-[12px] text-ink-faint">使用</span>
                   )}
                 </button>
               ))}
             </div>
           ) : (
-            <p className="text-[10.5px] text-ink-faint/50">
+            <p className="text-[12px] text-ink-faint">
               target/ 目录为空，先执行 Package 打包生成 jar
             </p>
           )}
@@ -698,12 +698,12 @@ export function ConsolePanel({ entry }: { entry: LaunchEntry }): React.JSX.Eleme
       {/* ── 终端输出 ── */}
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <div className="flex shrink-0 items-center gap-2 border-b border-line px-4 py-1.5">
-          <TerminalIcon size={10} weight="bold" className="text-ink-faint/50" aria-hidden />
-          <span className="font-mono text-[9px] font-bold uppercase tracking-[0.18em] text-ink-faint/60">
+          <TerminalIcon size={10} weight="bold" className="text-ink-faint" aria-hidden />
+          <span className="font-mono text-[12px] font-bold uppercase tracking-[0.18em] text-ink-faint">
             输出
           </span>
           {sessionId && (
-            <span className="ml-auto font-mono text-[9px] text-ink-faint/40">
+            <span className="ml-auto font-mono text-[12px] text-ink-faint">
               {live ? (
                 <span className="inline-flex items-center gap-1">
                   <Circle size={6} weight="fill" className="text-live" aria-hidden />
@@ -718,7 +718,7 @@ export function ConsolePanel({ entry }: { entry: LaunchEntry }): React.JSX.Eleme
             <TerminalView sessionId={sessionId} />
           ) : (
             <div className="flex h-full items-center justify-center">
-              <p className="font-mono text-[10.5px] text-ink-faint/40">等待会话启动…</p>
+              <p className="font-mono text-[12px] text-ink-faint">等待会话启动…</p>
             </div>
           )}
         </div>

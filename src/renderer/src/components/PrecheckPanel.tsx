@@ -53,7 +53,7 @@ export function PrecheckPanel({
               className="flex items-start gap-3 border-b border-line px-4 py-2.5 last:border-b-0"
             >
               <span
-                className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-[4px] ${TONE_CLASS[meta.tone]}`}
+                className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-control ${TONE_CLASS[meta.tone]}`}
                 aria-hidden
               >
                 <IconCmp size={13} weight="bold" />
@@ -65,7 +65,7 @@ export function PrecheckPanel({
                   <StatusPill tone={meta.tone} label={meta.label} dot={false} />
                 </p>
                 {item.detail && (
-                  <p className="font-mono text-[11px] break-all text-ink-faint">{item.detail}</p>
+                  <p className="font-mono text-[12px] break-all text-ink-faint">{item.detail}</p>
                 )}
               </div>
 
@@ -74,7 +74,7 @@ export function PrecheckPanel({
                   type="button"
                   onClick={() => onFix(item.fix!.action, item.fix!.suggestedPort)}
                   className={[
-                    'pressable shrink-0 flex items-center gap-1.5 rounded-[6px] border px-2.5 py-1 text-[11.5px] font-medium transition-colors duration-150',
+                    'pressable shrink-0 flex items-center gap-1.5 rounded-control border px-2.5 py-1 text-[12px] font-medium transition-colors duration-150',
                     isSwitchPort
                       ? 'border-accent/40 bg-accent/8 text-accent hover:bg-accent/14'
                       : 'border-line bg-card text-ink-muted hover:border-line-strong hover:text-ink-strong'
