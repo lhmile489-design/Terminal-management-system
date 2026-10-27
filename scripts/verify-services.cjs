@@ -318,6 +318,40 @@ app.whenReady().then(async () => {
   check('最多显示 5 个', ops.length <= 5, `${ops.length} 个`)
   check('列表项左侧不再有图标', ops.every((o) => !o.img))
 
+  console.log('\n=== 运行状态筛选 ===')
+  await js(`document.activeElement&&document.activeElement.blur();true`)
+  await key('Escape'); await key('Escape'); await sleep(200)
+  await key('1', { ctrlKey: true }); await sleep(300)
+  const pickStatus = (v) => js(`(()=>{const s=document.querySelector('select[aria-label="运行状态"]');if(!s)return false;
+    const set=Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set;set.call(s,${JSON.stringify(v)});
+    s.dispatchEvent(new Event('change',{bubbles:true}));return true})()`)
+  check('工具条有运行状态筛选', await pickStatus('all'))
+  const allRows = (await visibleRows()).length
+  await pickStatus('running'); await sleep(300)
+  const runRows = (await visibleRows()).length
+  check('筛「运行中」后行数减少', runRows < allRows, `${allRows} → ${runRows}`)
+  const empty = await js(`!!document.querySelector('.svc-empty-row')&&[...document.querySelectorAll('main button')].some(b=>b.textContent.trim()==='清除筛选')`)
+  check('筛空时给提示和「清除筛选」，不是空白', runRows > 0 || empty)
+  await pickStatus('stopped'); await sleep(300)
+  const stopRows = await visibleRows()
+  check('筛「已停止」只剩未运行条目', stopRows.length > 0 && stopRows.length <= allRows, stopRows.join(','))
+  await pickStatus('all'); await sleep(300)
+  check('切回「全部状态」行数复原', (await visibleRows()).length === allRows)
+
+  console.log('\n=== 添加对话框 ===')
+  await press('main', '添加服务')
+  check('打开添加对话框', await waitFor(`!!document.querySelector('.add-dialog[role="dialog"]')`, 2000))
+  const addDlg = await js(`(()=>{const d=document.querySelector('.add-dialog');const s=getComputedStyle(d);const sc=getComputedStyle(document.querySelector('.add-scrim'));
+    return {shadow:s.boxShadow,radius:s.borderRadius,blur:sc.backdropFilter,focusIn:d.contains(document.activeElement),drop:!!d.querySelector('.add-drop')}})()`)
+  check('对话框有浮层阴影', !!addDlg.shadow && addDlg.shadow !== 'none', addDlg.shadow.slice(0, 60))
+  check('遮罩模糊', /blur/.test(addDlg.blur || ''), addDlg.blur)
+  check('打开后焦点在对话框内', addDlg.focusIn)
+  check('未选目录时显示选择目录的大按钮', addDlg.drop)
+  const addBtn = await js(`(()=>{const b=[...document.querySelectorAll('.add-dialog button')].find(x=>x.textContent.trim()==='添加服务');return b?b.disabled:null})()`)
+  check('未选目录时「添加服务」禁用', addBtn === true, String(addBtn))
+  await key('Escape'); await sleep(300)
+  check('Esc 关闭对话框', !(await js(`!!document.querySelector('.add-dialog')`)))
+
   console.log(`\n结果：${pass} 通过，${fail} 失败`)
   try { rmSync(SANDBOX, { recursive: true, force: true }) } catch { console.log(`  (沙箱残留，交由系统清理：${SANDBOX})`) }
   app.exit(fail === 0 ? 0 : 1)

@@ -83,31 +83,34 @@ app.whenReady().then(async () => {
     }
 
     console.log('\n=== 1. 从 DOM 走完整添加流程 ===')
-    check('切到启动台', await click('启动台'))
+    // UI-REFACTOR 阶段 4：启动台并入服务页，添加对话框改版（选目录是一个大按钮，提交按钮在对话框底部）
+    check('切到服务页', await click('服务'))
+    await waitFor(`(document.querySelector('main h1')||{}).textContent==='服务'`)
     check('打开添加服务对话框', await click('添加服务'))
-    check('对话框已挂载', await waitFor(`!!document.querySelector('[role="dialog"]')`))
-    check('触发目录选择', await click('选择目录'))
+    check('对话框已挂载', await waitFor(`!!document.querySelector('.add-dialog[role="dialog"]')`))
+    check('触发目录选择', await js(`(()=>{const b=document.querySelector('.add-dialog .add-drop');if(!b)return false;b.click();return true})()`))
     check(
       '识别结果已回填',
       await waitFor(
         `(document.querySelector('[role="dialog"]')||{textContent:''}).textContent.includes('识别结果')`
       )
     )
-    check('提交', await click('添加到启动台'))
-    check('对话框已关闭', await waitFor(`!document.querySelector('[role="dialog"]')`))
+    // 提交按钮只在对话框底部找，工具条上也有一个「添加服务」
+    check('提交', await js(`(()=>{const b=[...document.querySelectorAll('.add-dialog .add-foot button')].find(x=>x.textContent.trim()==='添加服务');if(!b||b.disabled)return false;b.click();return true})()`))
+    check('对话框已关闭', await waitFor(`!document.querySelector('.add-dialog')`))
 
     console.log('\n=== 2. 列表里只有一条 ===')
     // 断言带计数，空选择器不能静默通过
-    const cards = await js(`document.querySelectorAll('article').length`)
-    check('启动台只有一张卡片', cards === 1, `cards=${cards}`)
+    await waitFor(`document.querySelectorAll('.svc-row').length > 0`)
+    const cards = await js(`document.querySelectorAll('.svc-row').length`)
+    check('服务页只有一行', cards === 1, `rows=${cards}`)
 
     const head = await js(`(() => {
-      const h = [...document.querySelectorAll('h2,h3')]
-        .map((x) => (x.textContent || '').trim())
-        .find((t) => t.includes('服务'))
-      return h || ''
+      const b = [...document.querySelectorAll('[role="radiogroup"][aria-label="类型"] [role="radio"]')]
+        .find((x) => (x.textContent || '').trim().startsWith('全部'))
+      return b ? b.textContent.trim() : ''
     })()`)
-    check('分区计数为 1', /服务\s*1$/.test(head), `head=${JSON.stringify(head)}`)
+    check('「全部」计数为 1', /^全部\s*1$/.test(head), `head=${JSON.stringify(head)}`)
 
     const storeIds = await js(`window.mile.entry.list().then((l) => l.map((e) => e.id).join(','))`)
     const ids = storeIds ? storeIds.split(',') : []
@@ -115,7 +118,7 @@ app.whenReady().then(async () => {
 
     const disk = JSON.parse(readFileSync(CONFIG, 'utf8')).entries
     check('磁盘上只有一条', disk.length === 1, `disk=${disk.length}`)
-    check('卡片数与磁盘条数一致', cards === disk.length, `${cards} vs ${disk.length}`)
+    check('行数与磁盘条数一致', cards === disk.length, `${cards} vs ${disk.length}`)
   } catch (err) {
     console.log('HARNESS ERROR', err)
     fail++

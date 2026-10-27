@@ -150,3 +150,19 @@ export function openOutput(entry: LaunchEntry, runtime: EntryRuntime | undefined
     void window.mile.entry.outputDir(entry.id).then((dir) => dir && window.mile.shell.openPath(dir))
   }
 }
+
+/**
+ * 运行状态筛选，补回旧启动台的「运行中 / 已停止 / 异常」。
+ * 任务的成功、已取消算「已停止」，失败算「异常」；启动中、停止中算「运行中」。
+ */
+export type StatusFilter = 'all' | 'running' | 'stopped' | 'fault'
+
+const FAULT_STATUSES = new Set(['crashed', 'failed', 'blocked'])
+
+export function matchesStatus(runtime: EntryRuntime | undefined, f: StatusFilter): boolean {
+  if (f === 'all') return true
+  const s = runtime?.status ?? 'idle'
+  if (f === 'running') return isLiveStatus(s)
+  if (f === 'fault') return FAULT_STATUSES.has(s)
+  return !isLiveStatus(s) && !FAULT_STATUSES.has(s)
+}

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { EntryKind, EntryRuntime, LaunchEntry, NewLaunchEntry, ProjectGroup } from '@shared/types'
 import { GROUP_ENV_LABEL } from '@shared/types'
-import { Button, Segmented, TextInput, SplitPane, type MenuItem } from '../components/ui'
+import { Button, Segmented, Select, TextInput, SplitPane, type MenuItem } from '../components/ui'
 import { GroupTile, type RowActions } from '../components/services/GroupTile'
 import { EntryDetail, effectiveTab, hasBuildTab, type DetailTab } from '../components/services/EntryDetail'
 import { hasOpenOverlay } from '../lib/overlay'
@@ -22,7 +22,9 @@ import {
   startEntry,
   startGroup,
   stopGroup,
-  type ClassFilter
+  matchesStatus,
+  type ClassFilter,
+  type StatusFilter
 } from '../lib/services'
 import { confirm } from '../components/ui'
 
@@ -69,6 +71,7 @@ export function Services({
   const removeGroup = useGroups((s) => s.remove)
 
   const [filter, setFilter] = useState<ClassFilter>('all')
+  const [statusF, setStatusF] = useState<StatusFilter>('all')
   const [q, setQ] = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [tab, setTabState] = useState<DetailTab>(readTab)
@@ -116,10 +119,11 @@ export function Services({
   }, [entries])
 
   const visible = useCallback(
-    (e: LaunchEntry) => (filter === 'all' || classOf(e) === filter) && matchesQuery(e, runtimes[e.id], q),
-    [filter, q, runtimes]
+    (e: LaunchEntry) =>
+      (filter === 'all' || classOf(e) === filter) && matchesStatus(runtimes[e.id], statusF) && matchesQuery(e, runtimes[e.id], q),
+    [filter, statusF, q, runtimes]
   )
-  const filtering = filter !== 'all' || q.trim() !== ''
+  const filtering = filter !== 'all' || statusF !== 'all' || q.trim() !== ''
 
   const sections = useMemo(() => {
     const sorted = [...groups].sort((a, b) => a.order - b.order)
@@ -368,9 +372,9 @@ export function Services({
     <div className="svc-groups">
       {sections.length === 0 ? (
         <div className="ui-tile svc-empty-row" style={{ gridColumn: '1 / -1' }}>
-          <p>{filtering ? '没有匹配的服务，换个关键字或切回「全部」' : '还没有服务。添加一个项目目录，识别框架后即可一键启动'}</p>
+          <p>{filtering ? '没有符合条件的服务' : '还没有服务。添加一个项目目录，识别框架后即可一键启动'}</p>
           {filtering ? (
-            <Button onClick={() => { setQ(''); setFilter('all') }}>清除筛选</Button>
+            <Button onClick={() => { setQ(''); setFilter('all'); setStatusF('all') }}>清除筛选</Button>
           ) : (
             <Button variant="primary" icon={ICON.add} onClick={() => setAddDialog({ kind: 'service' })}>添加服务</Button>
           )}
@@ -411,6 +415,12 @@ export function Services({
             { value: 'task', label: '任务', count: counts.task }
           ]}
         />
+        <Select aria-label="运行状态" className="svc-status" value={statusF} onChange={(e) => setStatusF(e.target.value as StatusFilter)}>
+          <option value="all">全部状态</option>
+          <option value="running">运行中</option>
+          <option value="stopped">已停止</option>
+          <option value="fault">异常</option>
+        </Select>
         <div className="svc-search">
           <ICON.search size={16} aria-hidden />
           <TextInput

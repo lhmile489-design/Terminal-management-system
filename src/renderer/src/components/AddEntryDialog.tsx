@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { FolderOpen, X } from '@phosphor-icons/react'
+import { createPortal } from 'react-dom'
+import { FolderOpen, MagnifyingGlass, Image as ImageIcon, Warning } from '@phosphor-icons/react'
+import { Button, IconButton } from './ui'
+import { useOverlay } from '../lib/overlay'
+import { ICON } from '../lib/icons'
 import type { DetectResult, EntryKind, LaunchMode, NewLaunchEntry } from '@shared/types'
 import { FRAMEWORK_LABEL, FRAMEWORK_LAUNCH_MODES, LAUNCH_MODE_LABEL } from '../lib/entryMeta'
 
@@ -50,7 +54,7 @@ export function AddEntryDialog({
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [detecting, setDetecting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const closeRef = useRef<HTMLButtonElement>(null)
+  const panelRef = useOverlay<HTMLDivElement>(onClose)
 
   const detect = useCallback(
     async (target: string) => {
@@ -75,17 +79,9 @@ export function AddEntryDialog({
   )
 
   useEffect(() => {
-    closeRef.current?.focus()
     if (initialPath) void detect(initialPath)
   }, [initialPath, detect])
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') onClose()
-    }
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [onClose])
 
   const pick = async (): Promise<void> => {
     const target = await window.mile.dialog.pickDirectory()
@@ -177,188 +173,156 @@ export function AddEntryDialog({
 
   const scripts = Object.keys(detected?.scripts ?? {})
 
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-canvas/80 px-6 py-10"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="add-entry-title"
-    >
-      <div className="flex max-h-full w-full max-w-[560px] flex-col overflow-hidden rounded-[12px] border border-line bg-panel">
-        <header className="flex items-center justify-between gap-3 border-b border-line px-5 py-3.5">
-          <h2 id="add-entry-title" className="text-[15px] font-semibold text-ink-strong">
-            添加{kind === 'service' ? '服务' : '任务'}
-          </h2>
-          <button
-            ref={closeRef}
-            type="button"
-            aria-label="关闭"
-            title="关闭"
-            onClick={onClose}
-            className="pressable flex h-7 w-7 items-center justify-center rounded-[6px] text-ink-muted hover:bg-raised hover:text-ink-strong"
-          >
-            <X size={14} weight="bold" />
-          </button>
+  const willRegisterOnly = detected ? (isLaunchable ? !launchMode : detected.registerOnly || !script) : false
+  const noun = kind === 'service' ? '服务' : '任务'
+
+  return createPortal(
+    <>
+      <div className="ui-scrim add-scrim" onClick={onClose} aria-hidden />
+      <div
+        ref={panelRef}
+        className="add-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="add-entry-title"
+      >
+        <header className="add-head">
+          <span className="add-head-icon" aria-hidden>
+            <ICON.add size={20} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <h2 id="add-entry-title" className="add-title">添加{noun}</h2>
+            <p className="add-sub">选一个项目目录，自动识别框架和{kind === 'service' ? '启动' : '执行'}脚本。只读文件，不会执行项目代码</p>
+          </div>
+          <ol className="add-steps" aria-label="步骤">
+            <li data-on={!detected || undefined}>1 选目录</li>
+            <li data-on={!!detected || undefined}>2 确认</li>
+          </ol>
+          <IconButton icon={ICON.close} label="关闭" onClick={onClose} />
         </header>
 
-        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-5 py-4">
-          <Field label="项目目录">
-            <div className="flex items-center gap-2">
-              <span
-                className="min-w-0 flex-1 truncate rounded-[6px] border border-line bg-card px-2.5 py-1.5 font-mono text-[12px] text-ink-muted"
-                title={path || '未选择'}
-              >
-                {path || '未选择'}
-              </span>
-              <button
-                type="button"
-                onClick={() => void pick()}
-                className="pressable flex shrink-0 items-center gap-1.5 rounded-[6px] border border-line-strong bg-card px-2.5 py-1.5 text-[12px] text-ink-muted hover:text-ink-strong"
-              >
-                <FolderOpen size={13} weight="bold" />
-                选择目录
-              </button>
+        <div className="add-body">
+          {!path ? (
+            <button type="button" className="add-drop" onClick={() => void pick()}>
+              <FolderOpen size={28} aria-hidden />
+              <b>选择项目目录</b>
+              <span>识别 package.json、pom.xml 等标记文件</span>
+            </button>
+          ) : (
+            <div className="add-path">
+              <FolderOpen size={20} aria-hidden className="shrink-0 text-ink-muted" />
+              <span className="add-path-text" title={path}>{path}</span>
+              <Button size="sm" onClick={() => void pick()}>更换目录</Button>
             </div>
-          </Field>
+          )}
 
-          {detecting && <p className="text-[12px] text-ink-muted">正在识别项目…</p>}
-          {error && <p className="text-[12px] text-fault">{error}</p>}
+          {detecting && (
+            <p className="add-status"><MagnifyingGlass size={16} aria-hidden />正在识别项目…</p>
+          )}
+          {error && <p className="add-error" role="alert">{error}</p>}
 
           {detected && (
             <>
-              <Field label="名称">
-                <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full rounded-[6px] border border-line bg-card px-2.5 py-1.5 text-[13px] text-ink-strong"
-                />
-              </Field>
+              <div className="add-detect">
+                <span className="add-detect-k">识别结果</span>
+                <span className="ui-pill" data-tone="accent">{FRAMEWORK_LABEL[detected.framework]}</span>
+                <span className="ui-pill" data-tone="idle" data-mono="true">{detected.packageManager}</span>
+                {!detected.hasPackageJson && <span className="ui-pill" data-tone="warn">无 package.json</span>}
+                {detected.detectedPort ? <span className="ui-pill" data-tone="idle" data-mono="true">:{detected.detectedPort}</span> : null}
+              </div>
 
-              <Field label="分类">
-                <input
-                  data-entry-category-input
-                  list="launchpad-category-options"
-                  value={category}
-                  maxLength={40}
-                  placeholder="未分类（可输入新分类）"
-                  onChange={(e) => setCategory(e.target.value)}
-                  className="w-full rounded-[6px] border border-line bg-card px-2.5 py-1.5 text-[13px] text-ink-strong outline-none focus:border-accent"
-                />
-                <datalist id="launchpad-category-options">
-                  {categories.map((item) => (
-                    <option key={item} value={item} />
-                  ))}
-                </datalist>
-              </Field>
-
-              <Field label="识别结果">
-                <p className="font-mono text-[12px] text-ink-muted">
-                  {FRAMEWORK_LABEL[detected.framework]} · {detected.packageManager}
-                  {detected.hasPackageJson ? '' : ' · 无 package.json'}
-                </p>
-              </Field>
-
-              {/* 自定义图片：服务与任务都可用，创建后压缩落盘。优先于预设图标与 favicon */}
-              <Field label="自定义图片（可选，压缩存本地）">
-                <div className="flex items-center gap-3">
-                  <span
-                    className="icon-tile flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden"
-                    aria-hidden
-                  >
-                    {imagePreview ? (
-                      <img
-                        src={imagePreview}
-                        className="h-9 w-9 rounded-[4px] object-contain"
-                        alt=""
-                        draggable={false}
-                      />
-                    ) : (
-                      <span className="font-mono text-[11px] text-ink-faint">无</span>
-                    )}
-                  </span>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp,image/gif,image/bmp"
-                    className="hidden"
-                    onChange={(e) => onPickImage(e.target.files?.[0])}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="pressable rounded-[6px] border border-line-strong bg-card px-2.5 py-1.5 text-[12px] text-ink-muted hover:text-ink-strong"
-                  >
-                    {imagePreview ? '更换图片' : '上传图片'}
-                  </button>
-                  {imagePreview && (
-                    <button
-                      type="button"
-                      onClick={clearImage}
-                      className="pressable rounded-[6px] border border-line-strong bg-card px-2.5 py-1.5 text-[12px] text-ink-muted hover:text-ink-strong"
-                    >
-                      移除
-                    </button>
-                  )}
-                </div>
-              </Field>
-
-              {isLaunchable ? (
-                <>
-                  <Field label="启动方式">
-                    <select
-                      value={launchMode}
-                      onChange={(e) => setLaunchMode(e.target.value as LaunchMode | '')}
-                      className="w-full rounded-[6px] border border-line bg-card px-2.5 py-1.5 font-mono text-[12px] text-ink-strong"
-                    >
-                      <option value="">不设置（仅登记）</option>
-                      {launchModeOptions.map((m) => (
-                        <option key={m} value={m}>
-                          {LAUNCH_MODE_LABEL[m]}
-                        </option>
-                      ))}
-                    </select>
-                  </Field>
-
-                  {modeNeedsPath && (
-                    <Field label={pathInfo?.label ?? '路径'}>
-                      <input
-                        value={jarPath}
-                        onChange={(e) => setJarPath(e.target.value)}
-                        placeholder={pathInfo?.placeholder ?? ''}
-                        className="w-full rounded-[6px] border border-line bg-card px-2.5 py-1.5 font-mono text-[12px] text-ink-strong"
-                      />
-                    </Field>
-                  )}
-                </>
-              ) : (
-                <Field label={kind === 'service' ? '启动脚本' : '执行脚本'}>
-                  {scripts.length === 0 ? (
-                    <p className="text-[12px] text-ink-faint">
-                      该项目没有可用脚本，条目将以「仅登记」方式添加，可监控不可启动
-                    </p>
-                  ) : (
-                    <select
-                      value={script}
-                      onChange={(e) => setScript(e.target.value)}
-                      className="w-full rounded-[6px] border border-line bg-card px-2.5 py-1.5 font-mono text-[12px] text-ink-strong"
-                    >
-                      <option value="">不设置（仅登记）</option>
-                      {scripts.map((s) => (
-                        <option key={s} value={s}>
-                          {s} — {detected.scripts[s]}
-                        </option>
-                      ))}
-                    </select>
-                  )}
+              <div className="add-grid">
+                <Field label="名称">
+                  <input className="ui-input" value={name} onChange={(e) => setName(e.target.value)} />
                 </Field>
-              )}
+                <Field label="分类">
+                  <input
+                    className="ui-input"
+                    data-entry-category-input
+                    list="launchpad-category-options"
+                    value={category}
+                    maxLength={40}
+                    placeholder="未分类（可输入新分类）"
+                    onChange={(e) => setCategory(e.target.value)}
+                  />
+                  <datalist id="launchpad-category-options">
+                    {categories.map((item) => (
+                      <option key={item} value={item} />
+                    ))}
+                  </datalist>
+                </Field>
+
+                {isLaunchable ? (
+                  <>
+                    <Field label="启动方式" full={!modeNeedsPath}>
+                      <select
+                        className="ui-input"
+                        data-mono="true"
+                        value={launchMode}
+                        onChange={(e) => setLaunchMode(e.target.value as LaunchMode | '')}
+                      >
+                        <option value="">不设置（仅登记）</option>
+                        {launchModeOptions.map((m) => (
+                          <option key={m} value={m}>{LAUNCH_MODE_LABEL[m]}</option>
+                        ))}
+                      </select>
+                    </Field>
+                    {modeNeedsPath && (
+                      <Field label={pathInfo?.label ?? '路径'}>
+                        <input
+                          className="ui-input"
+                          data-mono="true"
+                          value={jarPath}
+                          onChange={(e) => setJarPath(e.target.value)}
+                          placeholder={pathInfo?.placeholder ?? ''}
+                        />
+                      </Field>
+                    )}
+                  </>
+                ) : (
+                  <Field label={kind === 'service' ? '启动脚本' : '执行脚本'} full>
+                    {scripts.length === 0 ? (
+                      <p className="add-hint">该项目没有可用脚本，会以「仅登记」方式添加：可监控，不可启动</p>
+                    ) : (
+                      <select className="ui-input" data-mono="true" value={script} onChange={(e) => setScript(e.target.value)}>
+                        <option value="">不设置（仅登记）</option>
+                        {scripts.map((s) => (
+                          <option key={s} value={s}>{s} — {detected.scripts[s]}</option>
+                        ))}
+                      </select>
+                    )}
+                  </Field>
+                )}
+
+                <Field label="自定义图片（可选）" full>
+                  <div className="add-image">
+                    <span className="add-image-tile" aria-hidden>
+                      {imagePreview ? (
+                        <img src={imagePreview} alt="" draggable={false} />
+                      ) : (
+                        <ImageIcon size={20} />
+                      )}
+                    </span>
+                    <span className="add-hint">压缩后存本地，优先于框架图标</span>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp,image/gif,image/bmp"
+                      className="hidden"
+                      onChange={(e) => onPickImage(e.target.files?.[0])}
+                    />
+                    <Button size="sm" onClick={() => fileInputRef.current?.click()}>
+                      {imagePreview ? '更换图片' : '上传图片'}
+                    </Button>
+                    {imagePreview && <Button size="sm" variant="ghost" onClick={clearImage}>移除</Button>}
+                  </div>
+                </Field>
+              </div>
 
               {detected.warnings.length > 0 && (
-                <ul className="flex flex-col gap-1 rounded-[6px] bg-warn-soft px-3 py-2">
+                <ul className="add-warn">
                   {detected.warnings.map((w) => (
-                    <li key={w} className="text-[12px] text-warn">
-                      {w}
-                    </li>
+                    <li key={w}><Warning size={16} aria-hidden />{w}</li>
                   ))}
                 </ul>
               )}
@@ -366,40 +330,38 @@ export function AddEntryDialog({
           )}
         </div>
 
-        <footer className="flex items-center justify-end gap-2 border-t border-line px-5 py-3.5">
-          <button
-            type="button"
-            onClick={onClose}
-            className="pressable rounded-[6px] border border-line-strong bg-card px-3 py-1.5 text-[12px] text-ink-muted hover:text-ink-strong"
-          >
-            取消
-          </button>
-          <button
-            type="button"
+        <footer className="add-foot">
+          <span className="add-foot-msg">
+            {!detected ? '先选一个项目目录' : willRegisterOnly ? '将以「仅登记」方式添加：可监控，不可启动' : `添加后可在服务页一键启动`}
+          </span>
+          <Button variant="ghost" onClick={onClose}>取消</Button>
+          <Button
+            variant="primary"
+            icon={ICON.add}
             onClick={() => void submit()}
             disabled={!detected || !name.trim() || launchIncomplete}
-            className="btn-primary px-3 py-1.5 text-[12px]"
           >
-            添加到启动台
-          </button>
+            添加{noun}
+          </Button>
         </footer>
       </div>
-    </div>
+    </>,
+    document.body
   )
 }
 
 function Field({
   label,
+  full,
   children
 }: {
   label: string
+  full?: boolean
   children: React.ReactNode
 }): React.JSX.Element {
   return (
-    <label className="flex flex-col gap-1.5">
-      <span className="font-mono text-[10px] font-semibold tracking-[0.12em] text-ink-faint uppercase">
-        {label}
-      </span>
+    <label className="ui-field" style={full ? { gridColumn: '1 / -1' } : undefined}>
+      <span className="ui-field-label">{label}</span>
       {children}
     </label>
   )
