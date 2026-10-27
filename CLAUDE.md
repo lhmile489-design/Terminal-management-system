@@ -26,7 +26,7 @@ npx electron scripts/verify-m10.cjs    # 跑单个
 全套 23 个 harness，逐条断言（m7-visual 的「1px 边框」在 devicePixelRatio=2 环境差 1 条，属显示密度差异非代码回归，见 §验证纪律）：
 
 ```bash
-for f in m4-ui m5 m6-sort m6-palette m6-settings m7-visual m8 m9 m9-readonly m9-recover m10 m11-add m11-port m11-dual m12-press m12-port-config m13-icon m14-categories m14-favicon m15-uniapp m16-langs springboot m17-image; do
+for f in ui shell services m4-ui m5 m6-sort m6-palette m6-settings m7-visual m8 m9 m9-readonly m9-recover m10 m11-add m11-port m11-dual m12-press m12-port-config m13-icon m14-categories m14-favicon m15-uniapp m16-langs springboot m17-image; do
   npx electron scripts/verify-$f.cjs 2>&1 | grep -E '结果：|Result:|PASS [0-9]+ / FAIL|^\s*FAIL'
 done
 ```
@@ -152,20 +152,21 @@ src/shared/     两侧共用的类型与 IPC 频道名
 
 ## UI 约定
 
-风格锁定 `.claude/skills/minimalist-ui`，一处明确偏离：配色用冷调双色（深空蓝黑 / 雾灰），因为 Ops 场景需要深色模式。
+风格为「便当网格 + 微交互」，权威说明在 `docs/UI/UI-REFACTOR.md`（第 4 节视觉系统、第 8 节决策记录）。静态原型在 `docs/UI/prototype/`。浅色为主，深色只要求不劣于基线（Q16）。
 
-- 无渐变、无重阴影（不透明度 < 0.05）、边框统一 1px、等宽字体做区块标签、Phosphor 图标。禁用 Inter/Roboto，禁用 emoji，大容器不用 `rounded-full`。
-- **状态色只染边框、图标瓦片与胶囊，绝不染卡片底。** 底色跟着状态走，六张卡片同屏就成了色块拼贴。
-- **每个组件只赋一次 `--glow`**，其余读同一个自定义属性。改配色不需要逐个组件跟改。
-- 文字对比度 ≥ 4.5:1，**深浅两模式分别校验，且要包含按钮的启用/禁用两态**。`--text-faint` 承载 KPI 标签与区块标题，属正文，不放宽到 3:1。
-- 主按钮用 `.btn-primary`（`tokens.css`）。底 `--text-strong`、字 `--text-on-ink`。**不要用 `--text-inverse`** —— 它相对页面底色反转，而 `ink-strong` 已经反转过一次，两次抵消会让字底同色（实测 1.81:1 / 1.37:1）。
-- **禁用态不压整块 `opacity`**，那会把文字一起拖到 1.26:1。换弱化底色 + 可见边框，文字守住 AA。
-- `.segmented` 只用于同一视图内的口径切换。**不做顶部分段视图切换器** —— 左侧导航轨是唯一的视图入口，两套导航会让人以为它们切的是不同东西。
-- 图标按钮必须有 `aria-label`；焦点态 2px 可见描边。
-- **按压反馈统一走 `.pressable`（缩 0.96 + 下沉 1px）与 `.pressable-flat`（只下沉，给命令面板结果行、会话行这类宽条目）。** 位移量与控件尺寸成反比，整行缩放看着像橡皮。`.btn-primary` 与 `.segmented-item` 把 `:active` 收在类里，调用方不用再挂 `.pressable` —— 六处以上的调用点漏一处就少一处手感。**贴窗口边缘的面（标题栏控件、折叠后的侧栏条）只换底色不做位移**，缩放会露出底下的画布。
-  - `tokens.css` **没有 `@layer`**，它的 `transition` 简写会盖过 Tailwind 在 `@layer utilities` 里的 `transition-colors`。所以这两个类的简写必须把 `background-color/border-color/color/box-shadow` 一起写上，否则 hover 变色变成硬切。
-  - `:active` 必须写在 `:hover` **之后** —— 两者特异性相等，后写的才生效。
-  - `prefers-reduced-motion` 的覆盖块要排在所有 `:active` 规则之后，且选择器长度一致（带上那两个 `:not()`）：媒体查询不加特异性，写短了盖不住。
+- **布局**：标题栏 40px；导航轨 5 项（总览、服务、终端、设置、关于），展开 184 / 折叠 56；实时动态是抽屉。服务页按工作组分段，点一行在右侧分栏打开详情（概览 / 输出 / 诊断 / 构建 / 配置）。
+- **令牌**：圆角三档 `rounded-card` 16 / `rounded-control` 10 / `rounded-full` 胶囊；阴影三档（静态 / 悬停 / 浮层），深色只留浮层阴影、层次靠描边。标题和数字用 Manrope（`--font-display`），正文 Segoe UI + 雅黑，端口路径用 Cascadia。
+- **三条硬规则，`verify-ui.cjs` 扫源码把关**：文字色不加透明度（`text-ink-faint/50` 这类）；字号不低于 12px；不用任意值圆角 `rounded-[Npx]`（图片按尺寸算比例圆角，写在 style 里）。
+- **渐变只给品牌标识**（`.ui-brand-mark`、`.about-logo`）。
+- **状态色只染描边、图标块和胶囊，不染卡片底。**
+- 文字对比度 ≥ 4.5:1，含按钮启用 / 禁用两态。**禁用态不压整块 `opacity`**，换弱化底色 + 可见边框。
+- 图标统一 Phosphor，含义 → 图标对照在 `lib/icons.ts`，尺寸只有 16 / 20 两档；主操作一律「图标 + 文字」，纯图标按钮必须有 `aria-label`。
+- **新组件优先用 `components/ui/`**（Button、Tile、Segmented、Tabs、Menu、SplitPane、DialogShell、Drawer、confirm、toast）。新浮层必须用 `useOverlay`（`lib/overlay.ts`）：Esc 只关最上层、焦点陷阱、关闭后还焦点。危险操作用 `confirm()`，不用 `window.confirm`。
+- **按压反馈**：按钮缩到 0.96（70ms），松开回弹，不下沉。贴窗口边缘的面（窗口控件）只换底色。`prefers-reduced-motion` 下去掉位移和缩放。
+  - `tokens.css` 与 `ui.css` **都没有 `@layer`**，transition 简写会盖过 Tailwind 的 `transition-colors`，所以简写里要把 `background-color/border-color/color/box-shadow/transform` 写全。
+  - `:active` 写在 `:hover` 之后；reduced-motion 覆盖块排在所有 `:active` 之后且选择器同样长。
+- **不做顶部视图切换器**；页内口径切换用 `Segmented`。
+- 键盘：`Ctrl+1–5` 切页、`Ctrl+K` 命令面板、`?` 快捷键一览；服务列表方向键 / Enter / Space / `Ctrl+↑↓` / `Ctrl+Tab`。焦点在输入框或终端里时单键快捷键不生效。
 
 ### 非线性动画（v1.6+）
 
