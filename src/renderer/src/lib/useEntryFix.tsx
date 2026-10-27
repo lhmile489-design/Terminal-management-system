@@ -93,8 +93,10 @@ export function useEntryFix(onAfterFix: (entryId: string) => void): {
         case 'switchPort': {
           // suggestedPort 由主进程预扫描后通过 PrecheckItem.fix.suggestedPort 带来。
           // 有值时直接切换（一键），无值时退化为弹框让用户手动输入。
-          if (suggestedPort) {
-            await switchPort(entry.id, suggestedPort)
+          if (suggestedPort && entry.framework === 'next') {
+            // 一键切换要同时注入 PORT，只改 expectedPort 不会改变实际监听端口
+            const saved = await edit(entry.id, { env: { ...entry.env, PORT: String(suggestedPort) }, expectedPort: suggestedPort })
+            if (saved) onAfterFix(entry.id)
           } else {
             setPortDialog({ entry })
           }

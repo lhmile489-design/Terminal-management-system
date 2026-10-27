@@ -154,13 +154,13 @@ app.whenReady().then(async () => {
       String(BLOCKER_PORT)
     )
 
-    await js(`document.querySelector('nav button[aria-label="前端启动台"]')?.click()`)
+    await js(`document.querySelector('nav button[aria-label="服务"]')?.click()`)
     check(
       'launchpad rendered its entries',
-      Boolean(await waitFor('manual entry card', () => js(`Boolean(document.querySelector('article[data-entry-id="manual"]'))`)))
+      Boolean(await waitFor('manual entry card', () => js(`Boolean(document.querySelector('.svc-row[data-entry-id="manual"]'))`)))
     )
 
-    await js(`document.querySelector('article[data-entry-id="manual"] button[aria-label="编辑"]')?.click()`)
+    await js(`(async()=>{const r=document.querySelector('.svc-row[data-entry-id="manual"]');if(!r)return false;r.click();await new Promise(s=>setTimeout(s,300));const t=[...document.querySelectorAll('.svc-detail [role="tab"]')].find(x=>x.textContent.includes('配置'));t&&t.click();await new Promise(s=>setTimeout(s,300));const a=document.querySelector('details.svc-adv');if(a)a.open=true;return true})()`)
     const editor = await waitFor('environment editor', () =>
       js(`Boolean(document.querySelector('[data-env-editor]'))`)
     )
@@ -203,7 +203,7 @@ app.whenReady().then(async () => {
     })()`)
     check('environment key/value rows accept masked values', inserted === true)
     await sleep(80)
-    await js(`(() => [...document.querySelectorAll('[role="dialog"] button')]
+    await js(`(() => [...document.querySelectorAll('.svc-savebar button')]
       .find(button => button.textContent.trim() === '保存')?.click())()`)
 
     const savedManual = await waitFor('manual environment persistence', () =>
@@ -232,7 +232,7 @@ app.whenReady().then(async () => {
     check('diagnosis does not expose the secret value', !diagnosticText.includes(SECRET))
     check('logs do not expose the secret value', !logText.includes(SECRET))
 
-    await js(`document.querySelector('article[data-entry-id="manual"] button[aria-label="编辑"]')?.click()`)
+    await js(`(async()=>{const r=document.querySelector('.svc-row[data-entry-id="manual"]');if(!r)return false;r.click();await new Promise(s=>setTimeout(s,300));const t=[...document.querySelectorAll('.svc-detail [role="tab"]')].find(x=>x.textContent.includes('配置'));t&&t.click();await new Promise(s=>setTimeout(s,300));const a=document.querySelector('details.svc-adv');if(a)a.open=true;return true})()`)
     const locked = await waitFor('environment controls to lock while live', () =>
       js(`(() => {
         const root = document.querySelector('[data-env-editor]')
@@ -242,7 +242,7 @@ app.whenReady().then(async () => {
       })()`)
     )
     check('environment variables are locked while the service runs', locked === true)
-    await js(`document.querySelector('[role="dialog"] button[aria-label="关闭"]')?.click()`)
+    await js(`document.querySelector('.svc-detail button[aria-label="关闭详情"]')?.click()`)
     await js(`window.mile.entry.stop('manual')`)
     await waitFor('manual service to stop', async () => {
       const item = await runtime('manual')
@@ -258,27 +258,27 @@ app.whenReady().then(async () => {
       ))
     )
 
-    await resolvePortFromCard(js, 'next', NEXT_PORT)
+    const fixedPort = await resolvePortFromCard(js, 'next', NEXT_PORT)
     const nextEntry = await waitFor('Next port fix persistence', () =>
       js(`window.mile.entry.list().then(entries => {
         const item = entries.find(entry => entry.id === 'next')
-        return item?.expectedPort === ${NEXT_PORT} && item?.env?.PORT === ${JSON.stringify(String(NEXT_PORT))}
+        return item?.expectedPort === ${fixedPort} && item?.env?.PORT === ${JSON.stringify(String(fixedPort))}
       })`)
     )
     check('Next repair updates PORT and expectedPort together', nextEntry === true)
     await js(`window.mile.entry.start('next')`)
     const nextRuntime = await waitFor('Next listener on repaired port', async () => {
       const item = await runtime('next')
-      return item?.port === NEXT_PORT ? item : null
+      return item?.port === fixedPort ? item : null
     }, 100, 200)
-    check('Next repair changes the actual listener port', Boolean(nextRuntime), String(NEXT_PORT))
+    check('Next repair changes the actual listener port', Boolean(nextRuntime), String(fixedPort))
     await js(`window.mile.entry.stop('next')`)
     await waitFor('Next service to stop', async () => {
       const item = await runtime('next')
       return item && ['stopped', 'crashed'].includes(item.status)
     })
 
-    await js(`document.querySelector('article[data-entry-id="vite"] button[aria-label="诊断"]')?.click()`)
+    await js(`(async()=>{const r=document.querySelector('.svc-row[data-entry-id="vite"]');if(!r)return false;r.click();await new Promise(s=>setTimeout(s,300));const t=[...document.querySelectorAll('.svc-detail [role="tab"]')].find(x=>x.textContent.includes('诊断'));t&&t.click();await new Promise(s=>setTimeout(s,300));const a=document.querySelector('details.svc-adv');if(a)a.open=true;return true})()`)
     const manualDialog = await waitFor('manual port guidance', () =>
       js(`(() => {
         const button = [...document.querySelectorAll('button')]
@@ -317,18 +317,26 @@ app.whenReady().then(async () => {
 })
 
 async function resolvePortFromCard(js, id, port) {
-  await js(`document.querySelector('article[data-entry-id=${JSON.stringify(id)}] button[aria-label="诊断"]')?.click()`)
+  await js(`(async()=>{const r=document.querySelector('.svc-row[data-entry-id=${JSON.stringify(id)}]');if(!r)return false;r.click();await new Promise(s=>setTimeout(s,300));const t=[...document.querySelectorAll('.svc-detail [role="tab"]')].find(x=>x.textContent.includes('诊断'));t&&t.click();await new Promise(s=>setTimeout(s,300));const a=document.querySelector('details.svc-adv');if(a)a.open=true;return true})()`)
+  /*
+   * 修复按钮两种形态（useEntryFix 自 v1.4.0 起）：
+   * - 主进程扫到了空闲端口 →「切换到 :N」，点一下直接改 PORT 与 expectedPort，不弹窗；
+   * - 扫不到 →「改用其他端口」，弹 next 模式对话框手填。
+   * 两条路最终验的是同一件事（PORT 与 expectedPort 一起改、监听真的换端口），返回实际用的端口。
+   */
   const clicked = await waitFor('port repair button', () =>
     js(`(() => {
-      const button = [...document.querySelectorAll('button')]
-        .find(item => item.textContent.includes('改用其他端口'))
+      const button = [...document.querySelectorAll('.svc-detail button')]
+        .find(item => /^切换到 :\\d+$/.test(item.textContent.trim()) || item.textContent.includes('改用其他端口'))
       if (!button) return false
+      const m = button.textContent.trim().match(/^切换到 :(\\d+)$/)
       button.click()
-      return true
+      return m ? Number(m[1]) : 'dialog'
     })()`)
   )
-  check(`${id} exposes a port repair action`, clicked === true)
+  check(`${id} exposes a port repair action`, Boolean(clicked), String(clicked))
   if (!clicked) throw new Error(`${id} has no port repair action`)
+  if (typeof clicked === 'number') return clicked
 
   const dialog = await waitFor('Next port repair dialog', () =>
     js(`(() => {
@@ -343,4 +351,5 @@ async function resolvePortFromCard(js, id, port) {
   check('Next port repair accepts a new port', set === true)
   await js(`(() => [...document.querySelectorAll('[data-port-fix-mode="next"] button')]
     .find(button => button.textContent.trim() === '保存')?.click())()`)
+  return port
 }

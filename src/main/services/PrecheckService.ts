@@ -461,6 +461,7 @@ async function portItem(
   allEntries: LaunchEntry[] = []
 ): Promise<PrecheckItem> {
   const port = entry.expectedPort
+  const canSwitch = entry.framework === 'next'
   if (!port) {
     return { id: 'port', label: '预期端口空闲', level: 'pass', detail: '未设置预期端口' }
   }
@@ -486,8 +487,9 @@ async function portItem(
       detail: `端口 :${port} 与「${names}」配置重复，同时运行时会冲突`,
       fix: {
         action: 'switchPort',
-        label: suggestedPort ? `切换到 :${suggestedPort}` : '改用其他端口',
-        suggestedPort: suggestedPort ?? undefined
+        // 只有 Next 的 PORT 是已验证的注入入口；其他框架改 expectedPort 不会改变实际监听，不给一键切换
+        label: canSwitch && suggestedPort ? `切换到 :${suggestedPort}` : '改用其他端口',
+        suggestedPort: canSwitch ? suggestedPort ?? undefined : undefined
       }
     }
   }
@@ -532,8 +534,8 @@ async function portItem(
       ? { action: 'resolvePort', label: '停止它' }
       : {
           action: 'switchPort',
-          label: suggestedPort ? `切换到 :${suggestedPort}` : '改用其他端口',
-          suggestedPort: suggestedPort ?? undefined
+          label: canSwitch && suggestedPort ? `切换到 :${suggestedPort}` : '改用其他端口',
+          suggestedPort: canSwitch ? suggestedPort ?? undefined : undefined
         }
   }
 }
