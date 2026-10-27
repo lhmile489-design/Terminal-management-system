@@ -314,7 +314,7 @@ export function RowToggle({
   const busy = isBusyStatus(runtime.status)
   if (entry.framework === 'uniapp') {
     return (
-      <Button size="sm" icon={ICON.openExternal} onClick={() => void window.mile.entry.openInHBuilderX(entry.id)}>
+      <Button size="sm" icon={ICON.openExternal} title="用 HBuilderX 打开（编译与运行由 HBuilderX 负责）" aria-label="用 HBuilderX 打开" onClick={() => void window.mile.entry.openInHBuilderX(entry.id)}>
         HBuilderX
       </Button>
     )

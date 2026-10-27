@@ -189,7 +189,7 @@ app.whenReady().then(async () => {
     // 切到启动台视图，卡片才会渲染
     await js(`(() => {
       const b = [...document.querySelectorAll('button,a')].find((x) =>
-        (x.textContent||'').trim() === '前端启动台' || x.getAttribute('aria-label') === '前端启动台')
+        (x.textContent||'').trim() === '服务' || x.getAttribute('aria-label') === '服务')
       if (b) b.click()
     })()`)
 
@@ -197,13 +197,13 @@ app.whenReady().then(async () => {
     await (async (ms = 5000) => {
       const deadline = Date.now() + ms
       while (Date.now() < deadline) {
-        const n = await js(`document.querySelectorAll('article[data-entry-id]').length`)
+        const n = await js(`document.querySelectorAll('.svc-row[data-entry-id]').length`)
         if (n >= 2) return
         await sleep(100)
       }
     })()
 
-    const cardDump = await js(`JSON.stringify([...document.querySelectorAll('article[data-entry-id]')].map(c => {
+    const cardDump = await js(`JSON.stringify([...document.querySelectorAll('.svc-row[data-entry-id]')].map(c => {
       const id = c.getAttribute('data-entry-id')
       const text = c.textContent || ''
       const startBtn = [...c.querySelectorAll('button')].find(b => /启动|运行/.test(b.getAttribute('aria-label')||b.getAttribute('title')||b.textContent||''))
@@ -220,7 +220,7 @@ app.whenReady().then(async () => {
 
     check('uniapp 卡片显示 HBuilderX 徽标', byId[uniId] && byId[uniId].hasBadge === true, cardDump)
     check('uniapp 卡片有「用 HBuilderX 打开」按钮', byId[uniId] && byId[uniId].hasOpenBtn === true, cardDump)
-    check('uniapp 卡片「启动」按钮禁用', byId[uniId] && byId[uniId].startDisabled === true, cardDump)
+    check('uniapp 卡片没有可点的「启动」', byId[uniId] && byId[uniId].startDisabled !== false, cardDump)
     check('非 uniapp 卡片无 HBuilderX 徽标', byId[nodeAdded.id] && byId[nodeAdded.id].hasBadge === false, cardDump)
     check('非 uniapp 卡片无「用 HBuilderX 打开」按钮', byId[nodeAdded.id] && byId[nodeAdded.id].hasOpenBtn === false, cardDump)
 

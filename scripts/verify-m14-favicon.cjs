@@ -168,25 +168,25 @@ app.whenReady().then(async () => {
     console.log('\n=== 3. 渲染层：卡片图标瓦片显示 <img> ===')
     await js(`(() => {
       const b = [...document.querySelectorAll('button,a')].find((x) =>
-        (x.textContent||'').trim() === '前端启动台' || x.getAttribute('aria-label') === '前端启动台')
+        (x.textContent||'').trim() === '服务' || x.getAttribute('aria-label') === '服务')
       if (b) b.click()
     })()`)
     check(
       '卡片已渲染',
-      await waitFor(`document.querySelectorAll('article[data-entry-id]').length >= 3`)
+      await waitFor(`document.querySelectorAll('.svc-row[data-entry-id]').length >= 3`)
     )
     // favicon 是挂载后异步懒加载的：轮询到 img 出现再断言，别用固定时序把「还没加载」误判成「没有」
     check(
       '前端卡片的 favicon 图片已加载',
       await waitFor(
-        `document.querySelectorAll('article[data-entry-id] .icon-tile img[src^="data:image/"]').length >= 2`
+        `document.querySelectorAll('.svc-row[data-entry-id] .svc-row-glyph img[src^="data:image/"]').length >= 2`
       )
     )
 
     const reactImg = await js(`(() => {
-      const card = document.querySelector('article[data-entry-id="e-react"]')
+      const card = document.querySelector('.svc-row[data-entry-id="e-react"]')
       if (!card) return 'no-card'
-      const img = card.querySelector('.icon-tile img')
+      const img = card.querySelector('.svc-row-glyph img')
       if (!img) return 'no-img'
       return img.getAttribute('src') || ''
     })()`)
@@ -197,25 +197,25 @@ app.whenReady().then(async () => {
     )
 
     const goGlyph = await js(`(() => {
-      const card = document.querySelector('article[data-entry-id="e-go"]')
+      const card = document.querySelector('.svc-row[data-entry-id="e-go"]')
       if (!card) return 'no-card'
-      const img = card.querySelector('.icon-tile img')
-      const span = card.querySelector('.icon-tile span')
+      const img = card.querySelector('.svc-row-glyph img')
+      const span = card.querySelector('.svc-row-glyph span')
       return { hasImg: !!img, glyph: span ? (span.textContent||'').trim() : null }
     })()`)
     check('go 卡片无 img', goGlyph && goGlyph.hasImg === false, JSON.stringify(goGlyph))
     check('go 卡片回退字标 Go', goGlyph && goGlyph.glyph === 'Go', JSON.stringify(goGlyph))
 
     const imgCount = await js(
-      `document.querySelectorAll('article[data-entry-id] .icon-tile img[src^="data:image/"]').length`
+      `document.querySelectorAll('.svc-row[data-entry-id] .svc-row-glyph img[src^="data:image/"]').length`
     )
     check('带 favicon 图片的卡片数 ≥ 2', imgCount >= 2, `imgCount=${imgCount}`)
 
     // 全卡片矩阵：web 框架显图片、非 web / 逃逸 / unknown 回退字标
-    const dump = await js(`JSON.stringify([...document.querySelectorAll('article[data-entry-id]')].map(c => ({
+    const dump = await js(`JSON.stringify([...document.querySelectorAll('.svc-row[data-entry-id]')].map(c => ({
       id: c.getAttribute('data-entry-id'),
-      hasImg: !!c.querySelector('.icon-tile img'),
-      glyph: (c.querySelector('.icon-tile span')||{}).textContent || null
+      hasImg: !!c.querySelector('.svc-row-glyph img'),
+      glyph: (c.querySelector('.svc-row-glyph span')||{}).textContent || null
     })))`)
     const cards = JSON.parse(dump)
     const byId = Object.fromEntries(cards.map((c) => [c.id, c]))
