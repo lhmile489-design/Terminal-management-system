@@ -7,6 +7,11 @@ import { DialogShell } from './ui'
 const KEYS: { label: string; keys: string[] }[] = [
   { label: '打开命令面板', keys: ['Ctrl', 'K'] },
   { label: '切换到总览 / 服务 / 终端 / 设置 / 关于', keys: ['Ctrl', '1–5'] },
+  { label: '服务页：在列表里上下移动', keys: ['↑', '↓'] },
+  { label: '服务页：打开详情', keys: ['Enter'] },
+  { label: '服务页：启动或停止（组头上是整组）', keys: ['Space'] },
+  { label: '服务页：在本组内上移 / 下移', keys: ['Ctrl', '↑ / ↓'] },
+  { label: '服务页：切换详情标签', keys: ['Ctrl', 'Tab'] },
   { label: '打开快捷键一览', keys: ['?'] },
   { label: '关闭最上层的弹窗、抽屉或菜单', keys: ['Esc'] }
 ]

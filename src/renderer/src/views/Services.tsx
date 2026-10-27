@@ -181,7 +181,10 @@ export function Services({
     const sib = entries.filter((e) => (e.groupId ?? null) === (entry.groupId ?? null)).sort((a, b) => a.order - b.order)
     const i = sib.findIndex((e) => e.id === entry.id)
     const other = sib[i + dir]
-    if (other) placeEntry(entry.id, other.id, dir < 0)
+    if (!other) return
+    placeEntry(entry.id, other.id, dir < 0)
+    // 读屏播报新位置（旧卡片有，合并时保留）
+    setAnnounce(`「${entry.name}」已移到第 ${i + dir + 1} 位，共 ${sib.length} 项`)
   }
 
   const flashFail = (id: string): void => {
@@ -330,6 +333,8 @@ export function Services({
    * 控件（分段、标签、菜单、分隔条）里时让给它们；有浮层时浮层优先。
    */
   const [cursorId, setCursorId] = useState<string | null>(null)
+  /** 排序结果给读屏播报（aria-live），视觉上隐藏 */
+  const [announce, setAnnounce] = useState('')
   useEffect(() => {
     if (selectedId) setCursorId(selectedId)
   }, [selectedId])
@@ -341,6 +346,12 @@ export function Services({
     const typing = !!t?.closest('input, textarea, select, [contenteditable="true"], .xterm')
     const ownKeys = !!t?.closest('[role="tablist"], [role="radiogroup"], [role="menu"], [role="separator"]')
 
+    // Ctrl+↑ / Ctrl+↓：在本组内移动光标所在的行（拖拽的键盘替代）
+    if (e.ctrlKey && !typing && (e.key === 'ArrowUp' || e.key === 'ArrowDown') && cursorId && !cursorId.startsWith('g:')) {
+      const entry = entries.find((x) => x.id === cursorId)
+      if (entry) { e.preventDefault(); shiftEntry(entry, e.key === 'ArrowUp' ? -1 : 1) }
+      return
+    }
     if (e.ctrlKey && e.key === 'Tab' && selected) {
       e.preventDefault()
       const order: DetailTab[] = ['overview', 'output', 'diagnose', ...(hasBuildTab(selected) ? (['build'] as DetailTab[]) : []), 'config']
@@ -461,6 +472,7 @@ export function Services({
 
   return (
     <div className="svc-page flex min-h-0 flex-1 flex-col gap-4" data-services-page>
+      <p className="sr-only" role="status" aria-live="polite" data-sort-announce>{announce}</p>
       <div className="svc-toolbar">
         <Segmented
           label="类型"
