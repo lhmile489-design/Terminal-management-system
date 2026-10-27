@@ -1,83 +1,66 @@
 import { useEffect, useState } from 'react'
-import {
-  ArrowSquareOut,
-  GithubLogo,
-  BookOpen,
-  Rocket,
-  Terminal,
-  Gauge,
-  Stethoscope,
-  ListMagnifyingGlass,
-  Gear,
-  Command,
-  ShieldCheck,
-  Package
-} from '@phosphor-icons/react'
+import { ArrowSquareOut, GithubLogo, ShieldCheck, type Icon } from '@phosphor-icons/react'
+import { ICON } from '../lib/icons'
+import logoUrl from '../assets/logo.png'
 
 const GITHUB_URL = 'https://github.com/lhmile489-design/Terminal-management-system'
 
-/** 使用教程的每个步骤 */
-const GUIDE_STEPS: { icon: React.ReactNode; title: string; desc: string }[] = [
+/** 使用教程：按现在的页面结构写（总览 / 服务 / 终端），UI-REFACTOR §3 */
+const GUIDE_STEPS: { icon: Icon; title: string; desc: string }[] = [
   {
-    icon: <Rocket size={16} weight="bold" />,
-    title: '添加项目到启动台',
-    desc: '打开「启动台」，点击"添加服务"（或按 Ctrl+K 搜索）→ 选择项目目录 → 应用只读识别 package.json，选择启动脚本后保存。'
+    icon: ICON.add,
+    title: '添加服务',
+    desc: '在「服务」页点「添加服务」，选项目目录。应用只读 package.json、pom.xml 等标记文件识别框架，不执行项目代码。'
   },
   {
-    icon: <Terminal size={16} weight="bold" />,
-    title: '启动并查看日志',
-    desc: '在服务卡片上点击「启动」，预检通过后进程启动；卡片实时显示运行状态与捕获到的端口。点击「日志」跳转到对应终端会话。'
+    icon: ICON.group,
+    title: '按工作组整理',
+    desc: '「新建工作组」把前后端放在一起。把服务行拖到别的工作组即可换组，拖到行上方或下方可排顺序。'
   },
   {
-    icon: <Gauge size={16} weight="bold" />,
-    title: '工作台：查看本机端口',
-    desc: '「工作台」每 2 秒刷新当前用户的所有监听端口、CPU、内存与运行时长，分「我的服务」和「应用后台」两组显示。'
+    icon: ICON.start,
+    title: '启停与查看输出',
+    desc: '行上的按钮启停单个服务，组头的「全部启动」一次启动整组。点一行打开详情，概览、输出、诊断、配置都在里面。'
   },
   {
-    icon: <Package size={16} weight="bold" />,
-    title: '打包任务：多脚本下拉',
-    desc: '任务条目（如 Electron 打包）有多个脚本时，「运行」按钮右侧出现下拉箭头，可直接选择 build:win / build:mac 等脚本执行。任务成功后「查看产物」按钮高亮，点击即在资源管理器中定位产物文件。'
+    icon: ICON.port,
+    title: '打开前端页面',
+    desc: '服务运行起来后，行上的端口号可以点，直接在浏览器打开 localhost。多个服务撞在同一端口时会标「端口重合」。'
   },
   {
-    icon: <Command size={16} weight="bold" />,
-    title: '全局命令面板',
-    desc: '按 Ctrl+K 呼出命令面板：输入服务名快速启停、输入端口号定位监听项、以 > 开头搜索内置操作（切换主题、跳转视图等）。'
-  },
-  {
-    icon: <Stethoscope size={16} weight="bold" />,
+    icon: ICON.diagnose,
     title: '预检与诊断',
-    desc: '启动前自动检查目录、脚本、运行时和端口冲突。失败时直接给修复入口。卡片上的「诊断」按钮可随时重新收集诊断信息。'
+    desc: '启动前自动检查目录、脚本、运行时和端口。没通过时右下角弹通知，「查看诊断」直达原因和修复入口。'
   },
   {
-    icon: <ListMagnifyingGlass size={16} weight="bold" />,
-    title: '日志中心',
-    desc: '「日志」视图汇总所有会话的输出，可按会话、级别（信息/警告/错误）和关键字筛选。日志只保留在内存，最多 5000 行。'
+    icon: ICON.navOverview,
+    title: '总览本机状态',
+    desc: '「总览」显示监听端口、CPU、内存和最常用的 5 个服务，端口被谁占用、是不是本应用启动的一眼可见。'
   },
   {
-    icon: <Gear size={16} weight="bold" />,
-    title: '设置',
-    desc: '可调整采集周期（1/2/5/10 秒）、浅色/深色/跟随系统主题、终端字号与回滚行数、退出行为和任务完成通知。'
+    icon: ICON.output,
+    title: '终端与全部输出',
+    desc: '「终端」页可新建 PowerShell；「全部输出」汇总所有会话的日志，按级别、会话、关键字筛选，点一行跳回对应会话。'
   }
 ]
 
 const DESIGN_PRINCIPLES: { title: string; desc: string }[] = [
-  {
-    title: '不安装依赖，不执行项目代码',
-    desc: '识别项目类型只读文件，不运行 npm install 或任何版本查询命令。缺依赖时只提示，由你主动点击创建安装会话。'
-  },
-  {
-    title: '归属可证才能终止进程',
-    desc: '只对通过「运行 token + 进程组 + 当前用户」三重校验的受控进程执行停止。不因端口相同就杀外部进程。'
-  },
-  {
-    title: '失败前置',
-    desc: '启动前静态检查所有可预检的问题，直接给出修复入口，不让你先失败一次再看报错。'
-  },
-  {
-    title: '日志只留内存',
-    desc: '跨会话日志是环形缓冲，不落盘。用于查看当下这轮跑得怎么样，不做持久审计。'
-  }
+  { title: '不安装依赖，不执行项目代码', desc: '识别只读文件，不跑 npm install 和任何版本查询。缺依赖时只提示，由你主动创建安装会话。' },
+  { title: '归属可证才能终止进程', desc: '只停止通过「运行 token + 进程组 + 当前用户」三重校验的进程，不因端口相同就结束外部进程。' },
+  { title: '失败前置', desc: '启动前把能检查的问题都检查一遍，并直接给出修复入口。' },
+  { title: '日志只留内存', desc: '跨会话日志是环形缓冲，不落盘；环境变量只显示键名，不显示值。' }
 ]
+
+const SHORTCUTS: { keys: string; desc: string }[] = [
+  { keys: 'Ctrl+K', desc: '打开命令面板' },
+  { keys: 'Ctrl+1–5', desc: '切换总览 / 服务 / 终端 / 设置 / 关于' },
+  { keys: '↑ / ↓', desc: '服务页移动选中行' },
+  { keys: 'Space', desc: '启动或停止选中的服务' },
+  { keys: 'Ctrl+↑ / ↓', desc: '在本组内调整顺序' },
+  { keys: '?', desc: '快捷键一览' }
+]
+
+const STACK = ['Electron 43', 'React 19', 'TypeScript', 'Vite 7', 'Tailwind 4', 'node-pty', 'xterm.js 6', 'Zustand']
 
 export function About(): React.JSX.Element {
   const [version, setVersion] = useState<string>('')
@@ -87,135 +70,78 @@ export function About(): React.JSX.Element {
   }, [])
 
   return (
-    <div className="flex flex-col gap-8 pb-8">
-
-      {/* ── 顶部 Hero 卡 ── */}
-      <div className="surface-card flex flex-col gap-4 px-6 py-6">
-        <div className="flex items-start gap-4">
-          <span className="icon-tile h-14 w-14 shrink-0 text-[22px]">
-            <BookOpen size={28} weight="bold" />
+    <div className="about-grid">
+      <section className="ui-tile about-brand" aria-labelledby="about-title">
+        <div className="about-brand-top">
+          <span className="about-logo" aria-hidden>
+            <img src={logoUrl} alt="" draggable={false} />
           </span>
-          <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-            <div className="flex items-baseline gap-3">
-              <h2 className="text-[20px] font-bold text-ink-strong">Mile Terminal</h2>
-              {version && (
-                <span className="rounded-[5px] border border-accent/50 px-2 py-0.5 font-mono text-[11px] font-semibold text-accent">
-                  v{version}
-                </span>
-              )}
-            </div>
-            <p className="text-[13px] leading-relaxed text-ink-muted">
-              Windows 本地终端与前端项目管理工作台。把「本机现在跑着什么」和「我常跑的那几个项目」
-              收口进一个界面——查监听端口、集中启停服务与任务、跨会话回看日志、启动前诊断。
-            </p>
-            <div className="mt-1 flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => window.open(GITHUB_URL, '_blank')}
-                className="pressable flex items-center gap-1.5 rounded-[6px] bg-raised px-3 py-1.5 text-[12px] font-semibold text-ink hover:bg-line"
-              >
-                <GithubLogo size={14} weight="bold" aria-hidden />
-                GitHub 仓库
-                <ArrowSquareOut size={12} aria-hidden className="text-ink-faint" />
-              </button>
-              <span className="font-mono text-[11px] text-ink-faint">
-                个人自用 · Windows 11 · 开源
-              </span>
-            </div>
+          <div className="min-w-0">
+            <h2 id="about-title" className="about-name">Mile Terminal</h2>
+            {version && <span className="ui-pill" data-tone="accent" data-mono="true">v{version}</span>}
           </div>
         </div>
-
-        {/* 技术栈徽标行 */}
-        <div className="flex flex-wrap gap-2 border-t border-line pt-4">
-          {[
-            'Electron 43', 'React 19', 'TypeScript', 'Vite 7',
-            'Tailwind 4', 'node-pty', 'xterm.js 6', 'Zustand'
-          ].map((tech) => (
-            <span
-              key={tech}
-              className="rounded-[5px] bg-raised px-2 py-0.5 font-mono text-[11px] text-ink-muted"
-            >
-              {tech}
-            </span>
-          ))}
+        <p className="about-lead">
+          Windows 本地服务与终端管理工作台。把「本机现在跑着什么」和「我常跑的那几个项目」收进一个界面：
+          按工作组启停前后端、看端口占用、跨会话回看输出、启动前诊断。
+        </p>
+        <div className="about-actions">
+          <button type="button" className="ui-btn" data-variant="primary" onClick={() => window.open(GITHUB_URL, '_blank')}>
+            <GithubLogo size={16} aria-hidden />GitHub 仓库<ArrowSquareOut size={16} aria-hidden />
+          </button>
+          <button type="button" className="ui-btn" data-variant="secondary" onClick={() => window.open(`${GITHUB_URL}/issues`, '_blank')}>
+            提交 Issue<ArrowSquareOut size={16} aria-hidden />
+          </button>
         </div>
-      </div>
+        <ul className="about-stack" aria-label="技术栈">
+          {STACK.map((t) => <li key={t}>{t}</li>)}
+        </ul>
+        <p className="about-meta">个人自用 · Windows 11 · 开源</p>
+      </section>
 
-      {/* ── 使用教程 ── */}
-      <section aria-labelledby="about-guide-heading">
-        <h3 id="about-guide-heading" className="eyebrow mb-3">
-          使用教程
+      <section className="ui-tile about-tile" aria-labelledby="about-shortcuts-heading">
+        <h3 id="about-shortcuts-heading" className="about-h">常用快捷键</h3>
+        <dl className="about-keys">
+          {SHORTCUTS.map((r) => (
+            <div key={r.keys}>
+              <dt>{r.desc}</dt>
+              <dd><kbd className="ui-kbd">{r.keys}</kbd></dd>
+            </div>
+          ))}
+        </dl>
+      </section>
+
+      <section className="ui-tile about-tile about-wide" aria-labelledby="about-guide-heading">
+        <h3 id="about-guide-heading" className="about-h">使用教程</h3>
+        <ol className="about-steps">
+          {GUIDE_STEPS.map((s, i) => {
+            const IconCmp = s.icon
+            return (
+              <li key={s.title}>
+                <span className="about-step-icon" aria-hidden><IconCmp size={20} /></span>
+                <div className="min-w-0">
+                  <b><span className="about-step-n">{i + 1}</span>{s.title}</b>
+                  <p>{s.desc}</p>
+                </div>
+              </li>
+            )
+          })}
+        </ol>
+      </section>
+
+      <section className="ui-tile about-tile about-wide" aria-labelledby="about-principles-heading">
+        <h3 id="about-principles-heading" className="about-h">
+          <ShieldCheck size={20} aria-hidden />设计原则
         </h3>
-        <div className="surface-card divide-y divide-line">
-          {GUIDE_STEPS.map((step, i) => (
-            <div key={i} className="flex gap-3 px-5 py-4">
-              <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-[6px] bg-accent/10 text-accent">
-                {step.icon}
-              </div>
-              <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                <p className="text-[13px] font-semibold text-ink-strong">{step.title}</p>
-                <p className="text-[12px] leading-relaxed text-ink-muted">{step.desc}</p>
-              </div>
+        <div className="about-principles">
+          {DESIGN_PRINCIPLES.map((p) => (
+            <div key={p.title}>
+              <b>{p.title}</b>
+              <p>{p.desc}</p>
             </div>
           ))}
         </div>
       </section>
-
-      {/* ── 设计原则 ── */}
-      <section aria-labelledby="about-principles-heading">
-        <h3 id="about-principles-heading" className="eyebrow mb-3">
-          设计原则
-        </h3>
-        <div className="grid grid-cols-2 gap-3">
-          {DESIGN_PRINCIPLES.map((p, i) => (
-            <div key={i} className="surface-card flex flex-col gap-1.5 px-4 py-3.5">
-              <div className="flex items-center gap-2">
-                <ShieldCheck size={13} weight="bold" className="shrink-0 text-accent" aria-hidden />
-                <p className="text-[12px] font-semibold text-ink-strong">{p.title}</p>
-              </div>
-              <p className="text-[12px] leading-relaxed text-ink-muted">{p.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── 快捷键 ── */}
-      <section aria-labelledby="about-shortcuts-heading">
-        <h3 id="about-shortcuts-heading" className="eyebrow mb-3">
-          常用快捷键
-        </h3>
-        <div className="surface-card divide-y divide-line">
-          {[
-            { keys: 'Ctrl+K', desc: '打开全局命令面板' },
-            { keys: 'Ctrl+↑ / ↓', desc: '键盘调整服务卡片顺序' },
-            { keys: 'Esc', desc: '关闭命令面板 / 弹层' }
-          ].map((row) => (
-            <div key={row.keys} className="flex items-center justify-between px-5 py-3">
-              <span className="text-[13px] text-ink-muted">{row.desc}</span>
-              <kbd className="rounded-[5px] border border-line bg-raised px-2.5 py-1 font-mono text-[11px] font-semibold text-ink-strong">
-                {row.keys}
-              </kbd>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── 底部链接 ── */}
-      <div className="flex items-center justify-between rounded-[10px] border border-line px-4 py-3">
-        <span className="text-[12px] text-ink-faint">
-          遇到问题或有想法？欢迎在 GitHub 提 Issue
-        </span>
-        <button
-          type="button"
-          onClick={() => window.open(`${GITHUB_URL}/issues`, '_blank')}
-          className="pressable flex items-center gap-1.5 rounded-[6px] px-2.5 py-1.5 text-[12px] font-semibold text-accent hover:bg-accent/10"
-        >
-          <GithubLogo size={13} weight="bold" aria-hidden />
-          提交 Issue
-          <ArrowSquareOut size={11} aria-hidden />
-        </button>
-      </div>
-
     </div>
   )
 }
