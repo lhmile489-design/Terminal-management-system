@@ -608,7 +608,7 @@ export class EntryService extends EventEmitter {
 
   remove(id: string): void {
     const runtime = this.runtimes.get(id)
-    if (runtime?.sessionId) this.sessions.kill(runtime.sessionId)
+    if (runtime?.sessionId) void this.sessions.kill(runtime.sessionId)
     this.runtimes.delete(id)
     this.commit(this.config.get().entries.filter((e) => e.id !== id))
   }

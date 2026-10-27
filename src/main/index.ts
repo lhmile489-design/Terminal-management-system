@@ -467,10 +467,19 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {
   if (!config.get().settings.closeToTray) app.quit()
 })
-app.on('before-quit', () => {
+/** 退出时等进程树终止的上限：taskkill 卡住也不能让应用关不掉 */
+const QUIT_CLEANUP_TIMEOUT_MS = 6000
+let cleanupDone = false
+
+app.on('before-quit', (e) => {
   quitting = true
   scanner?.stop()
-  if (config.get().settings.killOwnedOnQuit) sessions.disposeAll()
+  if (cleanupDone || !config.get().settings.killOwnedOnQuit || sessions.liveCount() === 0) return
+  // 不等的话进程退出时 taskkill 还没跑完，dev server 会留在后台占端口
+  e.preventDefault()
+  cleanupDone = true
+  const timeout = new Promise<void>((r) => setTimeout(r, QUIT_CLEANUP_TIMEOUT_MS))
+  void Promise.race([sessions.disposeAll().catch(() => undefined), timeout]).finally(() => app.quit())
 })
 
 const SCAN_INTERVALS = [1000, 2000, 5000, 10_000]

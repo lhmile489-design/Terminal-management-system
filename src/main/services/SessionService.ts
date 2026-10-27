@@ -171,19 +171,20 @@ export class SessionService extends EventEmitter {
     setTimeout(() => this.kill(id), 3000)
   }
 
-  kill(id: string): void {
+  /** 返回的 Promise 在 taskkill 结束后才 resolve；退出清理要等它，普通调用方可以不等 */
+  kill(id: string): Promise<void> {
     const entry = this.entries.get(id)
-    if (!entry) return
+    if (!entry) return Promise.resolve()
     const { pid, status } = entry.meta
     // 会话已退出则 PID 可能被系统回收复用，此时 taskkill 就是误杀
     if (status === 'stopped' || status === 'crashed') {
       this.ownership.unregister(id)
-      return
+      return Promise.resolve()
     }
     // PRD §6.3 步骤 4：kill 前重新验证归属，防止 3s 等待期间 PID 被回收复用后误杀。
-    // 异步路径：先拿到表再执行，同步地 void 掉整段；若 scanner 尚未注入则跳过重校验
+    // 若 scanner 尚未注入则跳过重校验
     // (仅在极早期 disposeAll 场景，此时 scanner 还未完成首次采集，风险可接受)
-    void this.doKill(id, pid, entry)
+    return this.doKill(id, pid, entry)
   }
 
   private async doKill(id: string, pid: number, entry: Entry): Promise<void> {
@@ -198,17 +199,21 @@ export class SessionService extends EventEmitter {
       }
     }
 
-    // Vite/webpack 会拉起子进程，pty.kill() 只结束 conhost 根进程，必须带树终止
-    try {
-      execFile(
-        'taskkill.exe',
-        ['/PID', String(pid), '/T', '/F'],
-        { windowsHide: true },
-        () => undefined
-      )
-    } catch {
-      // taskkill 不可用时退回 pty.kill
-    }
+    // Vite/webpack 会拉起子进程，pty.kill() 只结束 conhost 根进程，必须带树终止。
+    // 等 taskkill 回调再往下走：退出清理靠这一步确认进程树已结束
+    await new Promise<void>((resolve) => {
+      try {
+        execFile(
+          'taskkill.exe',
+          ['/PID', String(pid), '/T', '/F'],
+          { windowsHide: true, timeout: 5000 },
+          () => resolve()
+        )
+      } catch {
+        // taskkill 不可用时退回 pty.kill
+        resolve()
+      }
+    })
     try {
       entry.pty.kill()
     } catch {
@@ -228,8 +233,15 @@ export class SessionService extends EventEmitter {
     return null
   }
 
-  disposeAll(): void {
-    for (const id of this.entries.keys()) this.kill(id)
+  /** 还活着的会话数，退出流程据此决定要不要等清理 */
+  liveCount(): number {
+    return this.ownedPids().length
+  }
+
+  /** 终止全部会话的进程树；resolve 时每个 taskkill 都已返回 */
+  async disposeAll(): Promise<void> {
+    const ids = [...this.entries.keys()]
+    await Promise.all(ids.map((id) => this.kill(id)))
     this.entries.clear()
   }
 }
