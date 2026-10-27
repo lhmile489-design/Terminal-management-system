@@ -5,8 +5,8 @@ interface SessionStore {
   sessions: SessionMeta[]
   activeId: string | null
   refresh: () => Promise<void>
-  /** 省略 cwd 时由主进程回退到用户主目录 */
-  openShell: (cwd?: string) => Promise<void>
+  /** 工作目录由主进程决定（用户主目录），渲染层不能指定 */
+  openShell: () => Promise<void>
   select: (id: string) => void
   /** 启动台创建的会话不经过本 store，先拉列表再选中 */
   focus: (id: string) => Promise<void>
@@ -26,8 +26,8 @@ export const useSessions = create<SessionStore>((set, get) => ({
     }))
   },
 
-  openShell: async (cwd) => {
-    const meta = await window.mile.session.create({ kind: 'shell', cwd, title: 'PowerShell' })
+  openShell: async () => {
+    const meta = await window.mile.session.create({ kind: 'shell', title: 'PowerShell' })
     set((s) => ({ sessions: [...s.sessions, meta], activeId: meta.id }))
   },
 

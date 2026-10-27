@@ -1,8 +1,8 @@
 import { join } from 'node:path'
 import { app, BrowserWindow, dialog, ipcMain, Menu, Notification, shell, Tray } from 'electron'
+import type { IpcMainEvent, IpcMainInvokeEvent } from 'electron'
 import { Channels } from '@shared/channels'
 import type {
-  CreateSessionInput,
   EntryEdit,
   EntryStatus,
   GroupPatch,
@@ -95,6 +95,12 @@ function createWindow(): void {
     return { action: 'deny' }
   })
 
+  // 顶层页面只能是应用自己：渲染层改 location 离开当前 URL 一律拦下。
+  // 页内 hash 跳转不触发 will-navigate；主进程 loadURL 也不经过这里。
+  win.webContents.on('will-navigate', (e, url) => {
+    if (url !== win.webContents.getURL()) e.preventDefault()
+  })
+
   const devUrl = process.env.ELECTRON_RENDERER_URL
   if (devUrl) {
     win.loadURL(devUrl)
@@ -134,23 +140,53 @@ function createTray(): void {
   tray.on('double-click', show)
 }
 
+/**
+ * IPC 只认主窗口的主框架。preload 只挂在主窗口上，正常不会有别的来源；
+ * 这一层是兜底 —— 万一以后多开窗口或嵌了 iframe，它们拿不到特权通道。
+ */
+function isTrustedSender(event: IpcMainEvent | IpcMainInvokeEvent): boolean {
+  return (
+    !!mainWindow &&
+    event.sender === mainWindow.webContents &&
+    event.senderFrame === mainWindow.webContents.mainFrame
+  )
+}
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+const ipc = {
+  handle(channel: string, listener: (event: IpcMainInvokeEvent, ...args: any[]) => unknown): void {
+    ipcMain.handle(channel, (event, ...args) => {
+      if (!isTrustedSender(event)) throw new Error('拒绝非主窗口或非主框架的 IPC 请求')
+      return listener(event, ...args)
+    })
+  },
+  on(channel: string, listener: (event: IpcMainEvent, ...args: any[]) => void): void {
+    ipcMain.on(channel, (event, ...args) => {
+      if (!isTrustedSender(event)) return
+      listener(event, ...args)
+    })
+  }
+}
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
 function registerIpc(): void {
-  ipcMain.handle(Channels.sessionList, () => sessions.list())
-  ipcMain.handle(Channels.sessionCreate, (_e, input: CreateSessionInput) => sessions.create(input))
-  ipcMain.handle(Channels.sessionHistory, (_e, id: string) => sessions.history(id))
-  ipcMain.handle(Channels.sessionStop, (_e, id: string) => sessions.stop(id))
-  ipcMain.on(Channels.sessionWrite, (_e, id: string, data: string) => sessions.write(id, data))
-  ipcMain.on(Channels.sessionResize, (_e, id: string, cols: number, rows: number) =>
+  ipc.handle(Channels.sessionList, () => sessions.list())
+  // 只走固定 shell 入口：渲染层给的 file/args/cwd/env 在这里被丢弃，PRD §11 红线 3、4
+  ipc.handle(Channels.sessionCreate, (_e, input: unknown) => sessions.createShell(input))
+  ipc.handle(Channels.sessionHistory, (_e, id: string) => sessions.history(id))
+  ipc.handle(Channels.sessionStop, (_e, id: string) => sessions.stop(id))
+  ipc.on(Channels.sessionWrite, (_e, id: string, data: string) => sessions.write(id, data))
+  ipc.on(Channels.sessionResize, (_e, id: string, cols: number, rows: number) =>
     sessions.resize(id, cols, rows)
   )
 
   // 仅允许 localhost 的 http，端口取整校验 —— 不接受渲染层传任意 URL，PRD §11
-  ipcMain.on(Channels.shellOpenLocalhost, (_e, port: unknown) => {
+  ipc.on(Channels.shellOpenLocalhost, (_e, port: unknown) => {
     if (!Number.isInteger(port) || (port as number) < 1 || (port as number) > 65535) return
     void shell.openExternal(`http://localhost:${port as number}`)
   })
 
-  ipcMain.on(Channels.shellOpenPath, (_e, target: unknown) => {
+  ipc.on(Channels.shellOpenPath, (_e, target: unknown) => {
     if (typeof target !== 'string') return
     // 白名单二选一：采集到的现存目录，或启动台已登记条目的目录/产物目录。
     // 两者都不匹配就拒绝 —— 不接受渲染层构造任意路径触发关联程序，PRD §11。
@@ -158,20 +194,20 @@ function registerIpc(): void {
     void shell.openPath(target)
   })
 
-  ipcMain.handle(Channels.entryList, () => entries.list())
-  ipcMain.handle(Channels.entryAdd, (_e, input: NewLaunchEntry) => entries.add(input))
+  ipc.handle(Channels.entryList, () => entries.list())
+  ipc.handle(Channels.entryAdd, (_e, input: NewLaunchEntry) => entries.add(input))
   // 渲染层没有不受校验的写入口：edit 只认白名单字段，运行中改身份字段直接抛错，PRD §4.6
-  ipcMain.handle(Channels.entryEdit, (_e, id: string, patch: EntryEdit) => entries.edit(id, patch))
-  ipcMain.handle(Channels.entryRemove, (_e, id: string) => entries.remove(id))
-  ipcMain.handle(Channels.entryReorder, (_e, ids: string[]) => entries.reorder(ids))
-  ipcMain.handle(Channels.entryDetect, (_e, path: string) => detect.detect(path))
-  ipcMain.handle(Channels.entryPrecheck, (_e, id: string) => entries.runPrecheck(id))
-  ipcMain.handle(Channels.entryStart, (_e, id: string) => entries.start(id))
-  ipcMain.handle(Channels.entryStop, (_e, id: string) => entries.stop(id))
-  ipcMain.handle(Channels.entryRestart, (_e, id: string) => entries.restart(id))
-  ipcMain.handle(Channels.entryInstall, (_e, id: string) => entries.install(id))
+  ipc.handle(Channels.entryEdit, (_e, id: string, patch: EntryEdit) => entries.edit(id, patch))
+  ipc.handle(Channels.entryRemove, (_e, id: string) => entries.remove(id))
+  ipc.handle(Channels.entryReorder, (_e, ids: string[]) => entries.reorder(ids))
+  ipc.handle(Channels.entryDetect, (_e, path: string) => detect.detect(path))
+  ipc.handle(Channels.entryPrecheck, (_e, id: string) => entries.runPrecheck(id))
+  ipc.handle(Channels.entryStart, (_e, id: string) => entries.start(id))
+  ipc.handle(Channels.entryStop, (_e, id: string) => entries.stop(id))
+  ipc.handle(Channels.entryRestart, (_e, id: string) => entries.restart(id))
+  ipc.handle(Channels.entryInstall, (_e, id: string) => entries.install(id))
   // 后端控制台：Maven/Gradle 构建任务。goal 在主进程白名单校验，不接受自由字符串。
-  ipcMain.handle(Channels.entryMavenRun, (_e, id: string, goal: unknown) => {
+  ipc.handle(Channels.entryMavenRun, (_e, id: string, goal: unknown) => {
     const VALID_GOALS: MavenGoal[] = ['clean', 'compile', 'package', 'test', 'install', 'verify']
     if (typeof goal !== 'string' || !VALID_GOALS.includes(goal as MavenGoal)) {
       throw new Error(`非法构建目标：${String(goal)}`)
@@ -179,7 +215,7 @@ function registerIpc(): void {
     return entries.mavenRun(id, goal as MavenGoal)
   })
   // 带 profile 的打包：profile 为 null 不带 -P；命令构造全在主进程，profile 经 SAFE_PROFILE 白名单
-  ipcMain.handle(Channels.entryPackageWithProfile, (_e, id: unknown, profile: unknown) => {
+  ipc.handle(Channels.entryPackageWithProfile, (_e, id: unknown, profile: unknown) => {
     if (typeof id !== 'string') throw new Error('条目 id 非法')
     if (profile !== null && typeof profile !== 'string') {
       throw new Error('profile 必须是字符串或 null')
@@ -187,19 +223,19 @@ function registerIpc(): void {
     return entries.packageWithProfile(id, profile as string | null)
   })
   // 检测 Spring Boot profile 配置文件列表（只读目录，不执行代码）
-  ipcMain.handle(Channels.entryDetectProfiles, (_e, id: unknown) => {
+  ipc.handle(Channels.entryDetectProfiles, (_e, id: unknown) => {
     if (typeof id !== 'string') return []
     const entry = entries.get(id)
     if (!entry || entry.framework !== 'spring-boot') return []
     return detect.detectSpringBootProfiles(entry.path)
   })
   // 扫描 target/ 目录下的 jar 文件列表（只读目录），供后端控制台 jar 模式一键选择
-  ipcMain.handle(Channels.entryListJars, (_e, id: unknown) => {
+  ipc.handle(Channels.entryListJars, (_e, id: unknown) => {
     if (typeof id !== 'string') return []
     return entries.listJars(id)
   })
   // 将条目的 expectedPort 切换到指定端口并持久化。port 必须是 1024-65535 的整数。
-  ipcMain.handle(Channels.entrySwitchPort, (_e, id: unknown, port: unknown) => {
+  ipc.handle(Channels.entrySwitchPort, (_e, id: unknown, port: unknown) => {
     if (typeof id !== 'string') throw new Error('条目 id 非法')
     const p = Number(port)
     if (!Number.isInteger(p) || p < 1024 || p > 65535) {
@@ -208,14 +244,14 @@ function registerIpc(): void {
     return entries.switchPort(id, p)
   })
   // 只收 id + 脚本名，命令构造与脚本校验全在主进程，PRD §9.5 / §11
-  ipcMain.handle(Channels.entryRunScript, (_e, id: string, script: string) => {
+  ipc.handle(Channels.entryRunScript, (_e, id: string, script: string) => {
     if (typeof script !== 'string') throw new Error('脚本名必须是字符串')
     return entries.runScript(id, script)
   })
-  ipcMain.handle(Channels.entryDiagnose, (_e, id: string) => entries.diagnose(id))
-  ipcMain.handle(Channels.entryOutputDir, (_e, id: string) => entries.outputDir(id))
+  ipc.handle(Channels.entryDiagnose, (_e, id: string) => entries.diagnose(id))
+  ipc.handle(Channels.entryOutputDir, (_e, id: string) => entries.outputDir(id))
   // 路径全在主进程构造（entries.revealOutput → outputDir → readdir），渲染层只给 id，PRD §11
-  ipcMain.handle(Channels.entryRevealOutput, async (_e, id: string) => {
+  ipc.handle(Channels.entryRevealOutput, async (_e, id: string) => {
     const result = await entries.revealOutput(id)
     if (!result.path) return false
     if (result.kind === 'file') {
@@ -228,7 +264,7 @@ function registerIpc(): void {
   })
 
   // 路径由主进程按条目 id 自己拼，渲染层只给 id —— 不接受传入任意文件路径，PRD §11
-  ipcMain.handle(Channels.entryOpenPackageJson, async (_e, id: string) => {
+  ipc.handle(Channels.entryOpenPackageJson, async (_e, id: string) => {
     const target = entries.packageJsonPath(id)
     if (!target) return false
     const err = await shell.openPath(target)
@@ -236,15 +272,15 @@ function registerIpc(): void {
     return true
   })
   // uniapp 专属：只收 id，cli.exe 探测与命令构造全在主进程，PRD §11
-  ipcMain.handle(Channels.entryOpenInHBuilderX, (_e, id: string) => entries.openInHBuilderX(id))
-  ipcMain.handle(Channels.entryRuntimes, () => entries.runtimeList())
+  ipc.handle(Channels.entryOpenInHBuilderX, (_e, id: string) => entries.openInHBuilderX(id))
+  ipc.handle(Channels.entryRuntimes, () => entries.runtimeList())
   // 只收 id，路径由主进程按条目自己拼，返回 base64 data URL 或 null，只读不联网，PRD §11
-  ipcMain.handle(Channels.entryFavicon, (_e, id: unknown) =>
+  ipc.handle(Channels.entryFavicon, (_e, id: unknown) =>
     typeof id === 'string' ? entries.favicon(id) : null
   )
   // 自定义图片：渲染层传 id + 原始字节，主进程压缩落盘并回填哈希文件名。字节做上限
   // 校验（8MB），超限拒绝避免大文件占内存；解码/非图片由 ImageService 兜底抛错。
-  ipcMain.handle(Channels.entrySetImage, (_e, id: unknown, bytes: unknown) => {
+  ipc.handle(Channels.entrySetImage, (_e, id: unknown, bytes: unknown) => {
     if (typeof id !== 'string') throw new Error('条目 id 非法')
     const view =
       bytes instanceof Uint8Array
@@ -257,11 +293,11 @@ function registerIpc(): void {
     if (view.byteLength > 8 * 1024 * 1024) throw new Error('图片过大（上限 8MB）')
     return entries.setImage(id, view)
   })
-  ipcMain.handle(Channels.entryClearImage, (_e, id: unknown) => {
+  ipc.handle(Channels.entryClearImage, (_e, id: unknown) => {
     if (typeof id !== 'string') throw new Error('条目 id 非法')
     return entries.clearImage(id)
   })
-  ipcMain.handle(Channels.entryImage, (_e, id: unknown) =>
+  ipc.handle(Channels.entryImage, (_e, id: unknown) =>
     typeof id === 'string' ? entries.imageDataUrl(id) : null
   )
   entries.on('changed', (list) => mainWindow?.webContents.send(Channels.entryChanged, list))
@@ -276,25 +312,25 @@ function registerIpc(): void {
   )
 
   // ── 工作组 IPC，PRD-WORKGROUPS §4 ──────────────────────────────────────────
-  ipcMain.handle(Channels.groupList, () => groups.list())
+  ipc.handle(Channels.groupList, () => groups.list())
 
-  ipcMain.handle(Channels.groupAdd, (_e, input: unknown) => {
+  ipc.handle(Channels.groupAdd, (_e, input: unknown) => {
     if (typeof input !== 'object' || input === null) throw new Error('工作组输入必须是对象')
     return groups.add(input as NewProjectGroup)
   })
 
-  ipcMain.handle(Channels.groupPatch, (_e, id: unknown, patch: unknown) => {
+  ipc.handle(Channels.groupPatch, (_e, id: unknown, patch: unknown) => {
     if (typeof id !== 'string') throw new Error('工作组 id 必须是字符串')
     if (typeof patch !== 'object' || patch === null) throw new Error('工作组补丁必须是对象')
     return groups.patch(id, patch as GroupPatch)
   })
 
-  ipcMain.handle(Channels.groupRemove, (_e, id: unknown) => {
+  ipc.handle(Channels.groupRemove, (_e, id: unknown) => {
     if (typeof id !== 'string') throw new Error('工作组 id 必须是字符串')
     groups.remove(id)
   })
 
-  ipcMain.handle(Channels.groupReorder, (_e, ids: unknown) => {
+  ipc.handle(Channels.groupReorder, (_e, ids: unknown) => {
     if (!Array.isArray(ids) || !ids.every((id) => typeof id === 'string')) {
       throw new Error('ids 必须是字符串数组')
     }
@@ -304,7 +340,7 @@ function registerIpc(): void {
   groups.on('changed', (list) => mainWindow?.webContents.send(Channels.groupChanged, list))
 
   // entry:revealLastJar：路径由主进程从 EntryRuntime.lastBuiltJar 构造，渲染层只给 id，PRD §11
-  ipcMain.handle(Channels.entryRevealLastJar, async (_e, id: unknown) => {
+  ipc.handle(Channels.entryRevealLastJar, async (_e, id: unknown) => {
     if (typeof id !== 'string') throw new Error('条目 id 非法')
     const entry = entries.get(id)
     if (!entry) throw new Error('条目不存在')
@@ -322,14 +358,14 @@ function registerIpc(): void {
   })
 
   // 查询条件逐字段校形：坏值会让筛选静默失效，用户以为「没有这样的日志」
-  ipcMain.handle(Channels.logQuery, (_e, query: unknown) => logs.query(sanitizeLogQuery(query)))
-  ipcMain.on(Channels.logClear, () => logs.clear())
+  ipc.handle(Channels.logQuery, (_e, query: unknown) => logs.query(sanitizeLogQuery(query)))
+  ipc.on(Channels.logClear, () => logs.clear())
 
-  ipcMain.handle(Channels.settingsGet, () => config.get().settings)
+  ipc.handle(Channels.settingsGet, () => config.get().settings)
 
   // 设置直接驱动采集周期、退出行为等，逐字段校验后再落盘 —— 不接受渲染层
   // 塞进任意键值，坏值会让采集器排出无意义的定时或让配置结构走形。
-  ipcMain.handle(Channels.settingsPatch, (_e, patch: unknown) => {
+  ipc.handle(Channels.settingsPatch, (_e, patch: unknown) => {
     const next = sanitizeSettings(patch)
     const updated = config.patchSettings(next).settings
     // 采集周期改了要立刻生效，否则要等下一轮才换节奏
@@ -342,7 +378,7 @@ function registerIpc(): void {
     return updated
   })
 
-  ipcMain.handle(Channels.dialogPickDirectory, async () => {
+  ipc.handle(Channels.dialogPickDirectory, async () => {
     if (!mainWindow) return null
     const result = await dialog.showOpenDialog(mainWindow, {
       title: '选择项目目录',
@@ -351,18 +387,18 @@ function registerIpc(): void {
     return result.canceled ? null : (result.filePaths[0] ?? null)
   })
 
-  ipcMain.handle(Channels.scannerSnapshot, () => scanner.snapshot())
-  ipcMain.on(Channels.scannerRefresh, () => scanner.refresh())
-  ipcMain.on(Channels.scannerVisibility, (_e, visible: boolean) => scanner.setVisible(visible))
-  ipcMain.on(Channels.scannerIgnore, (_e, processName: string, port: number) =>
+  ipc.handle(Channels.scannerSnapshot, () => scanner.snapshot())
+  ipc.on(Channels.scannerRefresh, () => scanner.refresh())
+  ipc.on(Channels.scannerVisibility, (_e, visible: boolean) => scanner.setVisible(visible))
+  ipc.on(Channels.scannerIgnore, (_e, processName: string, port: number) =>
     scanner.ignore(processName, port)
   )
-  ipcMain.on(Channels.scannerHideOnce, (_e, pid: number, port: number) =>
+  ipc.on(Channels.scannerHideOnce, (_e, pid: number, port: number) =>
     scanner.hideOnce(pid, port)
   )
 
   // 分组只影响列表怎么排，不影响能不能停 —— 权限判定始终在 OwnershipService，PRD §5.2
-  ipcMain.handle(Channels.scannerSetGroup, (_e, processName: unknown, group: unknown) => {
+  ipc.handle(Channels.scannerSetGroup, (_e, processName: unknown, group: unknown) => {
     if (typeof processName !== 'string') throw new Error('进程名必须是字符串')
     if (group !== 'mine' && group !== 'background' && group !== null) {
       throw new Error('分组只接受 mine / background / null')
@@ -370,24 +406,24 @@ function registerIpc(): void {
     scanner.setGroup(processName, group)
   })
 
-  ipcMain.handle(Channels.scannerWatchedGet, () => config.get().watchedKeywords)
-  ipcMain.handle(Channels.scannerWatchedSet, (_e, keywords: unknown) =>
+  ipc.handle(Channels.scannerWatchedGet, () => config.get().watchedKeywords)
+  ipc.handle(Channels.scannerWatchedSet, (_e, keywords: unknown) =>
     scanner.setWatchedKeywords(keywords)
   )
   scanner.on('diff', (diff) => mainWindow?.webContents.send(Channels.scannerDiff, diff))
 
-  ipcMain.handle(Channels.themeGet, () => theme.state())
-  ipcMain.handle(Channels.themeSet, (_e, preference: ThemePreference) => theme.set(preference))
+  ipc.handle(Channels.themeGet, () => theme.state())
+  ipc.handle(Channels.themeSet, (_e, preference: ThemePreference) => theme.set(preference))
   theme.on('changed', (state) => mainWindow?.webContents.send(Channels.themeChanged, state))
 
-  ipcMain.handle(Channels.windowIsMaximized, () => mainWindow?.isMaximized() ?? false)
-  ipcMain.handle(Channels.appInfo, () => ({ version: app.getVersion(), name: app.getName() }))
-  ipcMain.on('window:minimize', () => mainWindow?.minimize())
-  ipcMain.on('window:toggleMaximize', () => {
+  ipc.handle(Channels.windowIsMaximized, () => mainWindow?.isMaximized() ?? false)
+  ipc.handle(Channels.appInfo, () => ({ version: app.getVersion(), name: app.getName() }))
+  ipc.on('window:minimize', () => mainWindow?.minimize())
+  ipc.on('window:toggleMaximize', () => {
     if (!mainWindow) return
     mainWindow.isMaximized() ? mainWindow.unmaximize() : mainWindow.maximize()
   })
-  ipcMain.on('window:close', () => mainWindow?.close())
+  ipc.on('window:close', () => mainWindow?.close())
 
   sessions.on('data', (payload) => mainWindow?.webContents.send(Channels.sessionData, payload))
   sessions.on('exit', (payload) => mainWindow?.webContents.send(Channels.sessionExit, payload))

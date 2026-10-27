@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { Channels } from '@shared/channels'
 import type {
-  CreateSessionInput,
+  CreateShellSessionInput,
   DetectResult,
   EntryDiagnosis,
   EntryEdit,
@@ -30,7 +30,7 @@ import type {
 const api = {
   session: {
     list: (): Promise<SessionMeta[]> => ipcRenderer.invoke(Channels.sessionList),
-    create: (input: CreateSessionInput): Promise<SessionMeta> =>
+    create: (input: CreateShellSessionInput): Promise<SessionMeta> =>
       ipcRenderer.invoke(Channels.sessionCreate, input),
     history: (id: string): Promise<string> => ipcRenderer.invoke(Channels.sessionHistory, id),
     stop: (id: string): Promise<void> => ipcRenderer.invoke(Channels.sessionStop, id),

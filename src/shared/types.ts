@@ -16,6 +16,19 @@ export interface SessionMeta {
   exitCode?: number
 }
 
+/**
+ * 渲染层「新建终端」唯一能提的请求。可执行文件、参数、工作目录、环境变量
+ * 一律由主进程决定 —— 渲染层传来的其他字段在 IPC 边界被丢弃，PRD §11。
+ */
+export interface CreateShellSessionInput {
+  kind: 'shell'
+  title?: string
+}
+
+/**
+ * 主进程内部的完整会话规格（EntryService 用固定模板构造），不经过 IPC。
+ * 渲染层拿不到这个入口。
+ */
 export interface CreateSessionInput {
   kind: SessionKind
   /** 省略时回退到用户主目录 */

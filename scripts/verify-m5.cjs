@@ -167,7 +167,9 @@ function seedConfig() {
 async function callIpc(channel, ...args) {
   const handler = ipcMain._invokeHandlers.get(channel)
   if (!handler) throw new Error(`没有注册 handler: ${channel}`)
-  return await handler({}, ...args)
+  // 主进程只认主窗口主框架的 IPC，直调 handler 也得带上同样的 sender
+  const wc = BrowserWindow.getAllWindows()[0].webContents
+  return await handler({ sender: wc, senderFrame: wc.mainFrame }, ...args)
 }
 
 async function waitFor(fn, timeoutMs, label) {
