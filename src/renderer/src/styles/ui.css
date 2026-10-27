@@ -1117,3 +1117,18 @@
 .about-steps p, .about-principles p { margin-top: 2px; font-size: 12px; line-height: 1.6; color: var(--text-muted); }
 .about-principles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .about-principles > div { padding: 12px; border-radius: 12px; border: 1px solid var(--stroke-base); }
+
+/* ── 通用对话框外壳：端口、脚本选择、工作组、命令面板（阶段 7）── 与添加对话框同一套层次 */
+.dlg-scrim { background: rgb(15 18 25 / 0.32); backdrop-filter: blur(6px); animation: ui-fade 180ms var(--ease-out); }
+[data-theme='dark'] .dlg-scrim { background: rgb(0 0 0 / 0.5); }
+.dlg-panel {
+  border: 1px solid var(--stroke-base);
+  border-radius: var(--radius-card);
+  background: var(--surface-card);
+  box-shadow: 0 1px 2px rgb(20 28 48 / 0.06), 0 24px 56px -12px rgb(20 28 48 / 0.28), inset 0 1px 0 rgb(255 255 255 / 0.6);
+  animation: dlg-pop 200ms var(--ease-spring);
+}
+[data-theme='dark'] .dlg-panel { box-shadow: 0 24px 56px -12px rgb(0 0 0 / 0.6), inset 0 1px 0 rgb(255 255 255 / 0.04); }
+@keyframes dlg-pop { from { opacity: 0; transform: translateY(6px) scale(0.97); } }
+.dlg-title { font-family: var(--font-display); font-size: 16px; font-weight: 700; letter-spacing: -0.01em; color: var(--text-strong); }
+@media (prefers-reduced-motion: reduce) { .dlg-scrim, .dlg-panel { animation: none; } }

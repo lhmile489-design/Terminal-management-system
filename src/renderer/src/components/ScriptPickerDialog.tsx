@@ -29,15 +29,15 @@ export function ScriptPickerDialog({
   }, [onClose])
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center dlg-scrim px-6">
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="script-picker-heading"
-        className="flex max-h-[80vh] w-full max-w-lg flex-col rounded-[14px] border border-line bg-panel shadow-2xl"
+        className="flex max-h-[80vh] w-full max-w-lg flex-col dlg-panel"
       >
         <header className="flex items-center justify-between gap-3 border-b border-line px-5 py-3.5">
-          <h2 id="script-picker-heading" className="text-[14px] font-semibold text-ink-strong">
+          <h2 id="script-picker-heading" className="dlg-title">
             选择要执行的脚本
           </h2>
           <button
@@ -78,7 +78,7 @@ export function ScriptPickerDialog({
                     />
                     <span className="flex min-w-0 flex-col gap-0.5">
                       <span className="font-mono text-[12.5px] text-ink-strong">{name}</span>
-                      <span className="font-mono text-[11px] break-all text-ink-faint">
+                      <span className="font-mono text-[12px] break-all text-ink-faint">
                         {entry.scripts[name]}
                       </span>
                     </span>

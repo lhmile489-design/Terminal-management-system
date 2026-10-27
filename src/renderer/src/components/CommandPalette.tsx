@@ -117,14 +117,14 @@ export function CommandPalette({
     <div
       role="presentation"
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
-      className="scrim-frosted cmd-scrim fixed inset-0 z-50 flex items-start justify-center pt-[12vh]"
+      className="dlg-scrim fixed inset-0 z-50 flex items-start justify-center pt-[12vh]"
     >
       <div
         role="dialog"
         aria-modal="true"
         aria-label="命令面板"
         onKeyDown={onKeyDown}
-        className="cmd-dialog surface-frosted flex max-h-[64vh] w-[560px] max-w-[calc(100vw-48px)] flex-col overflow-hidden rounded-[14px]"
+        className="dlg-panel flex max-h-[64vh] w-[560px] max-w-[calc(100vw-48px)] flex-col overflow-hidden"
       >
         <div className="flex shrink-0 items-center gap-2.5 border-b border-line px-3.5 py-3">
           <MagnifyingGlass size={15} weight="bold" className="shrink-0 text-ink-faint" aria-hidden />
@@ -140,7 +140,7 @@ export function CommandPalette({
             aria-controls="palette-results"
             className="min-w-0 flex-1 bg-transparent text-[13.5px] text-ink-strong placeholder:text-ink-faint focus:outline-none"
           />
-          <kbd className="shrink-0 rounded-[4px] border border-line-strong px-1.5 py-0.5 font-mono text-[10px] text-ink-faint">
+          <kbd className="shrink-0 rounded-[4px] border border-line-strong px-1.5 py-0.5 font-mono text-[12px] text-ink-faint">
             Esc
           </kbd>
         </div>
@@ -155,7 +155,7 @@ export function CommandPalette({
               return (
                 <div key={c.id}>
                   {header && (
-                    <p className="px-3.5 pt-2 pb-1 font-mono text-[10px] font-semibold tracking-[0.12em] text-ink-faint uppercase">
+                    <p className="px-3.5 pt-2 pb-1 text-[12px] font-semibold text-ink-faint">
                       {header}
                     </p>
                   )}
@@ -180,7 +180,7 @@ export function CommandPalette({
                     />
                     <span className="min-w-0 flex-1 truncate text-[13px] text-ink-strong">{c.label}</span>
                     {c.hint && (
-                      <span className="shrink-0 font-mono text-[11px] text-ink-faint">{c.hint}</span>
+                      <span className="shrink-0 font-mono text-[12px] text-ink-faint">{c.hint}</span>
                     )}
                   </button>
                 </div>

@@ -38,16 +38,16 @@ export function PortDialog({
   const valid = Number.isInteger(port) && port >= 1 && port <= 65535
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center dlg-scrim px-6">
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="port-dialog-heading"
         data-port-fix-mode={isNext ? 'next' : 'manual'}
-        className="w-full max-w-sm rounded-[14px] border border-line bg-panel shadow-2xl"
+        className="w-full max-w-sm dlg-panel"
       >
         <header className="flex items-center justify-between gap-3 border-b border-line px-5 py-3.5">
-          <h2 id="port-dialog-heading" className="text-[14px] font-semibold text-ink-strong">
+          <h2 id="port-dialog-heading" className="dlg-title">
             {isNext ? '改用其他端口' : '端口需要项目配置'}
           </h2>
           <button
@@ -89,7 +89,7 @@ export function PortDialog({
               Mile Terminal 无法安全推断此项目使用的端口配置。请修改项目配置，或在编辑条目中填写该项目文档指定的环境变量名。
             </p>
           )}
-          <p className="text-[11px] text-ink-faint">
+          <p className="text-[12px] text-ink-faint">
             {isNext
               ? '保存后会在下次启动时注入 PORT，并同步预期端口。'
               : '不会修改预期端口，也不会向启动命令追加 --port。'}

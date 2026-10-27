@@ -48,11 +48,11 @@ export function GroupDialog({ initial, onSubmit, onClose }: GroupDialogProps): R
 
   return (
     <div
-      className="scrim-frosted fixed inset-0 z-50 flex items-center justify-center"
+      className="dlg-scrim fixed inset-0 z-50 flex items-center justify-center"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="surface-frosted cmd-dialog w-full max-w-[400px] rounded-[12px] p-5 shadow-xl">
-        <h2 className="mb-4 text-[14px] font-semibold text-ink-strong">
+      <div className="dlg-panel w-full max-w-[400px] p-5">
+        <h2 className="mb-4 dlg-title">
           {initial ? '编辑工作组' : '新建工作组'}
         </h2>
 
@@ -102,7 +102,7 @@ export function GroupDialog({ initial, onSubmit, onClose }: GroupDialogProps): R
                   type="button"
                   onClick={() => setEnv(e)}
                   className={[
-                    'pressable flex-1 rounded-[6px] border py-1.5 text-[11.5px] font-medium transition-all duration-150',
+                    'pressable flex-1 rounded-[6px] border py-1.5 text-[12px] font-medium transition-all duration-150',
                     env === e
                       ? ENV_BADGE[e]
                       : 'border-line bg-raised/40 text-ink-faint hover:bg-raised hover:text-ink-muted'
@@ -118,7 +118,7 @@ export function GroupDialog({ initial, onSubmit, onClose }: GroupDialogProps): R
           {err && (
             <div className="flex items-center gap-1.5 rounded-[5px] border border-fault/25 bg-fault/8 px-2.5 py-1.5">
               <Warning size={11} weight="bold" className="shrink-0 text-fault" />
-              <p className="text-[11px] text-fault">{err}</p>
+              <p className="text-[12px] text-fault">{err}</p>
             </div>
           )}
 
@@ -180,13 +180,13 @@ export function AssignGroupDialog({ group, entries, onClose }: AssignDialogProps
 
   return (
     <div
-      className="scrim-frosted fixed inset-0 z-50 flex items-center justify-center"
+      className="dlg-scrim fixed inset-0 z-50 flex items-center justify-center"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="surface-frosted cmd-dialog w-full max-w-[440px] rounded-[12px] p-5 shadow-xl">
+      <div className="dlg-panel w-full max-w-[440px] p-5">
         <div className="mb-3 flex items-center gap-2">
           <Users size={14} weight="regular" className="shrink-0 text-accent/70" aria-hidden />
-          <h2 className="text-[14px] font-semibold text-ink-strong">分配条目到「{group.name}」</h2>
+          <h2 className="dlg-title">分配条目到「{group.name}」</h2>
         </div>
 
         <input
