@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useOverlay } from '../lib/overlay'
 import { ArrowRight, MagnifyingGlass } from '@phosphor-icons/react'
-import type { LaunchEntry, ListenerSnapshot, ThemePreference } from '@shared/types'
+import type { LaunchEntry, ListenerSnapshot, ProjectGroup, ThemePreference } from '@shared/types'
 import { STATUS_META } from '../lib/entryMeta'
 
 /**
@@ -14,6 +14,13 @@ import { STATUS_META } from '../lib/entryMeta'
 export type PaletteAction =
   | { type: 'startEntry'; entry: LaunchEntry }
   | { type: 'stopEntry'; entry: LaunchEntry }
+  | { type: 'restartEntry'; entry: LaunchEntry }
+  | { type: 'focusEntry'; entry: LaunchEntry }
+  | { type: 'openDir'; entry: LaunchEntry }
+  | { type: 'openTerminal'; entry: LaunchEntry }
+  | { type: 'openExternalTerminal'; entry: LaunchEntry }
+  | { type: 'startGroup'; group: ProjectGroup }
+  | { type: 'stopGroup'; group: ProjectGroup }
   | { type: 'locatePort'; port: number }
   | { type: 'runScript'; entry: LaunchEntry; script: string }
   | { type: 'addEntry'; kind: 'service' | 'task' }
@@ -39,6 +46,7 @@ const VIEW_LABEL: Record<string, string> = {
 function PaletteBody({
   open,
   entries,
+  groups = [],
   listeners,
   runtimeStatus,
   onClose,
@@ -46,6 +54,8 @@ function PaletteBody({
 }: {
   open: boolean
   entries: LaunchEntry[]
+  /** 工作组，搜到组名时给「启动全部 / 停止全部」 */
+  groups?: ProjectGroup[]
   listeners: ListenerSnapshot[]
   runtimeStatus: (id: string) => string
   onClose: () => void
@@ -66,8 +76,8 @@ function PaletteBody({
   }, [open])
 
   const candidates = useMemo(
-    () => buildCandidates(query, entries, listeners, runtimeStatus),
-    [query, entries, listeners, runtimeStatus]
+    () => buildCandidates(query, entries, groups, listeners, runtimeStatus),
+    [query, entries, groups, listeners, runtimeStatus]
   )
 
   useEffect(() => {
@@ -206,6 +216,7 @@ function fuzzy(text: string, query: string): boolean {
 function buildCandidates(
   raw: string,
   entries: LaunchEntry[],
+  groups: ProjectGroup[],
   listeners: ListenerSnapshot[],
   runtimeStatus: (id: string) => string
 ): Candidate[] {
@@ -240,13 +251,36 @@ function buildCandidates(
     if (!fuzzy(entry.name, query) && !fuzzy(entry.path, query)) continue
     const status = runtimeStatus(entry.id)
     const running = status === 'running' || status === 'starting'
+    const group = entry.kind === 'service' ? '服务' : '任务'
     out.push({
       id: `entry-${entry.id}`,
-      group: entry.kind === 'service' ? '服务' : '任务',
+      group,
       label: `${running ? '停止' : '启动'} ${entry.name}`,
       hint: STATUS_META[status as keyof typeof STATUS_META]?.label ?? status,
       action: running ? { type: 'stopEntry', entry } : { type: 'startEntry', entry }
     })
+    // 空查询不刷出这一大串，有关键字时才给次要动作
+    if (!query) continue
+    if (status === 'running' && entry.kind === 'service') {
+      out.push({ id: `restart-${entry.id}`, group, label: `重启 ${entry.name}`, action: { type: 'restartEntry', entry } })
+    }
+    out.push(
+      { id: `focus-${entry.id}`, group, label: `查看详情 ${entry.name}`, action: { type: 'focusEntry', entry } },
+      { id: `dir-${entry.id}`, group, label: `打开目录 ${entry.name}`, action: { type: 'openDir', entry } },
+      { id: `term-${entry.id}`, group, label: `在此目录开终端 ${entry.name}`, action: { type: 'openTerminal', entry } },
+      { id: `ext-${entry.id}`, group, label: `在外部终端打开 ${entry.name}`, action: { type: 'openExternalTerminal', entry } }
+    )
+  }
+
+  // 工作组：整组启停，确认规则与服务页一致（在 App 里走 lib/services）
+  if (query) {
+    for (const g of groups) {
+      if (!fuzzy(g.name, query)) continue
+      out.push(
+        { id: `gstart-${g.id}`, group: '工作组', label: `启动全部 · ${g.name}`, action: { type: 'startGroup', group: g } },
+        { id: `gstop-${g.id}`, group: '工作组', label: `停止全部 · ${g.name}`, action: { type: 'stopGroup', group: g } }
+      )
+    }
   }
 
   // 脚本名匹配：选中后在该项目目录创建会话执行

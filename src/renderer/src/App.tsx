@@ -14,7 +14,7 @@ import { TerminalWorkspace } from './views/TerminalWorkspace'
 import { Settings } from './views/Settings'
 import { About } from './views/About'
 import { CommandPalette, type PaletteAction } from './components/CommandPalette'
-import { startEntry as startWithConfirm } from './lib/services'
+import { startEntry as startWithConfirm, startGroup, stopGroup } from './lib/services'
 import type { DetailTab } from './components/services/EntryDetail'
 import { useSessions } from './store/sessions'
 import type { EntryKind } from '@shared/types'
@@ -105,6 +105,7 @@ export function App(): React.JSX.Element {
   const setSettings = useSettings((s) => s.set)
   const initGroups = useGroups((s) => s.init)
   const setGroups = useGroups((s) => s.setGroups)
+  const groups = useGroups((s) => s.groups)
 
   useEffect(() => {
     void refresh()
@@ -265,6 +266,39 @@ export function App(): React.JSX.Element {
         case 'stopEntry':
           await stopEntry(action.entry.id)
           return
+        case 'restartEntry': {
+          const blocked = await useEntries.getState().restart(action.entry.id)
+          if (blocked) focusService(action.entry.id, 'diagnose')
+          return
+        }
+        case 'focusEntry':
+          focusService(action.entry.id, 'overview')
+          return
+        case 'openDir':
+          // 主进程只放行已登记目录（knownPath 白名单）
+          window.mile.shell.openPath(action.entry.path)
+          return
+        case 'openTerminal':
+          openTerminalAt(action.entry.id)
+          return
+        case 'openExternalTerminal':
+          void window.mile.entry.openExternalTerminal(action.entry.id).catch((err: unknown) => {
+            const msg = (err instanceof Error ? err.message : String(err)).replace(/^Error invoking remote method '[^']+': (Error: )?/, '')
+            toast({ tone: 'fault', title: '没能在外部终端打开', body: msg })
+          })
+          return
+        case 'startGroup': {
+          // 同服务页「全部启动」：prod / sandbox 先确认，汇总通知；被拦的打开诊断
+          const members = useEntries.getState().entries.filter((e) => e.groupId === action.group.id)
+          setView('services')
+          await startGroup(action.group, members, { onBlocked: (e) => focusService(e.id, 'diagnose') })
+          return
+        }
+        case 'stopGroup': {
+          const members = useEntries.getState().entries.filter((e) => e.groupId === action.group.id)
+          await stopGroup(action.group, members)
+          return
+        }
         case 'locatePort':
           setView('dashboard')
           setHighlightPort(action.port)
@@ -290,7 +324,7 @@ export function App(): React.JSX.Element {
           return
       }
     },
-    [startEntry, stopEntry, runScript, openLogs, pushEvent]
+    [startEntry, stopEntry, runScript, openLogs, pushEvent, focusService, openTerminalAt]
   )
 
   const clearEvents = useCallback(() => setEvents([]), [])
@@ -351,6 +385,7 @@ export function App(): React.JSX.Element {
       <CommandPalette
         open={paletteOpen}
         entries={entries}
+        groups={groups}
         listeners={listeners}
         runtimeStatus={(id) => runtimes[id]?.status ?? 'idle'}
         onClose={() => setPaletteOpen(false)}
