@@ -233,7 +233,8 @@ async function readExport(file: string): Promise<ExportFile> {
 /** 同一目录、同一子目录、同一脚本算同一个条目；Windows 路径大小写不敏感 */
 function entryKey(e: Pick<LaunchEntry, 'path' | 'cwd' | 'script'>): string {
   const path = resolve(String(e.path)).replace(/[\\/]+$/, '').toLowerCase()
-  const cwd = typeof e.cwd === 'string' ? e.cwd.replace(/\\/g, '/').replace(/\/+$/, '') : ''
+  // Windows 路径大小写不敏感，子目录与项目根一样要小写后再比
+  const cwd = typeof e.cwd === 'string' ? e.cwd.replace(/\\/g, '/').replace(/\/+$/, '').toLowerCase() : ''
   const script = typeof e.script === 'string' ? e.script : ''
   return `${path}|${cwd}|${script}`
 }

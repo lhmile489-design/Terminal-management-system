@@ -66,7 +66,7 @@ writeFileSync(CONFIG, JSON.stringify({
     { id: 'e1', kind: 'service', name: '甲服务', path: FIX, framework: 'node', packageManager: 'npm', script: 'dev',
       scripts: { dev: 'node server.cjs' }, env: { SECRET_TOKEN: SECRET }, registerOnly: false, pinned: false, order: 0, createdAt: now, groupId: 'g1' },
     { id: 'e2', kind: 'task', name: '乙任务', path: FIXT, framework: 'node', packageManager: 'npm', script: 'build',
-      scripts: { build: 'node make.cjs' }, env: {}, registerOnly: false, pinned: false, order: 1, createdAt: now, groupId: 'g1', startAfter: ['e1'] }
+      scripts: { build: 'node make.cjs' }, env: {}, registerOnly: false, pinned: false, order: 1, createdAt: now, groupId: 'g1', startAfter: ['e1'], cwd: 'sub' }
   ],
   groups: [{ id: 'g1', name: '组甲', description: '', env: 'dev', order: 0, createdAt: now }],
   ignoredListeners: [{ processName: 'foo.exe', port: 1234 }],
@@ -110,6 +110,9 @@ app.whenReady().then(async () => {
     console.log('\n=== 2. 导入合并 ===')
     const before = readFileSync(CONFIG, 'utf8')
     const imp = JSON.parse(JSON.stringify(file))
+    // Windows 目录大小写不敏感：子目录写成 SUB 也是同一个条目，不能重复加
+    const impTask = imp.entries.find((e) => e.name === '乙任务')
+    if (impTask) impTask.cwd = 'SUB'
     imp.groups.push({ id: 'gx', name: '组乙', description: '', env: 'sandbox', order: 1, createdAt: now })
     imp.entries.push(
       { id: 'n1', kind: 'service', name: '新服务', path: NEWPROJ, framework: 'node', packageManager: 'npm', script: 'dev',
@@ -139,6 +142,7 @@ app.whenReady().then(async () => {
     check('同目录同脚本的条目没重复加', d.entries.filter((e) => same(e.path, FIX)).length === 1 && d.entries.filter((e) => same(e.path, FIXT)).length === 1)
     check('目录不存在的被跳过并写明原因', (r.skipped || []).some((s) => s.name === '目录不在了' && /目录/.test(s.reason)), JSON.stringify(r.skipped))
     check('重复的也在跳过列表里', (r.skipped || []).some((s) => s.name === '甲服务'), JSON.stringify(r.skipped))
+    check('子目录大小写不同也算重复', !!impTask && (r.skipped || []).some((s) => s.name === '乙任务'), JSON.stringify(r.skipped))
     check('环境变量没写入', !!n1 && Object.keys(n1.env || {}).length === 0)
     check('结果列出要重填变量的条目', (r.envToRefill || []).some((x) => x.name === '新服务' && x.keys.includes('API_KEY')), JSON.stringify(r.envToRefill))
     check('原有条目的密钥还在', d.entries.find((e) => e.id === 'e1').env.SECRET_TOKEN === SECRET)
