@@ -174,6 +174,22 @@ export function Settings(): React.JSX.Element {
               onChange={(v) => void patch({ notifyOnTaskDone: v })}
             />
           </Row>
+          <Row label="服务崩溃或被拦时弹系统通知" hint="服务自己崩溃、启动被预检拦下、重启后端口迟迟不释放时推送；点通知直达输出或诊断。自己按停止不算">
+            <Toggle
+              label="服务崩溃或被拦时弹系统通知"
+              checked={settings.notifyOnCrash}
+              disabled={saving}
+              onChange={(v) => void patch({ notifyOnCrash: v })}
+            />
+          </Row>
+          <Row label="只在窗口收起或失焦时弹" hint="窗口在前台时应用内已有提示，不重复打扰；关掉后前台也会弹">
+            <Toggle
+              label="只在窗口收起或失焦时弹"
+              checked={settings.notifyOnlyWhenBackground}
+              disabled={saving || !settings.notifyOnCrash}
+              onChange={(v) => void patch({ notifyOnlyWhenBackground: v })}
+            />
+          </Row>
       </section>
     </div>
   )

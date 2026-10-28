@@ -227,10 +227,23 @@ export interface Settings {
   notifyOnTaskDone: boolean
   /** 从 Windows 任务栏隐藏，只保留系统托盘图标，v6 起 */
   hideFromTaskbar: boolean
+  /** 服务崩溃、启动被预检拦下时弹系统通知，v10 起 */
+  notifyOnCrash: boolean
+  /** 通知只在窗口收起、最小化或失焦时弹，前台已有应用内提示，避免重复打扰，v10 起 */
+  notifyOnlyWhenBackground: boolean
 }
 
 /** 当前配置结构版本。加字段就要加迁移，见 ConfigStore.migrate */
-export const CONFIG_VERSION = 9
+export const CONFIG_VERSION = 10
+
+/**
+ * 主进程要求渲染层「定位到某个服务的某个标签」。只带条目 id 和两个标签枚举，
+ * 通知点击不触发任何写操作。
+ */
+export interface FocusEntryRequest {
+  id: string
+  tab: 'output' | 'diagnose'
+}
 
 /**
  * 关于页可打开的外部链接。渲染层只传键名，地址只在这里定义、由主进程查表打开 ——

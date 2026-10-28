@@ -20,7 +20,9 @@ const DEFAULTS: AppConfig = {
     killOwnedOnQuit: true,
     closeToTray: false,
     notifyOnTaskDone: true,
-    hideFromTaskbar: false
+    hideFromTaskbar: false,
+    notifyOnCrash: true,
+    notifyOnlyWhenBackground: true
   }
 }
 
@@ -146,6 +148,13 @@ export class ConfigStore {
     // 老条目无 groupId，保持 undefined 即可；groups 数组初始化为空，用户自行创建。
     if (from < 9) {
       if (!Array.isArray(out.groups)) out.groups = []
+    }
+
+    // v9 -> v10：崩溃通知两个开关。默认都开：窗口收起时服务挂了本来就该知道，
+    // 且只在后台弹，前台使用时行为与升级前一致
+    if (from < 10) {
+      out.settings.notifyOnCrash = DEFAULTS.settings.notifyOnCrash
+      out.settings.notifyOnlyWhenBackground = DEFAULTS.settings.notifyOnlyWhenBackground
     }
 
     // 迁移后仍要校形：数组字段被手改成对象会让下游 .some / .filter 直接抛

@@ -43,6 +43,8 @@ export const Channels = {
   entryRuntimeChanged: 'entry:runtimeChanged',
   /** 主进程侧的非致命告警（如端口 5 秒未释放），只进实时动态，不弹窗 */
   entryWarning: 'entry:warning',
+  /** 通知被点击后，主进程让渲染层定位到某个服务的输出或诊断标签 */
+  appFocusEntry: 'app:focusEntry',
   dialogPickDirectory: 'dialog:pickDirectory',
   shellOpenLocalhost: 'shell:openLocalhost',
   shellOpenPath: 'shell:openPath',

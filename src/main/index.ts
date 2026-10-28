@@ -13,7 +13,8 @@ import type {
   NewProjectGroup,
   Settings,
   ThemePreference,
-  ProjectLink
+  ProjectLink,
+  FocusEntryRequest
 } from '@shared/types'
 import { PROJECT_LINKS } from '@shared/types'
 import { SessionService } from './services/SessionService'
@@ -341,6 +342,30 @@ function registerIpc(): void {
     sendToRenderer(Channels.entryRuntimeChanged, runtime)
   )
   entries.on('taskDone', notifyTaskDone)
+  entries.on('crashed', (e: { entryId: string; name: string; exitCode: number }) =>
+    notifyEntryProblem({
+      entryId: e.entryId,
+      title: `服务已崩溃 · ${e.name}`,
+      body: `退出码 ${e.exitCode}，点击查看输出`,
+      tab: 'output'
+    })
+  )
+  entries.on('blocked', (e: { entryId: string; name: string }) =>
+    notifyEntryProblem({
+      entryId: e.entryId,
+      title: `启动被拦下 · ${e.name}`,
+      body: '启动前检查没通过，点击查看原因和修复入口',
+      tab: 'diagnose'
+    })
+  )
+  entries.on('portUnreleased', (e: { entryId: string; port: number }) =>
+    notifyEntryProblem({
+      entryId: e.entryId,
+      title: `端口未释放 · ${entryName(e.entryId)}`,
+      body: `:${e.port} 在 5 秒内没有放手，重启后可能仍被占用`,
+      tab: 'diagnose'
+    })
+  )
   // 这条以前没人订阅：「端口 5 秒未释放」只在主进程 emit 一下就没了，
   // 而重启后端口还被占着恰恰是用户最需要知道的那一刻
   entries.on('warning', (text: string) =>
@@ -575,6 +600,50 @@ function notifyTaskDone(e: { name: string; status: EntryStatus; exitCode: number
   n.show()
 }
 
+/** 窗口当前看不到：隐藏到托盘、最小化或失焦。前台时应用内已有提示，不再弹系统通知 */
+function windowInBackground(): boolean {
+  const w = mainWindow
+  if (!w || w.isDestroyed()) return true
+  return !w.isVisible() || w.isMinimized() || !w.isFocused()
+}
+
+/**
+ * 服务崩溃、启动被预检拦下、端口未释放的系统通知。
+ *
+ * 点击只把窗口带回前台并让渲染层定位到该服务的输出或诊断标签，不做任何写操作。
+ * 退出清理期间不弹：killOwnedOnQuit 杀进程会让每个服务走一遍 crashed 路径。
+ */
+function notifyEntryProblem(opts: {
+  entryId: string
+  title: string
+  body: string
+  tab: FocusEntryRequest['tab']
+}): void {
+  const s = config.get().settings
+  if (!s.notifyOnCrash || quitting) return
+  if (s.notifyOnlyWhenBackground && !windowInBackground()) return
+  if (!Notification.isSupported()) return
+
+  const n = new Notification({
+    title: opts.title,
+    body: opts.body,
+    icon: notifyIconPath,
+    silent: false
+  })
+  n.on('click', () => {
+    if (!mainWindow) return
+    if (mainWindow.isMinimized()) mainWindow.restore()
+    mainWindow.show()
+    mainWindow.focus()
+    sendToRenderer(Channels.appFocusEntry, { id: opts.entryId, tab: opts.tab } satisfies FocusEntryRequest)
+  })
+  n.show()
+}
+
+function entryName(id: string): string {
+  return entries.get(id)?.name ?? '服务'
+}
+
 function sanitizeSettings(input: unknown): Partial<Settings> {
   if (typeof input !== 'object' || input === null) throw new Error('设置补丁必须是对象')
   const raw = input as Record<string, unknown>
@@ -625,6 +694,16 @@ function sanitizeSettings(input: unknown): Partial<Settings> {
   if (raw.hideFromTaskbar !== undefined) {
     if (typeof raw.hideFromTaskbar !== 'boolean') throw new Error('hideFromTaskbar 必须是布尔值')
     out.hideFromTaskbar = raw.hideFromTaskbar
+  }
+  if (raw.notifyOnCrash !== undefined) {
+    if (typeof raw.notifyOnCrash !== 'boolean') throw new Error('notifyOnCrash 必须是布尔值')
+    out.notifyOnCrash = raw.notifyOnCrash
+  }
+  if (raw.notifyOnlyWhenBackground !== undefined) {
+    if (typeof raw.notifyOnlyWhenBackground !== 'boolean') {
+      throw new Error('notifyOnlyWhenBackground 必须是布尔值')
+    }
+    out.notifyOnlyWhenBackground = raw.notifyOnlyWhenBackground
   }
   return out
 }

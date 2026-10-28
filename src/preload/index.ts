@@ -7,6 +7,7 @@ import type {
   EntryEdit,
   EntryRuntime,
   EntryStartResult,
+  FocusEntryRequest,
   GroupPatch,
   LaunchEntry,
   ListenerGroup,
@@ -152,7 +153,9 @@ const api = {
       subscribe(Channels.windowMaximizeChanged, cb)
   },
   app: {
-    info: (): Promise<{ version: string; name: string }> => ipcRenderer.invoke(Channels.appInfo)
+    info: (): Promise<{ version: string; name: string }> => ipcRenderer.invoke(Channels.appInfo),
+    onFocusEntry: (cb: (req: FocusEntryRequest) => void): (() => void) =>
+      subscribe(Channels.appFocusEntry, cb)
   },
   group: {
     list: (): Promise<ProjectGroup[]> => ipcRenderer.invoke(Channels.groupList),

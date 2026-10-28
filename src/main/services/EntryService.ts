@@ -856,6 +856,8 @@ export class EntryService extends EventEmitter {
     const precheck = await this.precheck.run(entry, this.scanner.snapshot(), this.list())
     if (!precheck.ok) {
       this.setRuntime(id, { status: 'blocked', precheck })
+      // 系统通知用：窗口收起时点启动被拦下，用户要能知道
+      this.emit('blocked', { entryId: id, name: entry.name })
       return { ok: false, precheck }
     }
 
@@ -1496,7 +1498,7 @@ export class EntryService extends EventEmitter {
     const own = this.ownListenPids(id)
     await this.stop(id)
     await this.waitSessionExit(id)
-    if (port) await this.waitPortReleased(port, own)
+    if (port) await this.waitPortReleased(port, own, id)
     return await this.start(id)
   }
 
@@ -1537,7 +1539,8 @@ export class EntryService extends EventEmitter {
    */
   private async waitPortReleased(
     port: number,
-    own: ReadonlySet<number> = new Set()
+    own: ReadonlySet<number> = new Set(),
+    entryId?: string
   ): Promise<boolean> {
     const deadline = Date.now() + PORT_RELEASE_TIMEOUT_MS
     const held = (rows: ListenRow[]): boolean =>
@@ -1550,6 +1553,8 @@ export class EntryService extends EventEmitter {
       await sleep(250)
     }
     this.emit('warning', `端口 :${port} 在 5 秒内未释放，重启后可能仍被占用`)
+    // 带上条目 id 给系统通知用；渲染层的 warning 文本通道保持不变
+    if (entryId) this.emit('portUnreleased', { entryId, port })
     return false
   }
 
@@ -1633,6 +1638,11 @@ export class EntryService extends EventEmitter {
      */
     if (entry?.kind === 'task' && !watch.stoppedByUser) {
       this.emit('taskDone', { entryId: entry.id, name: entry.name, status, exitCode })
+    }
+
+    // 服务自己崩溃（非用户停止、非任务）：同一个结构性理由，一个会话只会走到这一次
+    if (entry && entry.kind !== 'task' && status === 'crashed' && !watch.stoppedByUser) {
+      this.emit('crashed', { entryId: entry.id, name: entry.name, exitCode, sessionId })
     }
   }
 

@@ -151,6 +151,12 @@ export function App(): React.JSX.Element {
 
   useEffect(() => window.mile.entry.onWarning((text) => pushEvent('warn', text)), [pushEvent])
 
+  // 系统通知被点击：主进程只给条目 id 和标签枚举，这里负责切页并打开对应标签
+  useEffect(
+    () => window.mile.app.onFocusEntry((req) => focusService(req.id, req.tab)),
+    [focusService]
+  )
+
 
   const openLogs = useCallback(
     (sessionId: string) => {
