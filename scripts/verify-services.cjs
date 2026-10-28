@@ -170,9 +170,17 @@ app.whenReady().then(async () => {
   check('组头计数更新为 1/1', /1\s*\/\s*1/.test(count), count)
   const tone = await js(`document.querySelector('[data-group-id="${ids.mall}"]').dataset.tone||''`)
   check('全部运行时磁贴描边转成功色', tone === 'live', tone)
-  await press('[data-entry-id="a"]', '停止')
-  const stopped = await waitFor(`(document.querySelector('[data-entry-id="a"] .ui-dot')||{dataset:{}}).dataset.tone!=='live'`, 15000)
+  const pressedStop = await press('[data-entry-id="a"]', '停止')
+  check('点到了「停止」按钮', pressedStop, String(pressedStop))
+  // 停止要经两次进程表刷新 + 3 秒 Ctrl+C 宽限，负载高时实测 8–11 秒，15 秒会踩线
+  const stopped = await waitFor(`(document.querySelector('[data-entry-id="a"] .ui-dot')||{dataset:{}}).dataset.tone!=='live'`, 30000)
   check('点「停止」后不再运行', stopped, await status('a'))
+  if (!stopped) {
+    const rt = await js(`window.mile.entry.runtimes().then(r=>JSON.stringify(r.find(x=>x.entryId==='a')))`)
+    const toasts = await js(`[...document.querySelectorAll('[role="status"],[role="alert"],.ui-toast')].map(e=>e.textContent.trim()).join(' | ')`)
+    const btn = await js(`(()=>{const r=document.querySelector('[data-entry-id="a"]');return r?[...r.querySelectorAll('button')].map(b=>(b.getAttribute('aria-label')||b.textContent).trim()+(b.disabled?'(disabled)':'')).join(',') :'no row'})()`)
+    console.log('  [diag] runtime=' + rt + ' toasts=' + toasts + ' buttons=' + btn)
+  }
 
   console.log('\n=== 7. 成员行「⋯」菜单 ===')
   await press('[data-entry-id="a"]', '更多操作')

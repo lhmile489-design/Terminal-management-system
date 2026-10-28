@@ -89,7 +89,11 @@ export class ScannerService extends EventEmitter {
    */
   async table(hintPids: number[] = []): Promise<ProcessTable> {
     const stale = !this.meta || Date.now() - this.meta.at > VERIFY_MAX_AGE_MS
-    const unknown = this.meta ? hintPids.some((p) => !this.meta!.byPid.has(p)) : true
+    // mine 与 byPid 来自两次不同的 CIM 查询，刚启动的进程可能只在 byPid 里。
+    // 只看 byPid 会拿着半新不旧的缓存把自己的进程判成 foreign，停止被误拒
+    const unknown = this.meta
+      ? hintPids.some((p) => !this.meta!.byPid.has(p) || !this.meta!.mine.has(p))
+      : true
     if (stale || unknown) this.meta = await readProcessMeta()
     const listens = await readListenPorts()
     return { ...this.meta!, listens }
