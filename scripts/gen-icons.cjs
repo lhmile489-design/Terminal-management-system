@@ -131,31 +131,87 @@ function crc32(buf) {
   return c ^ 0xffffffff
 }
 
-// ---------- 双线性缩放 ----------
-function resize(img, tw, th) {
-  const { width: sw, height: sh, data: src } = img
-  const dst = Buffer.alloc(tw * th * 4)
-  for (let y = 0; y < th; y++) {
-    const sy = ((y + 0.5) * sh) / th - 0.5
-    const y0 = Math.max(0, Math.floor(sy)), y1 = Math.min(sh - 1, y0 + 1)
-    const fy = sy - Math.floor(sy)
-    for (let x = 0; x < tw; x++) {
-      const sx = ((x + 0.5) * sw) / tw - 0.5
-      const x0 = Math.max(0, Math.floor(sx)), x1 = Math.min(sw - 1, x0 + 1)
-      const fx = sx - Math.floor(sx)
-      const d = (y * tw + x) * 4
-      for (let ch = 0; ch < 4; ch++) {
-        const p00 = src[(y0 * sw + x0) * 4 + ch]
-        const p10 = src[(y0 * sw + x1) * 4 + ch]
-        const p01 = src[(y1 * sw + x0) * 4 + ch]
-        const p11 = src[(y1 * sw + x1) * 4 + ch]
-        const top = p00 + (p10 - p00) * fx
-        const bot = p01 + (p11 - p01) * fx
-        dst[d + ch] = Math.round(top + (bot - top) * fy)
+// ---------- 面积平均缩放（预乘 alpha） ----------
+// 以前是双线性：1254 → 16 时每个目标像素只采样源图 2×2 个点，其余几千个像素被跳过，
+// 小尺寸就是一团锯齿与糊边。面积平均让每个目标像素按覆盖比例吃进它对应的整块源像素。
+// 预乘 alpha：透明像素的 RGB 是抠图留下的白，不预乘就会把白渗进边缘，成一圈发灰的毛边。
+function resample1d(src, sw, sh, tw, horizontal) {
+  // src: Float64Array RGBA（预乘），返回横向或纵向缩放后的 Float64Array
+  const outW = horizontal ? tw : sw
+  const outH = horizontal ? sh : tw
+  const dst = new Float64Array(outW * outH * 4)
+  const sLen = horizontal ? sw : sh
+  const scale = sLen / tw
+  for (let o = 0; o < tw; o++) {
+    const start = o * scale
+    const end = start + scale
+    const i0 = Math.floor(start)
+    const i1 = Math.min(sLen - 1, Math.ceil(end) - 1)
+    for (let line = 0; line < (horizontal ? sh : sw); line++) {
+      let r = 0, g = 0, b = 0, a = 0
+      for (let i = i0; i <= i1; i++) {
+        const w = Math.min(end, i + 1) - Math.max(start, i)
+        if (w <= 0) continue
+        const s = (horizontal ? line * sw + i : i * sw + line) * 4
+        r += src[s] * w; g += src[s + 1] * w; b += src[s + 2] * w; a += src[s + 3] * w
       }
+      const d = (horizontal ? line * outW + o : o * outW + line) * 4
+      dst[d] = r / scale; dst[d + 1] = g / scale; dst[d + 2] = b / scale; dst[d + 3] = a / scale
+    }
+  }
+  return dst
+}
+
+function resize(img, tw, th) {
+  const { width: sw, height: sh, data } = img
+  const pm = new Float64Array(sw * sh * 4)
+  for (let i = 0; i < sw * sh; i++) {
+    const a = data[i * 4 + 3] / 255
+    pm[i * 4] = data[i * 4] * a
+    pm[i * 4 + 1] = data[i * 4 + 1] * a
+    pm[i * 4 + 2] = data[i * 4 + 2] * a
+    pm[i * 4 + 3] = a
+  }
+  const h = resample1d(pm, sw, sh, tw, true)
+  const v = resample1d(h, tw, sh, th, false)
+  const dst = Buffer.alloc(tw * th * 4)
+  for (let i = 0; i < tw * th; i++) {
+    const a = v[i * 4 + 3]
+    dst[i * 4 + 3] = Math.round(Math.min(1, a) * 255)
+    for (let ch = 0; ch < 3; ch++) {
+      dst[i * 4 + ch] = a > 0 ? Math.round(Math.min(255, v[i * 4 + ch] / a)) : 0
     }
   }
   return { width: tw, height: th, data: dst }
+}
+
+// ---------- 小尺寸轻度锐化 ----------
+// 面积平均会把 `>_` 这种细笔画抹软。≤ 48px 加一次 3×3 反锐化遮罩，只动 RGB、不动 alpha，
+// 力度压低，避免发光区出现亮暗晕圈。
+function sharpen(img, amount) {
+  const { width: w, height: h, data } = img
+  const out = Buffer.from(data)
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const d = (y * w + x) * 4
+      if (data[d + 3] === 0) continue
+      for (let ch = 0; ch < 3; ch++) {
+        let sum = 0, n = 0
+        for (let dy = -1; dy <= 1; dy++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            const nx = x + dx, ny = y + dy
+            if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue
+            const s = (ny * w + nx) * 4
+            if (data[s + 3] === 0) continue
+            sum += data[s + ch]; n++
+          }
+        }
+        const blur = sum / n
+        out[d + ch] = Math.max(0, Math.min(255, Math.round(data[d + ch] + (data[d + ch] - blur) * amount)))
+      }
+    }
+  }
+  return { width: w, height: h, data: out }
 }
 
 // ---------- 抠掉白底方块（从边缘泛洪，只抠与边框连通的白），做透明过渡 ----------
@@ -299,6 +355,22 @@ function buildIco(entries) {
   return Buffer.concat([header, dir, ...bodies])
 }
 
+// ---------- 中心裁切 ----------
+// 小尺寸时整张图里四周的深色底占了一半面积，`>_` 缩到 16px 只剩几个像素。
+// 按比例裁掉外圈深底再缩，字形在小图标里能大出一截；圆角随后由 roundCorners 重建。
+function cropCenter(img, ratio) {
+  if (ratio >= 1) return img
+  const { width: w, data } = img
+  const side = Math.round(w * ratio)
+  const o = Math.round((w - side) / 2)
+  const dst = Buffer.alloc(side * side * 4)
+  for (let y = 0; y < side; y++) {
+    data.copy(dst, y * side * 4, ((y + o) * w + o) * 4, ((y + o) * w + o + side) * 4)
+  }
+  // 裁进来的四角原本是 logo 自带圆角之内的深底，全不透明；交给 roundCorners 切
+  return { width: side, height: side, data: dst }
+}
+
 // ---------- 主流程 ----------
 // 先在原分辨率抠白底、裁到内容外接框，再缩放；圆角只作兜底（logo 自带圆角，半径给大避免二次切角）
 const SAFETY_RADIUS = 0.12
@@ -307,24 +379,35 @@ console.log(`源图 ${src.width}×${src.height}`)
 const keyed = trimToContent(keyOutWhite(src), 0)
 console.log(`抠白+裁边后 ${keyed.width}×${keyed.height}`)
 
+/**
+ * 按目标尺寸选裁切比例与锐化力度。字形外接框约占源图 22%–81%，裁到 0.80 仍完整包住它。
+ * ≥ 64px 用整图（任务栏大图标、桌面图标看得到完整的圆角深底）。
+ */
 function make(size) {
-  const scaled = resize(keyed, size, size)
-  return roundCorners(scaled, SAFETY_RADIUS)
+  const ratio = size <= 32 ? 0.8 : size <= 48 ? 0.88 : 1
+  const amount = size <= 24 ? 0.45 : size <= 48 ? 0.3 : 0
+  let img = resize(cropCenter(keyed, ratio), size, size)
+  if (amount) img = sharpen(img, amount)
+  return roundCorners(img, ratio < 1 ? 0.2 : SAFETY_RADIUS)
 }
 
-// resources/icon.png 1024
+// resources/icon.png 1024：Linux / 通知等只认 PNG 的场合
 const icon1024 = make(1024)
-fs.writeFileSync(path.join(ROOT, 'resources', 'icon.png'), encodePng(icon1024))
-console.log('写入 resources/icon.png (1024)')
+fs.writeFileSync(path.join(ROOT, "resources", "icon.png"), encodePng(icon1024))
+console.log("写入 resources/icon.png (1024)")
 
-// src/renderer/src/assets/logo.png 128
+// src/renderer/src/assets/logo.png 128：标题栏 22px、关于页 56px，高 DPI 下仍有余量
 const logo128 = make(128)
-fs.writeFileSync(path.join(ROOT, 'src', 'renderer', 'src', 'assets', 'logo.png'), encodePng(logo128))
-console.log('写入 src/renderer/src/assets/logo.png (128)')
+fs.writeFileSync(path.join(ROOT, "src", "renderer", "src", "assets", "logo.png"), encodePng(logo128))
+console.log("写入 src/renderer/src/assets/logo.png (128)")
 
-// build/icon.ico 多尺寸
-const icoSizes = [16, 24, 32, 48, 64, 128, 256]
+// 多尺寸 ICO：窗口、任务栏、托盘、exe 与桌面快捷方式都用它。
+// Windows 按 DPI 直接挑最接近的一张，不再从 1024 现场缩：100% / 125% / 150% / 175% / 200%
+// 下小图标要 16 / 20 / 24 / 28 / 32，大图标要 32 / 40 / 48 / 56 / 64。
+const icoSizes = [16, 20, 24, 28, 32, 40, 48, 56, 64, 96, 128, 256]
 const icoEntries = icoSizes.map((s) => ({ size: s, png: encodePng(make(s)) }))
-fs.writeFileSync(path.join(ROOT, 'build', 'icon.ico'), buildIco(icoEntries))
-console.log('写入 build/icon.ico (' + icoSizes.join(',') + ')')
-console.log('完成')
+const ico = buildIco(icoEntries)
+fs.writeFileSync(path.join(ROOT, "build", "icon.ico"), ico)
+fs.writeFileSync(path.join(ROOT, "resources", "icon.ico"), ico)
+console.log("写入 build/icon.ico 与 resources/icon.ico (" + icoSizes.join(",") + ")")
+console.log("完成")

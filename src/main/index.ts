@@ -26,9 +26,14 @@ import { LogService } from './services/LogService'
 import { GroupService } from './services/GroupService'
 
 // 打包后 resources/ 被 extraResources 平铺到 resourcesPath，开发期从工程根取
-const iconPath = app.isPackaged
-  ? join(process.resourcesPath, 'icon.png')
-  : join(__dirname, '../../resources/icon.png')
+const resourceDir = app.isPackaged ? process.resourcesPath : join(__dirname, '../../resources')
+/**
+ * 窗口与托盘用多尺寸 .ico：Windows 按当前 DPI 直接取预先缩好的那一档（16/20/24/32/40/48…）。
+ * 以前给的是 1024px PNG，任务栏和托盘要系统现场缩到 16–32px，缩放质量差，图标发糊。
+ * 通知仍用 PNG（Toast 会按自己的尺寸取图，PNG 兼容性更好）。
+ */
+const iconPath = join(resourceDir, 'icon.ico')
+const notifyIconPath = join(resourceDir, 'icon.png')
 
 const ownership = new OwnershipService()
 const sessions = new SessionService(ownership)
@@ -546,7 +551,7 @@ function notifyTaskDone(e: { name: string; status: EntryStatus; exitCode: number
   const n = new Notification({
     title: `${title} · ${e.name}`,
     body: e.status === 'succeeded' ? '退出码 0' : `退出码 ${e.exitCode}`,
-    icon: iconPath,
+    icon: notifyIconPath,
     silent: false
   })
   n.on('click', () => {
