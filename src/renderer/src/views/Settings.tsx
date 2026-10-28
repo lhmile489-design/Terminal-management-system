@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Warning } from '@phosphor-icons/react'
 import type { Settings as AppSettings } from '@shared/types'
+import { Button, toast } from '../components/ui'
+import { ICON } from '../lib/icons'
 
 /**
  * 设置页，PRD §9.3。采集周期、主题、终端偏好与退出行为。
@@ -199,7 +201,61 @@ export function Settings(): React.JSX.Element {
             />
           </Row>
       </section>
+
+      <ConfigTransfer />
     </div>
+  )
+}
+
+/** 6 · 配置：导出 / 导入（2.3.0）。文件由主进程弹系统对话框选，这里只发无参调用 */
+function ConfigTransfer(): React.JSX.Element {
+  const [busy, setBusy] = useState(false)
+  const [report, setReport] = useState<string[] | null>(null)
+
+  const clean = (err: unknown): string =>
+    (err instanceof Error ? err.message : String(err)).replace(/^Error invoking remote method '[^']+': (Error: )?/, '')
+
+  const run = async (kind: 'export' | 'import'): Promise<void> => {
+    setBusy(true)
+    try {
+      if (kind === 'export') {
+        const r = await window.mile.config.export()
+        if (r) toast({ tone: 'live', title: '配置已导出', body: `${r.entries} 个条目、${r.groups} 个工作组，环境变量只带了变量名` })
+        return
+      }
+      const r = await window.mile.config.import()
+      if (!r) return
+      const lines = [`导入前的配置已备份到 ${r.backup}`, `新增 ${r.added} 个条目、${r.groupsAdded} 个工作组`]
+      for (const s of r.skipped) lines.push(`跳过 ${s.name}：${s.reason}`)
+      for (const x of r.envToRefill) lines.push(`${x.name} 需要重填环境变量：${x.keys.join('、')}`)
+      setReport(lines)
+      toast({ tone: 'live', title: '配置已导入', body: `新增 ${r.added} 个条目，跳过 ${r.skipped.length} 个` })
+    } catch (err) {
+      toast({ tone: 'fault', title: kind === 'export' ? '导出失败' : '导入失败', body: clean(err) })
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <section className="set-tile" aria-labelledby="settings-transfer-heading">
+      <h2 id="settings-transfer-heading" className="set-tile-title">
+        6 · 配置
+      </h2>
+      <Row label="导出配置" hint="条目、工作组、忽略规则与关注关键字写进一个 JSON 文件；环境变量只带变量名，不带值">
+        <Button icon={ICON.export} disabled={busy} data-config-export onClick={() => void run('export')}>导出</Button>
+      </Row>
+      <Row label="导入配置" hint="先备份当前配置再合并：已登记的同目录条目跳过，同名工作组复用，设置不覆盖">
+        <Button icon={ICON.import} disabled={busy} data-config-import onClick={() => void run('import')}>导入</Button>
+      </Row>
+      {report && (
+        <ul className="set-transfer-report" data-config-report>
+          {report.map((line, i) => (
+            <li key={i}>{line}</li>
+          ))}
+        </ul>
+      )}
+    </section>
   )
 }
 

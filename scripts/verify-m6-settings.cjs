@@ -174,7 +174,7 @@ async function checks(win) {
   )
   // 分区序号是写在文案里的（「4 · 退出行为」），数量之外还要求序号连续 ——
   // 加一段却忘了改前一段的编号，界面上会出现两个「4 ·」
-  check('设置页渲染五个分区', sections.length === 5, JSON.stringify(sections))
+  check('设置页渲染六个分区', sections.length === 6, JSON.stringify(sections))
   check(
     '分区序号连续无重复',
     sections.every((s, i) => s.startsWith(`${i + 1} ·`)),

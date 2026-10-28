@@ -673,6 +673,22 @@ export interface EntryStartResult {
 }
 
 /** 按依赖顺序整组启动的逐条结果 */
+/** 配置导出结果（2.3.0）。环境变量只导出变量名 */
+export interface ConfigExportResult {
+  path: string
+  entries: number
+  groups: number
+}
+
+/** 配置导入结果（2.3.0）。导入前的备份位置、新增数、跳过原因、要重填的环境变量名 */
+export interface ConfigImportResult {
+  backup: string
+  added: number
+  groupsAdded: number
+  skipped: { name: string; reason: string }[]
+  envToRefill: { id: string; name: string; keys: string[] }[]
+}
+
 export interface OrderedStartResult {
   id: string
   ok: boolean

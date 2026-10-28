@@ -26,6 +26,7 @@ import { DetectService } from './services/DetectService'
 import { EntryService } from './services/EntryService'
 import { LogService } from './services/LogService'
 import { GroupService } from './services/GroupService'
+import { ConfigTransferService } from './services/ConfigTransferService'
 import { loadWindowState, trackWindowState, MIN_WIDTH, MIN_HEIGHT } from './lib/windowState'
 import { openExternalTerminal } from './lib/externalTerminal'
 
@@ -49,6 +50,7 @@ let theme: ThemeService
 let scanner: ScannerService
 let entries: EntryService
 let groups: GroupService
+let transfer: ConfigTransferService
 let mainWindow: BrowserWindow | null = null
 let tray: Tray | null = null
 /** before-quit 已触发：close 事件不再拦成「收起到托盘」 */
@@ -595,6 +597,30 @@ function registerIpc(): void {
     return { root, items: await detect.scanChildren(root) }
   })
 
+  // 配置导入导出：文件只能是系统对话框刚返回的那一个，渲染层给不出路径
+  ipc.handle(Channels.configExport, async () => {
+    if (!mainWindow) return null
+    const result = await dialog.showSaveDialog(mainWindow, {
+      title: '导出配置',
+      defaultPath: `mile-terminal-config-${new Date().toISOString().slice(0, 10)}.json`,
+      filters: [{ name: 'JSON', extensions: ['json'] }]
+    })
+    if (result.canceled || !result.filePath) return null
+    return transfer.exportTo(result.filePath)
+  })
+
+  ipc.handle(Channels.configImport, async () => {
+    if (!mainWindow) return null
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: '导入配置',
+      properties: ['openFile'],
+      filters: [{ name: 'JSON', extensions: ['json'] }]
+    })
+    const file = result.canceled ? null : (result.filePaths[0] ?? null)
+    if (!file) return null
+    return transfer.importFrom(file)
+  })
+
   ipc.handle(Channels.scannerSnapshot, () => scanner.snapshot())
   ipc.on(Channels.scannerRefresh, () => scanner.refresh())
   ipc.on(Channels.scannerVisibility, (_e, visible: boolean) => scanner.setVisible(visible))
@@ -696,6 +722,7 @@ app.whenReady().then(() => {
   scanner = new ScannerService(ownership, config)
   entries = new EntryService(config, detect, sessions, scanner, ownership)
   groups = new GroupService(config)
+  transfer = new ConfigTransferService(config, entries, groups, scanner)
   // 回注而非构造注入：Scanner 需要条目预期端口，Entry 需要 Scanner 快照，互为依赖
   scanner.setExpectationSource(() => entries.expectations())
   // scanner 晚于 sessions 构建，后注入供 kill 前重校验归属用，PRD §6.3 步骤 4

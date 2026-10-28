@@ -1,6 +1,8 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { Channels } from '@shared/channels'
 import type {
+  ConfigExportResult,
+  ConfigImportResult,
   CreateShellSessionInput,
   DetectResult,
   EntryDiagnosis,
@@ -136,6 +138,10 @@ const api = {
     setWatchedKeywords: (keywords: string[]): Promise<string[]> =>
       ipcRenderer.invoke(Channels.scannerWatchedSet, keywords),
     onDiff: (cb: (diff: ScanDiff) => void): (() => void) => subscribe(Channels.scannerDiff, cb)
+  },
+  config: {
+    export: (): Promise<ConfigExportResult | null> => ipcRenderer.invoke(Channels.configExport),
+    import: (): Promise<ConfigImportResult | null> => ipcRenderer.invoke(Channels.configImport)
   },
   settings: {
     get: (): Promise<Settings> => ipcRenderer.invoke(Channels.settingsGet),

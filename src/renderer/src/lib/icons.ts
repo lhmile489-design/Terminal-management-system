@@ -40,6 +40,8 @@ import {
   Sun,
   TerminalWindow,
   Trash,
+  DownloadSimple,
+  UploadSimple,
   Warning,
   WarningCircle,
   X,
@@ -83,6 +85,8 @@ export const ICON = {
   themeDark: Moon,
   collapseNav: SidebarSimple,
   add: Plus,
+  export: UploadSimple,
+  import: DownloadSimple,
   // 导航
   navServices: Stack,
   navOverview: Gauge,

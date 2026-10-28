@@ -198,6 +198,22 @@ export class ConfigStore {
   }
 
   /**
+   * 导入前的整份备份（2.3.0），与 .bak 轮转分开：.bak 下一次写入就会被覆盖，
+   * 这份留着让用户在导入结果不满意时手动换回。返回备份的绝对路径。
+   */
+  backupBeforeImport(): string {
+    mkdirSync(this.dir, { recursive: true })
+    const d = new Date()
+    const p = (n: number): string => String(n).padStart(2, '0')
+    const stamp = `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`
+    let target = join(this.dir, `config.before-import-${stamp}.json`)
+    for (let i = 2; existsSync(target); i++) target = join(this.dir, `config.before-import-${stamp}-${i}.json`)
+    if (existsSync(this.file)) copyFileSync(this.file, target)
+    else writeFileSync(target, JSON.stringify(this.cache, null, 2), 'utf8')
+    return target
+  }
+
+  /**
    * 写入前先把当前良好版本留成 .bak，再临时文件 + rename 换上新版本。
    * 顺序不能颠倒 —— 先 rename 再备份就会把刚写的新内容备份成「上一份良好版本」。
    */
