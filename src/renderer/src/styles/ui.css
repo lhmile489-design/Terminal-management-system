@@ -1080,6 +1080,11 @@
 .term-sess-name b { display: block; font-weight: 600; color: var(--text-strong); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .term-sess-name span { display: block; font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .term-main { flex: 1; min-width: 0; display: flex; overflow: hidden; }
+/* 终端内搜索条（Ctrl+F）：贴在终端右上角，固定层，不随输出滚动 */
+.term-view { position: relative; flex: 1; min-width: 0; display: flex; }
+.term-search { position: absolute; top: 8px; right: 12px; z-index: 2; display: flex; align-items: center; gap: 6px; padding: 4px 4px 4px 10px; border: 1px solid var(--stroke-strong); border-radius: var(--radius-control); background: var(--surface-card); box-shadow: var(--shadow-float); color: var(--text-muted); }
+.term-search input { width: 200px; height: 28px; padding: 0 6px; border: 0; background: transparent; color: var(--text-strong); font-size: 13px; outline: none; }
+.term-search-status { min-width: 6.5em; font-size: 12px; color: var(--text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .term-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: var(--text-faint); }
 .term-note { padding: 4px 8px; font-size: 12px; color: var(--text-faint); }
 .log-src { max-width: 9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: var(--text-muted); text-align: left; border-radius: 4px; }
