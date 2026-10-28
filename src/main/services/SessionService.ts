@@ -41,12 +41,19 @@ export class SessionService extends EventEmitter {
    * IPC 的「新建终端」入口：只认 kind 与标题，shell、参数、目录全部由主进程定。
    * 不要把 IPC 入参直接交给 create() —— 那等于让渲染层指定任意可执行文件，PRD §11。
    */
-  createShell(input: unknown): SessionMeta {
+  createShell(input: unknown, at?: { cwd: string; title: string }): SessionMeta {
     const raw = (typeof input === 'object' && input !== null ? input : {}) as Record<string, unknown>
     if (raw.kind !== 'shell') throw new Error('自由终端只允许 shell')
     const title = typeof raw.title === 'string' && raw.title.trim() ? raw.title.trim().slice(0, 80) : 'PowerShell'
     const file = defaultShell()
-    return this.create({ kind: 'shell', file, args: shellLaunchArgs(file), cwd: homedir(), title })
+    // at 只由主进程传入（EntryService.terminalCwd 解析并校验过的条目目录），渲染层给不了
+    return this.create({
+      kind: 'shell',
+      file,
+      args: shellLaunchArgs(file),
+      cwd: at?.cwd ?? homedir(),
+      title: at?.title ?? title
+    })
   }
 
   /** 主进程内部入口，调用方负责构造可信的完整规格 */

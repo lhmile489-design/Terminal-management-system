@@ -23,6 +23,8 @@ export interface SessionMeta {
 export interface CreateShellSessionInput {
   kind: 'shell'
   title?: string
+  /** 开在该已登记条目的目录里；目录由主进程解析，渲染层给不出路径 */
+  entryId?: string
 }
 
 /**

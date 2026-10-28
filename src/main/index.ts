@@ -311,7 +311,15 @@ const ipc = {
 function registerIpc(): void {
   ipc.handle(Channels.sessionList, () => sessions.list())
   // 只走固定 shell 入口：渲染层给的 file/args/cwd/env 在这里被丢弃，PRD §11 红线 3、4
-  ipc.handle(Channels.sessionCreate, (_e, input: unknown) => sessions.createShell(input))
+  // 带 entryId 时开在该条目目录：目录由 EntryService 按登记信息解析并校验（红线 4），
+  // 渲染层只给 id。entryId 不是字符串、条目不存在、目录越界或不存在都直接抛错，不回退
+  ipc.handle(Channels.sessionCreate, async (_e, input: unknown) => {
+    const raw = (typeof input === 'object' && input !== null ? input : {}) as Record<string, unknown>
+    if (raw.entryId === undefined) return sessions.createShell(input)
+    if (typeof raw.entryId !== 'string') throw new Error('entryId 必须是字符串')
+    const at = await entries.terminalCwd(raw.entryId)
+    return sessions.createShell(input, { cwd: at.cwd, title: `终端 · ${at.name}`.slice(0, 80) })
+  })
   ipc.handle(Channels.sessionHistory, (_e, id: string) => sessions.history(id))
   ipc.handle(Channels.sessionStop, (_e, id: string) => sessions.stop(id))
   ipc.on(Channels.sessionWrite, (_e, id: string, data: string) => sessions.write(id, data))

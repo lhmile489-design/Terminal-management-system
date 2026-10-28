@@ -667,6 +667,20 @@ export class EntryService extends EventEmitter {
     })
   }
 
+  /**
+   * 「在此目录开终端」的工作目录，由主进程按已登记条目解析，渲染层只给 id（红线 4）。
+   * 解析结果必须仍在条目路径内（旧配置里跳出项目根的 cwd 一律拒绝）且目录真实存在，
+   * 任何一项不满足都抛错，不回退到主目录或别处 —— 回退会让用户以为开在了项目里。
+   */
+  async terminalCwd(id: string): Promise<{ cwd: string; name: string }> {
+    const entry = this.get(id)
+    if (!entry) throw new Error(`条目不存在：${id}`)
+    const cwd = resolveCwd(entry)
+    this.assertInsideEntry(entry, cwd)
+    if (!(await isDirectory(cwd))) throw new Error(`目录不存在：${cwd}`)
+    return { cwd, name: entry.name }
+  }
+
   /** 条目的 package.json 路径，供「在编辑器中打开」用，路径由主进程拼 */
   packageJsonPath(id: string): string | null {
     const entry = this.get(id)

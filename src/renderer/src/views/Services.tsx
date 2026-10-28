@@ -48,9 +48,12 @@ export function Services({
   onPendingConsumed,
   pendingKind,
   onPendingKindConsumed,
-  focus
+  focus,
+  onOpenTerminal
 }: {
   onOpenLogs: (sessionId: string) => void
+  /** 在条目目录开一个新终端并切到终端页；目录由主进程按条目解析 */
+  onOpenTerminal?: (entryId: string) => void
   pendingAdd?: { path: string; name: string } | null
   onPendingConsumed?: () => void
   pendingKind?: EntryKind | null
@@ -298,6 +301,7 @@ export function Services({
       { label: '诊断', icon: ICON.diagnose, onSelect: () => openDiagnose(entry) },
       { label: '配置', icon: ICON.config, onSelect: () => pickTab(entry.id, 'config') },
       { label: '打开目录', icon: ICON.openFolder, onSelect: () => window.mile.shell.openPath(entry.path) },
+      { label: '在此目录开终端', icon: ICON.navTerminal, onSelect: () => onOpenTerminal?.(entry.id) },
       { label: '查看产物', icon: ICON.artifact, onSelect: () => openOutput(entry, rt) }
     )
     if (entry.framework === 'uniapp') {

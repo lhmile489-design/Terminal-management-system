@@ -181,6 +181,20 @@ export function App(): React.JSX.Element {
     [focusSession]
   )
 
+  const openShellAt = useSessions((s) => s.openShellAt)
+  const openTerminalAt = useCallback(
+    (entryId: string) => {
+      void openShellAt(entryId).then(
+        () => setView('terminal'),
+        (err: unknown) => {
+          const msg = (err instanceof Error ? err.message : String(err)).replace(/^Error invoking remote method '[^']+': (Error: )?/, '')
+          toast({ tone: 'fault', title: '没能在此目录开终端', body: msg })
+        }
+      )
+    },
+    [openShellAt]
+  )
+
   const requestAdd = useCallback((path: string, name: string) => {
     setPendingAdd({ path, name })
     setView('services')
@@ -318,6 +332,7 @@ export function App(): React.JSX.Element {
             {view === 'services' && (
               <Services
                 onOpenLogs={openLogs}
+                onOpenTerminal={openTerminalAt}
                 focus={svcFocus}
                 pendingAdd={pendingAdd}
                 onPendingConsumed={() => setPendingAdd(null)}
