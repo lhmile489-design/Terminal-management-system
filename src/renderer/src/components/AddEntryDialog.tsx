@@ -53,15 +53,21 @@ export function AddEntryDialog({
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [detecting, setDetecting] = useState(false)
+  /** 每次识别递增；晚到的旧结果发现版本不是自己就丢弃，免得盖掉新目录的状态 */
+  const detectSeq = useRef(0)
+  const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const panelRef = useOverlay<HTMLDivElement>(onClose)
 
   const detect = useCallback(
     async (target: string) => {
+      const seq = ++detectSeq.current
       setDetecting(true)
       setError(null)
       try {
         const result = await window.mile.entry.detect(target)
+        // 期间又选了别的目录：这份结果属于旧目录，丢掉
+        if (seq !== detectSeq.current) return
         setDetected(result)
         setName((current) => current || result.name)
         // 服务取 dev 脚本，任务取 build 脚本
@@ -70,9 +76,9 @@ export function AddEntryDialog({
         setLaunchMode(result.detectedLaunchMode ?? '')
         setJarPath('')
       } catch (err) {
-        setError(err instanceof Error ? err.message : String(err))
+        if (seq === detectSeq.current) setError(err instanceof Error ? err.message : String(err))
       } finally {
-        setDetecting(false)
+        if (seq === detectSeq.current) setDetecting(false)
       }
     },
     [kind]
@@ -121,7 +127,22 @@ export function AddEntryDialog({
   const launchModeOptions = detected ? FRAMEWORK_LAUNCH_MODES[detected.framework] : undefined
   const isLaunchable = !!launchModeOptions
 
+  /** 同步锁：state 要等下一次渲染才变，同一帧里的第二次点击会漏过去，所以另用 ref */
+  const submitLock = useRef(false)
   const submit = async (): Promise<void> => {
+    if (submitLock.current) return
+    submitLock.current = true
+    setSubmitting(true)
+    try {
+      await submitNow()
+    } finally {
+      // onSubmit 抛错时对话框不关，要让用户能再点一次
+      submitLock.current = false
+      setSubmitting(false)
+    }
+  }
+
+  const submitNow = async (): Promise<void> => {
     if (!detected || !name.trim()) return
 
     if (isLaunchable) {
@@ -339,7 +360,7 @@ export function AddEntryDialog({
             variant="primary"
             icon={ICON.add}
             onClick={() => void submit()}
-            disabled={!detected || !name.trim() || launchIncomplete}
+            disabled={!detected || !name.trim() || launchIncomplete || submitting}
           >
             添加{noun}
           </Button>
