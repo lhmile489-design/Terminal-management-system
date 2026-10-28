@@ -98,7 +98,8 @@ export const useEntries = create<EntriesStore>((set, get) => ({
   },
 
   reorder: async (ids) => {
-    // 先本地重排让拖拽不闪，再以主进程回执为准
+    // 先本地重排让拖拽不闪，再以主进程回执为准；失败时回到重排前的顺序
+    const prev = get().entries
     set((s) => {
       const rank = new Map(ids.map((id, i) => [id, i]))
       return {
@@ -107,7 +108,12 @@ export const useEntries = create<EntriesStore>((set, get) => ({
         )
       }
     })
-    set({ entries: await window.mile.entry.reorder(ids) })
+    try {
+      set({ entries: await window.mile.entry.reorder(ids) })
+    } catch (err) {
+      set({ entries: prev })
+      throw err
+    }
   },
 
   start: async (id) => guard(set, id, async () => {
