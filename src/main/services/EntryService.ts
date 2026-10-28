@@ -608,8 +608,17 @@ export class EntryService extends EventEmitter {
 
   remove(id: string): void {
     const runtime = this.runtimes.get(id)
-    if (runtime?.sessionId) void this.sessions.kill(runtime.sessionId)
+    if (runtime?.sessionId) {
+      // 先摘掉 watch：会话退出时 onSessionExit 找不到它就直接返回，
+      // 不会再把已删除条目的运行态写回 runtimes 并广播给界面
+      const watch = this.watches.get(runtime.sessionId)
+      if (watch?.timer) clearTimeout(watch.timer)
+      this.watches.delete(runtime.sessionId)
+      void this.sessions.kill(runtime.sessionId)
+    }
     this.runtimes.delete(id)
+    this.lastErrorLine.delete(id)
+    this.lastRunMs.delete(id)
     this.commit(this.config.get().entries.filter((e) => e.id !== id))
   }
 
