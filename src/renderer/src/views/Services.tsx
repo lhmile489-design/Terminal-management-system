@@ -302,6 +302,14 @@ export function Services({
       { label: '配置', icon: ICON.config, onSelect: () => pickTab(entry.id, 'config') },
       { label: '打开目录', icon: ICON.openFolder, onSelect: () => window.mile.shell.openPath(entry.path) },
       { label: '在此目录开终端', icon: ICON.navTerminal, onSelect: () => onOpenTerminal?.(entry.id) },
+      {
+        label: '在外部终端打开',
+        icon: ICON.openExternal,
+        onSelect: () =>
+          void window.mile.entry.openExternalTerminal(entry.id).catch((err: unknown) =>
+            toast({ tone: 'fault', title: '打不开外部终端', body: String(err instanceof Error ? err.message : err).replace(/^Error invoking remote method '[^']+': (Error: )?/, '') })
+          )
+      },
       { label: '查看产物', icon: ICON.artifact, onSelect: () => openOutput(entry, rt) }
     )
     if (entry.framework === 'uniapp') {

@@ -92,6 +92,8 @@ const api = {
     image: (id: string): Promise<string | null> =>
       ipcRenderer.invoke(Channels.entryImage, id),
     runtimes: (): Promise<EntryRuntime[]> => ipcRenderer.invoke(Channels.entryRuntimes),
+    openExternalTerminal: (id: string): Promise<void> =>
+      ipcRenderer.invoke(Channels.entryOpenExternalTerminal, id),
     revealLastJar: (id: string): Promise<boolean> =>
       ipcRenderer.invoke(Channels.entryRevealLastJar, id),
     onChange: (cb: (list: LaunchEntry[]) => void): (() => void) =>

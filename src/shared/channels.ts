@@ -52,6 +52,8 @@ export const Channels = {
   shellOpenPath: 'shell:openPath',
   /** 只接受 PROJECT_LINKS 的键名，URL 由主进程查表，渲染层给不出任意地址 */
   shellOpenProjectLink: 'shell:openProjectLink',
+  /** 用设置里选的外部终端打开条目目录；只收 entryId，目录由主进程按登记信息解析 */
+  entryOpenExternalTerminal: 'entry:openExternalTerminal',
   scannerSnapshot: 'scanner:snapshot',
   scannerDiff: 'scanner:diff',
   scannerRefresh: 'scanner:refresh',

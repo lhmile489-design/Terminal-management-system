@@ -27,6 +27,7 @@ import { EntryService } from './services/EntryService'
 import { LogService } from './services/LogService'
 import { GroupService } from './services/GroupService'
 import { loadWindowState, trackWindowState, MIN_WIDTH, MIN_HEIGHT } from './lib/windowState'
+import { openExternalTerminal } from './lib/externalTerminal'
 
 // 打包后 resources/ 被 extraResources 平铺到 resourcesPath，开发期从工程根取
 const resourceDir = app.isPackaged ? process.resourcesPath : join(__dirname, '../../resources')
@@ -337,6 +338,14 @@ function registerIpc(): void {
   ipc.on(Channels.shellOpenProjectLink, (_e, key: unknown) => {
     if (typeof key !== 'string' || !Object.hasOwn(PROJECT_LINKS, key)) return
     void shell.openExternal(PROJECT_LINKS[key as ProjectLink])
+  })
+
+  // 外部终端：只收 entryId，目录走 EntryService.terminalCwd（越界、不存在都抛），
+  // 程序与参数是 lib/externalTerminal 里的常量，渲染层给不出任何路径或命令（红线 3、4）
+  ipc.handle(Channels.entryOpenExternalTerminal, async (_e, id: unknown) => {
+    if (typeof id !== 'string') throw new Error('条目 id 必须是字符串')
+    const at = await entries.terminalCwd(id)
+    openExternalTerminal(config.get().settings.externalTerminal, at.cwd)
   })
 
   ipc.on(Channels.shellOpenPath, (_e, target: unknown) => {

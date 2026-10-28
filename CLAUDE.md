@@ -23,10 +23,10 @@ npm run build                          # 必须先构建，harness 加载的是 
 npx electron scripts/verify-m10.cjs    # 跑单个
 ```
 
-全套 41 个 Electron harness，逐条断言（m7-visual 的「1px 边框」在 devicePixelRatio=2 环境差 1 条，属显示密度差异非代码回归，见 §验证纪律）：
+全套 42 个 Electron harness，逐条断言（m7-visual 的「1px 边框」在 devicePixelRatio=2 环境差 1 条，属显示密度差异非代码回归，见 §验证纪律）：
 
 ```bash
-for f in ui shell services m4-ui m5 m6-sort m6-palette m6-settings m7-visual m8 m9 m9-readonly m9-recover m10 m11-add m11-port m11-dual m12-press m12-port-config m13-icon m14-categories m14-favicon m15-uniapp m16-langs springboot m17-image review-ipc review-entry review-scanner review-quit review-panel review-links review-keys review-remove review-env review-notify review-tray review-window review-single review-hotkey review-cwdterm; do
+for f in ui shell services m4-ui m5 m6-sort m6-palette m6-settings m7-visual m8 m9 m9-readonly m9-recover m10 m11-add m11-port m11-dual m12-press m12-port-config m13-icon m14-categories m14-favicon m15-uniapp m16-langs springboot m17-image review-ipc review-entry review-scanner review-quit review-panel review-links review-keys review-remove review-env review-notify review-tray review-window review-single review-hotkey review-cwdterm review-extterm; do
   npx electron scripts/verify-$f.cjs 2>&1 | grep -E '结果：|Result:|PASS [0-9]+ / FAIL|^\s*FAIL'
 done
 node scripts/verify-review-ownership.cjs   # 纯逻辑，不起 Electron：用 esbuild 单独打包 OwnershipService 喂合成进程表
@@ -93,6 +93,7 @@ src/shared/     两侧共用的类型与 IPC 频道名
 - 新增 IPC 一律在 `index.ts` 里写 `sanitize*` 校形函数，白名单外的键静默丢弃，非法值抛错且**不落盘**。
 - **IPC 注册一律走 `ipc.handle` / `ipc.on` 包装器，不直接调 `ipcMain`。** 包装器只认主窗口主框架（`isTrustedSender`）。harness 绕过渲染层直调 `ipcMain._invokeHandlers` 时，要传 `{ sender: wc, senderFrame: wc.mainFrame }`，传 `{}` 会被拒（m5 / m6-palette / m6-settings 的 `callIpc` 有现成写法）。
 - **`session:create` 只走 `SessionService.createShell`**：只认 `kind: 'shell'` 和标题，可执行文件、参数、目录由主进程定。`create(CreateSessionInput)` 是主进程内部入口，只给 EntryService 用固定模板构造的规格，**绝不能接到 IPC 上**。带 `entryId` 时开在该条目目录：目录由 `EntryService.terminalCwd` 按登记信息解析，要求在条目路径内且真实存在，否则抛错、不回退；解析结果由 IPC 层作为可信参数交给 `createShell`，渲染层给不出路径。
+- **外部终端（`lib/externalTerminal.ts`，`entry:openExternalTerminal`）只开在已登记条目的目录**：渲染层只给 `entryId`，目录走 `EntryService.terminalCwd` 解析并校验（越界、不存在一律拒，不回退）。经 `cmd /d /c start "Mile Terminal" <终端> <固定参数>` 拉起 —— 直接 spawn 控制台程序拿不到自己的窗口，3 秒内就退出。**目录从不进命令行**，只走 spawn 的 `cwd` 选项（wt 用 `-d .`，Git Bash 用 `--cd-to-here`），因为 wt 把 `;` 当子命令分隔符、cmd 会解释 `&` `|`。`wt.exe` 是应用执行别名，`existsSync` 认不出，要用 `lstat`。verify-review-extterm 拦截 spawn 只量命令行，不真弹窗口。
 - **`entry:add` 与 `entry:edit` 共用 `sanitizeEdit`。** 新增可编辑字段时只改那一处，两个入口一起生效；别在 `add()` 里另写一套铺开入参的逻辑。
 - **环境变量的值不出主进程。** `entry:list` / `add` / `edit` / `reorder` / `clearImage` 的返回值和 `entry:changed` 广播都经 `redactEntry`，`env` 只剩键名（值恒为空串）。`EntryEdit.env` 是**合并补丁**：字符串=新增或覆盖，`null`=删除，没提的键保持原值；渲染层做端口修复这类改动只发 `{ PORT }`，不要再展开 `entry.env`（展开的是空串，会把旧值全冲掉）。读 env 值的 harness 要读磁盘 config，不能走 `entry.list()`。
 - 往渲染层推送用 `sendToRenderer(channel, ...)`，不要写 `mainWindow?.webContents.send`：窗口销毁后采集与会话输出仍在推，直接 send 会抛 `Object has been destroyed`。
