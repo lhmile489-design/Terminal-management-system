@@ -6,6 +6,10 @@ import { useOverlay } from '../lib/overlay'
 import { ICON } from '../lib/icons'
 import type { DetectResult, EntryKind, LaunchMode, NewLaunchEntry } from '@shared/types'
 import { FRAMEWORK_LABEL, FRAMEWORK_LAUNCH_MODES, LAUNCH_MODE_LABEL } from '../lib/entryMeta'
+import { useEntries } from '../store/entries'
+
+/** Windows 路径比较：大小写、斜杠方向、末尾分隔符都不算区别 */
+const normDir = (p: string): string => p.replace(/\\/g, '/').replace(/\/+$/, '').toLowerCase()
 
 /** 需要在 jarPath 字段填「路径/模块」的启动方式 */
 const MODES_NEEDING_PATH = new Set<LaunchMode>([
@@ -58,6 +62,8 @@ export function AddEntryDialog({
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const panelRef = useOverlay<HTMLDivElement>(onClose)
+  const allEntries = useEntries((s) => s.entries)
+  const sameDir = detected ? allEntries.filter((e) => normDir(e.path) === normDir(detected.path)) : []
 
   const detect = useCallback(
     async (target: string) => {
@@ -251,6 +257,14 @@ export function AddEntryDialog({
                 {!detected.hasPackageJson && <span className="ui-pill" data-tone="warn">无 package.json</span>}
                 {detected.detectedPort ? <span className="ui-pill" data-tone="idle" data-mono="true">:{detected.detectedPort}</span> : null}
               </div>
+
+              {/* 同一目录已登记：只提示不拦截，同目录配不同脚本（monorepo、dev 与 build）是合理用法 */}
+              {sameDir.length > 0 && (
+                <p className="add-dup" data-dup-dir>
+                  <Warning size={16} aria-hidden />
+                  这个目录已登记为{sameDir.map((e) => `「${e.name}」`).join('、')}。要用同一目录配另一个脚本可以继续添加，否则不必重复登记
+                </p>
+              )}
 
               <div className="add-grid">
                 <Field label="名称">
