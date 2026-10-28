@@ -23,10 +23,10 @@ npm run build                          # 必须先构建，harness 加载的是 
 npx electron scripts/verify-m10.cjs    # 跑单个
 ```
 
-全套 38 个 Electron harness，逐条断言（m7-visual 的「1px 边框」在 devicePixelRatio=2 环境差 1 条，属显示密度差异非代码回归，见 §验证纪律）：
+全套 39 个 Electron harness，逐条断言（m7-visual 的「1px 边框」在 devicePixelRatio=2 环境差 1 条，属显示密度差异非代码回归，见 §验证纪律）：
 
 ```bash
-for f in ui shell services m4-ui m5 m6-sort m6-palette m6-settings m7-visual m8 m9 m9-readonly m9-recover m10 m11-add m11-port m11-dual m12-press m12-port-config m13-icon m14-categories m14-favicon m15-uniapp m16-langs springboot m17-image review-ipc review-entry review-scanner review-quit review-panel review-links review-keys review-remove review-env review-notify review-tray review-window; do
+for f in ui shell services m4-ui m5 m6-sort m6-palette m6-settings m7-visual m8 m9 m9-readonly m9-recover m10 m11-add m11-port m11-dual m12-press m12-port-config m13-icon m14-categories m14-favicon m15-uniapp m16-langs springboot m17-image review-ipc review-entry review-scanner review-quit review-panel review-links review-keys review-remove review-env review-notify review-tray review-window review-single; do
   npx electron scripts/verify-$f.cjs 2>&1 | grep -E '结果：|Result:|PASS [0-9]+ / FAIL|^\s*FAIL'
 done
 node scripts/verify-review-ownership.cjs   # 纯逻辑，不起 Electron：用 esbuild 单独打包 OwnershipService 喂合成进程表
@@ -98,6 +98,7 @@ src/shared/     两侧共用的类型与 IPC 频道名
 - 往渲染层推送用 `sendToRenderer(channel, ...)`，不要写 `mainWindow?.webContents.send`：窗口销毁后采集与会话输出仍在推，直接 send 会抛 `Object has been destroyed`。
 - `OwnershipService.assertKillable(pid, table, sessionId)` 的第三个参数要传：PID 命中的会话必须就是要停的那个会话。
 - **托盘菜单（`index.ts` 的 `rebuildTray`）启停只调 `EntryService.start / stop`**，不另开命令通道。生产环境任何启动、沙箱环境的 Spring Boot 启动，都要走 `dialog.showMessageBox` 确认，规则与渲染层 `lib/services.ts` 的 `confirmEnv` 保持一致，改一边必须同步另一边。
+- **单实例锁只在打包后启用**（`app.isPackaged` 或 `MILE_FORCE_SINGLE_INSTANCE=1`）：锁的作用域是 userData，开发期默认 userData 与本机其他 Electron 项目共用，强开会互相挤掉，所有 harness 也会因此互相冲突。第二个实例用 `app.exit(0)` 直接退出（它还没建任何服务，没有清理要做），第一个实例在 `second-instance` 事件里把窗口带回前台。verify-review-single 自己当驱动，把 userData 指到沙箱后强开。
 - **窗口状态记在 `appData/mile-terminal/window-state.json`（`lib/windowState.ts`），不进 `config.json`**：它是纯展示偏好，写坏了不该牵连条目配置，也不参与 `.bak` 轮转。读取时坐标不在任何屏幕工作区内（拔掉副屏）一律丢弃交给系统居中。缩放不是 100% 时同一窗口每开关一次会多出几像素，所以保存时与上次值差 8px 以内当作没变，不要去掉这个容差，否则窗口会越开越大。上次的页面与选中服务存渲染层 localStorage（`mile.view` 等），不经主进程。
 - `verify-review-window.cjs` 要重启应用才量得到，所以脚本自己当驱动，按阶段拉起多个真实 Electron 进程共用同一沙箱，而且 `userData` 也要指向沙箱，否则 localStorage 读写的是真实数据。
 

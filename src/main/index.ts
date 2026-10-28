@@ -602,7 +602,30 @@ function registerIpc(): void {
   sessions.on('exit', (payload) => sendToRenderer(Channels.sessionExit, payload))
 }
 
+/**
+ * 单实例锁：再双击快捷方式不起第二个实例（两个实例会抢同一份 config.json 和同一批端口扫描），
+ * 第二个实例自己退出，并让第一个实例把窗口带到前台。
+ *
+ * 锁的作用域是 userData。开发期默认 userData 与本机其他 Electron 项目共用，会互相挤掉，
+ * 所以只在打包后启用；harness 用 MILE_FORCE_SINGLE_INSTANCE=1 强开（并自己把 userData 指到沙箱）。
+ * 这里用 app.exit 而不是 app.quit：第二个实例还没建任何服务，没有清理要做。
+ */
+const singleInstance = app.isPackaged || process.env.MILE_FORCE_SINGLE_INSTANCE === '1'
+const gotLock = !singleInstance || app.requestSingleInstanceLock()
+if (!gotLock) app.exit(0)
+
+app.on('second-instance', () => {
+  if (!mainWindow) {
+    if (app.isReady()) createWindow()
+    return
+  }
+  if (mainWindow.isMinimized()) mainWindow.restore()
+  mainWindow.show()
+  mainWindow.focus()
+})
+
 app.whenReady().then(() => {
+  if (!gotLock) return
   config = new ConfigStore()
   theme = new ThemeService(config)
   scanner = new ScannerService(ownership, config)
