@@ -23,10 +23,10 @@ npm run build                          # 必须先构建，harness 加载的是 
 npx electron scripts/verify-m10.cjs    # 跑单个
 ```
 
-全套 36 个 Electron harness，逐条断言（m7-visual 的「1px 边框」在 devicePixelRatio=2 环境差 1 条，属显示密度差异非代码回归，见 §验证纪律）：
+全套 37 个 Electron harness，逐条断言（m7-visual 的「1px 边框」在 devicePixelRatio=2 环境差 1 条，属显示密度差异非代码回归，见 §验证纪律）：
 
 ```bash
-for f in ui shell services m4-ui m5 m6-sort m6-palette m6-settings m7-visual m8 m9 m9-readonly m9-recover m10 m11-add m11-port m11-dual m12-press m12-port-config m13-icon m14-categories m14-favicon m15-uniapp m16-langs springboot m17-image review-ipc review-entry review-scanner review-quit review-panel review-links review-keys review-remove review-env review-notify; do
+for f in ui shell services m4-ui m5 m6-sort m6-palette m6-settings m7-visual m8 m9 m9-readonly m9-recover m10 m11-add m11-port m11-dual m12-press m12-port-config m13-icon m14-categories m14-favicon m15-uniapp m16-langs springboot m17-image review-ipc review-entry review-scanner review-quit review-panel review-links review-keys review-remove review-env review-notify review-tray; do
   npx electron scripts/verify-$f.cjs 2>&1 | grep -E '结果：|Result:|PASS [0-9]+ / FAIL|^\s*FAIL'
 done
 node scripts/verify-review-ownership.cjs   # 纯逻辑，不起 Electron：用 esbuild 单独打包 OwnershipService 喂合成进程表
@@ -97,6 +97,7 @@ src/shared/     两侧共用的类型与 IPC 频道名
 - **环境变量的值不出主进程。** `entry:list` / `add` / `edit` / `reorder` / `clearImage` 的返回值和 `entry:changed` 广播都经 `redactEntry`，`env` 只剩键名（值恒为空串）。`EntryEdit.env` 是**合并补丁**：字符串=新增或覆盖，`null`=删除，没提的键保持原值；渲染层做端口修复这类改动只发 `{ PORT }`，不要再展开 `entry.env`（展开的是空串，会把旧值全冲掉）。读 env 值的 harness 要读磁盘 config，不能走 `entry.list()`。
 - 往渲染层推送用 `sendToRenderer(channel, ...)`，不要写 `mainWindow?.webContents.send`：窗口销毁后采集与会话输出仍在推，直接 send 会抛 `Object has been destroyed`。
 - `OwnershipService.assertKillable(pid, table, sessionId)` 的第三个参数要传：PID 命中的会话必须就是要停的那个会话。
+- **托盘菜单（`index.ts` 的 `rebuildTray`）启停只调 `EntryService.start / stop`**，不另开命令通道。生产环境任何启动、沙箱环境的 Spring Boot 启动，都要走 `dialog.showMessageBox` 确认，规则与渲染层 `lib/services.ts` 的 `confirmEnv` 保持一致，改一边必须同步另一边。
 
 ---
 
