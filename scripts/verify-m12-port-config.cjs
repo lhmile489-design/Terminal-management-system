@@ -14,6 +14,8 @@ const FIXTURE = join(__dirname, 'fixture')
 const SERVER = join(FIXTURE, 'env-port-server.cjs')
 const SANDBOX = join(tmpdir(), `mile-m12-port-${process.pid}`)
 const CONFIG = join(SANDBOX, 'mile-terminal', 'config.json')
+/** env 的值不经 IPC 下发渲染层，要核对只能读磁盘配置 */
+const diskEntry = (id) => JSON.parse(readFileSync(CONFIG, 'utf8')).entries.find((e) => e.id === id)
 const SECRET = 'm12-secret-do-not-log'
 
 const [BLOCKER_PORT, MANUAL_PORT, NEXT_PORT] = freePorts(3)
@@ -206,13 +208,11 @@ app.whenReady().then(async () => {
     await js(`(() => [...document.querySelectorAll('.svc-savebar button')]
       .find(button => button.textContent.trim() === '保存')?.click())()`)
 
-    const savedManual = await waitFor('manual environment persistence', () =>
-      js(`window.mile.entry.list().then(entries => {
-        const item = entries.find(entry => entry.id === 'manual')
-        return item?.env?.MILE_TEST_PORT === ${JSON.stringify(String(MANUAL_PORT))} &&
-          item?.env?.MILE_TEST_SECRET === ${JSON.stringify(SECRET)}
-      })`)
-    )
+    // 渲染层拿不到环境变量的值，持久化结果只能读磁盘配置
+    const savedManual = await waitFor('manual environment persistence', async () => {
+      const item = diskEntry('manual')
+      return item?.env?.MILE_TEST_PORT === String(MANUAL_PORT) && item?.env?.MILE_TEST_SECRET === SECRET
+    })
     check('edited environment persists on the entry', savedManual === true)
 
     await js(`window.mile.entry.start('manual')`)
@@ -259,12 +259,10 @@ app.whenReady().then(async () => {
     )
 
     const fixedPort = await resolvePortFromCard(js, 'next', NEXT_PORT)
-    const nextEntry = await waitFor('Next port fix persistence', () =>
-      js(`window.mile.entry.list().then(entries => {
-        const item = entries.find(entry => entry.id === 'next')
-        return item?.expectedPort === ${fixedPort} && item?.env?.PORT === ${JSON.stringify(String(fixedPort))}
-      })`)
-    )
+    const nextEntry = await waitFor('Next port fix persistence', async () => {
+      const item = diskEntry('next')
+      return item?.expectedPort === fixedPort && item?.env?.PORT === String(fixedPort)
+    })
     check('Next repair updates PORT and expectedPort together', nextEntry === true)
     await js(`window.mile.entry.start('next')`)
     const nextRuntime = await waitFor('Next listener on repaired port', async () => {
@@ -292,7 +290,7 @@ app.whenReady().then(async () => {
     const vite = await js(`window.mile.entry.list().then(entries => entries.find(entry => entry.id === 'vite'))`)
     check(
       'manual guidance leaves the bookkeeping port unchanged',
-      vite.expectedPort === BLOCKER_PORT && vite.env.PORT === undefined
+      vite.expectedPort === BLOCKER_PORT && diskEntry('vite')?.env?.PORT === undefined
     )
   } catch (error) {
     console.log('HARNESS ERROR', error)

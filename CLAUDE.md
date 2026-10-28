@@ -94,6 +94,7 @@ src/shared/     两侧共用的类型与 IPC 频道名
 - **IPC 注册一律走 `ipc.handle` / `ipc.on` 包装器，不直接调 `ipcMain`。** 包装器只认主窗口主框架（`isTrustedSender`）。harness 绕过渲染层直调 `ipcMain._invokeHandlers` 时，要传 `{ sender: wc, senderFrame: wc.mainFrame }`，传 `{}` 会被拒（m5 / m6-palette / m6-settings 的 `callIpc` 有现成写法）。
 - **`session:create` 只走 `SessionService.createShell`**：只认 `kind: 'shell'` 和标题，可执行文件、参数、目录由主进程定。`create(CreateSessionInput)` 是主进程内部入口，只给 EntryService 用固定模板构造的规格，**绝不能接到 IPC 上**。
 - **`entry:add` 与 `entry:edit` 共用 `sanitizeEdit`。** 新增可编辑字段时只改那一处，两个入口一起生效；别在 `add()` 里另写一套铺开入参的逻辑。
+- **环境变量的值不出主进程。** `entry:list` / `add` / `edit` / `reorder` / `clearImage` 的返回值和 `entry:changed` 广播都经 `redactEntry`，`env` 只剩键名（值恒为空串）。`EntryEdit.env` 是**合并补丁**：字符串=新增或覆盖，`null`=删除，没提的键保持原值；渲染层做端口修复这类改动只发 `{ PORT }`，不要再展开 `entry.env`（展开的是空串，会把旧值全冲掉）。读 env 值的 harness 要读磁盘 config，不能走 `entry.list()`。
 - 往渲染层推送用 `sendToRenderer(channel, ...)`，不要写 `mainWindow?.webContents.send`：窗口销毁后采集与会话输出仍在推，直接 send 会抛 `Object has been destroyed`。
 - `OwnershipService.assertKillable(pid, table, sessionId)` 的第三个参数要传：PID 命中的会话必须就是要停的那个会话。
 

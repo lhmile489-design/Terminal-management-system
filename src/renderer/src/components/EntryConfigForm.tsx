@@ -75,8 +75,9 @@ export function EntryConfigForm({
   const [cwd, setCwd] = useState(entry.cwd ?? '')
   const [script, setScript] = useState(entry.script ?? '')
   const [scripts, setScripts] = useState(entry.scripts)
+  // 渲染层拿不到环境变量的值：已有变量只有键名，值框留空表示「保持不变」
   const [envRows, setEnvRows] = useState<EnvRow[]>(() =>
-    Object.entries(entry.env).map(([key, value], id) => ({ id, key, value }))
+    Object.keys(entry.env).map((key, id) => ({ id, key, value: '', existing: true }))
   )
   const [port, setPort] = useState(entry.expectedPort ? String(entry.expectedPort) : '')
   const [outputDir, setOutputDir] = useState(entry.outputDir ?? '')
@@ -197,7 +198,7 @@ export function EntryConfigForm({
         scripts: isLaunchable ? {} : scripts,
         framework,
         packageManager,
-        env: envFromRows(envRows),
+        env: envPatch(Object.keys(entry.env), envRows),
         // 空串表示清掉端口，用 null 让主进程按「显式清空」处理而不是「没提这个字段」
         expectedPort: kind === 'task' || !port ? null : Number(port),
         outputDir,
@@ -221,7 +222,7 @@ export function EntryConfigForm({
   }
 
   const addEnvRow = (): void => {
-    setEnvRows((rows) => [...rows, { id: nextEnvRowId.current++, key: '', value: '' }])
+    setEnvRows((rows) => [...rows, { id: nextEnvRowId.current++, key: '', value: '', existing: false }])
   }
 
   const removeEnvRow = (id: number): void => {
@@ -430,7 +431,8 @@ export function EntryConfigForm({
                     <input
                       data-env-key
                       value={row.key}
-                      disabled={live}
+                      disabled={live || row.existing}
+                      title={row.existing ? '已保存的变量不能改名，删掉后重新添加' : undefined}
                       aria-label={`环境变量名称 ${index + 1}`}
                       placeholder="NAME"
                       onChange={(e) => updateEnvRow(row.id, 'key', e.target.value)}
@@ -443,7 +445,7 @@ export function EntryConfigForm({
                       disabled={live}
                       autoComplete="new-password"
                       aria-label={`环境变量值 ${index + 1}`}
-                      placeholder="value"
+                      placeholder={row.existing ? '已设置，留空保持不变' : 'value'}
                       onChange={(e) => updateEnvRow(row.id, 'value', e.target.value)}
                       className="min-w-0 flex-1 rounded-control border border-line bg-card px-2.5 py-1.5 font-mono text-[12px] text-ink-strong outline-none focus:border-accent disabled:border-line disabled:bg-raised disabled:text-ink-faint"
                     />
@@ -606,15 +608,26 @@ interface EnvRow {
   id: number
   key: string
   value: string
+  /** 来自已保存的条目：值在主进程，这里只知道键名 */
+  existing: boolean
 }
 
-function envFromRows(rows: EnvRow[]): Record<string, string> {
-  const env: Record<string, string> = {}
+/**
+ * 环境变量合并补丁：新值（非空）设置或覆盖；已有变量值框留空 = 不动；
+ * 已有变量的行被删掉 = null 删除。
+ */
+function envPatch(savedKeys: string[], rows: EnvRow[]): Record<string, string | null> {
+  const patch: Record<string, string | null> = {}
+  const kept = new Set<string>()
   for (const row of rows) {
     const key = row.key.trim()
-    if (key) env[key] = row.value
+    if (!key) continue
+    kept.add(key)
+    if (row.value !== '') patch[key] = row.value
+    else if (!row.existing) patch[key] = ''
   }
-  return env
+  for (const key of savedKeys) if (!kept.has(key)) patch[key] = null
+  return patch
 }
 
 function Field({

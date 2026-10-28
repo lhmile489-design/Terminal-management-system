@@ -6,6 +6,7 @@ import type {
   EntryEdit,
   EntryStatus,
   GroupPatch,
+  LaunchEntry,
   LogQuery,
   MavenGoal,
   NewLaunchEntry,
@@ -151,6 +152,15 @@ function createTray(): void {
   tray.on('double-click', show)
 }
 
+/**
+ * 条目出主进程前抹掉环境变量的值，只留键名（值恒为空串）。
+ * 渲染层拿不到密钥：编辑时用合并补丁（字符串覆盖、null 删除、没提的键保持原值）。
+ */
+function redactEntry(e: LaunchEntry): LaunchEntry {
+  return { ...e, env: Object.fromEntries(Object.keys(e.env ?? {}).map((k) => [k, ''])) }
+}
+const redactList = (list: LaunchEntry[]): LaunchEntry[] => list.map(redactEntry)
+
 /** 主进程 → 渲染层推送。窗口没了或正在销毁时静默丢弃，推送方不必各自判断 */
 function sendToRenderer(channel: string, ...args: unknown[]): void {
   const wc = mainWindow?.webContents
@@ -218,12 +228,14 @@ function registerIpc(): void {
     void shell.openPath(target)
   })
 
-  ipc.handle(Channels.entryList, () => entries.list())
-  ipc.handle(Channels.entryAdd, (_e, input: NewLaunchEntry) => entries.add(input))
+  ipc.handle(Channels.entryList, () => redactList(entries.list()))
+  ipc.handle(Channels.entryAdd, async (_e, input: NewLaunchEntry) => redactEntry(await entries.add(input)))
   // 渲染层没有不受校验的写入口：edit 只认白名单字段，运行中改身份字段直接抛错，PRD §4.6
-  ipc.handle(Channels.entryEdit, (_e, id: string, patch: EntryEdit) => entries.edit(id, patch))
+  ipc.handle(Channels.entryEdit, async (_e, id: string, patch: EntryEdit) =>
+    redactEntry(await entries.edit(id, patch))
+  )
   ipc.handle(Channels.entryRemove, (_e, id: string) => entries.remove(id))
-  ipc.handle(Channels.entryReorder, (_e, ids: string[]) => entries.reorder(ids))
+  ipc.handle(Channels.entryReorder, (_e, ids: string[]) => redactList(entries.reorder(ids)))
   ipc.handle(Channels.entryDetect, (_e, path: string) => detect.detect(path))
   ipc.handle(Channels.entryPrecheck, (_e, id: string) => entries.runPrecheck(id))
   ipc.handle(Channels.entryStart, (_e, id: string) => entries.start(id))
@@ -319,12 +331,12 @@ function registerIpc(): void {
   })
   ipc.handle(Channels.entryClearImage, (_e, id: unknown) => {
     if (typeof id !== 'string') throw new Error('条目 id 非法')
-    return entries.clearImage(id)
+    return redactEntry(entries.clearImage(id))
   })
   ipc.handle(Channels.entryImage, (_e, id: unknown) =>
     typeof id === 'string' ? entries.imageDataUrl(id) : null
   )
-  entries.on('changed', (list) => sendToRenderer(Channels.entryChanged, list))
+  entries.on('changed', (list) => sendToRenderer(Channels.entryChanged, redactList(list)))
   entries.on('runtime', (runtime) =>
     sendToRenderer(Channels.entryRuntimeChanged, runtime)
   )

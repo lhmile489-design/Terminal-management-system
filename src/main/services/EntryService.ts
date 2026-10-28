@@ -504,12 +504,16 @@ export class EntryService extends EventEmitter {
           break
         case 'env': {
           if (value === null || typeof value !== 'object') throw new Error('环境变量必须是对象')
-          const env = value as Record<string, unknown>
-          for (const [k, v] of Object.entries(env)) {
+          const patchEnv = value as Record<string, unknown>
+          // 合并补丁：字符串设置/覆盖，null 删除，没提的键保持原值（渲染层拿不到旧值）
+          const merged: Record<string, string> = { ...target.env }
+          for (const [k, v] of Object.entries(patchEnv)) {
             if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(k)) throw new Error(`环境变量名非法：${k}`)
-            if (typeof v !== 'string') throw new Error(`环境变量 ${k} 的值必须是字符串`)
+            if (v === null) delete merged[k]
+            else if (typeof v === 'string') merged[k] = v
+            else throw new Error(`环境变量 ${k} 的值必须是字符串`)
           }
-          out.env = env as Record<string, string>
+          out.env = merged
           break
         }
         case 'expectedPort': {

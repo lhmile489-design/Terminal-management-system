@@ -592,9 +592,15 @@ export type EditableEntryField =
 export type EntryEdit = Partial<
   Omit<
     Pick<LaunchEntry, EditableEntryField>,
-    'expectedPort' | 'outputDir' | 'icon' | 'imageId' | 'category' | 'groupId' | 'launchMode' | 'jarPath'
+    'expectedPort' | 'outputDir' | 'icon' | 'imageId' | 'category' | 'groupId' | 'launchMode' | 'jarPath' | 'env'
   >
 > & {
+  /**
+   * 合并补丁，不是整体替换：字符串 = 新增或覆盖该变量，null = 删除，没提到的键保持原值。
+   * 渲染层从不持有环境变量的值（条目里 env 的值恒为空串，只有键名可信），
+   * 所以不可能、也不需要回传旧值。
+   */
+  env?: Record<string, string | null>
   expectedPort?: number | null
   outputDir?: string | null
   /** null 是跨 IPC 显式恢复自动框架图标的哨兵值。 */
