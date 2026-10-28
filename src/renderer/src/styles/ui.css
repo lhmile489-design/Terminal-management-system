@@ -604,16 +604,15 @@
   color: var(--text-strong);
   user-select: none;
 }
+/* 品牌标识：logo 自带深色圆角底，直接铺满，不再套渐变底（2.0.x 去掉） */
 .ui-brand-mark {
   width: 22px;
   height: 22px;
-  border-radius: 7px;
-  /* 全应用唯一允许渐变的地方：品牌标识（§4.3） */
-  background: linear-gradient(135deg, #2563eb, #6e3ff3);
+  flex: none;
   display: grid;
   place-items: center;
 }
-.ui-brand-mark img { width: 14px; height: 14px; }
+.ui-brand-mark img { width: 22px; height: 22px; border-radius: 6px; display: block; }
 .ui-search-trigger {
   margin: 0 auto;
   width: 360px;
@@ -826,15 +825,16 @@
 .svc-env[data-env='dev'] { background: var(--surface-raised); color: var(--text-muted); }
 .svc-env[data-env='sandbox'] { background: var(--signal-warn-soft); color: color-mix(in srgb, var(--signal-warn) 72%, var(--text-strong)); }
 .svc-env[data-env='prod'] { background: var(--signal-fault-soft); color: color-mix(in srgb, var(--signal-fault) 72%, var(--text-strong)); }
-.svc-rows { position: relative; display: flex; flex-direction: column; padding: 0 6px 8px; }
+.svc-rows { position: relative; display: flex; flex-direction: column; gap: 2px; padding: 2px 8px 10px; container-type: inline-size; }
+
 .svc-row {
   position: relative;
   display: grid;
-  grid-template-columns: 8px 28px minmax(0, 1fr) auto auto 28px;
+  grid-template-columns: 8px 32px minmax(0, 1fr) auto auto 28px;
   align-items: center;
-  gap: 10px;
-  height: 48px;
-  padding: 0 8px 0 12px;
+  column-gap: 12px;
+  min-height: 60px;
+  padding: 8px 8px 8px 12px;
   border-radius: var(--radius-control);
   cursor: pointer;
   transition: background-color 90ms var(--ease-out);
@@ -842,11 +842,21 @@
 .svc-row:hover { background: var(--surface-sunken); }
 .svc-row[aria-selected='true'] { background: var(--signal-accent-soft); }
 .svc-row[data-cursor='true'] { box-shadow: inset 0 0 0 2px var(--btn-primary-bg); }
-.svc-row-glyph { width: 28px; height: 28px; display: grid; place-items: center; }
-.svc-row-name { min-width: 0; }
-.svc-row-name b { display: block; font-weight: 600; color: var(--text-strong); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.svc-row-name span { display: block; font-size: 12px; color: var(--text-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.svc-row-port { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+/* 图标放进一块凹陷底：字标、预设图标、自定义图片都落在同一个 32px 方块里，列对齐 */
+.svc-row-glyph { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 9px; background: var(--surface-sunken); color: var(--text-muted); }
+.svc-row:hover .svc-row-glyph, .svc-row[aria-selected='true'] .svc-row-glyph { background: var(--surface-card); }
+.svc-row-name { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.svc-row-name b { display: block; font-size: 13.5px; line-height: 18px; font-weight: 600; color: var(--text-strong); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* 副标题：类型胶囊 · 分类 · 框架，同一基线、统一 18px 高 */
+.svc-row-name span { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 12px; line-height: 18px; color: var(--text-faint); overflow: hidden; white-space: nowrap; }
+.svc-row-sub { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-style: normal; }
+.svc-row-port { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* 详情打开后列表只剩约 480px：分类胶囊让位、间距收紧，名称至少留出可读宽度 */
+@container (max-width: 520px) {
+  .svc-row { column-gap: 8px; grid-template-columns: 8px 28px minmax(0, 1fr) auto auto 28px; padding-left: 10px; }
+  .svc-row-glyph { width: 28px; height: 28px; border-radius: 8px; }
+  .svc-row .svc-cat { display: none; }
+}
 .svc-row-ind {
   position: absolute; left: 0; top: 0; width: 3px; height: 24px; border-radius: 0 3px 3px 0;
   background: var(--btn-primary-bg); pointer-events: none;
@@ -892,7 +902,7 @@
 .svc-savebar-msg { margin-right: auto; font-size: 13px; font-weight: 600; color: var(--text-strong); }
 @media (prefers-reduced-motion: reduce) { .svc-savebar { animation: none; } }
 /* 成员行的类型标记：服务 / 任务 */
-.svc-kind { display: inline-block; margin-right: 6px; padding: 0 6px; border-radius: var(--radius-pill); font-style: normal; font-size: 12px; font-weight: 600; line-height: 18px; background: var(--surface-raised); color: var(--text-muted); }
+.svc-kind { display: inline-block; flex: none; padding: 0 7px; border-radius: var(--radius-pill); font-style: normal; font-size: 12px; font-weight: 600; line-height: 18px; background: var(--surface-raised); color: var(--text-muted); }
 .svc-kind[data-kind='task'] { background: var(--signal-accent-soft); color: color-mix(in srgb, var(--signal-accent) 72%, var(--text-strong)); }
 
 /* 配置表单「常用 / 高级」分组（Q13）：高级默认折叠 */
@@ -972,6 +982,10 @@
 /* 运行中的端口：点一下在浏览器打开 http://localhost:端口 */
 .svc-port-btn {
   font: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
   padding: 2px 6px;
   border-radius: 6px;
   color: color-mix(in srgb, var(--signal-accent) 72%, var(--text-strong));
@@ -991,7 +1005,7 @@
 .svc-row[data-drop-at='after']::after { bottom: -1px; }
 
 /* 分类标签：行副标题里的次级标签，不参与分组（分组只按工作组） */
-.svc-cat { display: inline-block; max-width: 10em; margin-right: 6px; padding: 0 6px; border: 1px solid var(--stroke-strong); border-radius: var(--radius-pill); font-style: normal; font-size: 12px; font-weight: 500; line-height: 16px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; vertical-align: bottom; }
+.svc-cat { display: inline-block; flex: none; max-width: 10em; padding: 0 7px; border: 1px solid var(--stroke-strong); border-radius: var(--radius-pill); font-style: normal; font-size: 12px; font-weight: 500; line-height: 16px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; vertical-align: bottom; }
 
 /* 诊断报告分段（原诊断页的端口、会话、环境、产物四段） */
 .svc-diag { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--stroke-base); }
@@ -1093,8 +1107,8 @@
 @container (max-width: 56rem) { .about-grid { grid-template-columns: minmax(0, 1fr); } }
 .about-brand { padding: 20px; gap: 14px; }
 .about-brand-top { display: flex; align-items: center; gap: 14px; }
-.about-logo { width: 56px; height: 56px; flex: none; display: grid; place-items: center; border-radius: 16px; background: linear-gradient(135deg, var(--btn-primary-bg), #6e3ff3); box-shadow: var(--shadow-lift); }
-.about-logo img { width: 34px; height: 34px; }
+.about-logo { width: 56px; height: 56px; flex: none; display: grid; place-items: center; border-radius: 14px; box-shadow: var(--shadow-lift); }
+.about-logo img { width: 56px; height: 56px; border-radius: 14px; display: block; }
 .about-name { font-family: var(--font-display); font-size: 22px; font-weight: 800; letter-spacing: -0.02em; color: var(--text-strong); margin-bottom: 4px; }
 .about-lead { font-size: 13px; line-height: 1.7; color: var(--text-muted); }
 .about-actions { display: flex; flex-wrap: wrap; gap: 8px; }

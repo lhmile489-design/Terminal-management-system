@@ -139,8 +139,8 @@ app.whenReady().then(async () => {
     console.log('\n=== 5. 渐变只用于品牌标识（§4.3）===')
     const grads = await js(`[...document.querySelectorAll('body *')].filter(el=>/gradient/.test(getComputedStyle(el).backgroundImage))
       .map(el=>el.className&&el.className.baseVal===undefined?String(el.className).split(' ')[0]:el.tagName)`)
-    const offenders = grads.filter((c) => !/ui-brand-mark|about-logo/.test(c))
-    check('除品牌标识外没有渐变背景', offenders.length === 0, offenders.join(' | ') || `只有 ${grads.length} 处品牌`)
+    // 2.0.x 起品牌标识也不用渐变底：logo 自带深色圆角底
+    check('界面里没有任何渐变背景', grads.length === 0, grads.join(' | ') || '0 处')
 
     console.log('\n=== 6. 总览便当网格（§3.4）===')
     await setTheme('light')

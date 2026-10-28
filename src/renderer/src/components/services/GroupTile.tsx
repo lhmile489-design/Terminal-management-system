@@ -188,7 +188,7 @@ function Rows({
   )
 }
 
-/** 成员行 44px：状态点、图标、名称、端口、启停、「⋯」 */
+/** 成员行 60px：状态点、图标块、名称与副标题两行、端口、启停、「⋯」 */
 function EntryLine({
   entry,
   runtime,
@@ -258,11 +258,11 @@ function EntryLine({
     >
       <StatusDot tone={meta.tone} label={meta.label} />
       <span className="svc-row-glyph" data-card-icon={entry.kind === 'service' ? (entry.icon ?? 'auto') : undefined}>
-        <EntryGlyph entry={entry} imageUrl={image} size={18} glyphClass="text-[12px]" />
+        <EntryGlyph entry={entry} imageUrl={image} size={20} glyphClass="text-[13px]" />
       </span>
       <span className="svc-row-name">
         <b>{entry.name}</b>
-        <span><em className="svc-kind" data-kind={entry.kind}>{entry.kind === 'task' ? '任务' : '服务'}</em>{entry.category && <em className="svc-cat" data-entry-category={entry.category} title={'分类：' + entry.category}>{entry.category}</em>}{sub}</span>
+        <span><em className="svc-kind" data-kind={entry.kind}>{entry.kind === 'task' ? '任务' : '服务'}</em>{entry.category && <em className="svc-cat" data-entry-category={entry.category} title={'分类：' + entry.category}>{entry.category}</em>}<i className="svc-row-sub" title={sub}>{sub}</i></span>
       </span>
       <span className="svc-row-port" data-shared={shared || undefined} title={shared ? sharedTip : undefined}>
         {livePort ? (
