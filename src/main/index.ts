@@ -16,7 +16,7 @@ import type {
   ProjectLink,
   FocusEntryRequest
 } from '@shared/types'
-import { PROJECT_LINKS } from '@shared/types'
+import { GROUP_ENV_LABEL, PROJECT_LINKS } from '@shared/types'
 import { SessionService } from './services/SessionService'
 import { ConfigStore } from './services/ConfigStore'
 import { ThemeService } from './services/ThemeService'
@@ -140,15 +140,119 @@ function createTray(): void {
     mainWindow.focus()
   }
 
-  tray.setContextMenu(
-    Menu.buildFromTemplate([
-      { label: '显示主窗口', click: show },
-      { type: 'separator' },
-      // 这里必须走 app.quit()：直接 destroy 窗口会跳过 before-quit，
-      // killOwnedOnQuit 的清理就不会执行
-      { label: '退出', click: () => app.quit() }
-    ])
-  )
+  /** 与渲染层 isGroupStartable 同口径：常驻服务、可启动、不由 HBuilderX 接管 */
+  const startable = (e: LaunchEntry): boolean =>
+    e.kind === 'service' && !e.registerOnly && e.framework !== 'uniapp'
+  const isLive = (status: string | undefined): boolean =>
+    status === 'precheck' || status === 'starting' || status === 'running' || status === 'stopping'
+
+  /**
+   * 启动前的环境确认，规则同渲染层 confirmEnv：prod 任何条目都确认，
+   * sandbox 只有 spring-boot 确认。托盘入口不能因为换了入口就绕过这道确认。
+   */
+  const confirmEnv = async (list: LaunchEntry[], groupId: string | undefined): Promise<boolean> => {
+    const group = groupId ? groups.list().find((g) => g.id === groupId) : undefined
+    if (!group) return true
+    const names = list.map((e) => `「${e.name}」`).join('、')
+    let message: string | null = null
+    if (group.env === 'prod') {
+      message = `工作组「${group.name}」处于${GROUP_ENV_LABEL.prod}环境，启动 ${names} 会影响真实业务数据。`
+    } else if (group.env === 'sandbox' && list.some((e) => e.framework === 'spring-boot')) {
+      message = `工作组「${group.name}」处于${GROUP_ENV_LABEL.sandbox}环境，确认后启动 ${names}。`
+    }
+    if (!message) return true
+    const options = {
+      type: 'warning' as const,
+      title: '确认启动',
+      message: `在${GROUP_ENV_LABEL[group.env]}环境启动？`,
+      detail: message,
+      buttons: ['确认启动', '取消'],
+      defaultId: 1,
+      cancelId: 1,
+      noLink: true
+    }
+    const result = mainWindow && !mainWindow.isDestroyed()
+      ? await dialog.showMessageBox(mainWindow, options)
+      : await dialog.showMessageBox(options)
+    return result.response === 0
+  }
+
+  const startList = async (list: LaunchEntry[], groupId: string | undefined): Promise<void> => {
+    const live = new Set(entries.runtimeList().filter((r) => isLive(r.status)).map((r) => r.entryId))
+    const todo = list.filter((e) => startable(e) && !live.has(e.id))
+    if (!todo.length || !(await confirmEnv(todo, groupId))) return
+    // 预检被拦下只会让该条目进入 blocked（并触发系统通知），不抛；spawn 抛错同理吞掉
+    await Promise.all(todo.map((e) => entries.start(e.id).catch(() => undefined)))
+  }
+
+  const stopList = async (list: LaunchEntry[]): Promise<void> => {
+    const live = new Set(entries.runtimeList().filter((r) => isLive(r.status)).map((r) => r.entryId))
+    // stop 内部走 OwnershipService.assertKillable，拒绝时抛错，这里逐个吞掉不影响其余条目
+    await Promise.all(list.filter((e) => live.has(e.id)).map((e) => entries.stop(e.id).catch(() => undefined)))
+  }
+
+  const rebuild = (): void => {
+    if (!tray || tray.isDestroyed()) return
+    const all = entries.list()
+    const live = new Set(entries.runtimeList().filter((r) => isLive(r.status)).map((r) => r.entryId))
+    const liveCount = all.filter((e) => live.has(e.id)).length
+
+    const groupItems: Electron.MenuItemConstructorOptions[] = groups.list().map((g) => {
+      const members = all.filter((e) => e.groupId === g.id)
+      const anyStartable = members.some((e) => startable(e) && !live.has(e.id))
+      const anyLive = members.some((e) => live.has(e.id))
+      return {
+        label: `${g.name}（${GROUP_ENV_LABEL[g.env]}）`,
+        submenu: [
+          { label: '启动全部', enabled: anyStartable, click: () => void startList(members, g.id) },
+          { label: '停止全部', enabled: anyLive, click: () => void stopList(members) }
+        ]
+      }
+    })
+
+    const recent = all
+      .filter((e) => startable(e) && e.lastStartedAt)
+      .sort((a, b) => (b.lastStartedAt ?? 0) - (a.lastStartedAt ?? 0))
+      .slice(0, 5)
+    const recentItems: Electron.MenuItemConstructorOptions[] = recent.map((e) => ({
+      label: e.name,
+      type: 'checkbox',
+      checked: live.has(e.id),
+      click: () => void (live.has(e.id) ? stopList([e]) : startList([e], e.groupId))
+    }))
+
+    tray.setToolTip(liveCount > 0 ? `Mile Terminal · ${liveCount} 个运行中` : 'Mile Terminal')
+    tray.setContextMenu(
+      Menu.buildFromTemplate([
+        { label: `${liveCount} 个运行中`, enabled: false },
+        { type: 'separator' },
+        { label: '显示主窗口', click: show },
+        { type: 'separator' },
+        { label: '工作组', enabled: groupItems.length > 0, submenu: groupItems },
+        { label: '最近使用', enabled: recentItems.length > 0, submenu: recentItems },
+        { label: '全部停止', enabled: liveCount > 0, click: () => void stopList(all) },
+        { type: 'separator' },
+        // 这里必须走 app.quit()：直接 destroy 窗口会跳过 before-quit，
+        // killOwnedOnQuit 的清理就不会执行
+        { label: '退出', click: () => app.quit() }
+      ])
+    )
+  }
+
+  // 运行态在端口捕获、状态切换时会连发多次，合并成一次重建
+  let rebuildTimer: NodeJS.Timeout | null = null
+  const scheduleRebuild = (): void => {
+    if (rebuildTimer) return
+    rebuildTimer = setTimeout(() => {
+      rebuildTimer = null
+      rebuild()
+    }, 50)
+  }
+  entries.on('runtime', scheduleRebuild)
+  entries.on('changed', scheduleRebuild)
+  groups.on('changed', scheduleRebuild)
+
+  rebuild()
   tray.on('click', show)
   tray.on('double-click', show)
 }
