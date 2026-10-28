@@ -123,6 +123,9 @@ export function Services({
     if (id && entries.some((e) => e.id === id)) {
       setSelectedId(id)
       setCursorId(id)
+    } else if (id) {
+      // 记着的条目已被删掉：清掉，免得每次启动都白查一遍
+      try { localStorage.removeItem(SEL_KEY) } catch { /* 无害 */ }
     }
   }, [entries])
 
