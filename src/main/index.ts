@@ -26,6 +26,7 @@ import { DetectService } from './services/DetectService'
 import { EntryService } from './services/EntryService'
 import { LogService } from './services/LogService'
 import { GroupService } from './services/GroupService'
+import { loadWindowState, trackWindowState, MIN_WIDTH, MIN_HEIGHT } from './lib/windowState'
 
 // 打包后 resources/ 被 extraResources 平铺到 resourcesPath，开发期从工程根取
 const resourceDir = app.isPackaged ? process.resourcesPath : join(__dirname, '../../resources')
@@ -53,11 +54,14 @@ let tray: Tray | null = null
 let quitting = false
 
 function createWindow(): void {
+  // 上次的位置与大小；坐标跑到屏幕外或文件损坏时 x/y 为空，交给系统居中
+  const winState = loadWindowState()
   const win = new BrowserWindow({
-    width: 1440,
-    height: 900,
-    minWidth: 1180,
-    minHeight: 760,
+    width: winState.width,
+    height: winState.height,
+    ...(winState.x !== undefined && winState.y !== undefined ? { x: winState.x, y: winState.y } : {}),
+    minWidth: MIN_WIDTH,
+    minHeight: MIN_HEIGHT,
     show: false,
     // 从任务栏隐藏（仅托盘）—— 构造时读一次，托盘 show() 重建窗口也走这条路
     skipTaskbar: config.get().settings.hideFromTaskbar,
@@ -76,6 +80,8 @@ function createWindow(): void {
   })
 
   mainWindow = win
+  if (winState.maximized) win.maximize()
+  trackWindowState(win)
   win.once('ready-to-show', () => win.show())
   // 窗口销毁后必须放掉引用：采集、会话输出仍在推送，往已销毁的 webContents 发会抛错
   win.on('closed', () => {

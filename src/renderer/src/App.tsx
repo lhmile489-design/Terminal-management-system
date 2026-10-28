@@ -50,9 +50,21 @@ const TITLES: Record<
   }
 }
 
+const VIEW_KEY = 'mile.view'
+const VIEW_IDS: ViewId[] = ['dashboard', 'services', 'terminal', 'settings', 'about']
+
+function readView(): ViewId {
+  const v = localStorage.getItem(VIEW_KEY)
+  return VIEW_IDS.includes(v as ViewId) ? (v as ViewId) : 'dashboard'
+}
+
 export function App(): React.JSX.Element {
-  // 打开应用默认进入服务页（Q11）：第一件事通常是启动工作组
-  const [view, setView] = useState<ViewId>('dashboard')
+  // 默认进入总览；上次停留的页面记在 localStorage，重启后回到那里
+  const [view, setViewState] = useState<ViewId>(readView)
+  const setView = useCallback((v: ViewId) => {
+    setViewState(v)
+    try { localStorage.setItem(VIEW_KEY, v) } catch { /* 记不住页面不影响使用 */ }
+  }, [])
   const [events, setEvents] = useState<ActivityEvent[]>([])
   // 实时动态改为抽屉（UI-REFACTOR Q1）：关着时新事件计入未读，失败类让角标变红
   const [drawerOpen, setDrawerOpen] = useState(false)

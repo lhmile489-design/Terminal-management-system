@@ -29,6 +29,7 @@ import {
 import { confirm } from '../components/ui'
 
 const TAB_KEY = 'mile.services.tab'
+const SEL_KEY = 'mile.services.selected'
 const IDLE = (id: string): EntryRuntime => ({ entryId: id, status: 'idle', portUnknown: false })
 
 function readTab(): DetailTab {
@@ -103,6 +104,27 @@ export function Services({
     setAddDialog({ kind: pendingKind })
     onPendingKindConsumed?.()
   }, [pendingKind, onPendingKindConsumed])
+
+  // 选中的服务跨重启恢复。写入的 effect 必须排在恢复 effect 之前：同一次提交里
+  // 恢复还没生效，先写会把存的 id 覆盖成 null
+  const selRestored = useRef(false)
+  useEffect(() => {
+    if (!selRestored.current) return
+    try {
+      if (selectedId) localStorage.setItem(SEL_KEY, selectedId)
+      else localStorage.removeItem(SEL_KEY)
+    } catch { /* 记不住选中项不影响使用 */ }
+  }, [selectedId])
+  useEffect(() => {
+    // 启动时条目还没加载完，等到有条目再恢复一次；之后不再介入
+    if (selRestored.current || entries.length === 0) return
+    selRestored.current = true
+    const id = localStorage.getItem(SEL_KEY)
+    if (id && entries.some((e) => e.id === id)) {
+      setSelectedId(id)
+      setCursorId(id)
+    }
+  }, [entries])
 
   // 选中的条目被移除后关掉详情
   useEffect(() => {
