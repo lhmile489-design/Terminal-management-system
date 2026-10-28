@@ -576,6 +576,18 @@ function registerIpc(): void {
     return result.canceled ? null : (result.filePaths[0] ?? null)
   })
 
+  // 批量导入：选目录与扫描在主进程一次完成，扫描根只能是系统选择框刚返回的目录
+  ipc.handle(Channels.dialogPickImportRoot, async () => {
+    if (!mainWindow) return null
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: '选择包含多个项目的父目录',
+      properties: ['openDirectory']
+    })
+    const root = result.canceled ? null : (result.filePaths[0] ?? null)
+    if (!root) return null
+    return { root, items: await detect.scanChildren(root) }
+  })
+
   ipc.handle(Channels.scannerSnapshot, () => scanner.snapshot())
   ipc.on(Channels.scannerRefresh, () => scanner.refresh())
   ipc.on(Channels.scannerVisibility, (_e, visible: boolean) => scanner.setVisible(visible))

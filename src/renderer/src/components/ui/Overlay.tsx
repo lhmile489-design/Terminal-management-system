@@ -17,7 +17,8 @@ export function DialogShell({
   width = 480,
   alert,
   initialFocus,
-  dismissOnScrim = true
+  dismissOnScrim = true,
+  dataset
 }: {
   title: string
   icon?: React.ReactNode
@@ -29,6 +30,8 @@ export function DialogShell({
   alert?: boolean
   initialFocus?: React.RefObject<HTMLElement | null>
   dismissOnScrim?: boolean
+  /** 额外的 data-* 属性，给 harness 与样式定位用 */
+  dataset?: Record<string, string>
 }): React.JSX.Element {
   const titleId = useId()
   const ref = useOverlay<HTMLDivElement>(onClose, { initialFocus })
@@ -43,6 +46,7 @@ export function DialogShell({
         aria-modal="true"
         aria-labelledby={titleId}
         style={{ width }}
+        {...Object.fromEntries(Object.entries(dataset ?? {}).map(([k, v]) => [`data-${k}`, v]))}
       >
         <div className="ui-dialog-head">
           {icon && <span className="ui-dialog-icon" aria-hidden>{icon}</span>}

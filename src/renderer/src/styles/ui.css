@@ -1165,3 +1165,19 @@
 @keyframes dlg-pop { from { opacity: 0; transform: translateY(6px) scale(0.97); } }
 .dlg-title { font-family: var(--font-display); font-size: 16px; font-weight: 700; letter-spacing: -0.01em; color: var(--text-strong); }
 @media (prefers-reduced-motion: reduce) { .dlg-scrim, .dlg-panel { animation: none; } }
+
+/* 批量导入（2.3.0）：父目录下一层子目录的勾选表 */
+.imp-root { margin: 0 0 10px; font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.imp-empty { padding: 16px 0; font-size: 13px; color: var(--text-faint); }
+.imp-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 2px; max-height: 46vh; overflow-y: auto; }
+.imp-row label { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 6px 10px; border-radius: var(--radius-control); cursor: pointer; }
+.imp-row label:hover { background: var(--surface-sunken); }
+.imp-row[data-disabled='true'] label { cursor: default; }
+.imp-row input[type='checkbox'] { width: 16px; height: 16px; flex: none; accent-color: var(--btn-primary-bg); }
+.imp-name { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.imp-name b { font-size: 13.5px; font-weight: 600; color: var(--text-strong); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.imp-name span { display: flex; flex-wrap: wrap; gap: 6px; }
+.imp-name em { font-style: normal; }
+.imp-group { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--stroke-base); display: flex; flex-direction: column; gap: 8px; }
+.imp-group label { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-strong); cursor: pointer; }
+.imp-group input[type='checkbox'] { width: 16px; height: 16px; accent-color: var(--btn-primary-bg); }

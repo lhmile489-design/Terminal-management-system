@@ -48,6 +48,8 @@ export const Channels = {
   /** 全局快捷键触发：主进程把窗口带回前台后，让渲染层打开命令面板 */
   appOpenPalette: 'app:openPalette',
   dialogPickDirectory: 'dialog:pickDirectory',
+  /** 批量导入：主进程弹选择框并扫描一层子目录，渲染层给不出要扫的路径 */
+  dialogPickImportRoot: 'dialog:pickImportRoot',
   shellOpenLocalhost: 'shell:openLocalhost',
   shellOpenPath: 'shell:openPath',
   /** 只接受 PROJECT_LINKS 的键名，URL 由主进程查表，渲染层给不出任意地址 */

@@ -522,6 +522,43 @@ export class DetectService {
   async detectSpringBootProfiles(projectPath: string): Promise<string[]> {
     return detectSpringBootProfiles(projectPath)
   }
+
+  /**
+   * 批量导入：只列 root 下一层子目录，逐个复用 detect()（只读标记文件，不执行项目代码）。
+   * 跳过隐藏目录、node_modules 与常见产物目录；没有任何可识别标记（framework 为 unknown 且
+   * 无 package.json）的目录不返回，免得把文档、素材目录也列成「项目」。
+   * root 只能来自主进程刚打开的系统目录选择框，调用方负责保证，这里不接受渲染层路径。
+   */
+  async scanChildren(root: string, limit = 60): Promise<DetectResult[]> {
+    let names: string[]
+    try {
+      names = await readdir(root)
+    } catch {
+      return []
+    }
+    const SKIP = new Set(['node_modules', 'dist', 'build', 'out', 'target', 'release', 'coverage'])
+    const dirs: string[] = []
+    for (const name of names.sort((a, b) => a.localeCompare(b))) {
+      if (name.startsWith('.') || SKIP.has(name.toLowerCase())) continue
+      const full = join(root, name)
+      try {
+        if ((await stat(full)).isDirectory()) dirs.push(full)
+      } catch {
+        // 读不到就跳过
+      }
+      if (dirs.length >= limit) break
+    }
+    const out: DetectResult[] = []
+    for (const dir of dirs) {
+      try {
+        const r = await this.detect(dir)
+        if (r.hasPackageJson || r.framework !== 'unknown') out.push(r)
+      } catch {
+        // 单个目录识别失败不影响其余
+      }
+    }
+    return out
+  }
 }
 
 /** favicon 大小上限，超过跳过。favicon 通常几 KB，256KB 足够宽松 */

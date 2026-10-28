@@ -6,6 +6,7 @@ import { GroupTile, type RowActions } from '../components/services/GroupTile'
 import { EntryDetail, effectiveTab, hasBuildTab, type DetailTab } from '../components/services/EntryDetail'
 import { hasOpenOverlay } from '../lib/overlay'
 import { AddEntryDialog } from '../components/AddEntryDialog'
+import { ImportDialog } from '../components/ImportDialog'
 import { AssignGroupDialog, GroupDialog } from '../components/services/GroupDialogs'
 import { useEntries } from '../store/entries'
 import { useGroups } from '../store/groups'
@@ -83,6 +84,8 @@ export function Services({
   const [maximized, setMaximized] = useState(false)
   const [failedId, setFailedId] = useState<string | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
+  /** 批量导入：主进程选目录并扫描后的结果，null = 未打开 */
+  const [importing, setImporting] = useState<{ root: string; items: import('@shared/types').DetectResult[] } | null>(null)
   const [addDialog, setAddDialog] = useState<{ kind: EntryKind; path?: string; name?: string; groupId?: string } | null>(null)
   /** 配置标签有未保存改动（Q13）：切换服务、关闭详情前先确认 */
   const [dirty, setDirty] = useState(false)
@@ -540,6 +543,7 @@ export function Services({
         </div>
         <div className="svc-toolbar-acts">
           <Button icon={ICON.group} onClick={() => setGroupDialog({})}>新建工作组</Button>
+          <Button icon={ICON.openFolder} onClick={() => void window.mile.dialog.pickImportRoot().then((r) => { if (r) setImporting(r) })}>导入文件夹</Button>
           <Button variant="primary" icon={ICON.add} onClick={() => setAddDialog({ kind: 'service' })}>添加服务</Button>
         </div>
       </div>
@@ -589,6 +593,17 @@ export function Services({
           categories={categories}
           onSubmit={submitAdd}
           onClose={() => setAddDialog(null)}
+        />
+      )}
+      {importing && (
+        <ImportDialog
+          root={importing.root}
+          items={importing.items}
+          onClose={() => setImporting(null)}
+          onDone={(count, groupName) => {
+            setImporting(null)
+            toast({ tone: 'info', title: `已导入 ${count} 个${groupName ? `，归入「${groupName}」` : ''}` })
+          }}
         />
       )}
       {groupDialog && (

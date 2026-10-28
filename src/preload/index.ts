@@ -109,7 +109,9 @@ const api = {
   },
   dialog: {
     pickDirectory: (): Promise<string | null> =>
-      ipcRenderer.invoke(Channels.dialogPickDirectory)
+      ipcRenderer.invoke(Channels.dialogPickDirectory),
+    pickImportRoot: (): Promise<{ root: string; items: DetectResult[] } | null> =>
+      ipcRenderer.invoke(Channels.dialogPickImportRoot)
   },
   shell: {
     openLocalhost: (port: number): void => ipcRenderer.send(Channels.shellOpenLocalhost, port),

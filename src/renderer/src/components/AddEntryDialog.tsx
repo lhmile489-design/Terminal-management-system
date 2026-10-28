@@ -9,10 +9,10 @@ import { FRAMEWORK_LABEL, FRAMEWORK_LAUNCH_MODES, LAUNCH_MODE_LABEL } from '../l
 import { useEntries } from '../store/entries'
 
 /** Windows 路径比较：大小写、斜杠方向、末尾分隔符都不算区别 */
-const normDir = (p: string): string => p.replace(/\\/g, '/').replace(/\/+$/, '').toLowerCase()
+export const normDir = (p: string): string => p.replace(/\\/g, '/').replace(/\/+$/, '').toLowerCase()
 
 /** 需要在 jarPath 字段填「路径/模块」的启动方式 */
-const MODES_NEEDING_PATH = new Set<LaunchMode>([
+export const MODES_NEEDING_PATH = new Set<LaunchMode>([
   'jar',
   'cpp-exe',
   'python-file',
