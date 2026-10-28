@@ -361,6 +361,7 @@ export function App(): React.JSX.Element {
                 highlightPort={highlightPort}
                 onHighlightConsumed={() => setHighlightPort(null)}
                 onOpenLogs={openLogs}
+                onFocusService={focusService}
               />
             )}
             {view === 'services' && (

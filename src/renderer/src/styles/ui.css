@@ -1023,6 +1023,16 @@
 .dash-kpi .kpi-tile[data-wide='true'] { grid-column: span 2; }
 .dash-ops { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 16px; align-items: start; }
 .dash-side { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+/* 待办条：需要处理的事合成可点的行；状态色只染描边与图标，不染底（§4.6） */
+.dash-todo-ok { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border: 1px solid var(--stroke-base); border-radius: var(--radius-control); background: var(--surface-card); font-size: 13px; color: var(--text-muted); }
+.dash-todo-ok svg { color: var(--signal-live); flex: none; }
+.dash-todo-list { display: flex; flex-direction: column; gap: 8px; }
+.dash-todo-item { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 6px 8px 6px 14px; border: 1px solid var(--stroke-base); border-radius: var(--radius-control); background: var(--surface-card); font-size: 13px; color: var(--text-strong); }
+.dash-todo-item[data-tone='fault'] { border-color: color-mix(in srgb, var(--signal-fault) 55%, var(--stroke-base)); }
+.dash-todo-item[data-tone='fault'] svg { color: var(--signal-fault); flex: none; }
+.dash-todo-item[data-tone='warn'] { border-color: color-mix(in srgb, var(--signal-warn) 55%, var(--stroke-base)); }
+.dash-todo-item[data-tone='warn'] svg { color: var(--signal-warn); flex: none; }
+.dash-todo-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @container (max-width: 56rem) {
   .dash-kpi { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .dash-ops { grid-template-columns: minmax(0, 1fr); }

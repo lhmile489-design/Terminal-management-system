@@ -13,6 +13,7 @@ import { ListenerTable } from '../components/ListenerTable'
 import { DiscoveredListeners } from '../components/DiscoveredListeners'
 import { WatchedProcesses } from '../components/WatchedProcesses'
 import { MyServicesPanel } from '../components/MyServicesPanel'
+import { TodoBar } from '../components/TodoBar'
 import { useScanner } from '../store/scanner'
 import { useEntries } from '../store/entries'
 import { isLiveStatus } from '../lib/entryMeta'
@@ -22,7 +23,8 @@ export function Dashboard({
   onRequestAdd,
   highlightPort,
   onHighlightConsumed,
-  onOpenLogs
+  onOpenLogs,
+  onFocusService
 }: {
   onRequestAdd: (path: string, name: string) => void
   /** 命令面板定位过来的端口，滚动到对应行并短暂高亮 */
@@ -30,6 +32,8 @@ export function Dashboard({
   onHighlightConsumed?: () => void
   /** 打开终端/日志视图 */
   onOpenLogs?: (sessionId: string) => void
+  /** 待办条的「查看诊断 / 查看输出」：切到服务页并打开该服务的对应标签 */
+  onFocusService?: (id: string, tab: 'diagnose' | 'output') => void
 }): React.JSX.Element {
   const listeners = useScanner((s) => s.listeners)
   const system = useScanner((s) => s.system)
@@ -42,6 +46,7 @@ export function Dashboard({
   const setGroup = useScanner((s) => s.setGroup)
   const entries = useEntries((s) => s.entries)
   const runtimeOf = useEntries((s) => s.runtimeOf)
+  const runtimes = useEntries((s) => s.runtimes)
 
   // 只数「我的服务」里的外部监听：后台组是 GUI 与系统进程，把它们算进这个数字
   // 会让 KPI 常年是两位数，而用户关心的是「有几个我该纳管的服务没纳管」
@@ -132,6 +137,14 @@ export function Dashboard({
 
   return (
     <div className="dash flex flex-col gap-5">
+      <TodoBar
+        entries={entries}
+        runtimes={runtimes}
+        listeners={listeners}
+        scanFailed={failed}
+        lastSuccessAt={lastSuccessAt}
+        onFocusService={onFocusService ?? (() => {})}
+      />
       <section aria-labelledby="kpi-heading">
         <h2 id="kpi-heading" className="sr-only">
           本机概况
