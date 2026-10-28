@@ -235,7 +235,7 @@ spring 曲线的 `y2 = 1.56` 超过 1，产生轻微过冲后落回终态，用�
 
 - **Node 20.19。`electron-builder` 打包前需升到 22 LTS**（长期待办，从 M1 挂到现在）。
 - 平台 Windows 11。shell 用 bash 语法（`/dev/null`、正斜杠路径）。
-- 应用版本 2.1.0（`package.json`）。版本记录写在 `README.md` 的「版本记录」一节。
+- 应用版本 2.2.0（`package.json`）。版本记录写在 `README.md` 的「版本记录」一节。
 - 配置落在 `%APPDATA%/mile-terminal/config.json`，`.bak` 是上一份良好版本。当前 `CONFIG_VERSION = 11`（v9 加了工作组 `groups` 与条目的 `groupId`；v10 加了 `notifyOnCrash` / `notifyOnlyWhenBackground` 两个通知开关，迁移默认都开；v11 加了 `globalHotkey`，默认开）。从 `.bak` 恢复时坏主文件另存为 `config.json.corrupt`，且那次写入走 `persist(true)` 跳过「备份当前主文件」—— 常规 `persist()` 会把坏文件复制到 `.bak`，唯一的良好版本就没了。
 - 退出清理：`before-quit` 在 `killOwnedOnQuit` 开启且还有活会话时先 `preventDefault`，等 `sessions.disposeAll()`（每个 taskkill 返回才 resolve）或 6 秒上限，再 `app.quit()`。`SessionService.kill()` 返回 Promise，普通调用方不必等，退出流程要等。
 - **改 `CONFIG_VERSION` 时**：迁移写显式版本分支，不要用 `{...DEFAULTS, ...raw}` 铺开 —— 那样 `version` 会永远停在旧值，每次启动都重跑迁移。harness 里不要写死版本号，从 `src/shared/types.ts` 读。
