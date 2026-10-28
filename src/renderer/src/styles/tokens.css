@@ -172,10 +172,11 @@
   --signal-accent-soft: color-mix(in srgb, #2563eb 20%, #1b212c);
   --signal-on-accent: #0f1219;
 
-  /* 主按钮两套主题同为品牌蓝底白字（白字 5.2:1） */
+  /* 主按钮两套主题同为品牌蓝底白字（白字 5.2:1）。悬停往深走不往亮走：
+     #3b74f0 上白字只有 4.25:1，m12-press 在指针恰好停在按钮上时量到过 */
   --btn-primary-bg: #2563eb;
-  --btn-primary-bg-hover: #3b74f0;
-  --btn-primary-bg-active: #1d4ed8;
+  --btn-primary-bg-hover: #1d4ed8;
+  --btn-primary-bg-active: #1e40af;
   --btn-primary-fg: #ffffff;
   --btn-primary-border: transparent;
 
