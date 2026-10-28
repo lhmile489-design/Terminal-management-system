@@ -18,6 +18,7 @@ import {
   type LaunchMode,
   type MavenGoal,
   type NewLaunchEntry,
+  type OrderedStartResult,
   type PackageManager,
   type PortHolder,
   type PrecheckResult,
@@ -143,7 +144,7 @@ const OUTPUT_DIR_CANDIDATES = ['dist', 'build', 'out', '.next', '.output', 'rele
 const EDITABLE = new Set<EditableEntryField>([
   'name', 'category', 'groupId', 'pinned', 'kind', 'path', 'cwd', 'script', 'scripts',
   'framework', 'packageManager', 'env', 'icon', 'imageId', 'expectedPort', 'outputDir',
-  'launchMode', 'jarPath', 'registerOnly'
+  'launchMode', 'jarPath', 'registerOnly', 'startAfter'
 ])
 
 /** 决定「这张卡片是谁」的字段，运行中不可改，PRD §4.6 */
@@ -199,7 +200,8 @@ const FIELD_LABEL: Partial<Record<EditableEntryField, string>> = {
   pinned: '置顶',
   launchMode: '启动方式',
   jarPath: 'jar 路径',
-  registerOnly: '仅登记'
+  registerOnly: '仅登记',
+  startAfter: '先等待'
 }
 
 function fieldLabel(field: EditableEntryField): string {
@@ -398,6 +400,8 @@ export class EntryService extends EventEmitter {
       }
     }
 
+    if (clean.startAfter !== undefined) this.assertStartAfter(id, clean.startAfter)
+
     const next = this.update(id, clean)
     if (!next) throw new Error(`条目不存在：${id}`)
     return next
@@ -594,6 +598,19 @@ export class EntryService extends EventEmitter {
           out.jarPath = raw || undefined
           break
         }
+        case 'startAfter': {
+          if (value === null) {
+            out.startAfter = undefined
+            break
+          }
+          if (!Array.isArray(value) || value.some((v) => typeof v !== 'string')) {
+            throw new Error('先等待必须是条目 id 数组')
+          }
+          const ids = [...new Set(value as string[])]
+          if (ids.length > 32) throw new Error('先等待最多 32 项')
+          out.startAfter = ids.length ? ids : undefined
+          break
+        }
         case 'registerOnly':
         case 'pinned':
           if (typeof value !== 'boolean') throw new Error(`${fieldLabel(key)}必须是布尔值`)
@@ -608,6 +625,83 @@ export class EntryService extends EventEmitter {
       out.icon = undefined
     }
     return out
+  }
+
+  /** startAfter：不能指向自己、不能指向不存在的条目、不能成环（沿已有配置做深度优先） */
+  private assertStartAfter(id: string, deps: string[]): void {
+    const all = this.config.get().entries
+    const byId = new Map(all.map((e) => [e.id, e]))
+    for (const d of deps) {
+      if (d === id) throw new Error('先等待不能指向自己')
+      if (!byId.has(d)) throw new Error(`先等待的条目不存在：${d}`)
+    }
+    const next = (x: string): string[] => (x === id ? deps : (byId.get(x)?.startAfter ?? []))
+    const seen = new Set<string>()
+    const stack = [...deps]
+    while (stack.length) {
+      const cur = stack.pop() as string
+      if (cur === id) throw new Error('先等待形成了环：这些服务会互相等待，永远起不来')
+      if (seen.has(cur)) continue
+      seen.add(cur)
+      stack.push(...next(cur))
+    }
+  }
+
+  /**
+   * 按 startAfter 分层启动一批条目（2.3.0）。同层并发，下一层等上一层都进入运行中：
+   * 捕获到端口，或 60 秒没报端口按端口未知转运行中（PORT_CAPTURE_TIMEOUT_MS）。
+   * 只看本批次内的依赖；前置没起来（被拦、崩溃、抛错）的，依赖它的条目跳过并写明原因。
+   * 每一个仍走 start()，预检、命令构造、归属校验不变。
+   */
+  async startOrdered(ids: string[]): Promise<OrderedStartResult[]> {
+    const batch = [...new Set(ids)].map((id) => this.get(id)).filter((e): e is LaunchEntry => !!e)
+    const inBatch = new Set(batch.map((e) => e.id))
+    const deps = new Map(batch.map((e) => [e.id, (e.startAfter ?? []).filter((d) => inBatch.has(d))]))
+    const results = new Map<string, OrderedStartResult>()
+    const done = new Set<string>()
+    const okSet = new Set<string>()
+
+    while (done.size < batch.length) {
+      const layer = batch.filter((e) => !done.has(e.id) && (deps.get(e.id) ?? []).every((d) => done.has(d)))
+      // 剩下的互相依赖：校验挡住了新增的环，这里兜底旧配置，直接放行别卡死
+      const run = layer.length ? layer : batch.filter((e) => !done.has(e.id))
+      await Promise.all(run.map(async (e) => {
+        const bad = (deps.get(e.id) ?? []).filter((d) => !okSet.has(d))
+        if (layer.length && bad.length) {
+          const names = bad.map((d) => this.get(d)?.name ?? d).join('、')
+          results.set(e.id, { id: e.id, ok: false, skipped: `前置服务没起来：${names}` })
+          done.add(e.id)
+          return
+        }
+        try {
+          const r = await this.start(e.id)
+          if (!r.ok) {
+            results.set(e.id, { id: e.id, ok: false, precheck: r.precheck })
+          } else if (await this.waitRunning(e.id)) {
+            results.set(e.id, { id: e.id, ok: true })
+            okSet.add(e.id)
+          } else {
+            results.set(e.id, { id: e.id, ok: false, skipped: '启动后没有进入运行中' })
+          }
+        } catch (err) {
+          results.set(e.id, { id: e.id, ok: false, skipped: (err as Error).message })
+        }
+        done.add(e.id)
+      }))
+    }
+    return batch.map((e) => results.get(e.id) as OrderedStartResult)
+  }
+
+  /** 等条目进入 running；退出（崩溃、被停）或超时返回 false。端口捕获超时本身会把它转成 running */
+  private async waitRunning(id: string): Promise<boolean> {
+    const deadline = Date.now() + PORT_CAPTURE_TIMEOUT_MS + 5000
+    while (Date.now() < deadline) {
+      const s = this.runtimes.get(id)?.status
+      if (s === 'running') return true
+      if (!s || !isLive(s)) return false
+      await sleep(200)
+    }
+    return false
   }
 
   remove(id: string): void {

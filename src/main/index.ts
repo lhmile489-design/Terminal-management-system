@@ -189,7 +189,8 @@ function createTray(): void {
     const todo = list.filter((e) => startable(e) && !live.has(e.id))
     if (!todo.length || !(await confirmEnv(todo, groupId))) return
     // 预检被拦下只会让该条目进入 blocked（并触发系统通知），不抛；spawn 抛错同理吞掉
-    await Promise.all(todo.map((e) => entries.start(e.id).catch(() => undefined)))
+    // 按 startAfter 分层启动，与界面「全部启动」一致；被拦、抛错都记在结果里，不抛
+    await entries.startOrdered(todo.map((e) => e.id)).catch(() => undefined)
   }
 
   const stopList = async (list: LaunchEntry[]): Promise<void> => {
@@ -367,6 +368,12 @@ function registerIpc(): void {
   ipc.handle(Channels.entryDetect, (_e, path: string) => detect.detect(path))
   ipc.handle(Channels.entryPrecheck, (_e, id: string) => entries.runPrecheck(id))
   ipc.handle(Channels.entryStart, (_e, id: string) => entries.start(id))
+  ipc.handle(Channels.entryStartOrdered, (_e, ids: unknown) => {
+    if (!Array.isArray(ids) || ids.length > 200 || ids.some((x) => typeof x !== 'string')) {
+      throw new Error('ids 必须是条目 id 数组')
+    }
+    return entries.startOrdered(ids as string[])
+  })
   ipc.handle(Channels.entryStop, (_e, id: string) => entries.stop(id))
   ipc.handle(Channels.entryRestart, (_e, id: string) => entries.restart(id))
   ipc.handle(Channels.entryInstall, (_e, id: string) => entries.install(id))

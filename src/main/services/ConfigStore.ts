@@ -163,6 +163,10 @@ export class ConfigStore {
       out.settings.globalHotkey = DEFAULTS.settings.globalHotkey
     }
 
+    // v11 -> v12：条目新增可选 startAfter（整组按依赖顺序启动）。老条目没有即「不等待」，
+    // 不回填；这一步只推进版本号
+    void from
+
     // 迁移后仍要校形：数组字段被手改成对象会让下游 .some / .filter 直接抛
     if (!Array.isArray(out.entries)) out.entries = []
     if (!Array.isArray(out.groups)) out.groups = []

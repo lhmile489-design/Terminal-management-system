@@ -16,6 +16,8 @@ export const Channels = {
   entryDetect: 'entry:detect',
   entryPrecheck: 'entry:precheck',
   entryStart: 'entry:start',
+  /** 按 startAfter 分层启动一批条目，前置进入运行中才起下一层 */
+  entryStartOrdered: 'entry:startOrdered',
   entryStop: 'entry:stop',
   entryRestart: 'entry:restart',
   entryInstall: 'entry:install',

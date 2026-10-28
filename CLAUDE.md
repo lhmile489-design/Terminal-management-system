@@ -23,10 +23,10 @@ npm run build                          # 必须先构建，harness 加载的是 
 npx electron scripts/verify-m10.cjs    # 跑单个
 ```
 
-全套 48 个 Electron harness，逐条断言（m7-visual 的「1px 边框」在 devicePixelRatio=2 环境差 1 条，属显示密度差异非代码回归，见 §验证纪律）：
+全套 49 个 Electron harness，逐条断言（m7-visual 的「1px 边框」在 devicePixelRatio=2 环境差 1 条，属显示密度差异非代码回归，见 §验证纪律）：
 
 ```bash
-for f in ui shell services m4-ui m5 m6-sort m6-palette m6-settings m7-visual m8 m9 m9-readonly m9-recover m10 m11-add m11-port m11-dual m12-press m12-port-config m13-icon m14-categories m14-favicon m15-uniapp m16-langs springboot m17-image review-ipc review-entry review-scanner review-quit review-panel review-links review-keys review-remove review-env review-notify review-tray review-window review-single review-hotkey review-cwdterm review-extterm review-termsearch review-palette2 review-todo review-listenrow review-dupdir review-import; do
+for f in ui shell services m4-ui m5 m6-sort m6-palette m6-settings m7-visual m8 m9 m9-readonly m9-recover m10 m11-add m11-port m11-dual m12-press m12-port-config m13-icon m14-categories m14-favicon m15-uniapp m16-langs springboot m17-image review-ipc review-entry review-scanner review-quit review-panel review-links review-keys review-remove review-env review-notify review-tray review-window review-single review-hotkey review-cwdterm review-extterm review-termsearch review-palette2 review-todo review-listenrow review-dupdir review-import review-order; do
   npx electron scripts/verify-$f.cjs 2>&1 | grep -E '结果：|Result:|PASS [0-9]+ / FAIL|^\s*FAIL'
 done
 node scripts/verify-review-ownership.cjs   # 纯逻辑，不起 Electron：用 esbuild 单独打包 OwnershipService 喂合成进程表
@@ -101,6 +101,7 @@ src/shared/     两侧共用的类型与 IPC 频道名
 - **托盘菜单（`index.ts` 的 `rebuildTray`）启停只调 `EntryService.start / stop`**，不另开命令通道。生产环境任何启动、沙箱环境的 Spring Boot 启动，都要走 `dialog.showMessageBox` 确认，规则与渲染层 `lib/services.ts` 的 `confirmEnv` 保持一致，改一边必须同步另一边。
 - **单实例锁只在打包后启用**（`app.isPackaged` 或 `MILE_FORCE_SINGLE_INSTANCE=1`）：锁的作用域是 userData，开发期默认 userData 与本机其他 Electron 项目共用，强开会互相挤掉，所有 harness 也会因此互相冲突。第二个实例用 `app.exit(0)` 直接退出（它还没建任何服务，没有清理要做），第一个实例在 `second-instance` 事件里把窗口带回前台。verify-review-single 自己当驱动，把 userData 指到沙箱后强开。
 - **全局快捷键 `Ctrl+Alt+M`**（`index.ts` 的 `applyGlobalHotkey`，设置项 `globalHotkey`，默认开）：唤回窗口并发 `app:openPalette`，渲染层只「打开」命令面板、不切换，按两次不会关掉。回调只导航，不做启停。组合键被别的程序占用时不抛错、不挡设置保存，只往实时动态推一条提示。`will-quit` 里 `unregisterAll`。Electron 的加速键写法是 `Ctrl+Alt+M`，探针比对时别写成 `Control+Alt+M`。
+- **整组启动一律走 `EntryService.startOrdered`**（服务页、命令面板、托盘都是）：按条目的 `startAfter` 分层，同层并发，上一层都进入 running（捕获端口，或 60 秒端口捕获超时转 running）才起下一层；前置没起来的，依赖它的跳过并写明原因。只看本批次内的依赖。`startAfter` 在 `sanitizeEdit` 校形、在 `edit()` 里由 `assertStartAfter` 拒绝自指、不存在的 id 与成环。每一个仍走 `start()`，预检与命令构造不变。
 - **窗口状态记在 `appData/mile-terminal/window-state.json`（`lib/windowState.ts`），不进 `config.json`**：它是纯展示偏好，写坏了不该牵连条目配置，也不参与 `.bak` 轮转。读取时坐标不在任何屏幕工作区内（拔掉副屏）一律丢弃交给系统居中。缩放不是 100% 时同一窗口每开关一次会多出几像素，所以保存时与上次值差 8px 以内当作没变，不要去掉这个容差，否则窗口会越开越大。上次的页面与选中服务存渲染层 localStorage（`mile.view` 等），不经主进程。
 - `verify-review-window.cjs` 要重启应用才量得到，所以脚本自己当驱动，按阶段拉起多个真实 Electron 进程共用同一沙箱，而且 `userData` 也要指向沙箱，否则 localStorage 读写的是真实数据。
 
@@ -236,6 +237,6 @@ spring 曲线的 `y2 = 1.56` 超过 1，产生轻微过冲后落回终态，用�
 - **Node 20.19。`electron-builder` 打包前需升到 22 LTS**（长期待办，从 M1 挂到现在）。
 - 平台 Windows 11。shell 用 bash 语法（`/dev/null`、正斜杠路径）。
 - 应用版本 2.2.0（`package.json`）。版本记录写在 `README.md` 的「版本记录」一节。
-- 配置落在 `%APPDATA%/mile-terminal/config.json`，`.bak` 是上一份良好版本。当前 `CONFIG_VERSION = 11`（v9 加了工作组 `groups` 与条目的 `groupId`；v10 加了 `notifyOnCrash` / `notifyOnlyWhenBackground` 两个通知开关，迁移默认都开；v11 加了 `globalHotkey`，默认开）。从 `.bak` 恢复时坏主文件另存为 `config.json.corrupt`，且那次写入走 `persist(true)` 跳过「备份当前主文件」—— 常规 `persist()` 会把坏文件复制到 `.bak`，唯一的良好版本就没了。
+- 配置落在 `%APPDATA%/mile-terminal/config.json`，`.bak` 是上一份良好版本。当前 `CONFIG_VERSION = 12`（v9 加了工作组 `groups` 与条目的 `groupId`；v10 加了 `notifyOnCrash` / `notifyOnlyWhenBackground` 两个通知开关，迁移默认都开；v11 加了 `globalHotkey`，默认开；v12 加了条目的可选 `startAfter`，不回填）。从 `.bak` 恢复时坏主文件另存为 `config.json.corrupt`，且那次写入走 `persist(true)` 跳过「备份当前主文件」—— 常规 `persist()` 会把坏文件复制到 `.bak`，唯一的良好版本就没了。
 - 退出清理：`before-quit` 在 `killOwnedOnQuit` 开启且还有活会话时先 `preventDefault`，等 `sessions.disposeAll()`（每个 taskkill 返回才 resolve）或 6 秒上限，再 `app.quit()`。`SessionService.kill()` 返回 Promise，普通调用方不必等，退出流程要等。
 - **改 `CONFIG_VERSION` 时**：迁移写显式版本分支，不要用 `{...DEFAULTS, ...raw}` 铺开 —— 那样 `version` 会永远停在旧值，每次启动都重跑迁移。harness 里不要写死版本号，从 `src/shared/types.ts` 读。

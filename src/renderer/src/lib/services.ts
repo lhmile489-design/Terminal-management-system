@@ -86,7 +86,7 @@ export async function startEntry(entry: LaunchEntry, group: ProjectGroup | undef
 
 /** 整组启动：只确认一次，结束后发一条汇总通知（Q14） */
 export async function startGroup(group: ProjectGroup, members: LaunchEntry[], hooks: StartHooks = {}): Promise<void> {
-  const { runtimes, start } = useEntries.getState()
+  const { runtimes } = useEntries.getState()
   const todo = members.filter((e) => isGroupStartable(e) && !isLiveStatus(runtimes[e.id]?.status ?? 'idle'))
   if (!todo.length) {
     toast({ tone: 'info', title: `${group.name}：全部已在运行` })
@@ -94,22 +94,29 @@ export async function startGroup(group: ProjectGroup, members: LaunchEntry[], ho
   }
   if (!(await confirmEnv(todo, group))) return
 
-  const results = await Promise.all(
-    todo.map(async (e) => ({ e, blocked: await start(e.id).catch(() => null) }))
-  )
-  const failed = results.filter((r) => r.blocked)
+  // 主进程按 startAfter 分层启动：上一层进入运行中才起下一层；没配的仍一起起
+  let results: { e: LaunchEntry; ok: boolean; precheck?: PrecheckResult; skipped?: string }[]
+  try {
+    const raw = await window.mile.entry.startOrdered(todo.map((e) => e.id))
+    results = raw.map((r) => ({ e: todo.find((x) => x.id === r.id) as LaunchEntry, ok: r.ok, precheck: r.precheck, skipped: r.skipped }))
+  } catch (err) {
+    toast({ tone: 'fault', title: `${group.name}：启动失败`, body: err instanceof Error ? err.message : String(err) })
+    return
+  }
+  const failed = results.filter((r) => !r.ok)
   const ok = results.length - failed.length
   if (!failed.length) {
     toast({ tone: 'live', title: `${group.name}：${ok} 个已启动` })
     return
   }
-  const first = failed[0]
+  const blocked = failed.filter((r) => r.precheck)
+  const first = blocked[0]
   toast({
     tone: 'fault',
-    title: `${group.name}：${ok} 个已启动，${failed.length} 个被预检拦下`,
-    body: failed.map((r) => r.e.name).join('、'),
-    action: hooks.onBlocked && first.blocked
-      ? { label: '查看诊断', run: () => hooks.onBlocked?.(first.e, first.blocked as PrecheckResult) }
+    title: `${group.name}：${ok} 个已启动，${failed.length} 个没起来`,
+    body: failed.map((r) => (r.skipped ? `${r.e.name}（${r.skipped}）` : `${r.e.name}（预检未通过）`)).join('、'),
+    action: hooks.onBlocked && first?.precheck
+      ? { label: '查看诊断', run: () => hooks.onBlocked?.(first.e, first.precheck as PrecheckResult) }
       : undefined
   })
 }

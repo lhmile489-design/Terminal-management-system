@@ -17,6 +17,7 @@ import {
   isLiveStatus
 } from '../lib/entryMeta'
 import { Button } from './ui'
+import { useEntries } from '../store/entries'
 
 /** 需要在 jarPath 字段填「路径/模块」的启动方式（其余方式命令自足，无需额外输入） */
 const MODES_NEEDING_PATH = new Set<LaunchMode>([
@@ -85,6 +86,11 @@ export function EntryConfigForm({
   const [packageManager, setPackageManager] = useState(entry.packageManager)
   const [launchMode, setLaunchMode] = useState<LaunchMode | ''>(entry.launchMode ?? '')
   const [jarPath, setJarPath] = useState(entry.jarPath ?? '')
+  // 先等待：只能选同组的其他服务（整组按依赖顺序启动只看组内依赖）
+  const [startAfter, setStartAfter] = useState<string[]>(entry.startAfter ?? [])
+  const siblings = useEntries((st) => st.entries).filter(
+    (e) => !!entry.groupId && e.groupId === entry.groupId && e.id !== entry.id && e.kind === 'service'
+  )
   // 自定义图片预览（data URL）。图片改动即时经 setImage/clearImage 落盘，不随保存按钮走 ——
   // 它是展示字段（同 icon），运行中也能改，不影响运行身份。
   const [imageUrl, setImageUrl] = useState<string | null>(null)
@@ -179,7 +185,7 @@ export function EntryConfigForm({
 
   // 未保存判定：把所有表单字段拍成快照，与上次保存时的快照比较
   const snapshot = JSON.stringify([kind, name, category, icon, path, cwd, script, scripts,
-    envRows.map((r) => [r.key, r.value]), port, outputDir, framework, packageManager, launchMode, jarPath])
+    envRows.map((r) => [r.key, r.value]), port, outputDir, framework, packageManager, launchMode, jarPath, startAfter])
   const [baseline, setBaseline] = useState(snapshot)
   const dirty = snapshot !== baseline
   useEffect(() => {
@@ -210,7 +216,9 @@ export function EntryConfigForm({
         launchMode: isLaunchable ? mode : null,
         jarPath: isLaunchable && mode && MODES_NEEDING_PATH.has(mode) ? jarPath.trim() || null : null,
         // 选了启动方式才可启动；npm 项目按有无脚本判定
-        registerOnly: isLaunchable ? !mode : !script
+        registerOnly: isLaunchable ? !mode : !script,
+        // 只保留仍在同组里的，别把已移走的旧依赖再写回去
+        startAfter: (() => { const keep = startAfter.filter((d) => siblings.some((x) => x.id === d)); return keep.length ? keep : null })()
       })
       if (ok) {
         setBaseline(snapshot)
@@ -421,6 +429,30 @@ export function EntryConfigForm({
                 className="w-full rounded-control border border-line bg-card px-2.5 py-1.5 font-mono text-[12px] text-ink-strong outline-none focus:border-accent disabled:border-line disabled:bg-raised disabled:text-ink-faint"
               />
             </Field>
+
+            {entry.kind === 'service' && entry.groupId && (
+              <Field label="先等待" hint="整组启动时，等勾选的服务进入运行中（报出端口，或 60 秒后）再启动这一个">
+                {siblings.length ? (
+                  <div data-start-after className="flex flex-col gap-1.5">
+                    {siblings.map((x) => (
+                      <label key={x.id} className="flex items-center gap-2 text-[13px] text-ink-strong">
+                        <input
+                          type="checkbox"
+                          data-start-after-id={x.id}
+                          checked={startAfter.includes(x.id)}
+                          onChange={(e) =>
+                            setStartAfter((cur) => (e.target.checked ? [...cur, x.id] : cur.filter((d) => d !== x.id)))
+                          }
+                        />
+                        {x.name}
+                      </label>
+                    ))}
+                  </div>
+                ) : (
+                  <p data-start-after className="text-[12px] text-ink-faint">组里没有别的服务</p>
+                )}
+              </Field>
+            )}
 
             <Field label="识别结果">
               <p className="font-mono text-[12px] text-ink-muted">

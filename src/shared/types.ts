@@ -238,7 +238,7 @@ export interface Settings {
 }
 
 /** 当前配置结构版本。加字段就要加迁移，见 ConfigStore.migrate */
-export const CONFIG_VERSION = 11
+export const CONFIG_VERSION = 12
 
 /**
  * 主进程要求渲染层「定位到某个服务的某个标签」。只带条目 id 和两个标签枚举，
@@ -494,6 +494,11 @@ export interface LaunchEntry {
    * 未设置表示该条目不属于任何工作组（仍可在「全部」视图下操作）。
    */
   groupId?: string
+  /**
+   * 整组启动时先等这些条目进入运行中再启动本条目，v12 起。只认同组条目 id，
+   * 主进程校验：不能指向自己、不能指向不存在的条目、不能成环。
+   */
+  startAfter?: string[]
 }
 
 /** 新建条目时的入参，id/order/createdAt 由主进程生成 */
@@ -600,6 +605,7 @@ export type EditableEntryField =
   | 'launchMode'
   | 'jarPath'
   | 'registerOnly'
+  | 'startAfter'
 
 /**
  * `expectedPort`、`outputDir`、`jarPath`、`launchMode` 额外接受 null 表示「显式清空」。
@@ -609,7 +615,7 @@ export type EditableEntryField =
 export type EntryEdit = Partial<
   Omit<
     Pick<LaunchEntry, EditableEntryField>,
-    'expectedPort' | 'outputDir' | 'icon' | 'imageId' | 'category' | 'groupId' | 'launchMode' | 'jarPath' | 'env'
+    'expectedPort' | 'outputDir' | 'icon' | 'imageId' | 'category' | 'groupId' | 'launchMode' | 'jarPath' | 'env' | 'startAfter'
   >
 > & {
   /**
@@ -636,6 +642,8 @@ export type EntryEdit = Partial<
   launchMode?: LaunchMode | null
   /** null 显式清空可执行产物/入口路径。 */
   jarPath?: string | null
+  /** null 清空「先等待」 */
+  startAfter?: string[] | null
 }
 
 /** 条目运行态，不持久化 */
@@ -662,6 +670,16 @@ export interface EntryStartResult {
   ok: boolean
   precheck: PrecheckResult
   runtime?: EntryRuntime
+}
+
+/** 按依赖顺序整组启动的逐条结果 */
+export interface OrderedStartResult {
+  id: string
+  ok: boolean
+  /** 被预检拦下时的结果 */
+  precheck?: PrecheckResult
+  /** 没有启动的原因（前置没起来、启动抛错），给界面汇总用 */
+  skipped?: string
 }
 
 export interface PortHolder {

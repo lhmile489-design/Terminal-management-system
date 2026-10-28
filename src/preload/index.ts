@@ -16,6 +16,7 @@ import type {
   MavenGoal,
   NewLaunchEntry,
   NewProjectGroup,
+  OrderedStartResult,
   PrecheckResult,
   ProjectGroup,
   ScanDiff,
@@ -57,6 +58,8 @@ const api = {
     precheck: (id: string): Promise<PrecheckResult> =>
       ipcRenderer.invoke(Channels.entryPrecheck, id),
     start: (id: string): Promise<EntryStartResult> => ipcRenderer.invoke(Channels.entryStart, id),
+    startOrdered: (ids: string[]): Promise<OrderedStartResult[]> =>
+      ipcRenderer.invoke(Channels.entryStartOrdered, ids),
     stop: (id: string): Promise<EntryRuntime> => ipcRenderer.invoke(Channels.entryStop, id),
     restart: (id: string): Promise<EntryStartResult> =>
       ipcRenderer.invoke(Channels.entryRestart, id),
