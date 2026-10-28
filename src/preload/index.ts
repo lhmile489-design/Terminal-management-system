@@ -155,7 +155,9 @@ const api = {
   app: {
     info: (): Promise<{ version: string; name: string }> => ipcRenderer.invoke(Channels.appInfo),
     onFocusEntry: (cb: (req: FocusEntryRequest) => void): (() => void) =>
-      subscribe(Channels.appFocusEntry, cb)
+      subscribe(Channels.appFocusEntry, cb),
+    onOpenPalette: (cb: () => void): (() => void) =>
+      subscribe(Channels.appOpenPalette, cb)
   },
   group: {
     list: (): Promise<ProjectGroup[]> => ipcRenderer.invoke(Channels.groupList),

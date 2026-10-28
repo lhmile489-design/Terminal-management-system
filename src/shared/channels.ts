@@ -45,6 +45,8 @@ export const Channels = {
   entryWarning: 'entry:warning',
   /** 通知被点击后，主进程让渲染层定位到某个服务的输出或诊断标签 */
   appFocusEntry: 'app:focusEntry',
+  /** 全局快捷键触发：主进程把窗口带回前台后，让渲染层打开命令面板 */
+  appOpenPalette: 'app:openPalette',
   dialogPickDirectory: 'dialog:pickDirectory',
   shellOpenLocalhost: 'shell:openLocalhost',
   shellOpenPath: 'shell:openPath',

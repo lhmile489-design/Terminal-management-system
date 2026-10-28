@@ -169,6 +169,9 @@ export function App(): React.JSX.Element {
     [focusService]
   )
 
+  // 全局快捷键唤起：只打开不切换，已开着时再按一次保持打开
+  useEffect(() => window.mile.app.onOpenPalette(() => setPaletteOpen(true)), [])
+
 
   const openLogs = useCallback(
     (sessionId: string) => {

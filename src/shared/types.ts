@@ -231,10 +231,12 @@ export interface Settings {
   notifyOnCrash: boolean
   /** 通知只在窗口收起、最小化或失焦时弹，前台已有应用内提示，避免重复打扰，v10 起 */
   notifyOnlyWhenBackground: boolean
+  /** 全局快捷键 Ctrl+Alt+M 唤起窗口并打开命令面板，托盘驻留时也可用，v11 起 */
+  globalHotkey: boolean
 }
 
 /** 当前配置结构版本。加字段就要加迁移，见 ConfigStore.migrate */
-export const CONFIG_VERSION = 10
+export const CONFIG_VERSION = 11
 
 /**
  * 主进程要求渲染层「定位到某个服务的某个标签」。只带条目 id 和两个标签枚举，

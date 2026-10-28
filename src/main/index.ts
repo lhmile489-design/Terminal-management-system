@@ -1,5 +1,5 @@
 import { join } from 'node:path'
-import { app, BrowserWindow, dialog, ipcMain, Menu, Notification, shell, Tray } from 'electron'
+import { app, BrowserWindow, dialog, globalShortcut, ipcMain, Menu, Notification, shell, Tray } from 'electron'
 import type { IpcMainEvent, IpcMainInvokeEvent } from 'electron'
 import { Channels } from '@shared/channels'
 import type {
@@ -545,6 +545,7 @@ function registerIpc(): void {
     if (next.theme !== undefined) theme.set(next.theme)
     // 任务栏可见性即时生效：托盘常驻，隐藏后窗口仍能从托盘唤出
     if (next.hideFromTaskbar !== undefined) mainWindow?.setSkipTaskbar(next.hideFromTaskbar)
+    if (next.globalHotkey !== undefined) applyGlobalHotkey()
     sendToRenderer(Channels.settingsChanged, updated)
     return updated
   })
@@ -603,6 +604,34 @@ function registerIpc(): void {
 }
 
 /**
+ * 全局快捷键 Ctrl+Alt+M：唤起窗口并打开命令面板。窗口收起到托盘或失焦时 Ctrl+K 无效，这是唯一入口。
+ * 注册后在所有应用里都会被占用，所以设置里能关；组合键被别的程序占了时只在实时动态里提示，不抛错、
+ * 不挡设置保存。回调只导航，不触发启停这类写操作。
+ */
+const GLOBAL_HOTKEY = 'Ctrl+Alt+M'
+
+function applyGlobalHotkey(): void {
+  if (globalShortcut.isRegistered(GLOBAL_HOTKEY)) globalShortcut.unregister(GLOBAL_HOTKEY)
+  if (!config.get().settings.globalHotkey) return
+  const ok = globalShortcut.register(GLOBAL_HOTKEY, () => {
+    if (!mainWindow) {
+      createWindow()
+      // 新窗口加载完才有渲染层可接收。createWindow 会赋值 mainWindow，TS 的收窄看不到这一点
+      const created = mainWindow as BrowserWindow | null
+      created?.webContents.once('did-finish-load', () => sendToRenderer(Channels.appOpenPalette))
+      return
+    }
+    if (mainWindow.isMinimized()) mainWindow.restore()
+    mainWindow.show()
+    mainWindow.focus()
+    sendToRenderer(Channels.appOpenPalette)
+  })
+  if (!ok) {
+    sendToRenderer(Channels.entryWarning, `全局快捷键 ${GLOBAL_HOTKEY} 已被其他程序占用，未能注册`)
+  }
+}
+
+/**
  * 单实例锁：再双击快捷方式不起第二个实例（两个实例会抢同一份 config.json 和同一批端口扫描），
  * 第二个实例自己退出，并让第一个实例把窗口带到前台。
  *
@@ -638,6 +667,7 @@ app.whenReady().then(() => {
   registerIpc()
   createWindow()
   createTray()
+  applyGlobalHotkey()
   scanner.start()
 
   app.on('activate', () => {
@@ -653,6 +683,8 @@ app.on('window-all-closed', () => {
 /** 退出时等进程树终止的上限：taskkill 卡住也不能让应用关不掉 */
 const QUIT_CLEANUP_TIMEOUT_MS = 6000
 let cleanupDone = false
+
+app.on('will-quit', () => globalShortcut.unregisterAll())
 
 app.on('before-quit', (e) => {
   quitting = true
@@ -831,6 +863,10 @@ function sanitizeSettings(input: unknown): Partial<Settings> {
   if (raw.notifyOnCrash !== undefined) {
     if (typeof raw.notifyOnCrash !== 'boolean') throw new Error('notifyOnCrash 必须是布尔值')
     out.notifyOnCrash = raw.notifyOnCrash
+  }
+  if (raw.globalHotkey !== undefined) {
+    if (typeof raw.globalHotkey !== 'boolean') throw new Error('globalHotkey 必须是布尔值')
+    out.globalHotkey = raw.globalHotkey
   }
   if (raw.notifyOnlyWhenBackground !== undefined) {
     if (typeof raw.notifyOnlyWhenBackground !== 'boolean') {

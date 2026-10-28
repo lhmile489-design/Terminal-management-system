@@ -160,6 +160,14 @@ export function Settings(): React.JSX.Element {
               onChange={(v) => void patch({ hideFromTaskbar: v })}
             />
           </Row>
+          <Row label="全局快捷键 Ctrl+Alt+M 唤起" hint="在任何程序里按下都会唤出窗口并打开命令面板；会占用这个组合键，不需要时关掉">
+            <Toggle
+              label="全局快捷键 Ctrl+Alt+M 唤起"
+              checked={settings.globalHotkey}
+              disabled={saving}
+              onChange={(v) => void patch({ globalHotkey: v })}
+            />
+          </Row>
       </section>
 
       <section className="set-tile" aria-labelledby="settings-notify-heading">

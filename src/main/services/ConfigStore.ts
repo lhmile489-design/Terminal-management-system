@@ -22,7 +22,8 @@ const DEFAULTS: AppConfig = {
     notifyOnTaskDone: true,
     hideFromTaskbar: false,
     notifyOnCrash: true,
-    notifyOnlyWhenBackground: true
+    notifyOnlyWhenBackground: true,
+    globalHotkey: true
   }
 }
 
@@ -155,6 +156,11 @@ export class ConfigStore {
     if (from < 10) {
       out.settings.notifyOnCrash = DEFAULTS.settings.notifyOnCrash
       out.settings.notifyOnlyWhenBackground = DEFAULTS.settings.notifyOnlyWhenBackground
+    }
+
+    // v10 -> v11：全局快捷键。默认开，用户选定的行为；组合键被占用时只提示不报错
+    if (from < 11) {
+      out.settings.globalHotkey = DEFAULTS.settings.globalHotkey
     }
 
     // 迁移后仍要校形：数组字段被手改成对象会让下游 .some / .filter 直接抛
