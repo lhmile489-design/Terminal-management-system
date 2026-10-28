@@ -462,16 +462,10 @@ export function Services({
     place: (dragId, targetId, before) => placeEntry(dragId, targetId, before)
   }
 
-  const categories = useMemo(
-    () => [...new Set(entries.map((e) => e.category).filter((c): c is string => !!c))],
-    [entries]
-  )
-
   const submitAdd = async (input: NewLaunchEntry, image?: ArrayBuffer): Promise<void> => {
     const entry = await add(input)
     if (!entry?.id) return
     if (image) await window.mile.entry.setImage(entry.id, image).catch(() => undefined)
-    if (addDialog?.groupId) await edit(entry.id, { groupId: addDialog.groupId })
     // 添加完成后直接打开新条目的详情（UI-REFACTOR 默认做法）
     setSelectedId(entry.id)
     setTab('overview')
@@ -575,7 +569,6 @@ export function Services({
               onClose={() => void pick(null)}
               onToggle={() => void toggle(selected)}
               failed={failedId === selected.id}
-              categories={categories}
               onDirtyChange={setDirty}
               onOpenLogs={onOpenLogs}
               onFix={(action, port) => void runFix(selected.id, action, port)}
@@ -590,7 +583,7 @@ export function Services({
           kind={addDialog.kind}
           initialPath={addDialog.path}
           initialName={addDialog.name}
-          categories={categories}
+          initialGroupId={addDialog.groupId}
           onSubmit={submitAdd}
           onClose={() => setAddDialog(null)}
         />

@@ -111,27 +111,14 @@ app.whenReady().then(async () => {
       return true
     })()`)
     check('entry editor opens', opened === true)
-    const categoryInputReady = await waitFor('category input', () =>
-      js(`Boolean(document.querySelector('.svc-detail [data-entry-category-input]'))`)
+    // 2.3.x 起分类不再有输入入口（界面只给工作组下拉）；这里确认入口已下线，分类值改走 IPC
+    const categoryInputReady = await waitFor('config tab', () =>
+      js(`Boolean(document.querySelector('.svc-detail .svc-config'))`)
     )
-    check('editor exposes a category input', categoryInputReady === true)
+    check('editor no longer exposes a category input', categoryInputReady === true && (await js(`!document.querySelector('.svc-detail [data-entry-category-input]')`)))
 
-    if (categoryInputReady) {
-      await js(`(() => {
-        const input = document.querySelector('.svc-detail [data-entry-category-input]')
-        const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set
-        setter.call(input, '网站控制台')
-        input.dispatchEvent(new Event('input', { bubbles: true }))
-        return true
-      })()`)
-      await waitFor('save bar', () => js(`Boolean(document.querySelector('.svc-savebar'))`))
-      await js(`(() => {
-        const save = [...document.querySelectorAll('.svc-savebar button')].find((b) => b.textContent.trim() === '保存')
-        if (!save) return false
-        save.click()
-        return true
-      })()`)
-    }
+    // 旧数据里的分类值仍然能存、能显示、能搜；只是界面不再提供输入入口，这里直接走 IPC 写入
+    await js(`window.mile.entry.edit('site-service', { category: '网站控制台' }).then(() => true)`)
 
     const categorySaved = await waitFor('category persistence', () =>
       js(`window.mile.entry.list().then((items) =>

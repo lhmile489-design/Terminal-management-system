@@ -44,7 +44,6 @@ export function EntryDetail({
   onClose,
   onToggle,
   failed,
-  categories,
   onDirtyChange,
   onOpenLogs,
   onFix,
@@ -60,7 +59,6 @@ export function EntryDetail({
   onClose: () => void
   onToggle: () => void
   failed?: boolean
-  categories: string[]
   onDirtyChange: (dirty: boolean) => void
   onOpenLogs: (sessionId: string) => void
   onFix: (action: PrecheckFixAction, suggestedPort?: number) => void
@@ -157,7 +155,7 @@ export function EntryDetail({
           ))}
         {current === 'build' && <ConsolePanel entry={entry} />}
         {current === 'config' && (
-          <ConfigTab entry={entry} runtime={runtime} categories={categories} onDirtyChange={onDirtyChange} />
+          <ConfigTab entry={entry} runtime={runtime} onDirtyChange={onDirtyChange} />
         )}
       </div>
     </section>
@@ -252,12 +250,10 @@ function Output({
 function ConfigTab({
   entry,
   runtime,
-  categories,
   onDirtyChange
 }: {
   entry: LaunchEntry
   runtime: EntryRuntime
-  categories: string[]
   onDirtyChange: (dirty: boolean) => void
 }): React.JSX.Element {
   const edit = useEntries((s) => s.edit)
@@ -271,7 +267,6 @@ function ConfigTab({
       key={`${entry.id}:${nonce}`}
       entry={entry}
       runtime={runtime}
-      categories={categories}
       error={error}
       onSubmit={(patch) => edit(entry.id, patch)}
       onStop={() => void stop(entry.id)}

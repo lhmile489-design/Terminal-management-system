@@ -7,6 +7,7 @@ import { ICON } from '../lib/icons'
 import type { DetectResult, EntryKind, LaunchMode, NewLaunchEntry } from '@shared/types'
 import { FRAMEWORK_LABEL, FRAMEWORK_LAUNCH_MODES, LAUNCH_MODE_LABEL } from '../lib/entryMeta'
 import { useEntries } from '../store/entries'
+import { useGroups } from '../store/groups'
 
 /** Windows 路径比较：大小写、斜杠方向、末尾分隔符都不算区别 */
 export const normDir = (p: string): string => p.replace(/\\/g, '/').replace(/\/+$/, '').toLowerCase()
@@ -32,7 +33,7 @@ export function AddEntryDialog({
   kind,
   initialPath,
   initialName,
-  categories,
+  initialGroupId,
   onSubmit,
   onClose
 }: {
@@ -40,7 +41,8 @@ export function AddEntryDialog({
   /** 从「发现未纳管服务」进入时带上目录，跳过手动选择 */
   initialPath?: string
   initialName?: string
-  categories: string[]
+  /** 从工作组菜单点「添加服务到本组」进入时带上，下拉默认选中该组 */
+  initialGroupId?: string
   /** image：新建时选的图片字节，条目创建后由 Launchpad 补一次 setImage */
   onSubmit: (input: NewLaunchEntry, image?: ArrayBuffer) => Promise<void>
   onClose: () => void
@@ -48,7 +50,8 @@ export function AddEntryDialog({
   const [path, setPath] = useState(initialPath ?? '')
   const [detected, setDetected] = useState<DetectResult | null>(null)
   const [name, setName] = useState(initialName ?? '')
-  const [category, setCategory] = useState('')
+  const groups = useGroups((s) => s.groups)
+  const [groupId, setGroupId] = useState(initialGroupId ?? '')
   const [script, setScript] = useState<string>('')
   const [launchMode, setLaunchMode] = useState<LaunchMode | ''>('')
   const [jarPath, setJarPath] = useState('')
@@ -157,7 +160,7 @@ export function AddEntryDialog({
       await onSubmit({
         kind,
         name: name.trim(),
-        category: category.trim() || undefined,
+        groupId: groupId || undefined,
         path: detected.path,
         framework: detected.framework,
         packageManager: detected.packageManager,
@@ -180,7 +183,7 @@ export function AddEntryDialog({
     await onSubmit({
       kind,
       name: name.trim(),
-      category: category.trim() || undefined,
+      groupId: groupId || undefined,
       path: detected.path,
       framework: detected.framework,
       packageManager: detected.packageManager,
@@ -270,21 +273,20 @@ export function AddEntryDialog({
                 <Field label="名称">
                   <input className="ui-input" value={name} onChange={(e) => setName(e.target.value)} />
                 </Field>
-                <Field label="分类">
-                  <input
+                <Field label="工作组">
+                  <select
                     className="ui-input"
-                    data-entry-category-input
-                    list="launchpad-category-options"
-                    value={category}
-                    maxLength={40}
-                    placeholder="未分类（可输入新分类）"
-                    onChange={(e) => setCategory(e.target.value)}
-                  />
-                  <datalist id="launchpad-category-options">
-                    {categories.map((item) => (
-                      <option key={item} value={item} />
+                    data-entry-group-select
+                    value={groupId}
+                    onChange={(e) => setGroupId(e.target.value)}
+                  >
+                    <option value="">未分组</option>
+                    {groups.map((g) => (
+                      <option key={g.id} value={g.id}>
+                        {g.name}
+                      </option>
                     ))}
-                  </datalist>
+                  </select>
                 </Field>
 
                 {isLaunchable ? (

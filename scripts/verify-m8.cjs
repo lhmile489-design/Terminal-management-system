@@ -256,7 +256,7 @@ app.whenReady().then(async () => {
   const formState = () => js(`(()=>{const d=${CFG};if(!d)return null;
     const inputs=[...d.querySelectorAll('input:not([type=file]),select')];
     const nameInput=d.querySelector('input');
-    const categoryInput=d.querySelector('[data-entry-category-input]');
+    const categoryInput=d.querySelector('[data-entry-group-select]');
     return {fields:inputs.length,disabled:inputs.filter(i=>i.disabled).length,
       draft:nameInput?nameInput.value:null,
       nameEditable:!!nameInput&&!nameInput.disabled,
@@ -297,7 +297,7 @@ app.whenReady().then(async () => {
   check('运行中配置标签仍打开', !!livePanel)
   if (livePanel) {
     check('运行中名称仍可编辑', livePanel.nameEditable === true, String(livePanel.nameEditable))
-    check('运行中分类仍可编辑', livePanel.categoryEditable === true, String(livePanel.categoryEditable))
+    check('运行中工作组下拉仍可编辑', livePanel.categoryEditable === true, String(livePanel.categoryEditable))
     check('运行中身份字段被禁用', livePanel.disabled > 0, `${livePanel.disabled}/${livePanel.fields} 禁用`)
     check('表单内给出停止入口', livePanel.hasStop === true, String(livePanel.hasStop))
     check('说明了为什么禁用', livePanel.lockNote === true, String(livePanel.lockNote))

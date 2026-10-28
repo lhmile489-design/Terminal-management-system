@@ -18,6 +18,7 @@ import {
 } from '../lib/entryMeta'
 import { Button } from './ui'
 import { useEntries } from '../store/entries'
+import { useGroups } from '../store/groups'
 
 /** 需要在 jarPath 字段填「路径/模块」的启动方式（其余方式命令自足，无需额外输入） */
 const MODES_NEEDING_PATH = new Set<LaunchMode>([
@@ -40,7 +41,7 @@ const PATH_HINT: Partial<Record<LaunchMode, { label: string; hint: string; place
 /**
  * 条目编辑，PRD §4.6。
  *
- * 名称、分类、置顶与图标运行中可直接改；类型、目录、脚本、端口、环境变量决定
+ * 名称、工作组、置顶与图标运行中可直接改；类型、目录、脚本、端口、环境变量决定
  * 「这张卡片是谁」，必须先停止 —— 运行中改了它们，停止时的归属校验会拿新配置去对旧进程。
  *
  * 面板内提供停止入口，且停止不关面板、不清草稿：让人把填好的东西丢掉再去外面点停止，
@@ -49,7 +50,6 @@ const PATH_HINT: Partial<Record<LaunchMode, { label: string; hint: string; place
 export function EntryConfigForm({
   entry,
   runtime,
-  categories,
   onSubmit,
   onStop,
   onDiscard,
@@ -58,7 +58,6 @@ export function EntryConfigForm({
 }: {
   entry: LaunchEntry
   runtime: EntryRuntime
-  categories: string[]
   onSubmit: (patch: EntryEdit) => Promise<boolean>
   onStop: () => void
   /** 放弃改动：父组件换 key 重挂载表单，回到已保存的值 */
@@ -70,7 +69,8 @@ export function EntryConfigForm({
 }): React.JSX.Element {
   const [kind, setKind] = useState<EntryKind>(entry.kind)
   const [name, setName] = useState(entry.name)
-  const [category, setCategory] = useState(entry.category ?? '')
+  const groups = useGroups((s) => s.groups)
+  const [groupId, setGroupId] = useState(entry.groupId ?? '')
   const [icon, setIcon] = useState<ServiceIcon | null>(entry.icon ?? null)
   const [path, setPath] = useState(entry.path)
   const [cwd, setCwd] = useState(entry.cwd ?? '')
@@ -184,7 +184,7 @@ export function EntryConfigForm({
   const modeNeedsPath = launchMode !== '' && MODES_NEEDING_PATH.has(launchMode)
 
   // 未保存判定：把所有表单字段拍成快照，与上次保存时的快照比较
-  const snapshot = JSON.stringify([kind, name, category, icon, path, cwd, script, scripts,
+  const snapshot = JSON.stringify([kind, name, groupId, icon, path, cwd, script, scripts,
     envRows.map((r) => [r.key, r.value]), port, outputDir, framework, packageManager, launchMode, jarPath, startAfter])
   const [baseline, setBaseline] = useState(snapshot)
   const dirty = snapshot !== baseline
@@ -199,7 +199,7 @@ export function EntryConfigForm({
       const ok = await onSubmit({
         kind,
         name,
-        category: category.trim() || null,
+        groupId: groupId || null,
         icon: kind === 'service' ? icon : null,
         path,
         cwd,
@@ -218,7 +218,8 @@ export function EntryConfigForm({
         // 选了启动方式才可启动；npm 项目按有无脚本判定
         registerOnly: isLaunchable ? !mode : !script,
         // 只保留仍在同组里的，别把已移走的旧依赖再写回去
-        startAfter: (() => { const keep = startAfter.filter((d) => siblings.some((x) => x.id === d)); return keep.length ? keep : null })()
+        // 换了工作组就清空：先等待只认同组条目，旧组的依赖带过去是无效的
+        startAfter: (() => { const keep = groupId === (entry.groupId ?? '') ? startAfter.filter((d) => siblings.some((x) => x.id === d)) : []; return keep.length ? keep : null })()
       })
       if (ok) {
         setBaseline(snapshot)
@@ -258,7 +259,7 @@ export function EntryConfigForm({
           >
             <Lock size={14} weight="bold" className="shrink-0 text-warn" aria-hidden />
             <p className="min-w-0 flex-1 text-[12px] text-warn">
-              运行中只能改名称、分类、置顶与图标。类型、目录、脚本、端口与环境变量需先停止。
+              运行中只能改名称、工作组、置顶与图标。类型、目录、脚本、端口与环境变量需先停止。
             </p>
             <button
               type="button"
@@ -287,21 +288,20 @@ export function EntryConfigForm({
             />
           </Field>
 
-          <Field label="分类">
-            <input
-              data-entry-category-input
-              list="launchpad-category-options"
-              value={category}
-              maxLength={40}
-              placeholder="未分类（可输入新分类）"
-              onChange={(e) => setCategory(e.target.value)}
+          <Field label="工作组">
+            <select
+              data-entry-group-select
+              value={groupId}
+              onChange={(e) => setGroupId(e.target.value)}
               className="w-full rounded-control border border-line bg-card px-2.5 py-1.5 text-[13px] text-ink-strong outline-none focus:border-accent"
-            />
-            <datalist id="launchpad-category-options">
-              {categories.map((item) => (
-                <option key={item} value={item} />
+            >
+              <option value="">未分组</option>
+              {groups.map((g) => (
+                <option key={g.id} value={g.id}>
+                  {g.name}
+                </option>
               ))}
-            </datalist>
+            </select>
           </Field>
 
           {isLaunchable ? (
