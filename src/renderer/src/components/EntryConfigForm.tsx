@@ -94,6 +94,10 @@ export function EntryConfigForm({
   const [redetecting, setRedetecting] = useState(false)
   const [saving, setSaving] = useState(false)
   const nextEnvRowId = useRef(Object.keys(entry.env).length)
+  // 挂载时的变量名快照，与 envRows 同一时刻。保存时只对这批键发 null 删除：
+  // 面板打开期间 entry:changed 会把 entry.env 换成新列表，若用实时 prop，
+  // 别处新增的变量不在 envRows 里，会被误判成「用户删了」
+  const savedEnvKeys = useRef(Object.keys(entry.env))
 
   const live = isLiveStatus(runtime.status)
 
@@ -198,7 +202,7 @@ export function EntryConfigForm({
         scripts: isLaunchable ? {} : scripts,
         framework,
         packageManager,
-        env: envPatch(Object.keys(entry.env), envRows),
+        env: envPatch(savedEnvKeys.current, envRows),
         // 空串表示清掉端口，用 null 让主进程按「显式清空」处理而不是「没提这个字段」
         expectedPort: kind === 'task' || !port ? null : Number(port),
         outputDir,
@@ -208,7 +212,11 @@ export function EntryConfigForm({
         // 选了启动方式才可启动；npm 项目按有无脚本判定
         registerOnly: isLaunchable ? !mode : !script
       })
-      if (ok) setBaseline(snapshot)
+      if (ok) {
+        setBaseline(snapshot)
+        // 保存后面板里的行就是磁盘上的这批键：下次再删其中某个要能发出 null
+        savedEnvKeys.current = envRows.map((r) => r.key.trim()).filter(Boolean)
+      }
     } finally {
       setSaving(false)
     }

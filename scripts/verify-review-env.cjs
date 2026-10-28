@@ -119,6 +119,31 @@ app.whenReady().then(async () => {
   check('诊断带 envKeys', Array.isArray(diag.envKeys) && diag.envKeys.includes('TOKEN_A'), JSON.stringify(diag.envKeys))
   check('诊断不含密钥值', !leaks(diag))
 
+  console.log('\n=== 5. 面板打开期间别处新增的变量，保存时不被删掉 ===')
+  const waitFor = async (code, ms = 8000) => {
+    for (let t = 0; t < ms; t += 150) { if (await js(code)) return true; await sleep(150) }
+    return false
+  }
+  await js(`document.body.dispatchEvent(new KeyboardEvent('keydown',{key:'2',ctrlKey:true,bubbles:true,cancelable:true}));true`)
+  await waitFor(`!!document.querySelector('.svc-row[data-entry-id="e1"]')`)
+  await js(`(async()=>{document.querySelector('.svc-row[data-entry-id="e1"]').click();await new Promise(s=>setTimeout(s,300));
+    const t=[...document.querySelectorAll('.svc-detail [role="tab"]')].find(x=>x.textContent.includes('配置'));t&&t.click();return true})()`)
+  check('前提：配置面板已打开', await waitFor(`!!document.querySelector('.svc-config')`))
+  // 面板已挂载之后，从别处（这里直接走 IPC，等价于托盘或另一处编辑）新增一个变量
+  await js(`window.mile.entry.edit('e1', { env: { EXT_KEY: 'external' } })`)
+  check('前提：外部新增已落盘', disk().env.EXT_KEY === 'external')
+  await sleep(300)
+  // 只改名称，然后保存
+  await js(`(()=>{const i=[...document.querySelectorAll('.svc-config input')].find(x=>x.value==='密钥探针');
+    const set=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set;set.call(i,'密钥探针改名');
+    i.dispatchEvent(new Event('input',{bubbles:true}));return true})()`)
+  check('前提：出现保存按钮', await waitFor(`[...document.querySelectorAll('.svc-savebar button')].some(b=>b.textContent.trim()==='保存')`))
+  await js(`[...document.querySelectorAll('.svc-savebar button')].find(b=>b.textContent.trim()==='保存').click();true`)
+  for (let i = 0; i < 40 && disk().name !== '密钥探针改名'; i++) await sleep(150)
+  check('前提：改名已保存', disk().name === '密钥探针改名', disk().name)
+  check('外部新增的变量没被删掉', disk().env.EXT_KEY === 'external', JSON.stringify(Object.keys(disk().env)))
+  check('原有变量也都在', disk().env.TOKEN_A === SECRET_D && disk().env.TOKEN_C === SECRET_C)
+
   console.log(`\n结果：${pass} 通过，${fail} 失败`)
   try {
     rmSync(SANDBOX, { recursive: true, force: true })
