@@ -33,7 +33,7 @@ export function Dashboard({
   /** 打开终端/日志视图 */
   onOpenLogs?: (sessionId: string) => void
   /** 待办条的「查看诊断 / 查看输出」：切到服务页并打开该服务的对应标签 */
-  onFocusService?: (id: string, tab: 'diagnose' | 'output') => void
+  onFocusService?: (id: string, tab: 'diagnose' | 'output' | 'overview') => void
 }): React.JSX.Element {
   const listeners = useScanner((s) => s.listeners)
   const system = useScanner((s) => s.system)
@@ -177,6 +177,7 @@ export function Dashboard({
           onSetGroup={(name, g) => void setGroup(name, g)}
           highlightPort={hidesHighlight ? null : highlightPort}
           onHighlightConsumed={onHighlightConsumed}
+          onFocusEntry={onFocusService ? (id) => onFocusService(id, 'overview') : undefined}
         />
       </section>
 
@@ -207,6 +208,7 @@ export function Dashboard({
             onSetGroup={(name, g) => void setGroup(name, g)}
             highlightPort={hidesHighlight ? highlightPort : null}
             onHighlightConsumed={onHighlightConsumed}
+            onFocusEntry={onFocusService ? (id) => onFocusService(id, 'overview') : undefined}
           />
         ) : (
           <p className="text-[12px] text-ink-faint">

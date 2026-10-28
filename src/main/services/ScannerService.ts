@@ -225,8 +225,11 @@ export class ScannerService extends EventEmitter {
       if (verdict.ownership === 'foreign') continue
 
       const ports = [...portSet].sort((a, b) => a - b)
-      const cwd = row?.commandLine ? guessCwd(row.commandLine) : undefined
-      const entryId = matchEntry(expectations, pid, cwd, verdict.sessionId)
+      const guessed = row?.commandLine ? guessCwd(row.commandLine) : undefined
+      const entryId = matchEntry(expectations, pid, guessed, verdict.sessionId)
+      // 命令行里没有绝对路径（如 `node server.cjs`）时推不出目录；已归到条目的进程就用条目的
+      // 工作目录 —— 它本来就在 knownPath 白名单里，端口表的「复制 / 打开目录」才有值
+      const cwd = guessed ?? (entryId ? expectations.find((e) => e.id === entryId)?.cwd : undefined)
 
       // 用户手动定过的分组优先于推断，PRD §5.2。但覆盖是按进程名生效的：
       // 把某个 node.exe 移回后台后，不能把刚从启动台拉起的服务一起带走 ——
