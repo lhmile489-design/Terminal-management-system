@@ -1,5 +1,6 @@
 import type { LogLevel, LogLine, LogQuery, LogResult } from '@shared/types'
 import type { SessionService } from './SessionService'
+import { CURSOR_TO_COL1, ERROR_RE, WARN_RE, lastVisiblePaint } from '../lib/outputText'
 
 /**
  * 日志中心，PRD §4.8。
@@ -15,27 +16,6 @@ const MAX_LINES = 5000
 const MAX_LINE_CHARS = 500
 /** 退出后再等一小会儿收尾，容纳晚于 exit 到达的末尾数据。见 scheduleFinalFlush */
 const FINAL_FLUSH_MS = 120
-
-/*
- * 转义序列一律写成 \x1b 这种可见形式，不敲字面 ESC 字节 —— 字面控制字符在
- * 编辑、复制、diff 与补丁里都会悄悄丢掉，那时正则会静默地什么都不匹配。
- * CSI：颜色与光标移动。OSC：设置窗口标题，以 BEL 或 ST 收尾。
- */
-const ANSI = /\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)/g
-/** 剩下的裸控制字符（退格、响铃…）留着会在界面上显示成方块 */
-const CONTROL = /[\x00-\x08\x0b-\x1f]/g
-
-/*
- * ConPTY 换行不一定发 \n：它常用绝对光标定位跳到下一行行首（实测 \x1b[5;1H）。
- * 只按 \r?\n 切，两条逻辑行就会粘成一条。这里只认「回到第 1 列」这种形式 ——
- * 那正是换行的语义；定位到其他列是同一行内的重绘，切开反而会把一行拆碎。
- */
-const CURSOR_TO_COL1 = /\x1b\[[0-9]+;1[Hf]/g
-
-/** 行级别。只认明确的词形，拿不准就算 info —— 宁可少标，不要把普通输出染成红的 */
-const ERROR_RE =
-  /\b(error|err!|failed|failure|exception|cannot find|not found|ELIFECYCLE|ENOENT|EADDRINUSE)\b|错误|失败/i
-const WARN_RE = /\b(warn|warning|deprecated|deprecation)\b|警告/i
 
 export class LogService {
   private lines: LogLine[] = []
@@ -156,23 +136,6 @@ export class LogService {
     for (const t of this.finalizers.values()) clearTimeout(t)
     this.finalizers.clear()
   }
-}
-
-/**
- * 取这一行最后一次「画出了东西」的重绘结果。
- *
- * 进度条用裸 \r 原地重写同一行，整块留下来就是几百条几乎一样的行，所以要取最后一段。
- * 但 ConPTY 在输出末尾还会补一个 \r + 擦除序列（实测 \r\x1b[K），那一段清理完是空的；
- * 若直接采信它，末行就会被整条丢掉 —— 而末行往往正是错误摘要。因此从后往前找，
- * 用第一个「清理后仍有可见内容」的段。
- */
-function lastVisiblePaint(raw: string): string {
-  const paints = raw.split('\r')
-  for (let i = paints.length - 1; i >= 0; i--) {
-    const text = paints[i].replace(ANSI, '').replace(CONTROL, '').trimEnd()
-    if (text.trim()) return text
-  }
-  return ''
 }
 
 function level(text: string): LogLevel {

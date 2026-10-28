@@ -33,6 +33,7 @@ import { ImageService } from './ImageService'
 import type { EntryExpectation, ScannerService } from './ScannerService'
 import type { SessionService } from './SessionService'
 import type { OwnershipService } from './OwnershipService'
+import { isErrorLine, pickLastError, stripAnsi, visibleTail } from '../lib/outputText'
 
 /** 端口捕获正则，PRD §8.4 */
 const PORT_PATTERNS = [
@@ -233,7 +234,8 @@ const TASK_CANCELED_CODE = 130
 /** 服务启动 60s 未捕获端口但进程存活，转 running（端口未知），PRD §4.3 */
 const PORT_CAPTURE_TIMEOUT_MS = 60_000
 const PORT_RELEASE_TIMEOUT_MS = 5000
-const ERROR_LINE = /\b(error|ERR!|failed|Cannot find|EADDRINUSE|BUILD FAILURE|APPLICATION FAILED TO START)\b/i
+/** 会话退出时留下的可见输出行数（只在内存），诊断里「退出前输出」用 */
+const TAIL_LINES = 30
 
 /** 一次启动要执行的命令，file + args 数组形式，绝不拼 shell 字符串 */
 interface LaunchCommand {
@@ -274,6 +276,9 @@ export class EntryService extends EventEmitter {
   /** 会话退出后留档，供诊断面板回顾 —— watches 在退出时就清了 */
   private lastErrorLine = new Map<string, string>()
   private lastRunMs = new Map<string, number>()
+  /** 退出前最后 TAIL_LINES 行可见输出与最后一个错误行，只在内存，不落盘 */
+  private lastTail = new Map<string, string[]>()
+  private lastErrorTail = new Map<string, string>()
   private precheck: PrecheckService
   private images = new ImageService()
 
@@ -717,6 +722,8 @@ export class EntryService extends EventEmitter {
     this.runtimes.delete(id)
     this.lastErrorLine.delete(id)
     this.lastRunMs.delete(id)
+    this.lastTail.delete(id)
+    this.lastErrorTail.delete(id)
     this.commit(this.config.get().entries.filter((e) => e.id !== id))
   }
 
@@ -1673,7 +1680,7 @@ export class EntryService extends EventEmitter {
     if (!watch) return
 
     if (!watch.firstErrorLine) {
-      const line = chunk.split(/\r?\n/).find((l) => ERROR_LINE.test(l))
+      const line = chunk.split(/\r?\n/).find((l) => isErrorLine(stripAnsi(l)))
       if (line) watch.firstErrorLine = stripAnsi(line).trim().slice(0, 200)
     }
 
@@ -1704,6 +1711,12 @@ export class EntryService extends EventEmitter {
 
     // 先留档再清运行态，诊断面板要在会话消失后仍能回顾
     if (watch.firstErrorLine) this.lastErrorLine.set(watch.entryId, watch.firstErrorLine)
+    // 退出前的现场：会话缓冲在 exit 前已 flush，取最后 TAIL_LINES 行可见输出
+    const tail = visibleTail(this.sessions.history(sessionId), TAIL_LINES)
+    this.lastTail.set(watch.entryId, tail)
+    const lastError = pickLastError(tail)
+    if (lastError) this.lastErrorTail.set(watch.entryId, lastError.slice(0, 200))
+    else this.lastErrorTail.delete(watch.entryId)
     const startedAt = this.runtimes.get(watch.entryId)?.startedAt
     if (startedAt) this.lastRunMs.set(watch.entryId, Date.now() - startedAt)
 
@@ -1750,7 +1763,7 @@ export class EntryService extends EventEmitter {
 
     // 服务自己崩溃（非用户停止、非任务）：同一个结构性理由，一个会话只会走到这一次
     if (entry && entry.kind !== 'task' && status === 'crashed' && !watch.stoppedByUser) {
-      this.emit('crashed', { entryId: entry.id, name: entry.name, exitCode, sessionId })
+      this.emit('crashed', { entryId: entry.id, name: entry.name, exitCode, sessionId, lastErrorLine: this.lastErrorTail.get(entry.id) })
     }
   }
 
@@ -1785,6 +1798,8 @@ export class EntryService extends EventEmitter {
       // 会话已退出时 watches 已清空，改从退出时留档的记录取，
       // 否则「崩溃后诊断」永远看不到错误行 —— 那正是最需要它的时刻。
       firstErrorLine: this.lastErrorLine.get(id),
+      lastErrorLine: this.lastErrorTail.get(id),
+      tailLines: this.lastTail.get(id) ?? [],
       node: process.versions.node,
       packageManager: entry.packageManager,
       packageManagerPath: await whichAny(PM_BINARIES[entry.packageManager]),
@@ -1863,16 +1878,6 @@ function capturePort(chunk: string): number | null {
   return null
 }
 
-/**
- * 剥掉 ANSI 控制序列，让端口正则不被颜色码或光标定位干扰。
- * 覆盖 CSI（颜色/光标）与 OSC（窗口标题）两类，与 LogService 保持一致。
- * 其余单字节 ESC 序列（=、>、M 等）极少出现在端口行里，残留  不会命中端口正则。
- */
-const ANSI = /\x1b\[[0-9;?]*[ -\/]*[@-~]|\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)/g
-
-function stripAnsi(text: string): string {
-  return text.replace(ANSI, '')
-}
 
 function sleep(ms: number): Promise<void> {
   return new Promise((done) => setTimeout(done, ms))

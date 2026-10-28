@@ -476,11 +476,11 @@ function registerIpc(): void {
     sendToRenderer(Channels.entryRuntimeChanged, runtime)
   )
   entries.on('taskDone', notifyTaskDone)
-  entries.on('crashed', (e: { entryId: string; name: string; exitCode: number }) =>
+  entries.on('crashed', (e: { entryId: string; name: string; exitCode: number; lastErrorLine?: string }) =>
     notifyEntryProblem({
       entryId: e.entryId,
       title: `服务已崩溃 · ${e.name}`,
-      body: `退出码 ${e.exitCode}，点击查看输出`,
+      body: e.lastErrorLine ? `退出码 ${e.exitCode}：${e.lastErrorLine.slice(0, 120)}` : `退出码 ${e.exitCode}，点击查看输出`,
       tab: 'output'
     })
   )

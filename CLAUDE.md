@@ -23,10 +23,10 @@ npm run build                          # 必须先构建，harness 加载的是 
 npx electron scripts/verify-m10.cjs    # 跑单个
 ```
 
-全套 49 个 Electron harness，逐条断言（m7-visual 的「1px 边框」在 devicePixelRatio=2 环境差 1 条，属显示密度差异非代码回归，见 §验证纪律）：
+全套 50 个 Electron harness，逐条断言（m7-visual 的「1px 边框」在 devicePixelRatio=2 环境差 1 条，属显示密度差异非代码回归，见 §验证纪律）：
 
 ```bash
-for f in ui shell services m4-ui m5 m6-sort m6-palette m6-settings m7-visual m8 m9 m9-readonly m9-recover m10 m11-add m11-port m11-dual m12-press m12-port-config m13-icon m14-categories m14-favicon m15-uniapp m16-langs springboot m17-image review-ipc review-entry review-scanner review-quit review-panel review-links review-keys review-remove review-env review-notify review-tray review-window review-single review-hotkey review-cwdterm review-extterm review-termsearch review-palette2 review-todo review-listenrow review-dupdir review-import review-order; do
+for f in ui shell services m4-ui m5 m6-sort m6-palette m6-settings m7-visual m8 m9 m9-readonly m9-recover m10 m11-add m11-port m11-dual m12-press m12-port-config m13-icon m14-categories m14-favicon m15-uniapp m16-langs springboot m17-image review-ipc review-entry review-scanner review-quit review-panel review-links review-keys review-remove review-env review-notify review-tray review-window review-single review-hotkey review-cwdterm review-extterm review-termsearch review-palette2 review-todo review-listenrow review-dupdir review-import review-order review-crashtail; do
   npx electron scripts/verify-$f.cjs 2>&1 | grep -E '结果：|Result:|PASS [0-9]+ / FAIL|^\s*FAIL'
 done
 node scripts/verify-review-ownership.cjs   # 纯逻辑，不起 Electron：用 esbuild 单独打包 OwnershipService 喂合成进程表
@@ -103,6 +103,7 @@ src/shared/     两侧共用的类型与 IPC 频道名
 - **全局快捷键 `Ctrl+Alt+M`**（`index.ts` 的 `applyGlobalHotkey`，设置项 `globalHotkey`，默认开）：唤回窗口并发 `app:openPalette`，渲染层只「打开」命令面板、不切换，按两次不会关掉。回调只导航，不做启停。组合键被别的程序占用时不抛错、不挡设置保存，只往实时动态推一条提示。`will-quit` 里 `unregisterAll`。Electron 的加速键写法是 `Ctrl+Alt+M`，探针比对时别写成 `Control+Alt+M`。
 - **整组启动一律走 `EntryService.startOrdered`**（服务页、命令面板、托盘都是）：按条目的 `startAfter` 分层，同层并发，上一层都进入 running（捕获端口，或 60 秒端口捕获超时转 running）才起下一层；前置没起来的，依赖它的跳过并写明原因。只看本批次内的依赖。`startAfter` 在 `sanitizeEdit` 校形、在 `edit()` 里由 `assertStartAfter` 拒绝自指、不存在的 id 与成环。每一个仍走 `start()`，预检与命令构造不变。
 - **窗口状态记在 `appData/mile-terminal/window-state.json`（`lib/windowState.ts`），不进 `config.json`**：它是纯展示偏好，写坏了不该牵连条目配置，也不参与 `.bak` 轮转。读取时坐标不在任何屏幕工作区内（拔掉副屏）一律丢弃交给系统居中。缩放不是 100% 时同一窗口每开关一次会多出几像素，所以保存时与上次值差 8px 以内当作没变，不要去掉这个容差，否则窗口会越开越大。上次的页面与选中服务存渲染层 localStorage（`mile.view` 等），不经主进程。
+- **会话输出的文本规则只在 `src/main/lib/outputText.ts` 一处**（去 ANSI、进度条重绘取末段、错误行判定 `ERROR_RE`）：日志中心与诊断都从这里取，别在服务里另写一份正则。会话退出时 EntryService 留下最后 30 行可见输出与最后一个错误行，**只在内存**，不进 config.json（日志不落盘红线）。
 - `verify-review-window.cjs` 要重启应用才量得到，所以脚本自己当驱动，按阶段拉起多个真实 Electron 进程共用同一沙箱，而且 `userData` 也要指向沙箱，否则 localStorage 读写的是真实数据。
 
 ---

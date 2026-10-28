@@ -345,7 +345,18 @@ function DiagnoseReport({ entry, report }: { entry: LaunchEntry; report: EntryDi
           <dd><span className="mono">{report.lastRunMs === undefined ? '—' : formatDuration(report.lastRunMs)}</span></dd>
           <dt>首个错误行</dt>
           <dd><span className="mono" title={report.firstErrorLine}>{report.firstErrorLine ?? '未捕获到错误关键字'}</span></dd>
+          <dt>最后错误行</dt>
+          <dd><span className="mono" title={report.lastErrorLine}>{report.lastErrorLine ?? '—'}</span></dd>
         </dl>
+        {report.tailLines.length > 0 && (
+          <div className="svc-tail" data-crash-tail>
+            <div className="svc-tail-head">
+              <span>退出前输出（最后 {report.tailLines.length} 行）</span>
+              <CopyButton text={report.tailLines.join('\n')} label="复制退出前输出" />
+            </div>
+            <pre className="svc-tail-body">{report.tailLines.join('\n')}</pre>
+          </div>
+        )}
       </section>
 
       <section className="svc-diag" aria-labelledby="diagnose-env-heading">

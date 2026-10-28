@@ -702,6 +702,10 @@ export interface EntryDiagnosis {
   /** 上次运行时长（毫秒），未运行过为 undefined */
   lastRunMs?: number
   firstErrorLine?: string
+  /** 退出前输出里的最后一个错误行（npm 收尾块之外优先），只在内存 */
+  lastErrorLine?: string
+  /** 退出前最后 30 行可见输出（已去 ANSI），只在内存，不落盘 */
+  tailLines: string[]
   node: string
   packageManager: PackageManager
   /** 包管理器可执行文件路径，PATH 中找不到时为 null */
