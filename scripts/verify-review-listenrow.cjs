@@ -113,7 +113,8 @@ app.whenReady().then(async () => {
   const n = OPENED.length
   await openMenu(); await waitFor(`!!document.querySelector('[role="menu"]')`, 3000)
   await pick('打开目录')
-  await sleep(300)
+  // 轮询到 IPC 落地：主进程忙时 300ms 不一定够
+  for (let i = 0; i < 30 && OPENED.length <= n; i++) await sleep(100)
   check('只发出这一行的目录', OPENED.length === n + 1 && same(OPENED[OPENED.length - 1], snap.cwd), OPENED.slice(n).join(' | '))
 
   console.log('\n=== 4. 查看服务 ===')

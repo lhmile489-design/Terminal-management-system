@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process'
 import { lstatSync } from 'node:fs'
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
 import type { Settings } from '@shared/types'
 
 type TerminalKind = Settings['externalTerminal']
@@ -78,8 +78,9 @@ function present(p: string): boolean {
  */
 export function openExternalTerminal(kind: TerminalKind, cwd: string): void {
   if (!(kind in LABEL)) throw new Error(`外部终端设置非法：${String(kind)}`)
-  // cmd 不能把 UNC 路径当工作目录，会静默退回 C:\Windows，用户会以为开对了地方
-  if (cwd.startsWith('\\\\')) throw new Error('外部终端不支持网络路径')
+  // cmd 不能把 UNC 路径当工作目录，会静默退回 C:\Windows，用户会以为开对了地方。
+  // 先 resolve：手改配置写成 //server/share 的正斜杠形式也会被规范成 \\server\share
+  if (resolve(cwd).startsWith('\\\\')) throw new Error('外部终端不支持网络路径')
   const exe = candidates(kind).find(present)
   if (!exe) throw new Error(`未找到 ${LABEL[kind]}，可在设置里换一个外部终端`)
   const comspec = process.env.ComSpec ?? 'cmd.exe'

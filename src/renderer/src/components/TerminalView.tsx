@@ -76,6 +76,14 @@ export function TerminalView({ sessionId }: { sessionId: string }): React.JSX.El
   /** index 为 -1 表示命中数超过高亮上限，只知道总数 */
   const [result, setResult] = useState<{ index: number; count: number } | null>(null)
 
+  // 会话换了就收起搜索：BuildPanel 里没有 key，服务重启换 sessionId 时组件不重挂，
+  // 留着旧计数会和新终端（还没搜过、没有高亮）对不上
+  useEffect(() => {
+    setSearchOpen(false)
+    setQuery('')
+    setResult(null)
+  }, [sessionId])
+
   useEffect(() => {
     if (termRef.current) termRef.current.options.theme = THEMES[resolved]
   }, [resolved])

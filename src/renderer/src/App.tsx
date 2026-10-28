@@ -98,7 +98,6 @@ export function App(): React.JSX.Element {
   const setRuntime = useEntries((s) => s.setRuntime)
   const entries = useEntries((s) => s.entries)
   const runtimes = useEntries((s) => s.runtimes)
-  const startEntry = useEntries((s) => s.start)
   const stopEntry = useEntries((s) => s.stop)
   const runScript = useEntries((s) => s.runScript)
   const initSettings = useSettings((s) => s.init)
@@ -181,6 +180,17 @@ export function App(): React.JSX.Element {
     },
     [focusSession]
   )
+
+  /**
+   * 命令面板发起的停止 / 重启失败时，错误只进了 store.error，而它的横幅只在服务页渲染。
+   * 面板常在别的页面用，所以这里读出来弹一条 toast 再清掉，否则用户看到的是「没反应」。
+   */
+  const notifyStoreError = useCallback((name: string, verb: string) => {
+    const { error, clearError } = useEntries.getState()
+    if (!error) return
+    toast({ tone: 'fault', title: `没能${verb}「${name}」`, body: error })
+    clearError()
+  }, [])
 
   const openShellAt = useSessions((s) => s.openShellAt)
   const openTerminalAt = useCallback(
@@ -265,10 +275,12 @@ export function App(): React.JSX.Element {
         }
         case 'stopEntry':
           await stopEntry(action.entry.id)
+          notifyStoreError(action.entry.name, '停止')
           return
         case 'restartEntry': {
           const blocked = await useEntries.getState().restart(action.entry.id)
           if (blocked) focusService(action.entry.id, 'diagnose')
+          else notifyStoreError(action.entry.name, '重启')
           return
         }
         case 'focusEntry':
@@ -324,7 +336,7 @@ export function App(): React.JSX.Element {
           return
       }
     },
-    [startEntry, stopEntry, runScript, openLogs, pushEvent, focusService, openTerminalAt]
+    [stopEntry, runScript, openLogs, focusService, openTerminalAt, notifyStoreError]
   )
 
   const clearEvents = useCallback(() => setEvents([]), [])
