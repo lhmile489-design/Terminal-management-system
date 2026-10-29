@@ -11,13 +11,7 @@ import type {
   UnmanagedListener,
   WatchedProcess
 } from '@shared/types'
-import {
-  readListenPorts,
-  readProcessMeta,
-  type ListenRow,
-  type ProcessMeta,
-  type ProcessTable
-} from '../lib/winProcess'
+import { platform, type ListenRow, type ProcessMeta, type ProcessTable } from '../platform'
 import { classifyGroup, traceLaunchSource } from '../lib/attribution'
 import type { OwnershipService } from './OwnershipService'
 import type { ConfigStore } from './ConfigStore'
@@ -94,8 +88,8 @@ export class ScannerService extends EventEmitter {
     const unknown = this.meta
       ? hintPids.some((p) => !this.meta!.byPid.has(p) || !this.meta!.mine.has(p))
       : true
-    if (stale || unknown) this.meta = await readProcessMeta()
-    const listens = await readListenPorts()
+    if (stale || unknown) this.meta = await platform.readProcessMeta()
+    const listens = await platform.readListenPorts()
     return { ...this.meta!, listens }
   }
 
@@ -170,7 +164,7 @@ export class ScannerService extends EventEmitter {
     if (this.running) return
     this.running = true
     try {
-      const listens = await readListenPorts()
+      const listens = await platform.readListenPorts()
       const meta = await this.resolveMeta(listens)
       await this.publish(this.build({ ...meta, listens }))
     } catch (err) {
@@ -190,7 +184,7 @@ export class ScannerService extends EventEmitter {
   private async resolveMeta(listens: ListenRow[]): Promise<ProcessMeta> {
     const stale = !this.meta || Date.now() - this.meta.at > META_MAX_AGE_MS
     const unknown = this.meta ? listens.some((l) => !this.meta!.byPid.has(l.pid)) : true
-    if (stale || unknown) this.meta = await readProcessMeta()
+    if (stale || unknown) this.meta = await platform.readProcessMeta()
     return this.meta!
   }
 
@@ -496,7 +490,10 @@ function matchEntry(
   const exact = expectations.find((e) => sameDir(e.cwd, cwd))
   if (exact) return exact.id
 
-  const prefix = expectations.find((e) => cwd.toLowerCase().startsWith(`${e.cwd.toLowerCase()}\\`))
+  // 前缀比较走平台的路径键：Windows 不区分大小写、分隔符是 \；macOS 保留大小写、分隔符是 /
+  const sep = platform.id === 'win32' ? '\\' : '/'
+  const key = platform.pathKey(cwd)
+  const prefix = expectations.find((e) => key.startsWith(`${platform.pathKey(e.cwd)}${sep}`))
   return prefix?.id
 }
 
@@ -523,7 +520,7 @@ function countConflicts(
 }
 
 function sameDir(a: string, b: string): boolean {
-  return a.replace(/[\\/]+$/, '').toLowerCase() === b.replace(/[\\/]+$/, '').toLowerCase()
+  return platform.pathKey(a) === platform.pathKey(b)
 }
 
 interface CpuTicks {
@@ -567,7 +564,11 @@ function systemLoad(): SystemLoad {
  * 处截断，拿到的才是项目根。
  */
 function guessCwd(commandLine: string): string | undefined {
-  const match = commandLine.match(/([a-zA-Z]:[\\/](?:[^"'*?<>|\r\n]*?))\.(?:js|cjs|mjs|ts)\b/)
+  // Windows 认盘符开头的绝对路径，macOS 认 / 开头的绝对路径
+  const abs = platform.id === 'win32'
+    ? /([a-zA-Z]:[\\/](?:[^"'*?<>|\r\n]*?))\.(?:js|cjs|mjs|ts)\b/
+    : /(\/(?:[^"'*?<>|\r\n\s]*?))\.(?:js|cjs|mjs|ts)\b/
+  const match = commandLine.match(abs)
   const script = match?.[1]
   if (!script) return undefined
 

@@ -2,6 +2,7 @@ import { app } from 'electron'
 import { copyFileSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { CONFIG_VERSION, type AppConfig } from '@shared/types'
+import { platform } from '../platform'
 
 const DEFAULTS: AppConfig = {
   version: CONFIG_VERSION,
@@ -14,7 +15,7 @@ const DEFAULTS: AppConfig = {
     scanIntervalMs: 2000,
     // UI 重构 Q16：先打磨浅色，新配置默认浅色。已保存的偏好由 {...DEFAULTS.settings, ...raw.settings} 保留
     theme: 'light',
-    externalTerminal: 'wt',
+    externalTerminal: platform.defaultTerminal,
     terminalFontSize: 13,
     scrollback: 5000,
     killOwnedOnQuit: true,
@@ -23,7 +24,8 @@ const DEFAULTS: AppConfig = {
     hideFromTaskbar: false,
     notifyOnCrash: true,
     notifyOnlyWhenBackground: true,
-    globalHotkey: true
+    globalHotkey: true,
+    loginShellPath: false
   }
 }
 
@@ -166,6 +168,16 @@ export class ConfigStore {
     // v11 -> v12：条目新增可选 startAfter（整组按依赖顺序启动）。老条目没有即「不等待」，
     // 不回填；这一步只推进版本号
     void from
+
+    // v12 -> v13：macOS 适配。新增 loginShellPath（默认关）。
+    if (from < 13) {
+      out.settings.loginShellPath = DEFAULTS.settings.loginShellPath
+    }
+    // 外部终端取值按平台收：配置从另一个平台带过来（导入、同步盘）时回落到本平台默认值。
+    // 每次都做，不只在迁移时：这是平台相关的取值，不是 schema
+    if (!platform.terminalKinds.includes(out.settings.externalTerminal)) {
+      out.settings.externalTerminal = platform.defaultTerminal
+    }
 
     // 迁移后仍要校形：数组字段被手改成对象会让下游 .some / .filter 直接抛
     if (!Array.isArray(out.entries)) out.entries = []

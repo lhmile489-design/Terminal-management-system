@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import type { CredentialResult, Ownership, OwnershipVerdict } from '@shared/types'
-import type { ProcessTable } from '../lib/winProcess'
+import type { ProcessTable } from '../platform'
 
 interface Tracked {
   sessionId: string

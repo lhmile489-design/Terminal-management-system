@@ -8,6 +8,7 @@ import { useTheme } from '../store/theme'
 import { useSettings } from '../store/settings'
 import { IconButton } from './ui'
 import { ICON } from '../lib/icons'
+import { primaryKey } from '../lib/platform'
 
 const THEMES = {
   light: {
@@ -136,7 +137,7 @@ export function TerminalView({ sessionId }: { sessionId: string }): React.JSX.El
 
     // Ctrl+F 在终端里打开搜索条，而不是作为 ^F 发给 shell。返回 false = xterm 不处理这次按键
     term.attachCustomKeyEventHandler((e) => {
-      if (e.type === 'keydown' && e.ctrlKey && !e.altKey && !e.shiftKey && (e.key === 'f' || e.key === 'F')) {
+      if (e.type === 'keydown' && primaryKey(e) && !e.altKey && !e.shiftKey && (e.key === 'f' || e.key === 'F')) {
         e.preventDefault()
         setSearchOpen(true)
         // 已经开着时再按一次，把焦点拉回搜索框并全选

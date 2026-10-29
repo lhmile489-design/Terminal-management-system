@@ -1,19 +1,20 @@
 import { DialogShell } from './ui'
+import { MOD_LABEL } from '../lib/platform'
 
 /**
  * 快捷键一览，UI-REFACTOR §5.2。按 `?` 打开。
  * 列表键盘操作（方向键 / Space / Enter）随阶段 4 的服务页一起上线，这里先列出全局部分。
  */
 const KEYS: { label: string; keys: string[] }[] = [
-  { label: '打开命令面板', keys: ['Ctrl', 'K'] },
-  { label: '切换到总览 / 服务 / 终端 / 设置 / 关于', keys: ['Ctrl', '1–5'] },
+  { label: '打开命令面板', keys: [MOD_LABEL, 'K'] },
+  { label: '切换到总览 / 服务 / 终端 / 设置 / 关于', keys: [MOD_LABEL, '1–5'] },
   { label: '服务页：在列表里上下移动', keys: ['↑', '↓'] },
   { label: '服务页：打开详情', keys: ['Enter'] },
   { label: '服务页：启动或停止（组头上是整组）', keys: ['Space'] },
-  { label: '服务页：在本组内上移 / 下移', keys: ['Ctrl', '↑ / ↓'] },
+  { label: '服务页：在本组内上移 / 下移', keys: [MOD_LABEL, '↑ / ↓'] },
   { label: '服务页：切到下一个详情标签', keys: ['Ctrl', 'Tab'] },
   { label: '服务页：切到上一个详情标签', keys: ['Ctrl', 'Shift', 'Tab'] },
-  { label: '终端：搜索输出（Enter 下一条，Shift+Enter 上一条）', keys: ['Ctrl', 'F'] },
+  { label: '终端：搜索输出（Enter 下一条，Shift+Enter 上一条）', keys: [MOD_LABEL, 'F'] },
   { label: '打开快捷键一览', keys: ['?'] },
   { label: '关闭最上层的弹窗、抽屉或菜单', keys: ['Esc'] }
 ]

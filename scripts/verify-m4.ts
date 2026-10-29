@@ -7,7 +7,7 @@ import { SessionService } from '../src/main/services/SessionService'
 import { DetectService } from '../src/main/services/DetectService'
 import { EntryService } from '../src/main/services/EntryService'
 import { satisfies } from '../src/main/lib/semver'
-import { readListenPorts } from '../src/main/lib/winProcess'
+import { readListenPorts } from '../src/main/platform/win32/process'
 
 import { join } from 'node:path'
 

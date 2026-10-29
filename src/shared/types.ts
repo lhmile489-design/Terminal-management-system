@@ -220,7 +220,8 @@ export interface ThemeState {
 export interface Settings {
   scanIntervalMs: 1000 | 2000 | 5000 | 10000
   theme: ThemePreference
-  externalTerminal: 'wt' | 'pwsh' | 'powershell' | 'cmd' | 'gitbash'
+  /** Windows：wt / pwsh / powershell / cmd / gitbash；macOS：terminal / iterm。按平台校验 */
+  externalTerminal: 'wt' | 'pwsh' | 'powershell' | 'cmd' | 'gitbash' | 'terminal' | 'iterm'
   terminalFontSize: number
   scrollback: number
   killOwnedOnQuit: boolean
@@ -235,10 +236,12 @@ export interface Settings {
   notifyOnlyWhenBackground: boolean
   /** 全局快捷键 Ctrl+Alt+M 唤起窗口并打开命令面板，托盘驻留时也可用，v11 起 */
   globalHotkey: boolean
+  /** macOS：从登录 shell 读 PATH（会执行用户自己的 .zshrc），默认关；Windows 忽略。v13 起 */
+  loginShellPath: boolean
 }
 
 /** 当前配置结构版本。加字段就要加迁移，见 ConfigStore.migrate */
-export const CONFIG_VERSION = 12
+export const CONFIG_VERSION = 13
 
 /**
  * 主进程要求渲染层「定位到某个服务的某个标签」。只带条目 id 和两个标签枚举，

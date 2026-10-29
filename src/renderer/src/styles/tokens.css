@@ -44,10 +44,10 @@
   --color-accent-soft: var(--signal-accent-soft);
   --color-on-accent: var(--signal-on-accent);
 
-  --font-sans: 'Segoe UI Variable Text', 'Segoe UI', 'Microsoft YaHei UI', system-ui, sans-serif;
+  --font-sans: 'Segoe UI Variable Text', 'Segoe UI', 'Microsoft YaHei UI', -apple-system, 'PingFang SC', system-ui, sans-serif;
   /* 标题、数字、品牌。Manrope 没有中文字形，中文自然回落到雅黑 */
-  --font-display: 'Manrope', 'Segoe UI Variable Display', 'Segoe UI', 'Microsoft YaHei UI', sans-serif;
-  --font-mono: 'Cascadia Code', 'JetBrains Mono', Consolas, ui-monospace, monospace;
+  --font-display: 'Manrope', 'Segoe UI Variable Display', 'Segoe UI', 'Microsoft YaHei UI', 'PingFang SC', sans-serif;
+  --font-mono: 'Cascadia Code', 'JetBrains Mono', Consolas, 'SF Mono', Menlo, ui-monospace, monospace;
 
   /* UI-REFACTOR §4.3：卡片 16 / 控件 10 / 胶囊 999 */
   --radius-card: 16px;

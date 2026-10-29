@@ -33,6 +33,8 @@ import type {
 } from '@shared/types'
 
 const api = {
+  /** 当前平台。沙箱 preload 里 process.platform 可用；渲染层据此切换快捷键修饰键与标题栏 */
+  platform: process.platform as 'win32' | 'darwin' | string,
   session: {
     list: (): Promise<SessionMeta[]> => ipcRenderer.invoke(Channels.sessionList),
     create: (input: CreateShellSessionInput): Promise<SessionMeta> =>

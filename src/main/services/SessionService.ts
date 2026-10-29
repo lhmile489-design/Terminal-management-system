@@ -1,9 +1,8 @@
 import { EventEmitter } from 'node:events'
-import { execFile } from 'node:child_process'
 import { homedir } from 'node:os'
 import { spawn as spawnPty, type IPty } from 'node-pty'
 import type { CreateSessionInput, SessionMeta } from '@shared/types'
-import { defaultShell, shellLaunchArgs } from '../lib/shell'
+import { platform } from '../platform'
 import type { OwnershipService } from './OwnershipService'
 import type { ScannerService } from './ScannerService'
 
@@ -44,13 +43,14 @@ export class SessionService extends EventEmitter {
   createShell(input: unknown, at?: { cwd: string; title: string }): SessionMeta {
     const raw = (typeof input === 'object' && input !== null ? input : {}) as Record<string, unknown>
     if (raw.kind !== 'shell') throw new Error('自由终端只允许 shell')
-    const title = typeof raw.title === 'string' && raw.title.trim() ? raw.title.trim().slice(0, 80) : 'PowerShell'
-    const file = defaultShell()
+    const shell = platform.defaultShell()
+    const title = typeof raw.title === 'string' && raw.title.trim() ? raw.title.trim().slice(0, 80) : shell.title
+    const file = shell.file
     // at 只由主进程传入（EntryService.terminalCwd 解析并校验过的条目目录），渲染层给不了
     return this.create({
       kind: 'shell',
       file,
-      args: shellLaunchArgs(file),
+      args: platform.shellArgs(file),
       cwd: at?.cwd ?? homedir(),
       title: at?.title ?? title
     })
@@ -58,8 +58,8 @@ export class SessionService extends EventEmitter {
 
   /** 主进程内部入口，调用方负责构造可信的完整规格 */
   create(input: CreateSessionInput): SessionMeta {
-    const file = input.file ?? defaultShell()
-    const args = input.args ?? shellLaunchArgs(file)
+    const file = input.file ?? platform.defaultShell().file
+    const args = input.args ?? platform.shellArgs(file)
     const cwd = input.cwd ?? homedir()
     const id = nextId()
     const runToken = this.ownership.issueToken()
@@ -86,6 +86,7 @@ export class SessionService extends EventEmitter {
          */
         npm_config_progress: 'false'
       },
+      // 只在 Windows 生效，其他平台 node-pty 忽略这个选项
       useConpty: true
     })
 
@@ -114,10 +115,9 @@ export class SessionService extends EventEmitter {
       this.emit('exit', { id: entry.meta.id, exitCode, signal })
     })
 
-    // ConPTY 默认代码页 936，中文与进度条会乱码
-    if (isPowerShell(file)) {
-      pty.write("chcp 65001 > $null; [Console]::OutputEncoding = [Text.Encoding]::UTF8; Clear-Host\r")
-    }
+    // Windows PowerShell 要先切 UTF-8（ConPTY 默认代码页 936）；macOS 的 shell 本身就是 UTF-8
+    const init = platform.shellInit(file)
+    if (init) pty.write(init)
 
     return meta
   }
@@ -206,21 +206,10 @@ export class SessionService extends EventEmitter {
       }
     }
 
-    // Vite/webpack 会拉起子进程，pty.kill() 只结束 conhost 根进程，必须带树终止。
-    // 等 taskkill 回调再往下走：退出清理靠这一步确认进程树已结束
-    await new Promise<void>((resolve) => {
-      try {
-        execFile(
-          'taskkill.exe',
-          ['/PID', String(pid), '/T', '/F'],
-          { windowsHide: true, timeout: 5000 },
-          () => resolve()
-        )
-      } catch {
-        // taskkill 不可用时退回 pty.kill
-        resolve()
-      }
-    })
+    // Vite/webpack 会拉起子进程，pty.kill() 只结束根进程，必须带树终止。
+    // 等平台层确认结束再往下走：退出清理靠这一步确认进程树已结束
+    // （Windows：taskkill /T /F；macOS：进程组 SIGTERM → SIGKILL）
+    await platform.killTree(pid)
     try {
       entry.pty.kill()
     } catch {
@@ -251,8 +240,4 @@ export class SessionService extends EventEmitter {
     await Promise.all(ids.map((id) => this.kill(id)))
     this.entries.clear()
   }
-}
-
-function isPowerShell(file: string): boolean {
-  return /powershell\.exe$|pwsh\.exe$/i.test(file)
 }

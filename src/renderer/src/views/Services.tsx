@@ -5,6 +5,7 @@ import { Button, Segmented, Select, TextInput, SplitPane, toast, type MenuItem }
 import { GroupTile, type RowActions } from '../components/services/GroupTile'
 import { EntryDetail, effectiveTab, hasBuildTab, type DetailTab } from '../components/services/EntryDetail'
 import { hasOpenOverlay } from '../lib/overlay'
+import { IS_MAC, primaryKey } from '../lib/platform'
 import { AddEntryDialog } from '../components/AddEntryDialog'
 import { ImportDialog } from '../components/ImportDialog'
 import { AssignGroupDialog, GroupDialog } from '../components/services/GroupDialogs'
@@ -382,13 +383,13 @@ export function Services({
 
   const keyRef = useRef<(e: KeyboardEvent) => void>(() => {})
   keyRef.current = (e: KeyboardEvent): void => {
-    if (e.defaultPrevented || hasOpenOverlay() || e.altKey || e.metaKey) return
+    if (e.defaultPrevented || hasOpenOverlay() || e.altKey || (!IS_MAC && e.metaKey)) return
     const t = e.target as HTMLElement | null
     const typing = !!t?.closest('input, textarea, select, [contenteditable="true"], .xterm')
     const ownKeys = !!t?.closest('[role="tablist"], [role="radiogroup"], [role="menu"], [role="separator"]')
 
     // Ctrl+↑ / Ctrl+↓：在本组内移动光标所在的行（拖拽的键盘替代）
-    if (e.ctrlKey && !typing && (e.key === 'ArrowUp' || e.key === 'ArrowDown') && cursorId && !cursorId.startsWith('g:')) {
+    if (primaryKey(e) && !typing && (e.key === 'ArrowUp' || e.key === 'ArrowDown') && cursorId && !cursorId.startsWith('g:')) {
       const entry = entries.find((x) => x.id === cursorId)
       if (entry) { e.preventDefault(); shiftEntry(entry, e.key === 'ArrowUp' ? -1 : 1) }
       return
@@ -401,7 +402,7 @@ export function Services({
       setTab(order[(i + (e.shiftKey ? -1 : 1) + order.length) % order.length])
       return
     }
-    if (e.ctrlKey || typing) return
+    if (e.ctrlKey || primaryKey(e) || typing) return
 
     if (e.key === 'Escape') {
       if (maximized) { e.preventDefault(); setMaximized(false) }

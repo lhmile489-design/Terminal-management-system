@@ -28,7 +28,7 @@ import { LogService } from './services/LogService'
 import { GroupService } from './services/GroupService'
 import { ConfigTransferService } from './services/ConfigTransferService'
 import { loadWindowState, trackWindowState, MIN_WIDTH, MIN_HEIGHT } from './lib/windowState'
-import { openExternalTerminal } from './lib/externalTerminal'
+import { platform } from './platform'
 
 // 打包后 resources/ 被 extraResources 平铺到 resourcesPath，开发期从工程根取
 const resourceDir = app.isPackaged ? process.resourcesPath : join(__dirname, '../../resources')
@@ -37,7 +37,9 @@ const resourceDir = app.isPackaged ? process.resourcesPath : join(__dirname, '..
  * 以前给的是 1024px PNG，任务栏和托盘要系统现场缩到 16–32px，缩放质量差，图标发糊。
  * 通知仍用 PNG（Toast 会按自己的尺寸取图，PNG 兼容性更好）。
  */
-const iconPath = join(resourceDir, 'icon.ico')
+// macOS 的窗口图标来自 .app 包里的 icns，这里给 PNG 只用于开发期；托盘用单色模板图
+const iconPath = join(resourceDir, process.platform === 'darwin' ? 'icon.png' : 'icon.ico')
+const trayIconPath = process.platform === 'darwin' ? join(resourceDir, 'trayTemplate.png') : iconPath
 const notifyIconPath = join(resourceDir, 'icon.png')
 
 const ownership = new OwnershipService()
@@ -71,7 +73,9 @@ function createWindow(): void {
     icon: iconPath,
     // 与令牌 --surface-canvas 对齐，避免启动瞬间闪白
     backgroundColor: theme.state().resolved === 'dark' ? '#0B0F14' : '#F6F7F9',
-    titleBarStyle: 'hidden',
+    // macOS 留系统红绿灯，标题栏左侧由渲染层让出位置；Windows 用自绘窗口控件
+    titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'hidden',
+    ...(process.platform === 'darwin' ? { trafficLightPosition: { x: 14, y: 13 } } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
@@ -137,7 +141,7 @@ function createWindow(): void {
  * 否则关窗即失联，只能去任务管理器结束进程。
  */
 function createTray(): void {
-  tray = new Tray(iconPath)
+  tray = new Tray(trayIconPath)
   tray.setToolTip('Mile Terminal')
 
   const show = (): void => {
@@ -344,11 +348,13 @@ function registerIpc(): void {
   })
 
   // 外部终端：只收 entryId，目录走 EntryService.terminalCwd（越界、不存在都抛），
-  // 程序与参数是 lib/externalTerminal 里的常量，渲染层给不出任何路径或命令（红线 3、4）
+  // 程序与参数是平台层里的常量，渲染层给不出任何路径或命令（红线 3、4）
   ipc.handle(Channels.entryOpenExternalTerminal, async (_e, id: unknown) => {
     if (typeof id !== 'string') throw new Error('条目 id 必须是字符串')
     const at = await entries.terminalCwd(id)
-    openExternalTerminal(config.get().settings.externalTerminal, at.cwd)
+    // 换平台带过来的旧取值（macOS 上存着 wt）回落到本平台默认终端
+    const kind = config.get().settings.externalTerminal
+    platform.openExternalTerminal(platform.terminalKinds.includes(kind) ? kind : platform.defaultTerminal, at.cwd)
   })
 
   ipc.on(Channels.shellOpenPath, (_e, target: unknown) => {
@@ -570,7 +576,7 @@ function registerIpc(): void {
     // 主题走 ThemeService，它还要同步 nativeTheme.themeSource 并广播
     if (next.theme !== undefined) theme.set(next.theme)
     // 任务栏可见性即时生效：托盘常驻，隐藏后窗口仍能从托盘唤出
-    if (next.hideFromTaskbar !== undefined) mainWindow?.setSkipTaskbar(next.hideFromTaskbar)
+    if (next.hideFromTaskbar !== undefined) applyTaskbarVisibility(next.hideFromTaskbar)
     if (next.globalHotkey !== undefined) applyGlobalHotkey()
     sendToRenderer(Channels.settingsChanged, updated)
     return updated
@@ -670,7 +676,17 @@ function registerIpc(): void {
  * 注册后在所有应用里都会被占用，所以设置里能关；组合键被别的程序占了时只在实时动态里提示，不抛错、
  * 不挡设置保存。回调只导航，不触发启停这类写操作。
  */
-const GLOBAL_HOTKEY = 'Ctrl+Alt+M'
+const GLOBAL_HOTKEY = platform.globalHotkey
+
+/** 「从任务栏隐藏」：Windows 是任务栏按钮，macOS 对应 Dock 图标。托盘始终在，窗口仍能唤出 */
+function applyTaskbarVisibility(hide: boolean): void {
+  if (process.platform === 'darwin') {
+    if (hide) app.dock?.hide()
+    else void app.dock?.show()
+    return
+  }
+  mainWindow?.setSkipTaskbar(hide)
+}
 
 function applyGlobalHotkey(): void {
   if (globalShortcut.isRegistered(GLOBAL_HOTKEY)) globalShortcut.unregister(GLOBAL_HOTKEY)
@@ -718,6 +734,7 @@ app.on('second-instance', () => {
 app.whenReady().then(() => {
   if (!gotLock) return
   config = new ConfigStore()
+  platform.preparePath({ loginShellPath: config.get().settings.loginShellPath })
   theme = new ThemeService(config)
   scanner = new ScannerService(ownership, config)
   entries = new EntryService(config, detect, sessions, scanner, ownership)
@@ -730,6 +747,7 @@ app.whenReady().then(() => {
   registerIpc()
   createWindow()
   createTray()
+  applyTaskbarVisibility(config.get().settings.hideFromTaskbar)
   applyGlobalHotkey()
   scanner.start()
 
@@ -761,7 +779,7 @@ app.on('before-quit', (e) => {
 })
 
 const SCAN_INTERVALS = [1000, 2000, 5000, 10_000]
-const TERMINALS = ['wt', 'pwsh', 'powershell', 'cmd', 'gitbash']
+const TERMINALS: readonly string[] = platform.terminalKinds
 const THEMES = ['light', 'dark', 'system']
 
 /**
@@ -926,6 +944,10 @@ function sanitizeSettings(input: unknown): Partial<Settings> {
   if (raw.notifyOnCrash !== undefined) {
     if (typeof raw.notifyOnCrash !== 'boolean') throw new Error('notifyOnCrash 必须是布尔值')
     out.notifyOnCrash = raw.notifyOnCrash
+  }
+  if (raw.loginShellPath !== undefined) {
+    if (typeof raw.loginShellPath !== 'boolean') throw new Error('loginShellPath 必须是布尔值')
+    out.loginShellPath = raw.loginShellPath
   }
   if (raw.globalHotkey !== undefined) {
     if (typeof raw.globalHotkey !== 'boolean') throw new Error('globalHotkey 必须是布尔值')

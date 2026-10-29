@@ -593,6 +593,8 @@
   position: relative;
   z-index: 30;
 }
+/* macOS：系统红绿灯占左侧约 72px，品牌往右让 */
+.ui-titlebar[data-mac='true'] { padding-left: 80px; }
 .ui-brand {
   display: flex;
   align-items: center;
@@ -685,6 +687,8 @@
   font-variant-numeric: tabular-nums;
 }
 .ui-bell-badge[data-fault='true'] { background: var(--ui-danger-bg); }
+/* macOS：红绿灯在左上角，约 72px 宽 */
+.ui-titlebar[data-mac='true'] { padding-left: 80px; }
 .ui-chrome {
   width: 46px;
   height: 40px;

@@ -1,6 +1,22 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Warning } from '@phosphor-icons/react'
 import type { Settings as AppSettings } from '@shared/types'
+import { IS_MAC } from '../lib/platform'
+
+/** 外部终端选项按平台列出；主进程按 platform.terminalKinds 再校验一次 */
+const TERMINAL_OPTIONS: { value: AppSettings['externalTerminal']; label: string }[] = IS_MAC
+  ? [
+      { value: 'terminal', label: '终端' },
+      { value: 'iterm', label: 'iTerm2' }
+    ]
+  : [
+      { value: 'wt', label: 'Windows Terminal' },
+      { value: 'pwsh', label: 'PowerShell 7' },
+      { value: 'powershell', label: 'PowerShell' },
+      { value: 'cmd', label: 'CMD' },
+      { value: 'gitbash', label: 'Git Bash' }
+    ]
+import { GLOBAL_HOTKEY_LABEL } from '../lib/platform'
 import { Button, toast } from '../components/ui'
 import { ICON } from '../lib/icons'
 
@@ -98,13 +114,7 @@ export function Settings(): React.JSX.Element {
         </h2>
           <Row label="外部终端" hint="「在外部终端打开」使用的程序">
             <Choice
-              options={[
-                { value: 'wt', label: 'Windows Terminal' },
-                { value: 'pwsh', label: 'PowerShell 7' },
-                { value: 'powershell', label: 'PowerShell' },
-                { value: 'cmd', label: 'CMD' },
-                { value: 'gitbash', label: 'Git Bash' }
-              ]}
+              options={TERMINAL_OPTIONS}
               value={settings.externalTerminal}
               disabled={saving}
               onPick={(v) => void patch({ externalTerminal: v as AppSettings['externalTerminal'] })}
@@ -162,9 +172,9 @@ export function Settings(): React.JSX.Element {
               onChange={(v) => void patch({ hideFromTaskbar: v })}
             />
           </Row>
-          <Row label="全局快捷键 Ctrl+Alt+M 唤起" hint="在任何程序里按下都会唤出窗口并打开命令面板；会占用这个组合键，不需要时关掉">
+          <Row label={`全局快捷键 ${GLOBAL_HOTKEY_LABEL} 唤起`} hint="在任何程序里按下都会唤出窗口并打开命令面板；会占用这个组合键，不需要时关掉">
             <Toggle
-              label="全局快捷键 Ctrl+Alt+M 唤起"
+              label={`全局快捷键 ${GLOBAL_HOTKEY_LABEL} 唤起`}
               checked={settings.globalHotkey}
               disabled={saving}
               onChange={(v) => void patch({ globalHotkey: v })}

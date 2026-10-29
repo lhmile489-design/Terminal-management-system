@@ -30,6 +30,7 @@ for f in ui shell services m4-ui m5 m6-sort m6-palette m6-settings m7-visual m8 
   npx electron scripts/verify-$f.cjs 2>&1 | grep -E '结果：|Result:|PASS [0-9]+ / FAIL|^\s*FAIL'
 done
 node scripts/verify-review-ownership.cjs   # 纯逻辑，不起 Electron：用 esbuild 单独打包 OwnershipService 喂合成进程表
+node scripts/verify-darwin-parse.cjs       # 纯逻辑：macOS 的 lsof / ps 解析器喂合成输出，Windows 上也能跑
 ```
 
 `review-*` 来自 2026-10-27 审查修复：IPC 边界与导航守卫、entry:add 校形、采集失败推送、退出等进程树、操作台停止按钮、关于页外链白名单、输入框里的 Ctrl+Tab、PID 复用防护。review-quit 会真的走一次 `app.quit()`，确认 shell 拉起的子进程也被树终止。
@@ -52,11 +53,14 @@ m11-dual 用 `scripts/fixture/dual-server.cjs` 造出「两个进程分别绑 IP
 src/main/       主进程。所有特权操作、所有命令构造、所有校验
   index.ts        IPC 注册与参数校形（sanitize*），窗口/托盘/通知
   services/       各司其职，构造函数注入依赖，无全局单例
-  lib/            Windows 平台细节（PowerShell 调用、进程表、归属推断）
-src/preload/    contextBridge 白名单，暴露 window.mile.*
+  lib/            与平台无关的工具（输出文本规则、来源推断、窗口状态、semver）
+  platform/       平台适配层：types.ts 接口，win32/ 与 darwin/ 两套实现，index.ts 按 process.platform 选一个
+src/preload/    contextBridge 白名单，暴露 window.mile.*（含只读的 platform 名）
 src/renderer/   React 19 + zustand + Tailwind 4。只做展示与交互
 src/shared/     两侧共用的类型与 IPC 频道名
 ```
+
+**平台差异只放在 `src/main/platform/`**（docs/MACOS-PORTING.md）。服务层只 `import { platform } from '../platform'`，不直接调 netstat / lsof、taskkill / 进程组、`cmd /d /s /c`；可执行文件候选名、wrapper 文件名、进程名表都从 `platform` 取。新增平台相关逻辑时两套实现都要写，判定逻辑（归属三重凭据、预检、命令白名单）留在服务层共用。渲染层的平台差异只有主修饰键（`lib/platform.ts` 的 `primaryKey` / `MOD_LABEL`）与标题栏是否画窗口控件。**darwin 实现只过了 typecheck 与 `verify-darwin-parse`（合成 lsof / ps 输出），未在真 Mac 上运行过**。
 
 **渲染层没有任何特权。** 它拿不到 `runToken`、拿不到环境变量的值、不能构造命令、不能指定要执行的可执行文件。所有这些都在主进程决定。
 
@@ -93,7 +97,7 @@ src/shared/     两侧共用的类型与 IPC 频道名
 - 新增 IPC 一律在 `index.ts` 里写 `sanitize*` 校形函数，白名单外的键静默丢弃，非法值抛错且**不落盘**。
 - **IPC 注册一律走 `ipc.handle` / `ipc.on` 包装器，不直接调 `ipcMain`。** 包装器只认主窗口主框架（`isTrustedSender`）。harness 绕过渲染层直调 `ipcMain._invokeHandlers` 时，要传 `{ sender: wc, senderFrame: wc.mainFrame }`，传 `{}` 会被拒（m5 / m6-palette / m6-settings 的 `callIpc` 有现成写法）。
 - **`session:create` 只走 `SessionService.createShell`**：只认 `kind: 'shell'` 和标题，可执行文件、参数、目录由主进程定。`create(CreateSessionInput)` 是主进程内部入口，只给 EntryService 用固定模板构造的规格，**绝不能接到 IPC 上**。带 `entryId` 时开在该条目目录：目录由 `EntryService.terminalCwd` 按登记信息解析，要求在条目路径内且真实存在，否则抛错、不回退；解析结果由 IPC 层作为可信参数交给 `createShell`，渲染层给不出路径。
-- **外部终端（`lib/externalTerminal.ts`，`entry:openExternalTerminal`）只开在已登记条目的目录**：渲染层只给 `entryId`，目录走 `EntryService.terminalCwd` 解析并校验（越界、不存在一律拒，不回退）。经 `cmd /d /c start "Mile Terminal" <终端> <固定参数>` 拉起 —— 直接 spawn 控制台程序拿不到自己的窗口，3 秒内就退出。**目录从不进命令行**，只走 spawn 的 `cwd` 选项（wt 用 `-d .`，Git Bash 用 `--cd-to-here`），因为 wt 把 `;` 当子命令分隔符、cmd 会解释 `&` `|`。`wt.exe` 是应用执行别名，`existsSync` 认不出，要用 `lstat`。verify-review-extterm 拦截 spawn 只量命令行，不真弹窗口。
+- **外部终端（Windows 在 `platform/win32/terminal.ts`、macOS 在 `platform/darwin/index.ts`，`entry:openExternalTerminal`）只开在已登记条目的目录**：渲染层只给 `entryId`，目录走 `EntryService.terminalCwd` 解析并校验（越界、不存在一律拒，不回退）。经 `cmd /d /c start "Mile Terminal" <终端> <固定参数>` 拉起 —— 直接 spawn 控制台程序拿不到自己的窗口，3 秒内就退出。**目录从不进命令行**，只走 spawn 的 `cwd` 选项（wt 用 `-d .`，Git Bash 用 `--cd-to-here`），因为 wt 把 `;` 当子命令分隔符、cmd 会解释 `&` `|`。`wt.exe` 是应用执行别名，`existsSync` 认不出，要用 `lstat`。verify-review-extterm 拦截 spawn 只量命令行，不真弹窗口。
 - **`entry:add` 与 `entry:edit` 共用 `sanitizeEdit`。** 新增可编辑字段时只改那一处，两个入口一起生效；别在 `add()` 里另写一套铺开入参的逻辑。
 - **环境变量的值不出主进程。** `entry:list` / `add` / `edit` / `reorder` / `clearImage` 的返回值和 `entry:changed` 广播都经 `redactEntry`，`env` 只剩键名（值恒为空串）。`EntryEdit.env` 是**合并补丁**：字符串=新增或覆盖，`null`=删除，没提的键保持原值；渲染层做端口修复这类改动只发 `{ PORT }`，不要再展开 `entry.env`（展开的是空串，会把旧值全冲掉）。读 env 值的 harness 要读磁盘 config，不能走 `entry.list()`。
 - 往渲染层推送用 `sendToRenderer(channel, ...)`，不要写 `mainWindow?.webContents.send`：窗口销毁后采集与会话输出仍在推，直接 send 会抛 `Object has been destroyed`。
@@ -238,6 +242,6 @@ spring 曲线的 `y2 = 1.56` 超过 1，产生轻微过冲后落回终态，用�
 - **Node 20.19。`electron-builder` 打包前需升到 22 LTS**（长期待办，从 M1 挂到现在）。
 - 平台 Windows 11。shell 用 bash 语法（`/dev/null`、正斜杠路径）。
 - 应用版本 2.3.0（`package.json`）。版本记录写在 `README.md` 的「版本记录」一节。
-- 配置落在 `%APPDATA%/mile-terminal/config.json`，`.bak` 是上一份良好版本。当前 `CONFIG_VERSION = 12`（v9 加了工作组 `groups` 与条目的 `groupId`；v10 加了 `notifyOnCrash` / `notifyOnlyWhenBackground` 两个通知开关，迁移默认都开；v11 加了 `globalHotkey`，默认开；v12 加了条目的可选 `startAfter`，不回填）。从 `.bak` 恢复时坏主文件另存为 `config.json.corrupt`，且那次写入走 `persist(true)` 跳过「备份当前主文件」—— 常规 `persist()` 会把坏文件复制到 `.bak`，唯一的良好版本就没了。配置导入（`ConfigTransferService`）先另存一份 `config.before-import-<时间>.json` 再合并，与 `.bak` 轮转分开 —— `.bak` 下一次写入就被覆盖，这份要留给用户手动换回。导出文件里环境变量只留键名；导入的新条目一律走 `EntryService.add` / `edit`，不要另写一套落盘逻辑。
+- 配置落在 `%APPDATA%/mile-terminal/config.json`，`.bak` 是上一份良好版本。当前 `CONFIG_VERSION = 13`（v9 加了工作组 `groups` 与条目的 `groupId`；v10 加了 `notifyOnCrash` / `notifyOnlyWhenBackground` 两个通知开关，迁移默认都开；v11 加了 `globalHotkey`，默认开；v12 加了条目的可选 `startAfter`，不回填；v13 加了 `loginShellPath`（只在 macOS 起作用，默认关），并把不属于当前平台的 `externalTerminal` 取值回落到 `platform.defaultTerminal`）。从 `.bak` 恢复时坏主文件另存为 `config.json.corrupt`，且那次写入走 `persist(true)` 跳过「备份当前主文件」—— 常规 `persist()` 会把坏文件复制到 `.bak`，唯一的良好版本就没了。配置导入（`ConfigTransferService`）先另存一份 `config.before-import-<时间>.json` 再合并，与 `.bak` 轮转分开 —— `.bak` 下一次写入就被覆盖，这份要留给用户手动换回。导出文件里环境变量只留键名；导入的新条目一律走 `EntryService.add` / `edit`，不要另写一套落盘逻辑。
 - 退出清理：`before-quit` 在 `killOwnedOnQuit` 开启且还有活会话时先 `preventDefault`，等 `sessions.disposeAll()`（每个 taskkill 返回才 resolve）或 6 秒上限，再 `app.quit()`。`SessionService.kill()` 返回 Promise，普通调用方不必等，退出流程要等。
 - **改 `CONFIG_VERSION` 时**：迁移写显式版本分支，不要用 `{...DEFAULTS, ...raw}` 铺开 —— 那样 `version` 会永远停在旧值，每次启动都重跑迁移。harness 里不要写死版本号，从 `src/shared/types.ts` 读。

@@ -6,6 +6,7 @@ import {
 } from '@phosphor-icons/react'
 import type { ThemePreference } from '@shared/types'
 import { ICON, ICON_SIZE } from '../lib/icons'
+import { MOD_LABEL } from '../lib/platform'
 import { useTheme } from '../store/theme'
 
 export type ViewId =
@@ -131,11 +132,11 @@ export function NavRail({
         data-group-active={opts.groupActive || undefined}
         data-sub={opts.sub || undefined}
         onClick={() => onChange(leaf.id)}
-        {...tipHandlers(opts.kbd ? `${leaf.label}  Ctrl ${opts.kbd}` : leaf.label)}
+        {...tipHandlers(opts.kbd ? `${leaf.label}  ${MOD_LABEL} ${opts.kbd}` : leaf.label)}
       >
         <IconCmp size={opts.sub ? ICON_SIZE.inline : ICON_SIZE.title} weight={current ? 'fill' : 'regular'} aria-hidden />
         <span className="ui-nav-label">{leaf.label}</span>
-        {opts.kbd && <span className="ui-nav-kbd" aria-hidden>Ctrl {opts.kbd}</span>}
+        {opts.kbd && <span className="ui-nav-kbd" aria-hidden>{MOD_LABEL} {opts.kbd}</span>}
       </button>
     )
   }

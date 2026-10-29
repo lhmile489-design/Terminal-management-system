@@ -1,11 +1,13 @@
 import { spawn } from 'node:child_process'
 import { lstatSync } from 'node:fs'
 import { join, resolve } from 'node:path'
-import type { Settings } from '@shared/types'
+import type { TerminalKind } from '../types'
 
-type TerminalKind = Settings['externalTerminal']
+type WinKind = 'wt' | 'pwsh' | 'powershell' | 'cmd' | 'gitbash'
 
-const LABEL: Record<TerminalKind, string> = {
+export const WIN_TERMINALS: readonly WinKind[] = ['wt', 'pwsh', 'powershell', 'cmd', 'gitbash']
+
+const LABEL: Record<WinKind, string> = {
   wt: 'Windows Terminal',
   pwsh: 'PowerShell 7',
   powershell: 'PowerShell',
@@ -16,7 +18,7 @@ const LABEL: Record<TerminalKind, string> = {
 /** 新窗口的标题。含空格是有意的：Node 会给它加引号，start 才把它当标题而不是程序名 */
 export const EXTERNAL_TERMINAL_TITLE = 'Mile Terminal'
 
-function candidates(kind: TerminalKind): string[] {
+function candidates(kind: WinKind): string[] {
   const root = process.env.SystemRoot ?? 'C:\\Windows'
   const local = process.env.LOCALAPPDATA ?? ''
   switch (kind) {
@@ -46,7 +48,7 @@ function candidates(kind: TerminalKind): string[] {
  * wt 用 `-d .`、Git Bash 用 `--cd-to-here` 表示「就在当前目录」。
  * 把路径塞进参数会有两个坑：wt 把 `;` 当子命令分隔符，cmd 会解释 `&` `|` 这类字符。
  */
-function fixedArgs(kind: TerminalKind): string[] {
+function fixedArgs(kind: WinKind): string[] {
   switch (kind) {
     case 'wt':
       return ['-d', '.']
@@ -58,6 +60,10 @@ function fixedArgs(kind: TerminalKind): string[] {
     case 'gitbash':
       return ['--cd-to-here']
   }
+}
+
+function isWinKind(kind: TerminalKind): kind is WinKind {
+  return (WIN_TERMINALS as readonly string[]).includes(kind)
 }
 
 function present(p: string): boolean {
@@ -77,7 +83,7 @@ function present(p: string): boolean {
  * 都是代码里的常量，没有任何来自条目或用户的字符串。
  */
 export function openExternalTerminal(kind: TerminalKind, cwd: string): void {
-  if (!(kind in LABEL)) throw new Error(`外部终端设置非法：${String(kind)}`)
+  if (!isWinKind(kind)) throw new Error(`外部终端设置非法：${String(kind)}`)
   // cmd 不能把 UNC 路径当工作目录，会静默退回 C:\Windows，用户会以为开对了地方。
   // 先 resolve：手改配置写成 //server/share 的正斜杠形式也会被规范成 \\server\share
   if (resolve(cwd).startsWith('\\\\')) throw new Error('外部终端不支持网络路径')

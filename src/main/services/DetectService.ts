@@ -7,6 +7,7 @@ import type {
   PackageManager,
   SpringBootLaunchMode
 } from '@shared/types'
+import { platform } from '../platform'
 
 /** 依赖键 → 框架，按 PRD §8.1 优先级排列，取首个命中 */
 const FRAMEWORK_RULES: { dep: string; resolve: (deps: Set<string>) => Framework }[] = [
@@ -244,8 +245,8 @@ async function detectLaunchableMode(
  * 只看文件存在性，不查 PATH、不执行任何东西。
  */
 async function detectSpringBootLaunchMode(path: string): Promise<SpringBootLaunchMode> {
-  const hasMvnw = await exists(join(path, 'mvnw.cmd'))
-  const hasGradlew = await exists(join(path, 'gradlew.bat'))
+  const hasMvnw = await exists(join(path, platform.wrapperFile.maven))
+  const hasGradlew = await exists(join(path, platform.wrapperFile.gradle))
   const hasPom = await exists(join(path, 'pom.xml'))
 
   if (hasMvnw) return 'maven-wrapper'
@@ -428,7 +429,8 @@ export class DetectService {
     // Python / Go / Rust / C++：命令形状固定（file 固定 + 硬编码子命令 / 项目内产物），
     // 走 EntryService 的第 N 条命令构造路径，可启动。识别时探测默认 launchMode 供预填。
     const launchable = await detectLaunchableMode(framework, path)
-    if (launchable) {
+    // 本平台首版不支持的启动方式（macOS 的 C++ 可执行文件）落到下面的仅登记分支
+    if (launchable && !platform.unsupportedLaunchModes.has(launchable.mode)) {
       warnings.push(`识别为 ${MARKER_RULES.find((r) => r.framework === framework)?.hint ?? framework}，默认启动方式：${launchable.mode}`)
       return {
         path,

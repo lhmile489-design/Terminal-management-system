@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { ArrowSquareOut, GithubLogo, ShieldCheck, type Icon } from '@phosphor-icons/react'
 import { ICON } from '../lib/icons'
 import logoUrl from '../assets/logo.png'
+import { MOD_LABEL } from '../lib/platform'
 
 // 外链地址写死在主进程 PROJECT_LINKS：window.open 会被窗口守卫按 localhost-only 拦下，点了没反应
 
@@ -52,11 +53,11 @@ const DESIGN_PRINCIPLES: { title: string; desc: string }[] = [
 ]
 
 const SHORTCUTS: { keys: string; desc: string }[] = [
-  { keys: 'Ctrl+K', desc: '打开命令面板' },
-  { keys: 'Ctrl+1–5', desc: '切换总览 / 服务 / 终端 / 设置 / 关于' },
+  { keys: `${MOD_LABEL}+K`, desc: '打开命令面板' },
+  { keys: `${MOD_LABEL}+1–5`, desc: '切换总览 / 服务 / 终端 / 设置 / 关于' },
   { keys: '↑ / ↓', desc: '服务页移动选中行' },
   { keys: 'Space', desc: '启动或停止选中的服务' },
-  { keys: 'Ctrl+↑ / ↓', desc: '在本组内调整顺序' },
+  { keys: `${MOD_LABEL}+↑ / ↓`, desc: '在本组内调整顺序' },
   { keys: '?', desc: '快捷键一览' }
 ]
 

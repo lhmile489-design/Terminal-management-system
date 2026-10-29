@@ -1,31 +1,6 @@
 import { execFile } from 'node:child_process'
 import { runPowerShell } from './powershell'
-
-export interface ProcessRow {
-  pid: number
-  ppid: number
-  name: string
-  execPath?: string
-  commandLine?: string
-  /** Unix ms，用于识别 PID 复用 */
-  startedAt?: number
-}
-
-export interface ListenRow {
-  port: number
-  pid: number
-}
-
-export interface ProcessMeta {
-  byPid: Map<number, ProcessRow>
-  /** 当前用户登录会话下的所有 PID */
-  mine: Set<number>
-  at: number
-}
-
-export interface ProcessTable extends ProcessMeta {
-  listens: ListenRow[]
-}
+import type { ListenRow, ProcessMeta, ProcessRow } from '../types'
 
 /**
  * 快层：netstat 取监听端口，实测 ~55ms。

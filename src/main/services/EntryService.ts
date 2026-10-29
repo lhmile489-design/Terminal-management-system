@@ -1,9 +1,9 @@
 import { EventEmitter } from 'node:events'
 import { randomUUID } from 'node:crypto'
 import { spawn } from 'node:child_process'
-import { existsSync } from 'node:fs'
-import { readFile, readdir, stat } from 'node:fs/promises'
-import { join, relative, isAbsolute, resolve } from 'node:path'
+import { constants as fsConstants, existsSync } from 'node:fs'
+import { access, readFile, readdir, stat } from 'node:fs/promises'
+import { join, relative, isAbsolute } from 'node:path'
 import {
   SERVICE_ICON_IDS,
   isWebFramework,
@@ -25,7 +25,7 @@ import {
   type ServiceIcon,
   type SpringBootLaunchMode
 } from '@shared/types'
-import { readListenPorts, type ListenRow } from '../lib/winProcess'
+import { platform, type ListenRow } from '../platform'
 import type { ConfigStore } from './ConfigStore'
 import type { DetectService } from './DetectService'
 import { PrecheckService, resolveCwd, whichAny } from './PrecheckService'
@@ -78,10 +78,10 @@ function assertSafeProfile(profile: string | null): void {
 }
 
 const PM_BINARIES: Record<PackageManager, string[]> = {
-  npm: ['npm.cmd', 'npm.exe'],
-  pnpm: ['pnpm.cmd', 'pnpm.exe'],
-  yarn: ['yarn.cmd', 'yarn.exe'],
-  bun: ['bun.exe']
+  npm: platform.binaries.npm,
+  pnpm: platform.binaries.pnpm,
+  yarn: platform.binaries.yarn,
+  bun: platform.binaries.bun
 }
 
 /**
@@ -102,19 +102,19 @@ function isSpringBootMode(mode: LaunchMode): mode is SpringBootLaunchMode {
 }
 
 /** wrapper 脚本文件名，硬编码常量，必须存在于条目登记目录内。用户改不了 */
-const MVNW_CMD = 'mvnw.cmd'
-const GRADLEW_BAT = 'gradlew.bat'
+const MVNW_CMD = platform.wrapperFile.maven
+const GRADLEW_BAT = platform.wrapperFile.gradle
 
 /** jar / system 模式需要的 java 可执行文件 */
-const JAVA_BINARIES = ['java.exe']
+const JAVA_BINARIES = platform.binaries.java
 /** system 模式的构建工具可执行文件 */
-const SYSTEM_MAVEN_BINARIES = ['mvn.cmd', 'mvn.bat', 'mvn']
-const SYSTEM_GRADLE_BINARIES = ['gradle.cmd', 'gradle.bat', 'gradle']
+const SYSTEM_MAVEN_BINARIES = platform.binaries.mvn
+const SYSTEM_GRADLE_BINARIES = platform.binaries.gradle
 
 /** 各语言解释器 / 构建工具的可执行文件候选，经 whichAny 定位，用户不能指定 */
-const PYTHON_BINARIES = ['python.exe', 'python3.exe', 'py.exe', 'python', 'python3']
-const GO_BINARIES = ['go.exe', 'go']
-const CARGO_BINARIES = ['cargo.exe', 'cargo']
+const PYTHON_BINARIES = platform.binaries.python
+const GO_BINARIES = platform.binaries.go
+const CARGO_BINARIES = platform.binaries.cargo
 
 /**
  * 全部合法的 launchMode 枚举（Spring Boot 5 个 + 各语言）。sanitizeEdit 与新建校形用它挡非法值。
@@ -167,17 +167,7 @@ const FRAMEWORKS = new Set<Framework>([
  * 顺序即优先级。测试可用 MILE_HBUILDERX_CLI 环境变量指向夹具里的假 cli，覆盖真实探测。
  */
 function hbuilderxCliCandidates(): string[] {
-  const override = process.env.MILE_HBUILDERX_CLI
-  if (override) return [override]
-  const localAppData = process.env.LOCALAPPDATA
-  const list = [
-    'D:\\HBuilderX\\cli.exe',
-    'C:\\Program Files\\HBuilderX\\cli.exe',
-    'D:\\Program Files\\HBuilderX\\cli.exe',
-    'C:\\HBuilderX\\cli.exe'
-  ]
-  if (localAppData) list.push(join(localAppData, 'HBuilderX', 'cli.exe'))
-  return list
+  return platform.hbuilderxCandidates()
 }
 
 function resolveHBuilderXCli(): string | null {
@@ -566,6 +556,9 @@ export class EntryService extends EventEmitter {
           if (typeof value !== 'string' || !LAUNCH_MODES.has(value as LaunchMode)) {
             throw new Error(`启动方式非法：${String(value)}`)
           }
+          if (platform.unsupportedLaunchModes.has(value as LaunchMode)) {
+            throw new Error(`这台系统上暂不支持该启动方式：${value}，只能仅登记`)
+          }
           out.launchMode = value as LaunchMode
           break
         }
@@ -857,8 +850,8 @@ export class EntryService extends EventEmitter {
     // CreateProcess 直接执行，且这样对真实 cli.exe 同样成立。参数仍以数组传入、绝不拼
     // shell 字符串；子命令 project open 固定、路径受 assertInsideEntry 约束。
     // detached + unref：HBuilderX 是独立 GUI，脱离本应用生命周期，不作为子会话跟踪。
-    const comspec = process.env.ComSpec ?? 'cmd.exe'
-    const child = spawn(comspec, ['/d', '/s', '/c', cli, 'project', 'open', '--path', cwd], {
+    const cmd = platform.wrapBatch(cli, ['project', 'open', '--path', cwd])
+    const child = spawn(cmd.file, cmd.args, {
       detached: true,
       stdio: 'ignore'
     })
@@ -1104,26 +1097,23 @@ export class EntryService extends EventEmitter {
     if (mode === 'jar') {
       throw new Error('jar 模式无内置构建命令，请手动构建后切换到 jar 启动方式')
     }
-    const comspec = process.env.ComSpec ?? 'cmd.exe'
     const mavenProfileArgs = profile ? ['-P', profile] : []
     const gradleProfileArgs = profile ? [`-P${profile}`] : []
 
     switch (mode) {
       case 'maven-wrapper': {
         const wrapper = join(cwd, MVNW_CMD)
-        if (!(await isFile(wrapper))) throw new Error(`未找到 ${MVNW_CMD}`)
+        if (!(await isRunnable(wrapper))) throw new Error(`未找到 ${MVNW_CMD}`)
         return {
-          file: comspec,
-          args: ['/d', '/s', '/c', wrapper, 'package', ...mavenProfileArgs],
+          ...platform.wrapBatch(wrapper, ['package', ...mavenProfileArgs]),
           title: profile ? `mvnw package -P ${profile}` : 'mvnw package'
         }
       }
       case 'gradle-wrapper': {
         const wrapper = join(cwd, GRADLEW_BAT)
-        if (!(await isFile(wrapper))) throw new Error(`未找到 ${GRADLEW_BAT}`)
+        if (!(await isRunnable(wrapper))) throw new Error(`未找到 ${GRADLEW_BAT}`)
         return {
-          file: comspec,
-          args: ['/d', '/s', '/c', wrapper, 'build', ...gradleProfileArgs],
+          ...platform.wrapBatch(wrapper, ['build', ...gradleProfileArgs]),
           title: profile ? `gradlew build -P${profile}` : 'gradlew build'
         }
       }
@@ -1131,8 +1121,7 @@ export class EntryService extends EventEmitter {
         const mvn = await whichAny(SYSTEM_MAVEN_BINARIES)
         if (!mvn) throw new Error('PATH 中找不到 mvn')
         return {
-          file: comspec,
-          args: ['/d', '/s', '/c', mvn, 'package', ...mavenProfileArgs],
+          ...platform.wrapBatch(mvn, ['package', ...mavenProfileArgs]),
           title: profile ? `mvn package -P ${profile}` : 'mvn package'
         }
       }
@@ -1140,8 +1129,7 @@ export class EntryService extends EventEmitter {
         const gradle = await whichAny(SYSTEM_GRADLE_BINARIES)
         if (!gradle) throw new Error('PATH 中找不到 gradle')
         return {
-          file: comspec,
-          args: ['/d', '/s', '/c', gradle, 'build', ...gradleProfileArgs],
+          ...platform.wrapBatch(gradle, ['build', ...gradleProfileArgs]),
           title: profile ? `gradle build -P${profile}` : 'gradle build'
         }
       }
@@ -1249,7 +1237,6 @@ export class EntryService extends EventEmitter {
       throw new Error('jar 模式无内置构建命令，请手动构建后切换到 jar 启动方式')
     }
 
-    const comspec = process.env.ComSpec ?? 'cmd.exe'
 
     // Gradle goal 映射：Maven goal → Gradle task
     const GRADLE_TASK: Record<MavenGoal, string> = {
@@ -1264,33 +1251,33 @@ export class EntryService extends EventEmitter {
     switch (mode) {
       case 'maven-wrapper': {
         const wrapper = join(cwd, MVNW_CMD)
-        if (!(await isFile(wrapper))) {
+        if (!(await isRunnable(wrapper))) {
           throw new Error(`未找到 ${MVNW_CMD}，无法用 Maven Wrapper 执行构建`)
         }
         const title = `mvnw ${goal}`
-        return { file: comspec, args: ['/d', '/s', '/c', wrapper, goal], title }
+        return { ...platform.wrapBatch(wrapper, [goal]), title }
       }
       case 'gradle-wrapper': {
         const wrapper = join(cwd, GRADLEW_BAT)
-        if (!(await isFile(wrapper))) {
+        if (!(await isRunnable(wrapper))) {
           throw new Error(`未找到 ${GRADLEW_BAT}，无法用 Gradle Wrapper 执行构建`)
         }
         const task = GRADLE_TASK[goal]
         const title = `gradlew ${task}`
-        return { file: comspec, args: ['/d', '/s', '/c', wrapper, task], title }
+        return { ...platform.wrapBatch(wrapper, [task]), title }
       }
       case 'system-maven': {
         const mvn = await whichAny(SYSTEM_MAVEN_BINARIES)
         if (!mvn) throw new Error('PATH 中找不到 mvn')
         const title = `mvn ${goal}`
-        return { file: comspec, args: ['/d', '/s', '/c', mvn, goal], title }
+        return { ...platform.wrapBatch(mvn, [goal]), title }
       }
       case 'system-gradle': {
         const gradle = await whichAny(SYSTEM_GRADLE_BINARIES)
         if (!gradle) throw new Error('PATH 中找不到 gradle')
         const task = GRADLE_TASK[goal]
         const title = `gradle ${task}`
-        return { file: comspec, args: ['/d', '/s', '/c', gradle, task], title }
+        return { ...platform.wrapBatch(gradle, [task]), title }
       }
     }
   }
@@ -1471,14 +1458,10 @@ export class EntryService extends EventEmitter {
     const pm = await whichAny(PM_BINARIES[entry.packageManager])
     if (!pm) throw new Error(`PATH 中找不到 ${entry.packageManager}`)
 
-    // npm.cmd/pnpm.cmd 是批处理文件，CreateProcess 不能直接执行，必须经 cmd.exe。
-    // 参数仍以数组传入由 node-pty 负责转义，脚本名另有白名单，不做字符串拼接。
-    const args = ['/d', '/s', '/c', pm, ...(script === null ? ['install'] : ['run', script])]
-    return {
-      file: process.env.ComSpec ?? 'cmd.exe',
-      args,
-      title: script ?? 'install'
-    }
+    // Windows 上 npm.cmd/pnpm.cmd 是批处理文件，CreateProcess 不能直接执行，必须经 cmd.exe；
+    // macOS 直接 spawn 绝对路径。参数始终是数组，脚本名另有白名单，不做字符串拼接。
+    const cmd = platform.wrapBatch(pm, script === null ? ['install'] : ['run', script])
+    return { ...cmd, title: script ?? 'install' }
   }
 
   /**
@@ -1495,24 +1478,23 @@ export class EntryService extends EventEmitter {
     if (!mode || !isSpringBootMode(mode)) {
       throw new Error('Spring Boot 条目缺少合法的启动方式（launchMode）')
     }
-    const comspec = process.env.ComSpec ?? 'cmd.exe'
 
     switch (mode) {
       case 'maven-wrapper': {
         const wrapper = join(cwd, MVNW_CMD)
-        if (!(await isFile(wrapper))) {
+        if (!(await isRunnable(wrapper))) {
           throw new Error(`未找到 ${MVNW_CMD}，无法用 Maven Wrapper 启动`)
         }
         // 用 wrapper 的绝对路径：cmd /c 不会去 cwd 搜可执行文件（只搜 PATH），
         // 而项目本地的 mvnw.cmd 不在 PATH 里。路径由主进程用常量文件名拼，非用户输入。
-        return { file: comspec, args: ['/d', '/s', '/c', wrapper, 'spring-boot:run'], title: 'spring-boot:run' }
+        return { ...platform.wrapBatch(wrapper, ['spring-boot:run']), title: 'spring-boot:run' }
       }
       case 'gradle-wrapper': {
         const wrapper = join(cwd, GRADLEW_BAT)
-        if (!(await isFile(wrapper))) {
+        if (!(await isRunnable(wrapper))) {
           throw new Error(`未找到 ${GRADLEW_BAT}，无法用 Gradle Wrapper 启动`)
         }
-        return { file: comspec, args: ['/d', '/s', '/c', wrapper, 'bootRun'], title: 'bootRun' }
+        return { ...platform.wrapBatch(wrapper, ['bootRun']), title: 'bootRun' }
       }
       case 'jar': {
         const jarAbs = await this.resolveJarPath(entry, cwd)
@@ -1524,12 +1506,12 @@ export class EntryService extends EventEmitter {
       case 'system-maven': {
         const mvn = await whichAny(SYSTEM_MAVEN_BINARIES)
         if (!mvn) throw new Error('PATH 中找不到 mvn')
-        return { file: comspec, args: ['/d', '/s', '/c', mvn, 'spring-boot:run'], title: 'mvn spring-boot:run' }
+        return { ...platform.wrapBatch(mvn, ['spring-boot:run']), title: 'mvn spring-boot:run' }
       }
       case 'system-gradle': {
         const gradle = await whichAny(SYSTEM_GRADLE_BINARIES)
         if (!gradle) throw new Error('PATH 中找不到 gradle')
-        return { file: comspec, args: ['/d', '/s', '/c', gradle, 'bootRun'], title: 'gradle bootRun' }
+        return { ...platform.wrapBatch(gradle, ['bootRun']), title: 'gradle bootRun' }
       }
     }
   }
@@ -1664,7 +1646,7 @@ export class EntryService extends EventEmitter {
         : rows.some((r) => r.port === port)
 
     while (Date.now() < deadline) {
-      if (!held(await readListenPorts())) return true
+      if (!held(await platform.readListenPorts())) return true
       await sleep(250)
     }
     this.emit('warning', `端口 :${port} 在 5 秒内未释放，重启后可能仍被占用`)
@@ -1814,7 +1796,7 @@ export class EntryService extends EventEmitter {
     port: number,
     exclude: ReadonlySet<number> = new Set()
   ): Promise<PortHolder | null> {
-    const rows = await readListenPorts()
+    const rows = await platform.readListenPorts()
     const row = rows.find((r) => r.port === port && !exclude.has(r.pid))
     if (!row) return null
 
@@ -1890,7 +1872,7 @@ function isSafeRelative(p: string): boolean {
 
 /** Windows 路径比较：大小写不敏感，且要消掉 `a\b\..\b` 这类等价写法 */
 function normalizePath(target: string): string {
-  return resolve(target).replace(/[\\/]+$/, '').toLowerCase()
+  return platform.pathKey(target)
 }
 
 async function isDirectory(target: string): Promise<boolean> {
@@ -1904,6 +1886,18 @@ async function isDirectory(target: string): Promise<boolean> {
 async function isFile(target: string): Promise<boolean> {
   try {
     return (await stat(target)).isFile()
+  } catch {
+    return false
+  }
+}
+
+/** 项目自带的 wrapper：是文件，且平台要求时有执行位（macOS 上 ./mvnw 没有 +x 就跑不起来） */
+async function isRunnable(target: string): Promise<boolean> {
+  if (!(await isFile(target))) return false
+  if (!platform.requiresExecBit) return true
+  try {
+    await access(target, fsConstants.X_OK)
+    return true
   } catch {
     return false
   }

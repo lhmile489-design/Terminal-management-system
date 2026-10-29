@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Copy, Minus, Square, X } from '@phosphor-icons/react'
 import { ICON, ICON_SIZE } from '../lib/icons'
 import logoUrl from '../assets/logo.png'
+import { IS_MAC, MOD_LABEL } from '../lib/platform'
 
 /**
  * 标题栏 40px，UI-REFACTOR §3.2：品牌 · 搜索入口 · 实时动态 · 窗口控件。
@@ -29,7 +30,7 @@ export function TitleBar({
   const Bell = ICON.activity
 
   return (
-    <header className="ui-titlebar drag-region">
+    <header className="ui-titlebar drag-region" data-mac={IS_MAC || undefined}>
       <div className="ui-brand">
         <span className="ui-brand-mark" aria-hidden>
           <img src={logoUrl} alt="" draggable={false} />
@@ -40,7 +41,7 @@ export function TitleBar({
       <button type="button" className="ui-search-trigger no-drag" onClick={onSearch}>
         <Search size={ICON_SIZE.inline} aria-hidden />
         <span>搜索服务、端口或命令</span>
-        <kbd className="ui-kbd">Ctrl K</kbd>
+        <kbd className="ui-kbd">{MOD_LABEL} K</kbd>
       </button>
 
       <div className="ui-tb-right no-drag">
@@ -59,15 +60,19 @@ export function TitleBar({
             </span>
           )}
         </button>
-        <ChromeButton label="最小化" onClick={window.mile.window.minimize}>
-          <Minus size={ICON_SIZE.inline} aria-hidden />
-        </ChromeButton>
-        <ChromeButton label={maximized ? '还原' : '最大化'} onClick={window.mile.window.toggleMaximize}>
-          {maximized ? <Copy size={ICON_SIZE.inline} aria-hidden /> : <Square size={ICON_SIZE.inline} aria-hidden />}
-        </ChromeButton>
-        <ChromeButton label="关闭" danger onClick={window.mile.window.close}>
-          <X size={ICON_SIZE.inline} aria-hidden />
-        </ChromeButton>
+        {!IS_MAC && (
+          <>
+            <ChromeButton label="最小化" onClick={window.mile.window.minimize}>
+              <Minus size={ICON_SIZE.inline} aria-hidden />
+            </ChromeButton>
+            <ChromeButton label={maximized ? '还原' : '最大化'} onClick={window.mile.window.toggleMaximize}>
+              {maximized ? <Copy size={ICON_SIZE.inline} aria-hidden /> : <Square size={ICON_SIZE.inline} aria-hidden />}
+            </ChromeButton>
+            <ChromeButton label="关闭" danger onClick={window.mile.window.close}>
+              <X size={ICON_SIZE.inline} aria-hidden />
+            </ChromeButton>
+          </>
+        )}
       </div>
     </header>
   )

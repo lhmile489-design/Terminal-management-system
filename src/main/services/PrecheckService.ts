@@ -9,27 +9,28 @@ import type {
 } from '@shared/types'
 import { satisfies } from '../lib/semver'
 import { findFreePort } from '../lib/portScanner'
+import { platform } from '../platform'
 import type { DetectService } from './DetectService'
 
 /** 包管理器可执行文件名，只查 PATH 中存在性，绝不执行，PRD §5.1 第 4 项 */
 const PM_BINARIES: Record<PackageManager, string[]> = {
-  npm: ['npm.cmd', 'npm.exe'],
-  pnpm: ['pnpm.cmd', 'pnpm.exe'],
-  yarn: ['yarn.cmd', 'yarn.exe'],
-  bun: ['bun.exe']
+  npm: platform.binaries.npm,
+  pnpm: platform.binaries.pnpm,
+  yarn: platform.binaries.yarn,
+  bun: platform.binaries.bun
 }
 
 /** Spring Boot 预检用到的文件名与可执行文件，与 EntryService 保持一致 */
-const MVNW_CMD = 'mvnw.cmd'
-const GRADLEW_BAT = 'gradlew.bat'
-const JAVA_BINARIES = ['java.exe']
-const SYSTEM_MAVEN_BINARIES = ['mvn.cmd', 'mvn.bat', 'mvn']
-const SYSTEM_GRADLE_BINARIES = ['gradle.cmd', 'gradle.bat', 'gradle']
+const MVNW_CMD = platform.wrapperFile.maven
+const GRADLEW_BAT = platform.wrapperFile.gradle
+const JAVA_BINARIES = platform.binaries.java
+const SYSTEM_MAVEN_BINARIES = platform.binaries.mvn
+const SYSTEM_GRADLE_BINARIES = platform.binaries.gradle
 
 /** 各语言解释器 / 构建工具，与 EntryService 保持一致 */
-const PYTHON_BINARIES = ['python.exe', 'python3.exe', 'py.exe', 'python', 'python3']
-const GO_BINARIES = ['go.exe', 'go']
-const CARGO_BINARIES = ['cargo.exe', 'cargo']
+const PYTHON_BINARIES = platform.binaries.python
+const GO_BINARIES = platform.binaries.go
+const CARGO_BINARIES = platform.binaries.cargo
 
 const MIN_FREE_BYTES = 500 * 1024 * 1024
 
@@ -262,12 +263,12 @@ export class PrecheckService {
     switch (mode) {
       case 'maven-wrapper':
         items.push(
-          await fileItem(join(cwd, MVNW_CMD), 'launchMode', 'Maven Wrapper（mvnw.cmd）存在', MVNW_CMD)
+          await fileItem(join(cwd, MVNW_CMD), 'launchMode', `Maven Wrapper（${MVNW_CMD}）存在`, MVNW_CMD)
         )
         break
       case 'gradle-wrapper':
         items.push(
-          await fileItem(join(cwd, GRADLEW_BAT), 'launchMode', 'Gradle Wrapper（gradlew.bat）存在', GRADLEW_BAT)
+          await fileItem(join(cwd, GRADLEW_BAT), 'launchMode', `Gradle Wrapper（${GRADLEW_BAT}）存在`, GRADLEW_BAT)
         )
         break
       case 'jar': {

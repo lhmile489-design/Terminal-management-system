@@ -7,6 +7,7 @@ import { ActivityDrawer, type ActivityEvent } from './components/ActivityDrawer'
 import { ShortcutOverlay } from './components/ShortcutOverlay'
 import { Button, ConfirmHost, ToastHost, toast } from './components/ui'
 import { hasOpenOverlay } from './lib/overlay'
+import { primaryKey } from './lib/platform'
 import { ICON } from './lib/icons'
 import { Dashboard } from './views/Dashboard'
 import { Services } from './views/Services'
@@ -236,13 +237,13 @@ export function App(): React.JSX.Element {
   // （Ctrl+C/D/Z/L/R 等）。若必须覆盖，需先检查焦点是否在终端内并决定是否 preventDefault。
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
-      if (e.ctrlKey && !e.altKey && (e.key === 'k' || e.key === 'K')) {
+      if (primaryKey(e) && !e.altKey && (e.key === 'k' || e.key === 'K')) {
         e.preventDefault()
         setPaletteOpen((v) => !v)
         return
       }
       // Ctrl+1..5 切换导航（UI-REFACTOR §5.2）。xterm 不占用这组键，终端里也能切
-      if (e.ctrlKey && !e.altKey && !e.shiftKey && /^[1-5]$/.test(e.key)) {
+      if (primaryKey(e) && !e.altKey && !e.shiftKey && /^[1-5]$/.test(e.key)) {
         const target = NAV_HOTKEYS[Number(e.key)]
         if (target) {
           e.preventDefault()
@@ -253,7 +254,7 @@ export function App(): React.JSX.Element {
       // 单键快捷键：焦点在输入框或终端里时不生效，避免打字误触发
       const el = e.target as HTMLElement | null
       const typing = !!el?.closest?.('input, textarea, select, [contenteditable="true"], .xterm')
-      if (e.key === '?' && !e.ctrlKey && !e.altKey && !typing && !hasOpenOverlay()) {
+      if (e.key === '?' && !primaryKey(e) && !e.altKey && !typing && !hasOpenOverlay()) {
         e.preventDefault()
         setKeysOpen(true)
       }
