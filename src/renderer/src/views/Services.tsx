@@ -341,6 +341,7 @@ export function Services({
 
   const groupMenu = (group: ProjectGroup, all: LaunchEntry[]): MenuItem[] => [
     { label: '添加服务到本组', icon: ICON.add, onSelect: () => setAddDialog({ kind: 'service', groupId: group.id }) },
+    { label: '添加任务到本组', icon: ICON.build, onSelect: () => setAddDialog({ kind: 'task', groupId: group.id }) },
     { label: '管理成员', icon: ICON.group, onSelect: () => setAssigning(group) },
     { label: '编辑工作组', icon: ICON.config, onSelect: () => setGroupDialog({ group }) },
     { label: '全部停止', icon: ICON.stop, disabled: !all.some((e) => isLiveStatus(runtimes[e.id]?.status ?? 'idle')), onSelect: () => void stopGroup(group, all) },
@@ -480,7 +481,10 @@ export function Services({
           {filtering ? (
             <Button onClick={() => { setQ(''); setFilter('all'); setStatusF('all') }}>清除筛选</Button>
           ) : (
-            <Button variant="primary" icon={ICON.add} onClick={() => setAddDialog({ kind: 'service' })}>添加服务</Button>
+            <div className="flex gap-2">
+              <Button icon={ICON.build} onClick={() => setAddDialog({ kind: 'task' })}>添加任务</Button>
+              <Button variant="primary" icon={ICON.add} onClick={() => setAddDialog({ kind: 'service' })}>添加服务</Button>
+            </div>
           )}
         </div>
       ) : (
@@ -538,6 +542,7 @@ export function Services({
         <div className="svc-toolbar-acts">
           <Button icon={ICON.group} onClick={() => setGroupDialog({})}>新建工作组</Button>
           <Button icon={ICON.openFolder} onClick={() => void window.mile.dialog.pickImportRoot().then((r) => { if (r) setImporting(r) })}>导入文件夹</Button>
+          <Button icon={ICON.build} onClick={() => setAddDialog({ kind: 'task' })}>添加任务</Button>
           <Button variant="primary" icon={ICON.add} onClick={() => setAddDialog({ kind: 'service' })}>添加服务</Button>
         </div>
       </div>
