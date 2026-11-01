@@ -2,7 +2,7 @@
 
 ## Project Structure & Module Organization
 
-Mile Terminal is a Windows Electron app for local projects, terminals, ports, and processes. Keep privileged work in `src/main/`: `services/` owns domain behavior and `lib/` contains Windows helpers. `src/preload/` exposes the narrow `window.mile` IPC API. `src/renderer/src/` contains React views, components, Zustand stores, and CSS tokens. Shared IPC names and domain types belong in `src/shared/`. Harnesses and fixture projects live under `scripts/`; icons live in `build/` and `resources/`.
+Mile Terminal is a Windows Electron app for local projects, terminals, ports, and processes. Keep privileged work in `src/main/`: `services/` owns domain behavior and `lib/` contains Windows helpers. `src/preload/` exposes the narrow `window.mile` IPC API. `src/renderer/src/` contains React views, components, Zustand stores, and CSS tokens. Shared IPC names and domain types belong in `src/shared/`. Harnesses and fixture projects live under `scripts/`; icons live in `build/` and `resources/`. The standalone React product website lives in `website/` and does not depend on the Electron runtime.
 
 ## Build, Test, and Development Commands
 
@@ -12,6 +12,8 @@ Mile Terminal is a Windows Electron app for local projects, terminals, ports, an
 - `npm run build:win` creates the NSIS installer in `release/` and needs Node 22 LTS.
 - `npm run rebuild` rebuilds the native `node-pty` module after Electron version changes.
 - `npx electron scripts/verify-m10.cjs` runs an end-to-end harness; run `npm run build` first.
+- `cd website && npm run dev` starts the independent product website.
+- `cd website && npm run build` type-checks the website and builds static files into `website/dist/`; validate it in a browser rather than with the Electron harnesses.
 
 ## Coding Style & Naming Conventions
 
