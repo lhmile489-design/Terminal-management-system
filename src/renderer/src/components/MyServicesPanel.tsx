@@ -5,6 +5,8 @@ import { FRAMEWORK_LABEL, STATUS_META, isLiveStatus } from '../lib/entryMeta'
 import { StatusPill } from './StatusPill'
 import { launchCounts } from '../lib/launchStats'
 import { useEntries } from '../store/entries'
+import { useGroups } from '../store/groups'
+import { startEntry } from '../lib/services'
 
 /**
  * Dashboard 上的「我的服务」卡片式列表面板。
@@ -166,14 +168,16 @@ function ActionBtn({
 }
 
 export function MyServicesPanel({
-  onOpenLogs
+  onOpenLogs,
+  onBlocked
 }: {
   onOpenLogs: (sessionId: string) => void
+  /** 预检拦下时调用：总览借此跳到该服务的「诊断」标签 */
+  onBlocked?: (entryId: string) => void
 }): React.JSX.Element | null {
   const entries = useEntries((s) => s.entries)
   const runtimes = useEntries((s) => s.runtimes)
   const busy = useEntries((s) => s.busy)
-  const start = useEntries((s) => s.start)
   const stop = useEntries((s) => s.stop)
   const restart = useEntries((s) => s.restart)
 
@@ -181,7 +185,15 @@ export function MyServicesPanel({
   /** 默认只列最常打开的 5 个，点「查看更多」展开全部 */
   const [showAll, setShowAll] = useState(false)
 
-  const handleStart = useCallback((id: string) => { void start(id) }, [start])
+  // 必须走 startEntry：prod / sandbox 的启动确认在那里（Q14），直接调 store.start 会绕过它
+  const handleStart = useCallback(
+    (entry: LaunchEntry) => {
+      void startEntry(entry, useGroups.getState().groupOf(entry.groupId ?? ''), {
+        onBlocked: (e) => onBlocked?.(e.id)
+      })
+    },
+    [onBlocked]
+  )
   const handleStop = useCallback((id: string) => { void stop(id) }, [stop])
   const handleRestart = useCallback((id: string) => { void restart(id) }, [restart])
 
@@ -250,7 +262,7 @@ export function MyServicesPanel({
                   entry={entry}
                   runtime={runtime}
                   busy={isBusy}
-                  onStart={() => handleStart(entry.id)}
+                  onStart={() => handleStart(entry)}
                   onStop={() => handleStop(entry.id)}
                   onRestart={() => handleRestart(entry.id)}
                   onLogs={() => {

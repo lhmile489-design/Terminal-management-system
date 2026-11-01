@@ -956,6 +956,10 @@ export class EntryService extends EventEmitter {
     if (!entry) throw new Error(`条目不存在：${id}`)
 
     const existing = this.runtimes.get(id)
+    // 停止中的会话马上就会退出，把它当「已在运行」返回 ok 会让调用方以为起来了
+    if (existing?.status === 'stopping') {
+      throw new Error(`${entry.name} 正在停止中，等它停下再启动`)
+    }
     if (existing && isLive(existing.status)) {
       return { ok: true, precheck: existing.precheck ?? { ok: true, items: [] }, runtime: existing }
     }
@@ -994,12 +998,20 @@ export class EntryService extends EventEmitter {
     if (entry.framework === 'spring-boot') {
       throw new Error('Spring Boot 条目不支持运行 npm 脚本')
     }
-    const existing = this.runtimes.get(id)
-    if (existing && isLive(existing.status)) {
-      throw new Error(`${entry.name} 正在运行中，先停止再执行其他脚本`)
-    }
+    this.assertNotLive(entry, '执行其他脚本')
     // 归为 build 型：跑完即止，按退出码判成败，不做端口捕获
     return await this.spawnSession(entry, script, 'build')
+  }
+
+  /**
+   * 一个条目同一时刻只挂一个会话。runtimes 按 entryId 存，第二个会话会覆盖
+   * runtime.sessionId，旧会话就成了 stop() 找不到的孤儿，它退出时还会把新会话的运行态改写。
+   */
+  private assertNotLive(entry: LaunchEntry, action: string): void {
+    const existing = this.runtimes.get(entry.id)
+    if (existing && isLive(existing.status)) {
+      throw new Error(`${entry.name} 正在运行中，先停止再${action}`)
+    }
   }
 
   /** 依赖安装必须由用户显式发起，PRD §5.2 */
@@ -1010,6 +1022,7 @@ export class EntryService extends EventEmitter {
     if (entry.framework === 'spring-boot') {
       throw new Error('Spring Boot 条目不支持 npm 安装会话')
     }
+    this.assertNotLive(entry, '安装依赖')
     return await this.spawnSession(entry, null, 'install')
   }
 
@@ -1034,6 +1047,7 @@ export class EntryService extends EventEmitter {
     if (!VALID_GOALS.includes(goal)) {
       throw new Error(`非法构建目标：${goal}`)
     }
+    this.assertNotLive(entry, '执行构建')
     return await this.spawnMavenGoal(entry, goal)
   }
 
@@ -1049,6 +1063,7 @@ export class EntryService extends EventEmitter {
       throw new Error('packageWithProfile 只支持 Spring Boot 条目')
     }
     assertSafeProfile(profile)
+    this.assertNotLive(entry, '打包')
     return await this.spawnPackageSession(entry, profile)
   }
 
@@ -1207,10 +1222,8 @@ export class EntryService extends EventEmitter {
    * 只改 expectedPort 元数据，不影响实际启动命令（那是项目配置的职责）。
    */
   async switchPort(id: string, newPort: number): Promise<void> {
-    const entry = this.get(id)
-    if (!entry) throw new Error(`条目不存在：${id}`)
-    const updated: LaunchEntry = { ...entry, expectedPort: newPort }
-    this.commit(this.list().map((e) => (e.id === id ? updated : e)))
+    // 走 edit()：端口范围、任务不收端口、运行中锁身份字段都由 sanitizeEdit 统一把关
+    await this.edit(id, { expectedPort: newPort })
   }
 
   /**
@@ -1322,7 +1335,7 @@ export class EntryService extends EventEmitter {
 
     if (kind === 'dev' && entry.kind === 'service') {
       const watch: Watch = { entryId: entry.id, captured: false, timer: null }
-      watch.timer = setTimeout(() => this.onCaptureTimeout(entry.id), PORT_CAPTURE_TIMEOUT_MS)
+      watch.timer = setTimeout(() => this.onCaptureTimeout(entry.id, session.id), PORT_CAPTURE_TIMEOUT_MS)
       this.watches.set(session.id, watch)
     } else {
       this.watches.set(session.id, { entryId: entry.id, captured: true, timer: null })
@@ -1594,17 +1607,22 @@ export class EntryService extends EventEmitter {
      */
     const own = this.ownListenPids(id)
     await this.stop(id)
-    await this.waitSessionExit(id)
+    // 停不下来就不能接着 start：旧会话还挂着时 start() 会被拒，硬起只会得到「重启成功」的假象
+    if (!(await this.waitSessionExit(id))) {
+      throw new Error(`${entry.name} 在 8 秒内没有停下，已取消重启，请稍后再试或强制关闭`)
+    }
     if (port) await this.waitPortReleased(port, own, id)
     return await this.start(id)
   }
 
-  private waitSessionExit(id: string, timeoutMs = 8000): Promise<void> {
+  /** 等条目退出活跃态；超时返回 false */
+  private waitSessionExit(id: string, timeoutMs = 8000): Promise<boolean> {
     const deadline = Date.now() + timeoutMs
     return new Promise((resolve) => {
       const poll = (): void => {
         const status = this.runtimes.get(id)?.status
-        if (!status || !isLive(status) || Date.now() > deadline) return resolve()
+        if (!status || !isLive(status)) return resolve(true)
+        if (Date.now() > deadline) return resolve(false)
         setTimeout(poll, 200)
       }
       poll()
@@ -1674,13 +1692,23 @@ export class EntryService extends EventEmitter {
     if (watch.timer) clearTimeout(watch.timer)
     watch.timer = null
 
+    // 只认条目当前挂着的会话：旧会话的迟到输出不能改写新会话的运行态
+    if (!this.isCurrentSession(watch.entryId, sessionId)) return
     this.setRuntime(watch.entryId, { status: 'running', port, portUnknown: false })
-    this.update(watch.entryId, { expectedPort: port })
+    // 端口没变就不写盘：每次启动都落盘会白白轮转一次 .bak
+    if (this.get(watch.entryId)?.expectedPort !== port) {
+      this.update(watch.entryId, { expectedPort: port })
+    }
   }
 
-  private onCaptureTimeout(entryId: string): void {
+  private isCurrentSession(entryId: string, sessionId: string): boolean {
+    return this.runtimes.get(entryId)?.sessionId === sessionId
+  }
+
+  private onCaptureTimeout(entryId: string, sessionId: string): void {
     const runtime = this.runtimes.get(entryId)
     if (!runtime || runtime.status !== 'starting') return
+    if (runtime.sessionId !== sessionId) return
     // 进程还活着就不判失败，只标端口未知
     this.setRuntime(entryId, { status: 'running', portUnknown: true })
   }
@@ -1690,6 +1718,8 @@ export class EntryService extends EventEmitter {
     if (!watch) return
     if (watch.timer) clearTimeout(watch.timer)
     this.watches.delete(sessionId)
+    // 被新会话顶掉的旧会话：留档、运行态、退出码、通知都属于新会话，这里一概不碰
+    if (!this.isCurrentSession(watch.entryId, sessionId)) return
 
     // 先留档再清运行态，诊断面板要在会话消失后仍能回顾
     if (watch.firstErrorLine) this.lastErrorLine.set(watch.entryId, watch.firstErrorLine)

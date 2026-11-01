@@ -158,7 +158,10 @@ export function Dashboard({
 
       {/* 服务操作台在左（主操作），新发现端口与关注进程叠在右侧 */}
       <div className="dash-ops">
-        <MyServicesPanel onOpenLogs={onOpenLogs ?? (() => {})} />
+        <MyServicesPanel
+          onOpenLogs={onOpenLogs ?? (() => {})}
+          onBlocked={onFocusService ? (id) => onFocusService(id, 'diagnose') : undefined}
+        />
         <div className="dash-side">
           <DiscoveredListeners onRequestAdd={onRequestAdd} />
           <WatchedProcesses />
