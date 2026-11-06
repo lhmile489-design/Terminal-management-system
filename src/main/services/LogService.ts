@@ -26,6 +26,8 @@ export class LogService {
   private partial = new Map<string, string>()
   /** 已退出会话的收尾计时器，见 scheduleFinalFlush */
   private finalizers = new Map<string, NodeJS.Timeout>()
+  /** 每切出一行可见行就通知一次，输出告警在这里订阅，不另写一套切行与去 ANSI */
+  private lineListeners: ((line: LogLine) => void)[] = []
 
   constructor(private sessions: SessionService) {
     this.sessions.on('data', ({ id, chunk }: { id: string; chunk: string }) =>
@@ -71,7 +73,7 @@ export class LogService {
     if (!text) return
 
     const meta = this.sessions.list().find((s) => s.id === sessionId)
-    this.lines.push({
+    const line: LogLine = {
       seq: ++this.seq,
       sessionId,
       entryId: meta?.projectId ?? null,
@@ -79,13 +81,26 @@ export class LogService {
       ts: Date.now(),
       level: level(text),
       text: text.slice(0, MAX_LINE_CHARS)
-    })
+    }
+    this.lines.push(line)
+    // 订阅方出错不能拖垮日志收集
+    for (const fn of this.lineListeners) {
+      try {
+        fn(line)
+      } catch {
+        // 吞掉：告警是附加功能
+      }
+    }
 
     if (this.lines.length > MAX_LINES) {
       const cut = this.lines.length - MAX_LINES
       this.lines.splice(0, cut)
       this.dropped += cut
     }
+  }
+
+  onLine(fn: (line: LogLine) => void): void {
+    this.lineListeners.push(fn)
   }
 
   /**

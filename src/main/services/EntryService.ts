@@ -14,6 +14,7 @@ import {
   type EntryStartResult,
   type EntryStatus,
   type Framework,
+  type GroupEnvironment,
   type LaunchEntry,
   type LaunchMode,
   type MavenGoal,
@@ -145,8 +146,23 @@ const OUTPUT_DIR_CANDIDATES = ['dist', 'build', 'out', '.next', '.output', 'rele
 const EDITABLE = new Set<EditableEntryField>([
   'name', 'category', 'groupId', 'pinned', 'kind', 'path', 'cwd', 'script', 'scripts',
   'framework', 'packageManager', 'env', 'icon', 'imageId', 'expectedPort', 'outputDir',
-  'launchMode', 'jarPath', 'registerOnly', 'startAfter'
+  'launchMode', 'jarPath', 'registerOnly', 'startAfter',
+  'healthCheck', 'autoRestart', 'alertKeywords', 'alertOnErrors'
 ])
+
+/** 输出告警关键词数量与长度上限：每块会话输出都要逐个匹配 */
+const MAX_ALERT_KEYWORDS = 10
+const MAX_ALERT_KEYWORD_LEN = 64
+
+/**
+ * 健康检查路径白名单：以 `/` 开头、不以 `//` 开头（那会被当成协议相对地址里的主机），
+ * 1–256 字符，只允许非保留字符加 `/ ? = & %`。空白、`@`、`#`、`\` 一律不收。
+ */
+const SAFE_HEALTH_PATH = /^\/(?!\/)[A-Za-z0-9\-._~/?=&%]{0,255}$/
+
+function isSafeHealthPath(p: string): boolean {
+  return SAFE_HEALTH_PATH.test(p)
+}
 
 /** 决定「这张卡片是谁」的字段，运行中不可改，PRD §4.6 */
 const IDENTITY_FIELDS = ['kind', 'path', 'cwd', 'script', 'packageManager', 'expectedPort', 'env', 'launchMode', 'jarPath'] as const
@@ -192,7 +208,11 @@ const FIELD_LABEL: Partial<Record<EditableEntryField, string>> = {
   launchMode: '启动方式',
   jarPath: 'jar 路径',
   registerOnly: '仅登记',
-  startAfter: '先等待'
+  startAfter: '先等待',
+  healthCheck: '健康检查',
+  autoRestart: '自动重启',
+  alertKeywords: '告警关键词',
+  alertOnErrors: '错误行告警'
 }
 
 function fieldLabel(field: EditableEntryField): string {
@@ -227,6 +247,13 @@ const PORT_RELEASE_TIMEOUT_MS = 5000
 /** 会话退出时留下的可见输出行数（只在内存），诊断里「退出前输出」用 */
 const TAIL_LINES = 30
 
+/** 自动重启的退避（第 1、2、3 次），滑动窗口与上限，PRD-FEATURE-UPGRADE P0-2 */
+const AUTO_RESTART_BACKOFF_MS = [2000, 8000, 30_000]
+const AUTO_RESTART_WINDOW_MS = 10 * 60_000
+const AUTO_RESTART_MAX = 3
+/** 每个条目保留最近几次启动耗时 */
+const READY_HISTORY = 10
+
 /** 一次启动要执行的命令，file + args 数组形式，绝不拼 shell 字符串 */
 interface LaunchCommand {
   file: string
@@ -251,6 +278,11 @@ interface Watch {
    * 退出码为 0 时，主进程扫描 target/ 写入 lastBuiltJar，供渲染层展示操作横幅。
    */
   isPackage?: boolean
+  /**
+   * 这是服务的 dev 会话。构建、安装、runScript 会话也挂在服务条目上，非零退出同样会被
+   * 判成 crashed；自动重启只认这一种，否则一次失败的构建会被当成崩溃反复拉起 dev 服务。
+   */
+  dev?: boolean
 }
 
 /**
@@ -266,9 +298,20 @@ export class EntryService extends EventEmitter {
   /** 会话退出后留档，供诊断面板回顾 —— watches 在退出时就清了 */
   private lastErrorLine = new Map<string, string>()
   private lastRunMs = new Map<string, number>()
+  /** 最近 READY_HISTORY 次启动耗时（毫秒），只在内存；停止、崩溃后保留，应用重启后清空 */
+  private readyHistory = new Map<string, number[]>()
+  /** 端口已捕获、正在等健康检查首次 ok 的条目 */
+  private awaitingHealthReady = new Set<string>()
   /** 退出前最后 TAIL_LINES 行可见输出与最后一个错误行，只在内存，不落盘 */
   private lastTail = new Map<string, string[]>()
   private lastErrorTail = new Map<string, string>()
+  /** 自动重启状态，只在内存，应用重启后清零 */
+  private quitting = false
+  private restartTimers = new Map<string, NodeJS.Timeout>()
+  /** 每个条目最近的自动重启时刻，按 10 分钟滑动窗口计数 */
+  private restartHistory = new Map<string, number[]>()
+  /** 正在由自动重启发起的 start()，用来区分「手动启动」 */
+  private autoStarting = new Set<string>()
   private precheck: PrecheckService
   private images = new ImageService()
 
@@ -397,8 +440,18 @@ export class EntryService extends EventEmitter {
 
     if (clean.startAfter !== undefined) this.assertStartAfter(id, clean.startAfter)
 
+    // 自动重启只在 dev / 未分组环境开放。这里拦是给界面一个明确的报错；
+    // 权威判断在排程时再读一次工作组环境，用户事后改了工作组环境也立即生效
+    if (clean.autoRestart === true) {
+      const groupId = 'groupId' in clean ? clean.groupId : target.groupId
+      const env = this.groupEnv(groupId)
+      if (env !== 'dev') throw new Error(`${target.name} 所在工作组是${env === 'prod' ? '生产' : '沙箱'}环境，不支持自动重启`)
+    }
+
     const next = this.update(id, clean)
     if (!next) throw new Error(`条目不存在：${id}`)
+    // 编辑过条目就撤掉排队中的重启：重启要按新配置由用户决定，不替用户拿旧计划去起
+    this.clearRestartTimer(id)
     return next
   }
 
@@ -609,6 +662,40 @@ export class EntryService extends EventEmitter {
           out.startAfter = ids.length ? ids : undefined
           break
         }
+        case 'healthCheck': {
+          if (value === null) {
+            out.healthCheck = undefined
+            break
+          }
+          if (typeof value !== 'object' || Array.isArray(value)) throw new Error('健康检查必须是对象')
+          const { path, enabled } = value as { path?: unknown; enabled?: unknown }
+          if (typeof enabled !== 'boolean') throw new Error('健康检查开关必须是布尔值')
+          if (typeof path !== 'string' || !isSafeHealthPath(path)) {
+            throw new Error('健康检查路径必须以 / 开头，且只含字母、数字与 - . _ ~ / ? = & %')
+          }
+          // 只取这两个键：主机、端口、协议一律不收，渲染层给不出别的目标
+          out.healthCheck = { path, enabled }
+          break
+        }
+        case 'alertKeywords': {
+          if (value === null) {
+            out.alertKeywords = undefined
+            break
+          }
+          if (!Array.isArray(value) || value.some((v) => typeof v !== 'string')) {
+            throw new Error('告警关键词必须是字符串数组')
+          }
+          const words = [...new Set((value as string[]).map((v) => v.trim()).filter(Boolean))]
+          if (words.length > MAX_ALERT_KEYWORDS) throw new Error(`告警关键词最多 ${MAX_ALERT_KEYWORDS} 个`)
+          for (const w of words) {
+            if (w.length > MAX_ALERT_KEYWORD_LEN) throw new Error(`告警关键词不能超过 ${MAX_ALERT_KEYWORD_LEN} 个字符`)
+            if (/[\u0000-\u001F\u007F]/.test(w)) throw new Error('告警关键词不能包含控制字符')
+          }
+          out.alertKeywords = words.length ? words : undefined
+          break
+        }
+        case 'autoRestart':
+        case 'alertOnErrors':
         case 'registerOnly':
         case 'pinned':
           if (typeof value !== 'boolean') throw new Error(`${fieldLabel(key)}必须是布尔值`)
@@ -621,8 +708,24 @@ export class EntryService extends EventEmitter {
     if (out.kind === 'task') {
       out.expectedPort = undefined
       out.icon = undefined
+      // 任务跑完就退出，健康检查与自动重启对它没有意义
+      out.healthCheck = undefined
+      out.autoRestart = undefined
+    }
+    const nextKind = out.kind ?? target.kind
+    if (nextKind === 'task' && (out.autoRestart === true || out.healthCheck !== undefined)) {
+      throw new Error('任务不支持健康检查与自动重启')
     }
     return out
+  }
+
+  /**
+   * 条目所属工作组的环境。未分组、或工作组已被删掉时按 dev 处理 ——
+   * 与渲染层 confirmEnv 的口径一致：没有工作组就没有沙箱 / 生产的确认要求。
+   */
+  private groupEnv(groupId: string | undefined): GroupEnvironment {
+    if (!groupId) return 'dev'
+    return this.config.get().groups.find((g) => g.id === groupId)?.env ?? 'dev'
   }
 
   /** startAfter：不能指向自己、不能指向不存在的条目、不能成环（沿已有配置做深度优先） */
@@ -703,6 +806,9 @@ export class EntryService extends EventEmitter {
   }
 
   remove(id: string): void {
+    // 先撤排队中的重启，且不推运行态：条目马上就没了，推出去会把已删除条目写回界面
+    this.clearRestartTimer(id, false)
+    this.restartHistory.delete(id)
     const runtime = this.runtimes.get(id)
     if (runtime?.sessionId) {
       // 先摘掉 watch：会话退出时 onSessionExit 找不到它就直接返回，
@@ -715,6 +821,8 @@ export class EntryService extends EventEmitter {
     this.runtimes.delete(id)
     this.lastErrorLine.delete(id)
     this.lastRunMs.delete(id)
+    this.readyHistory.delete(id)
+    this.awaitingHealthReady.delete(id)
     this.lastTail.delete(id)
     this.lastErrorTail.delete(id)
     this.commit(this.config.get().entries.filter((e) => e.id !== id))
@@ -954,6 +1062,15 @@ export class EntryService extends EventEmitter {
   async start(id: string): Promise<EntryStartResult> {
     const entry = this.get(id)
     if (!entry) throw new Error(`条目不存在：${id}`)
+    // 退出流程中一律不起新会话：disposeAll 正在杀进程树，这时起的会话会留在后台占端口
+    if (this.quitting) throw new Error('应用正在退出，不再启动服务')
+
+    // 手动启动：撤掉排队中的重启，重新计数，清掉「已停止自动重启」
+    if (!this.autoStarting.has(id)) {
+      this.clearRestartTimer(id, false)
+      this.restartHistory.delete(id)
+      if (this.runtimes.get(id)?.autoRestartGaveUp) this.setRuntime(id, { autoRestartGaveUp: false })
+    }
 
     const existing = this.runtimes.get(id)
     // 停止中的会话马上就会退出，把它当「已在运行」返回 ok 会让调用方以为起来了
@@ -1330,11 +1447,16 @@ export class EntryService extends EventEmitter {
       portUnknown: false,
       startedAt: session.startedAt,
       exitCode: undefined,
-      precheck
+      precheck,
+      // 新一次 dev 启动：清掉上一次的耗时，历史保留；构建 / 安装会话不动它
+      ...(kind === 'dev'
+        ? { readyMs: undefined, readySource: undefined, readyHistory: this.readyHistory.get(entry.id) }
+        : {})
     })
+    if (kind === 'dev') this.awaitingHealthReady.delete(entry.id)
 
     if (kind === 'dev' && entry.kind === 'service') {
-      const watch: Watch = { entryId: entry.id, captured: false, timer: null }
+      const watch: Watch = { entryId: entry.id, captured: false, timer: null, dev: true }
       watch.timer = setTimeout(() => this.onCaptureTimeout(entry.id, session.id), PORT_CAPTURE_TIMEOUT_MS)
       this.watches.set(session.id, watch)
     } else {
@@ -1576,6 +1698,8 @@ export class EntryService extends EventEmitter {
   // ── 停止与重启 ──────────────────────────────────────────────────────────
 
   async stop(id: string): Promise<EntryRuntime> {
+    // 用户停止（含托盘、面板、重启的前半段）：排队中的自动重启一并撤掉
+    this.clearRestartTimer(id)
     const runtime = this.runtimes.get(id)
     if (!runtime?.sessionId || !runtime.pid) {
       return this.setRuntime(id, { status: 'stopped' })
@@ -1635,8 +1759,10 @@ export class EntryService extends EventEmitter {
    * 真正监听端口的常是 cmd.exe → npm → node 链条末端的 node.exe，而条目记的是根
    * PID，所以不能只看 runtime.pid。采集快照已按会话归属把 entryId 回填到叶子进程，
    * 直接用那份结论。
+   *
+   * 公开给 HealthService 选探测目标用：只读，返回新建的 Set，调用方改不到运行态。
    */
-  private ownListenPids(id: string): Set<number> {
+  ownListenPids(id: string): Set<number> {
     const own = new Set<number>()
     const pid = this.runtimes.get(id)?.pid
     if (pid) own.add(pid)
@@ -1695,6 +1821,9 @@ export class EntryService extends EventEmitter {
     // 只认条目当前挂着的会话：旧会话的迟到输出不能改写新会话的运行态
     if (!this.isCurrentSession(watch.entryId, sessionId)) return
     this.setRuntime(watch.entryId, { status: 'running', port, portUnknown: false })
+    // 启动耗时（P1-2）：开了健康检查就等首次 ok 再记，更接近真正可用；否则取端口打印出来的这一刻
+    if (this.get(watch.entryId)?.healthCheck?.enabled) this.awaitingHealthReady.add(watch.entryId)
+    else this.recordReady(watch.entryId, 'port')
     // 端口没变就不写盘：每次启动都落盘会白白轮转一次 .bak
     if (this.get(watch.entryId)?.expectedPort !== port) {
       this.update(watch.entryId, { expectedPort: port })
@@ -1720,6 +1849,8 @@ export class EntryService extends EventEmitter {
     this.watches.delete(sessionId)
     // 被新会话顶掉的旧会话：留档、运行态、退出码、通知都属于新会话，这里一概不碰
     if (!this.isCurrentSession(watch.entryId, sessionId)) return
+    // 没等到健康检查 ok 就退出了：这次没有可信的就绪时刻
+    if (watch.dev) this.awaitingHealthReady.delete(watch.entryId)
 
     // 先留档再清运行态，诊断面板要在会话消失后仍能回顾
     if (watch.firstErrorLine) this.lastErrorLine.set(watch.entryId, watch.firstErrorLine)
@@ -1776,7 +1907,103 @@ export class EntryService extends EventEmitter {
     // 服务自己崩溃（非用户停止、非任务）：同一个结构性理由，一个会话只会走到这一次
     if (entry && entry.kind !== 'task' && status === 'crashed' && !watch.stoppedByUser) {
       this.emit('crashed', { entryId: entry.id, name: entry.name, exitCode, sessionId, lastErrorLine: this.lastErrorTail.get(entry.id) })
+      if (watch.dev) this.maybeScheduleRestart(entry)
     }
+  }
+
+  // ── 崩溃自动重启（PRD-FEATURE-UPGRADE P0-2） ────────────────────────────
+
+  /**
+   * 退出流程开始：之后不再排任何重启，已排的全部撤掉。
+   *
+   * 必须在 sessions.disposeAll() **之前**调用。退出流程杀会话不经 stop()，不会设
+   * stoppedByUser，这些会话会被判成 crashed —— 没有这个标记，每次退出都会触发自动重启。
+   */
+  beginQuit(): void {
+    this.quitting = true
+    for (const id of [...this.restartTimers.keys()]) this.clearRestartTimer(id)
+  }
+
+  /** 用户取消排队中的重启。只撤计时器，不改条目配置 */
+  cancelAutoRestart(id: string): EntryRuntime | null {
+    if (!this.get(id)) throw new Error(`条目不存在：${id}`)
+    this.clearRestartTimer(id)
+    return this.runtimes.get(id) ?? null
+  }
+
+  /**
+   * 崩溃后是否排一次重启。全部满足才排：未在退出；条目是服务且开了 autoRestart；
+   * **此刻**读到的工作组环境是 dev（用户事后把工作组改成沙箱 / 生产也立即生效）；
+   * 最近 10 分钟内的重启次数没到上限。健康检查失败不走这里，只有会话退出才算崩溃。
+   */
+  private maybeScheduleRestart(entry: LaunchEntry): void {
+    if (this.quitting) return
+    if (entry.kind !== 'service' || entry.autoRestart !== true || entry.registerOnly) return
+    if (this.groupEnv(entry.groupId) !== 'dev') return
+
+    const now = Date.now()
+    const history = (this.restartHistory.get(entry.id) ?? []).filter(
+      (t) => now - t < AUTO_RESTART_WINDOW_MS
+    )
+    if (history.length >= AUTO_RESTART_MAX) {
+      this.restartHistory.set(entry.id, history)
+      this.setRuntime(entry.id, { autoRestart: null, autoRestartGaveUp: true })
+      this.emit('autoRestartGaveUp', { entryId: entry.id, name: entry.name })
+      return
+    }
+
+    const attempt = history.length + 1
+    const delay = AUTO_RESTART_BACKOFF_MS[Math.min(attempt, AUTO_RESTART_BACKOFF_MS.length) - 1]
+    history.push(now)
+    this.restartHistory.set(entry.id, history)
+
+    this.clearRestartTimer(entry.id, false)
+    const timer = setTimeout(() => {
+      this.restartTimers.delete(entry.id)
+      this.setRuntime(entry.id, { autoRestart: null })
+      if (this.quitting) return
+      // 与手动启动同一条路径：预检、脚本声明校验、命令构造全部照旧
+      this.autoStarting.add(entry.id)
+      this.start(entry.id)
+        .catch((err: unknown) => {
+          this.emit('warning', `${entry.name} 自动重启失败：${err instanceof Error ? err.message : String(err)}`)
+        })
+        .finally(() => this.autoStarting.delete(entry.id))
+    }, delay)
+    this.restartTimers.set(entry.id, timer)
+    this.setRuntime(entry.id, {
+      autoRestart: { nextAt: now + delay, attempt, max: AUTO_RESTART_MAX },
+      autoRestartGaveUp: false
+    })
+  }
+
+  // ── 启动耗时（PRD-FEATURE-UPGRADE P1-2） ─────────────────────────────────
+
+  /**
+   * HealthService 首次探到 ok 时调用。只认「端口已捕获、正在等健康检查」的那一次，
+   * 之后每 15 秒的 ok 都不再算启动耗时。
+   */
+  noteHealthOk(id: string): void {
+    if (!this.awaitingHealthReady.has(id)) return
+    this.recordReady(id, 'health')
+  }
+
+  private recordReady(id: string, source: 'port' | 'health'): void {
+    this.awaitingHealthReady.delete(id)
+    const rt = this.runtimes.get(id)
+    if (!rt?.startedAt || rt.status !== 'running') return
+    const ms = Math.max(0, Date.now() - rt.startedAt)
+    const history = [...(this.readyHistory.get(id) ?? []), ms].slice(-READY_HISTORY)
+    this.readyHistory.set(id, history)
+    this.setRuntime(id, { readyMs: ms, readySource: source, readyHistory: history })
+  }
+
+  private clearRestartTimer(id: string, publish = true): void {
+    const timer = this.restartTimers.get(id)
+    if (!timer) return
+    clearTimeout(timer)
+    this.restartTimers.delete(id)
+    if (publish && this.runtimes.has(id)) this.setRuntime(id, { autoRestart: null })
   }
 
   // ── 诊断 ────────────────────────────────────────────────────────────────

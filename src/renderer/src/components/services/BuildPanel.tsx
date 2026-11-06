@@ -38,6 +38,7 @@ import { PrecheckPanel } from '../PrecheckPanel'
 import { useEntries } from '../../store/entries'
 import { useGroups } from '../../store/groups'
 import { useEntryFix } from '../../lib/useEntryFix'
+import { copyText } from '../../lib/clipboard'
 
 // ─── 构建目标定义 ─────────────────────────────────────────────────────────────
 
@@ -290,9 +291,10 @@ export function ConsolePanel({ entry }: { entry: LaunchEntry }): React.JSX.Eleme
   }, [isJarMode, entry.id, runtime.startedAt])   // startedAt 变化意味着有新构建/启动
 
   // 复制反馈
-  const [copiedHint, setCopiedHint] = useState<string | null>(null)
-  const showCopied = useCallback((hint: string) => {
-    setCopiedHint(hint)
+  // 成败分开存：失败时不能套「已复制」的前缀和成功色
+  const [copiedHint, setCopiedHint] = useState<{ ok: boolean; text: string } | null>(null)
+  const showCopied = useCallback((ok: boolean, text: string) => {
+    setCopiedHint({ ok, text })
     setTimeout(() => setCopiedHint(null), 2000)
   }, [])
 
@@ -308,11 +310,9 @@ export function ConsolePanel({ entry }: { entry: LaunchEntry }): React.JSX.Eleme
     if (s.action === 'switch-mode' && s.switchMode) {
       await handleModeChange(s.switchMode)
     } else if (s.action === 'copy-text' && s.copyText) {
-      await navigator.clipboard.writeText(s.copyText)
-      showCopied(s.copyText)
+      showCopied(await copyText(s.copyText), s.copyText)
     } else if (s.action === 'copy-pom') {
-      await navigator.clipboard.writeText(POM_PLUGIN_SNIPPET)
-      showCopied('pom.xml 插件配置已复制')
+      showCopied(await copyText(POM_PLUGIN_SNIPPET), 'pom.xml 插件配置')
     }
   }, [handleModeChange, showCopied])
 
@@ -524,9 +524,11 @@ export function ConsolePanel({ entry }: { entry: LaunchEntry }): React.JSX.Eleme
                   </button>
                 ))}
               </div>
-              {copiedHint && (
-                <p className="mt-1.5 text-[12px] text-live">✓ 已复制：{copiedHint}</p>
-              )}
+              {copiedHint && (copiedHint.ok ? (
+                <p className="mt-1.5 text-[12px] text-live" data-copy-hint="ok">✓ 已复制：{copiedHint.text}</p>
+              ) : (
+                <p className="mt-1.5 text-[12px] text-fault" data-copy-hint="fail" role="alert">复制失败，请重试</p>
+              ))}
             </div>
           )}
         </div>

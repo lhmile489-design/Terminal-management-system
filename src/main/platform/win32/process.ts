@@ -27,7 +27,7 @@ export function readListenPorts(timeoutMs = 4000): Promise<ListenRow[]> {
 
 function parseNetstat(stdout: string): ListenRow[] {
   const rows: ListenRow[] = []
-  const seen = new Set<string>()
+  const seen = new Map<string, ListenRow>()
 
   for (const line of stdout.split(/\r?\n/)) {
     if (!/LISTENING/i.test(line)) continue
@@ -38,12 +38,19 @@ function parseNetstat(stdout: string): ListenRow[] {
     const port = Number(local.slice(local.lastIndexOf(':') + 1))
     const pid = Number(f[f.length - 1])
     if (!Number.isInteger(port) || port < 1 || !Number.isInteger(pid) || pid <= 4) continue
+    // netstat 的 IPv6 本地地址一律带方括号：[::]:3000、[::1]:5174
+    const family: 4 | 6 = local.startsWith('[') ? 6 : 4
 
-    // IPv4 与 IPv6 会各出一行同 (pid, port)
+    // IPv4 与 IPv6 会各出一行同 (pid, port)：合并成一行，只记下两族都在
     const key = `${pid}:${port}`
-    if (seen.has(key)) continue
-    seen.add(key)
-    rows.push({ port, pid })
+    const existing = seen.get(key)
+    if (existing) {
+      if (!existing.families.includes(family)) existing.families.push(family)
+      continue
+    }
+    const row: ListenRow = { port, pid, families: [family] }
+    seen.set(key, row)
+    rows.push(row)
   }
   return rows
 }

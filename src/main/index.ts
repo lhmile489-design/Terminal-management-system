@@ -1,5 +1,5 @@
-import { join } from 'node:path'
-import { app, BrowserWindow, dialog, globalShortcut, ipcMain, Menu, Notification, shell, Tray } from 'electron'
+import { isAbsolute, join, relative } from 'node:path'
+import { app, BrowserWindow, clipboard, dialog, globalShortcut, ipcMain, Menu, Notification, shell, Tray } from 'electron'
 import type { IpcMainEvent, IpcMainInvokeEvent } from 'electron'
 import { Channels } from '@shared/channels'
 import type {
@@ -14,7 +14,8 @@ import type {
   Settings,
   ThemePreference,
   ProjectLink,
-  FocusEntryRequest
+  FocusEntryRequest,
+  OutputAlert
 } from '@shared/types'
 import { GROUP_ENV_LABEL, PROJECT_LINKS } from '@shared/types'
 import { SessionService } from './services/SessionService'
@@ -27,6 +28,8 @@ import { EntryService } from './services/EntryService'
 import { LogService } from './services/LogService'
 import { GroupService } from './services/GroupService'
 import { ConfigTransferService } from './services/ConfigTransferService'
+import { HealthService } from './services/HealthService'
+import { AlertService } from './services/AlertService'
 import { loadWindowState, trackWindowState, MIN_WIDTH, MIN_HEIGHT } from './lib/windowState'
 import { platform } from './platform'
 
@@ -53,6 +56,8 @@ let scanner: ScannerService
 let entries: EntryService
 let groups: GroupService
 let transfer: ConfigTransferService
+let health: HealthService
+let alerts: AlertService
 let mainWindow: BrowserWindow | null = null
 let tray: Tray | null = null
 /** before-quit 已触发：close 事件不再拦成「收起到托盘」 */
@@ -95,8 +100,9 @@ function createWindow(): void {
     if (mainWindow === win) mainWindow = null
   })
 
-  const notifyMaximize = (): void =>
-    win.webContents.send(Channels.windowMaximizeChanged, win.isMaximized())
+  const notifyMaximize = (): void => {
+    if (!win.isDestroyed()) win.webContents.send(Channels.windowMaximizeChanged, win.isMaximized())
+  }
   win.on('maximize', notifyMaximize)
   win.on('unmaximize', notifyMaximize)
 
@@ -275,6 +281,10 @@ function createTray(): void {
  * 条目出主进程前抹掉环境变量的值，只留键名（值恒为空串）。
  * 渲染层拿不到密钥：编辑时用合并补丁（字符串覆盖、null 删除、没提的键保持原值）。
  */
+function isPort(v: unknown): v is number {
+  return Number.isInteger(v) && (v as number) >= 1 && (v as number) <= 65535
+}
+
 function redactEntry(e: LaunchEntry): LaunchEntry {
   return { ...e, env: Object.fromEntries(Object.keys(e.env ?? {}).map((k) => [k, ''])) }
 }
@@ -330,10 +340,24 @@ function registerIpc(): void {
   })
   ipc.handle(Channels.sessionHistory, (_e, id: string) => sessions.history(id))
   ipc.handle(Channels.sessionStop, (_e, id: string) => sessions.stop(id))
-  ipc.on(Channels.sessionWrite, (_e, id: string, data: string) => sessions.write(id, data))
-  ipc.on(Channels.sessionResize, (_e, id: string, cols: number, rows: number) =>
-    sessions.resize(id, cols, rows)
-  )
+  // 单向通道没有回执，非法参数静默丢弃。单次写入 1 MiB 上限，远超任何一次粘贴
+  ipc.on(Channels.sessionWrite, (_e, id: unknown, data: unknown) => {
+    if (typeof id !== 'string' || typeof data !== 'string' || data.length > 1024 * 1024) return
+    sessions.write(id, data)
+  })
+  ipc.on(Channels.sessionResize, (_e, id: unknown, cols: unknown, rows: unknown) => {
+    const dim = (n: unknown): boolean => Number.isInteger(n) && (n as number) >= 1 && (n as number) <= 1000
+    if (typeof id !== 'string' || !dim(cols) || !dim(rows)) return
+    sessions.resize(id, cols as number, rows as number)
+  })
+
+  // 只写不读：渲染层拿不到剪贴板原有内容。长度设上限，避免一次塞进几十 MB
+  ipc.handle(Channels.clipboardWriteText, (_e, text: unknown) => {
+    if (typeof text !== 'string') throw new Error('剪贴板内容必须是字符串')
+    if (text.length > CLIPBOARD_MAX_CHARS) throw new Error('剪贴板内容过长')
+    clipboard.writeText(text)
+    return true
+  })
 
   // 仅允许 localhost 的 http，端口取整校验 —— 不接受渲染层传任意 URL，PRD §11
   ipc.on(Channels.shellOpenLocalhost, (_e, port: unknown) => {
@@ -372,7 +396,12 @@ function registerIpc(): void {
     redactEntry(await entries.edit(id, patch))
   )
   ipc.handle(Channels.entryRemove, (_e, id: string) => entries.remove(id))
-  ipc.handle(Channels.entryReorder, (_e, ids: string[]) => redactList(entries.reorder(ids)))
+  ipc.handle(Channels.entryReorder, (_e, ids: unknown) => {
+    if (!Array.isArray(ids) || ids.length > 200 || ids.some((x) => typeof x !== 'string')) {
+      throw new Error('ids 必须是条目 id 数组')
+    }
+    return redactList(entries.reorder(ids as string[]))
+  })
   ipc.handle(Channels.entryDetect, (_e, path: string) => detect.detect(path))
   ipc.handle(Channels.entryPrecheck, (_e, id: string) => entries.runPrecheck(id))
   ipc.handle(Channels.entryStart, (_e, id: string) => entries.start(id))
@@ -483,15 +512,43 @@ function registerIpc(): void {
   entries.on('runtime', (runtime) =>
     sendToRenderer(Channels.entryRuntimeChanged, runtime)
   )
+  // 健康检查结果只在内存，只用于展示；渲染层启动时先拉一次全量
+  health.on('health', (h) => sendToRenderer(Channels.entryHealth, h))
+  ipc.handle(Channels.entryHealthList, () => health.list())
+  // 只收 entryId；只撤排队中的计时器，不改条目配置
+  ipc.handle(Channels.entryCancelAutoRestart, (_e, id: unknown) => {
+    if (typeof id !== 'string' || id.length === 0 || id.length > 64) throw new Error('条目 id 非法')
+    return entries.cancelAutoRestart(id)
+  })
+  entries.on('autoRestartGaveUp', (e: { entryId: string; name: string }) =>
+    notifyEntryProblem({
+      entryId: e.entryId,
+      title: `已停止自动重启 · ${e.name}`,
+      body: '10 分钟内已重启 3 次仍然退出，点击查看输出',
+      tab: 'output'
+    })
+  )
+  // 输出告警：命中立即进实时动态；系统通知由 AlertService 延迟 3 秒发出，期间崩溃则撤掉
+  alerts.on('alert', (a) => sendToRenderer(Channels.entryAlert, a))
+  alerts.on('notify', (a: OutputAlert) =>
+    notifyEntryProblem({
+      entryId: a.entryId,
+      title: `输出告警 · ${a.name}`,
+      body: `${a.keyword === null ? '错误行' : `命中「${a.keyword}」`}：${a.line.slice(0, 120)}`,
+      tab: 'output'
+    })
+  )
   entries.on('taskDone', notifyTaskDone)
-  entries.on('crashed', (e: { entryId: string; name: string; exitCode: number; lastErrorLine?: string }) =>
+  entries.on('crashed', (e: { entryId: string; name: string; exitCode: number; lastErrorLine?: string }) => {
+    // 同一次崩溃只发一条通知：先撤掉该条目排队中的告警通知
+    alerts.noteCrash(e.entryId)
     notifyEntryProblem({
       entryId: e.entryId,
       title: `服务已崩溃 · ${e.name}`,
       body: e.lastErrorLine ? `退出码 ${e.exitCode}：${e.lastErrorLine.slice(0, 120)}` : `退出码 ${e.exitCode}，点击查看输出`,
       tab: 'output'
     })
-  )
+  })
   entries.on('blocked', (e: { entryId: string; name: string }) =>
     notifyEntryProblem({
       entryId: e.entryId,
@@ -554,8 +611,10 @@ function registerIpc(): void {
     const rel = runtime.lastBuiltJar
     if (rel.includes('..') || /^[/\\]/.test(rel)) throw new Error('jar 路径越界')
     const absPath = join(entry.path, rel)
-    // 二次确认：拼接后的绝对路径必须在项目目录内
-    if (!absPath.startsWith(entry.path)) throw new Error('jar 路径越界')
+    // 二次确认：拼接后的绝对路径必须在项目目录内。用 relative 判断而不是 startsWith：
+    // 后者会把同前缀的兄弟目录（D:\app 与 D:\app-old）误判为在内
+    const relToRoot = relative(entry.path, absPath)
+    if (relToRoot.startsWith('..') || isAbsolute(relToRoot)) throw new Error('jar 路径越界')
     shell.showItemInFolder(absPath)
     return true
   })
@@ -629,13 +688,19 @@ function registerIpc(): void {
 
   ipc.handle(Channels.scannerSnapshot, () => scanner.snapshot())
   ipc.on(Channels.scannerRefresh, () => scanner.refresh())
-  ipc.on(Channels.scannerVisibility, (_e, visible: boolean) => scanner.setVisible(visible))
-  ipc.on(Channels.scannerIgnore, (_e, processName: string, port: number) =>
+  // 以下三个是 ipc.on（无回执），非法入参静默丢弃：ignore 会落盘，不校形就能写进任意结构
+  ipc.on(Channels.scannerVisibility, (_e, visible: unknown) => {
+    if (typeof visible === 'boolean') scanner.setVisible(visible)
+  })
+  ipc.on(Channels.scannerIgnore, (_e, processName: unknown, port: unknown) => {
+    if (typeof processName !== 'string' || processName.length < 1 || processName.length > 260) return
+    if (!isPort(port)) return
     scanner.ignore(processName, port)
-  )
-  ipc.on(Channels.scannerHideOnce, (_e, pid: number, port: number) =>
-    scanner.hideOnce(pid, port)
-  )
+  })
+  ipc.on(Channels.scannerHideOnce, (_e, pid: unknown, port: unknown) => {
+    if (!Number.isInteger(pid) || (pid as number) <= 0 || !isPort(port)) return
+    scanner.hideOnce(pid as number, port)
+  })
 
   // 分组只影响列表怎么排，不影响能不能停 —— 权限判定始终在 OwnershipService，PRD §5.2
   ipc.handle(Channels.scannerSetGroup, (_e, processName: unknown, group: unknown) => {
@@ -655,17 +720,23 @@ function registerIpc(): void {
   scanner.on('error', (err) => console.error('[scanner] 采集失败：', err))
 
   ipc.handle(Channels.themeGet, () => theme.state())
-  ipc.handle(Channels.themeSet, (_e, preference: ThemePreference) => theme.set(preference))
+  ipc.handle(Channels.themeSet, (_e, preference: unknown) => {
+    // 非法值不落盘：ConfigStore.patchSettings 不校验，nativeTheme.themeSource 收到非法值会抛
+    if (typeof preference !== 'string' || !THEMES.includes(preference)) {
+      throw new Error('主题只接受 light / dark / system')
+    }
+    return theme.set(preference as ThemePreference)
+  })
   theme.on('changed', (state) => sendToRenderer(Channels.themeChanged, state))
 
   ipc.handle(Channels.windowIsMaximized, () => mainWindow?.isMaximized() ?? false)
   ipc.handle(Channels.appInfo, () => ({ version: app.getVersion(), name: app.getName() }))
-  ipc.on('window:minimize', () => mainWindow?.minimize())
-  ipc.on('window:toggleMaximize', () => {
+  ipc.on(Channels.windowMinimize, () => mainWindow?.minimize())
+  ipc.on(Channels.windowToggleMaximize, () => {
     if (!mainWindow) return
     mainWindow.isMaximized() ? mainWindow.unmaximize() : mainWindow.maximize()
   })
-  ipc.on('window:close', () => mainWindow?.close())
+  ipc.on(Channels.windowClose, () => mainWindow?.close())
 
   sessions.on('data', (payload) => sendToRenderer(Channels.sessionData, payload))
   sessions.on('exit', (payload) => sendToRenderer(Channels.sessionExit, payload))
@@ -740,6 +811,9 @@ app.whenReady().then(() => {
   entries = new EntryService(config, detect, sessions, scanner, ownership)
   groups = new GroupService(config)
   transfer = new ConfigTransferService(config, entries, groups, scanner)
+  // 在 registerIpc 之前建好：推送监听要在那里挂上
+  health = new HealthService(entries, scanner)
+  alerts = new AlertService(entries, logs)
   // 回注而非构造注入：Scanner 需要条目预期端口，Entry 需要 Scanner 快照，互为依赖
   scanner.setExpectationSource(() => entries.expectations())
   // scanner 晚于 sessions 构建，后注入供 kill 前重校验归属用，PRD §6.3 步骤 4
@@ -750,6 +824,7 @@ app.whenReady().then(() => {
   applyTaskbarVisibility(config.get().settings.hideFromTaskbar)
   applyGlobalHotkey()
   scanner.start()
+  health.start()
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
@@ -769,7 +844,12 @@ app.on('will-quit', () => globalShortcut.unregisterAll())
 
 app.on('before-quit', (e) => {
   quitting = true
+  // 必须先于 disposeAll：退出流程杀会话不设 stoppedByUser，会被判成崩溃。
+  // 先打标记，onSessionExit 就不会给这些会话排自动重启，start() 也直接拒绝
+  entries?.beginQuit()
   scanner?.stop()
+  health?.stop()
+  alerts?.dispose()
   if (cleanupDone || !config.get().settings.killOwnedOnQuit || sessions.liveCount() === 0) return
   // 不等的话进程退出时 taskkill 还没跑完，dev server 会留在后台占端口
   e.preventDefault()
@@ -778,17 +858,12 @@ app.on('before-quit', (e) => {
   void Promise.race([sessions.disposeAll().catch(() => undefined), timeout]).finally(() => app.quit())
 })
 
+/** 复制的最大字符数：端口、PID、路径、崩溃留尾都远小于这个值 */
+const CLIPBOARD_MAX_CHARS = 64 * 1024
 const SCAN_INTERVALS = [1000, 2000, 5000, 10_000]
 const TERMINALS: readonly string[] = platform.terminalKinds
 const THEMES = ['light', 'dark', 'system']
 
-/**
- * 逐字段校验设置补丁，只放行认识的键与合法值域。
- *
- * 这些值直接驱动采集定时与退出时的杀进程行为，坏值不是显示问题而是行为问题：
- * scanIntervalMs 给个 0 会让采集空转，killOwnedOnQuit 给个字符串会让退出逻辑
- * 按真值处理。未提供的键一律不动，避免整段覆盖丢掉其他设置。
- */
 const LOG_LEVELS = ['info', 'warn', 'error']
 
 /** 只放行认识的键与类型；limit 的上下限由 LogService 自己再收一次 */
@@ -890,6 +965,13 @@ function entryName(id: string): string {
   return entries.get(id)?.name ?? '服务'
 }
 
+/**
+ * 逐字段校验设置补丁，只放行认识的键与合法值域。
+ *
+ * 这些值直接驱动采集定时与退出时的杀进程行为，坏值不是显示问题而是行为问题：
+ * scanIntervalMs 给个 0 会让采集空转，killOwnedOnQuit 给个字符串会让退出逻辑
+ * 按真值处理。未提供的键一律不动，避免整段覆盖丢掉其他设置。
+ */
 function sanitizeSettings(input: unknown): Partial<Settings> {
   if (typeof input !== 'object' || input === null) throw new Error('设置补丁必须是对象')
   const raw = input as Record<string, unknown>

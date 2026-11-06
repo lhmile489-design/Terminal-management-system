@@ -22,6 +22,8 @@ import {
   Gauge,
   Gear,
   Hammer,
+  HeartBreakIcon,
+  HeartbeatIcon,
   Info,
   Keyboard,
   Lock,
@@ -81,6 +83,11 @@ export const ICON = {
   failed: WarningCircle,
   success: CheckCircle,
   info: Info,
+  // 健康检查：有响应 / 无响应（v14）
+  healthOk: HeartbeatIcon,
+  healthFail: HeartBreakIcon,
+  // 输出告警角标
+  alert: Bell,
   themeLight: Sun,
   themeDark: Moon,
   collapseNav: SidebarSimple,

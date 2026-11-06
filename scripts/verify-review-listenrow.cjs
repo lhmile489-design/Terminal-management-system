@@ -109,6 +109,25 @@ app.whenReady().then(async () => {
   await pick('复制目录')
   check('剪贴板是目录', await (async () => { for (let i = 0; i < 20; i++) { if (same(clipboard.readText(), snap.cwd)) return true; await sleep(100) } return false })(), clipboard.readText())
 
+  console.log('\n=== 2b. 窗口失焦时复制 ===')
+  // 以前走 navigator.clipboard.writeText：文档没焦点时以 NotAllowedError 拒绝、错误被吞，
+  // 剪贴板留空 —— 这条 harness 因此时好时坏。这里强制失焦，先验前提再验结果
+  win.blur()
+  for (let i = 0; i < 20 && (await js('document.hasFocus()')); i++) await sleep(100)
+  if (await js('document.hasFocus()')) {
+    win.minimize()
+    for (let i = 0; i < 20 && (await js('document.hasFocus()')); i++) await sleep(100)
+  }
+  const unfocused = !(await js('document.hasFocus()'))
+  check('前提：文档已失焦', unfocused)
+  clipboard.writeText('')
+  await openMenu(); await waitFor(`!!document.querySelector('[role="menu"]')`, 3000)
+  await pick('复制 PID')
+  check('失焦时剪贴板仍是 PID', await (async () => { for (let i = 0; i < 20; i++) { if (clipboard.readText() === String(info.pid)) return true; await sleep(100) } return false })(), clipboard.readText())
+  if (win.isMinimized()) win.restore()
+  win.focus()
+  await sleep(300)
+
   console.log('\n=== 3. 打开目录 ===')
   const n = OPENED.length
   await openMenu(); await waitFor(`!!document.querySelector('[role="menu"]')`, 3000)

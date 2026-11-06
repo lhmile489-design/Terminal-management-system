@@ -2,7 +2,7 @@
 
 ## Project Structure & Module Organization
 
-Mile Terminal is a Windows Electron app for local projects, terminals, ports, and processes. Keep privileged work in `src/main/`: `services/` owns domain behavior and `lib/` contains Windows helpers. `src/preload/` exposes the narrow `window.mile` IPC API. `src/renderer/src/` contains React views, components, Zustand stores, and CSS tokens. Shared IPC names and domain types belong in `src/shared/`. Harnesses and fixture projects live under `scripts/`; icons live in `build/` and `resources/`. The standalone React product website lives in `website/` and does not depend on the Electron runtime.
+Mile Terminal is a Windows Electron app for local projects, terminals, ports, and processes. Keep privileged work in `src/main/`: `services/` owns domain behavior, `lib/` holds platform-neutral utilities (output text rules, source inference, window state, semver), and `platform/` holds the win32/darwin adaptation layer selected at runtime. `src/preload/` exposes the narrow `window.mile` IPC API. `src/renderer/src/` contains React views, components, Zustand stores, and CSS tokens. Shared IPC names and domain types belong in `src/shared/`. Harnesses and fixture projects live under `scripts/`; icons live in `build/` and `resources/`. The standalone React product website lives in `website/` and does not depend on the Electron runtime.
 
 ## Build, Test, and Development Commands
 
@@ -25,8 +25,8 @@ This repository intentionally has no unit-test framework; do not add one without
 
 ## Security & Configuration
 
-Do not auto-install dependencies or execute detected project code. Commands must use `spawn(file, argsArray)` semantics, and scripts must be declared in the target `package.json`. Never terminate a process based only on its port; revalidate ownership. Keep `runToken` and environment values out of the renderer. Preserve configuration migration and atomic writes under `%APPDATA%/mile-terminal/config.json`.
+Do not auto-install dependencies or execute detected project code. Commands must use `spawn(file, argsArray)` semantics, and scripts must be declared in the target `package.json`. Never terminate a process based only on its port; revalidate ownership. Keep `runToken` and environment values out of the renderer. External links only through `shell:openLocalhost` (port int) or `shell:openProjectLink` (PROJECT_LINKS keys); `shell:openPath` only accepts whitelisted paths. Preserve configuration migration and atomic writes under `%APPDATA%/mile-terminal/config.json`.
 
 ## Commits & Pull Requests
 
-The Git history contains only the initial CRA commit, so no message convention exists. Use short imperative messages such as `feat(scanner): show watched processes`. Pull requests should explain behavior, list validation results, include UI screenshots, and update `../docs/PRD.md` when product behavior changes.
+The project uses Conventional Commits (`feat(...)`, `fix(...)`, `refactor(...)`, `chore(...)`, `docs:`). Use short imperative messages such as `feat(scanner): show watched processes`. Pull requests should explain behavior, list validation results, include UI screenshots, and update `../docs/PRD.md` when product behavior changes.

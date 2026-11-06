@@ -14,7 +14,7 @@ import type {
 import { platform, type ListenRow, type ProcessMeta, type ProcessTable } from '../platform'
 import { classifyGroup, traceLaunchSource } from '../lib/attribution'
 import type { OwnershipService } from './OwnershipService'
-import type { ConfigStore } from './ConfigStore'
+import { MAX_IGNORED_LISTENERS, type ConfigStore } from './ConfigStore'
 
 const BACKGROUND_INTERVAL_MS = 10_000
 /** 元数据兜底刷新周期：没有新 PID 时也定期刷一次，纠正 cwd/命令行的陈旧值 */
@@ -42,6 +42,9 @@ const MAX_KEYWORD_LEN = 64
 /** 单次采集下发的关注命中数上限：一个 `e` 这样的关键字能命中整张进程表 */
 const MAX_WATCHED = 50
 
+/** 「本次隐藏」只在内存里，但同样不让它随 IPC 调用无限增长 */
+const MAX_HIDDEN_ONCE = 1000
+
 /**
  * 下发命令行的截断长度，PRD §5.5。
  *
@@ -61,6 +64,8 @@ export class ScannerService extends EventEmitter {
   private lastSuccessAt: number | null = null
   private latest: ScanSnapshot | null = null
   private meta: ProcessMeta | null = null
+  /** 最近一次成功采集的原始监听行（含地址族），只给健康检查选回环地址用 */
+  private lastListens: ListenRow[] = []
   private cpuBaseline = new Map<number, { at: number; total: number }>()
 
   private expectations: ExpectationSource = () => []
@@ -107,6 +112,16 @@ export class ScannerService extends EventEmitter {
     return this.latest
   }
 
+  /** 最近一次采集的监听行。类型只读，调用方不得改写；每轮采集整体替换，不会原地修改 */
+  listenRows(): readonly ListenRow[] {
+    return this.lastListens
+  }
+
+  /** 窗口当前是否可见：健康检查据此降频，不跟采集间隔走 */
+  isVisible(): boolean {
+    return this.visible
+  }
+
   /** 路径白名单：只有最近一次采集里出现过的目录才允许在资源管理器打开 */
   knownPath(target: string): boolean {
     return this.latest?.listeners.some((l) => l.cwd === target) ?? false
@@ -131,14 +146,17 @@ export class ScannerService extends EventEmitter {
 
   ignore(processName: string, port: number): void {
     const list = this.config.get().ignoredListeners
-    if (!list.some((i) => i.processName === processName && i.port === port)) {
+    if (
+      list.length < MAX_IGNORED_LISTENERS &&
+      !list.some((i) => i.processName === processName && i.port === port)
+    ) {
       this.config.patch({ ignoredListeners: [...list, { processName, port }] })
     }
     void this.tick()
   }
 
   hideOnce(pid: number, port: number): void {
-    this.hiddenOnce.add(`${pid}:${port}`)
+    if (this.hiddenOnce.size < MAX_HIDDEN_ONCE) this.hiddenOnce.add(`${pid}:${port}`)
     void this.tick()
   }
 
@@ -167,6 +185,7 @@ export class ScannerService extends EventEmitter {
       const listens = await platform.readListenPorts()
       const meta = await this.resolveMeta(listens)
       await this.publish(this.build({ ...meta, listens }))
+      this.lastListens = listens
     } catch (err) {
       // 先推失败态，再报错误：没有 'error' 监听器时 emit 会同步抛出，
       // 排在前面就会让 publishFailure() 永远跑不到，界面继续显示旧数据

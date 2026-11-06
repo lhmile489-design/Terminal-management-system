@@ -149,7 +149,16 @@ export class SessionService extends EventEmitter {
 
   resize(id: string, cols: number, rows: number): void {
     const entry = this.entries.get(id)
-    if (!entry || cols < 1 || rows < 1) return
+    if (
+      !entry ||
+      !Number.isInteger(cols) ||
+      !Number.isInteger(rows) ||
+      cols < 1 ||
+      rows < 1 ||
+      cols > 1000 ||
+      rows > 1000
+    )
+      return
     try {
       entry.pty.resize(cols, rows)
     } catch {
@@ -189,21 +198,23 @@ export class SessionService extends EventEmitter {
       return Promise.resolve()
     }
     // PRD §6.3 步骤 4：kill 前重新验证归属，防止 3s 等待期间 PID 被回收复用后误杀。
-    // 若 scanner 尚未注入则跳过重校验
-    // (仅在极早期 disposeAll 场景，此时 scanner 还未完成首次采集，风险可接受)
+    // scanner 未注入（极早期 disposeAll）时无法重校验，doKill 拒绝 kill、只清理登记
     return this.doKill(id, pid, entry)
   }
 
   private async doKill(id: string, pid: number, entry: Entry): Promise<void> {
-    if (this.scanner) {
-      try {
-        const table = await this.scanner.table([pid])
-        await this.ownership.assertKillable(pid, table, id)
-      } catch {
-        // 重校验拒绝（归属变化或 PID 已复用）：取消 kill，仅清理会话登记
-        this.ownership.unregister(id)
-        return
-      }
+    // scanner 未注入就无法做归属重校验：宁可留下进程也不冒误杀风险，只清理登记
+    if (!this.scanner) {
+      this.ownership.unregister(id)
+      return
+    }
+    try {
+      const table = await this.scanner.table([pid])
+      await this.ownership.assertKillable(pid, table, id)
+    } catch {
+      // 重校验拒绝（归属变化或 PID 已复用）：取消 kill，仅清理会话登记
+      this.ownership.unregister(id)
+      return
     }
 
     // Vite/webpack 会拉起子进程，pty.kill() 只结束根进程，必须带树终止。

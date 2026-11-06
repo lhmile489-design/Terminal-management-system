@@ -21,6 +21,12 @@ export interface ProcessRow {
 export interface ListenRow {
   port: number
   pid: number
+  /**
+   * 该 (pid, port) 实际绑定的地址族。同一进程双栈监听时两族都在，仍只算一行，
+   * 下游按 pid:port 计数的逻辑不受影响。解析不出族（lsof 的 `*:P`）时为空数组。
+   * 只给健康检查选回环地址用，不参与归属判定。
+   */
+  families: (4 | 6)[]
 }
 
 export interface ProcessMeta {

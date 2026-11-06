@@ -105,15 +105,15 @@ export class OwnershipService {
 
   /**
    * 终止前重校验（PRD §6.3 步骤 4）。从判定到执行之间 PID 可能被回收复用，
-   * 不重校验就是误杀窗口。传 sessionId 时还要求归属命中的就是这个会话 ——
+   * 不重校验就是误杀窗口。sessionId 必填：归属命中的必须就是要停的那个会话 ——
    * 停 A 会话不能因为 PID 恰好落在 B 会话的树里就被放行。
    */
-  async assertKillable(pid: number, table: ProcessTable, sessionId?: string): Promise<OwnershipVerdict> {
+  async assertKillable(pid: number, table: ProcessTable, sessionId: string): Promise<OwnershipVerdict> {
     const verdict = this.verify(pid, table)
     if (verdict.ownership !== 'owned') {
       throw new Error(`拒绝终止 PID ${pid}：归属判定为 ${verdict.ownership}，非本应用启动`)
     }
-    if (sessionId !== undefined && verdict.sessionId !== sessionId) {
+    if (verdict.sessionId !== sessionId) {
       throw new Error(`拒绝终止 PID ${pid}：它属于会话 ${verdict.sessionId}，不是要停的会话 ${sessionId}`)
     }
     return verdict

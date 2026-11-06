@@ -262,7 +262,8 @@ function EntryLine({
       </span>
       <span className="svc-row-name">
         <b>{entry.name}</b>
-        <span><em className="svc-kind" data-kind={entry.kind}>{entry.kind === 'task' ? '任务' : '服务'}</em>{entry.category && <em className="svc-cat" data-entry-category={entry.category} title={'分类：' + entry.category}>{entry.category}</em>}<i className="svc-row-sub" title={sub}>{sub}</i></span>
+        <span><em className="svc-kind" data-kind={entry.kind}>{entry.kind === 'task' ? '任务' : '服务'}</em>{entry.category && <em className="svc-cat" data-entry-category={entry.category} title={'分类：' + entry.category}>{entry.category}</em>}<HealthMark entryId={entry.id} /><AlertMark entry={entry} onOpen={() => actions.select(entry)} /><i className="svc-row-sub" title={sub}>{sub}</i></span>
+        <RestartLine entry={entry} runtime={runtime} />
       </span>
       <span className="svc-row-port" data-shared={shared || undefined} title={shared ? sharedTip : undefined}>
         {livePort ? (
@@ -295,6 +296,83 @@ function EntryLine({
       </span>
     </div>
   )
+}
+
+const HEALTH_LABEL = { ok: '健康检查通过', fail: '健康检查无响应', unknown: '健康检查等待监听' } as const
+
+/** 健康检查图标：只染图标，不染行底。未开启或未运行时不显示 */
+function HealthMark({ entryId }: { entryId: string }): React.JSX.Element | null {
+  const h = useEntries((s) => s.health[entryId])
+  if (!h || h.state === 'off') return null
+  const Icon = h.state === 'fail' ? ICON.healthFail : ICON.healthOk
+  const detail =
+    h.state === 'ok'
+      ? `HTTP ${h.statusCode ?? ''} · ${h.latencyMs ?? 0} ms`
+      : (h.reason ?? '')
+  const label = `${HEALTH_LABEL[h.state]}${detail ? `：${detail}` : ''}`
+  return (
+    <span className="svc-health" data-health={h.state} role="img" aria-label={label} title={label}>
+      <Icon size={16} aria-hidden />
+    </span>
+  )
+}
+
+/** 输出告警角标：点开选中该服务并清掉未读 */
+function AlertMark({ entry, onOpen }: { entry: LaunchEntry; onOpen: () => void }): React.JSX.Element | null {
+  const a = useEntries((s) => s.alerts[entry.id])
+  const clear = useEntries((s) => s.clearAlerts)
+  if (!a || a.unread === 0) return null
+  const label = `${a.unread} 条输出告警，最近一条：${a.last.line}`
+  return (
+    <button
+      type="button"
+      className="svc-alert"
+      aria-label={label}
+      title={label}
+      onClick={(e) => {
+        e.stopPropagation()
+        clear(entry.id)
+        onOpen()
+      }}
+    >
+      <ICON.alert size={16} aria-hidden />
+      {a.unread > 99 ? '99+' : a.unread}
+    </button>
+  )
+}
+
+/** 排队中的自动重启：倒计时 + 取消；放弃后显示一行说明 */
+function RestartLine({ entry, runtime }: { entry: LaunchEntry; runtime: EntryRuntime }): React.JSX.Element | null {
+  const pending = runtime.autoRestart
+  const cancel = useEntries((s) => s.cancelAutoRestart)
+  const [now, setNow] = useState(() => Date.now())
+  useLayoutEffect(() => {
+    if (!pending) return
+    setNow(Date.now())
+    const t = setInterval(() => setNow(Date.now()), 500)
+    return () => clearInterval(t)
+  }, [pending])
+
+  if (pending) {
+    const left = Math.max(0, Math.ceil((pending.nextAt - now) / 1000))
+    return (
+      <span className="svc-restart" data-auto-restart="pending" onClick={(e) => e.stopPropagation()}>
+        {`将在 ${left} 秒后重启（第 ${pending.attempt} / ${pending.max} 次）`}
+        <button
+          type="button"
+          className="svc-restart-cancel"
+          aria-label={`取消 ${entry.name} 的自动重启`}
+          onClick={() => void cancel(entry.id)}
+        >
+          取消
+        </button>
+      </span>
+    )
+  }
+  if (runtime.autoRestartGaveUp) {
+    return <span className="svc-restart" data-auto-restart="gave-up">已停止自动重启，查看输出了解原因</span>
+  }
+  return null
 }
 
 export function RowToggle({

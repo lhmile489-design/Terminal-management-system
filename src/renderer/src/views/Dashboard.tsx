@@ -14,6 +14,8 @@ import { DiscoveredListeners } from '../components/DiscoveredListeners'
 import { WatchedProcesses } from '../components/WatchedProcesses'
 import { MyServicesPanel } from '../components/MyServicesPanel'
 import { TodoBar } from '../components/TodoBar'
+import { PortHistory } from '../components/PortHistory'
+import { Segmented } from '../components/ui'
 import { useScanner } from '../store/scanner'
 import { useEntries } from '../store/entries'
 import { isLiveStatus } from '../lib/entryMeta'
@@ -57,6 +59,13 @@ export function Dashboard({
   const mine = useMemo(() => listeners.filter((l) => l.group === 'mine'), [listeners])
   const background = useMemo(() => listeners.filter((l) => l.group !== 'mine'), [listeners])
   const [showBackground, setShowBackground] = useState(false)
+  // 端口历史（P1-4）：只在内存，页签状态不持久化
+  const [portView, setPortView] = useState<'now' | 'history'>('now')
+  const portHistoryCount = useScanner((s) => s.portHistory.length)
+  // 命令面板定位端口时切回「当前」，否则高亮的那一行不在 DOM 里
+  useEffect(() => {
+    if (highlightPort) setPortView('now')
+  }, [highlightPort])
 
   // 命令面板定位到的端口可能属于后台组，而后台组默认是折叠的。
   // 不展开的话那一行根本不在 DOM 里，用户点了搜索结果却什么都没发生。
@@ -169,19 +178,34 @@ export function Dashboard({
       </div>
 
       <section aria-labelledby="listeners-heading">
-        <h2 id="listeners-heading" className="eyebrow mb-2.5">
-          我的服务端口
-        </h2>
+        <div className="mb-2.5 flex items-center gap-3">
+          <h2 id="listeners-heading" className="eyebrow">
+            我的服务端口
+          </h2>
+          <Segmented
+            label="端口视图"
+            value={portView}
+            onChange={setPortView}
+            options={[
+              { value: 'now', label: '当前' },
+              { value: 'history', label: '历史', count: portHistoryCount || undefined }
+            ]}
+          />
+        </div>
         {/* 定位端口只交给真正持有那一行的表：两张表都拿到的话，没命中的那张
             会先跑完 2 秒计时把高亮消掉，命中的那张还没滚过去 */}
-        <ListenerTable
-          listeners={mine}
-          group="mine"
-          onSetGroup={(name, g) => void setGroup(name, g)}
-          highlightPort={hidesHighlight ? null : highlightPort}
-          onHighlightConsumed={onHighlightConsumed}
-          onFocusEntry={onFocusService ? (id) => onFocusService(id, 'overview') : undefined}
-        />
+        {portView === 'history' ? (
+          <PortHistory />
+        ) : (
+          <ListenerTable
+            listeners={mine}
+            group="mine"
+            onSetGroup={(name, g) => void setGroup(name, g)}
+            highlightPort={hidesHighlight ? null : highlightPort}
+            onHighlightConsumed={onHighlightConsumed}
+            onFocusEntry={onFocusService ? (id) => onFocusService(id, 'overview') : undefined}
+          />
+        )}
       </section>
 
       <section aria-labelledby="background-heading">

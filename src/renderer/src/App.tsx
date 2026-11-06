@@ -163,6 +163,18 @@ export function App(): React.JSX.Element {
   )
 
   useEffect(() => window.mile.entry.onWarning((text) => pushEvent('warn', text)), [pushEvent])
+  // 健康检查与输出告警（v14）：结果只在内存，渲染层只做展示
+  const setHealth = useEntries((s) => s.setHealth)
+  const addAlert = useEntries((s) => s.addAlert)
+  useEffect(() => window.mile.entry.onHealth(setHealth), [setHealth])
+  useEffect(
+    () =>
+      window.mile.entry.onAlert((a) => {
+        addAlert(a)
+        pushEvent('warn', `输出告警 · ${a.name}：${a.keyword ? `命中「${a.keyword}」` : '错误行'} · ${a.line}`)
+      }),
+    [addAlert, pushEvent]
+  )
 
   // 系统通知被点击：主进程只给条目 id 和标签枚举，这里负责切页并打开对应标签
   useEffect(

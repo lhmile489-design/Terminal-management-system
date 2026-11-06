@@ -885,8 +885,41 @@
 .svc-mini { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
 .svc-mini > div { padding: 12px; border-radius: 12px; background: var(--surface-sunken); }
 .svc-mini .k { font-size: 12px; font-weight: 600; color: var(--text-faint); }
+/* 条目资源趋势（P1-3）：只在详情概览页，服务行网格已满不再加 */
+.svc-trend { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; margin: -4px 0 16px; }
+.svc-trend-item { display: inline-flex; align-items: center; gap: 8px; }
+.svc-trend-item .k { font-size: 12px; font-weight: 600; color: var(--text-faint); }
+.svc-trend-note { font-size: 12px; color: var(--text-faint); }
+/* 端口占用历史（P1-4）：只读列表，高度封顶后内部滚动；状态色只染文字 */
+.port-history { padding: 8px 0 10px; }
+.port-history-list { max-height: 320px; overflow-y: auto; margin: 0; padding: 0 16px; list-style: none; }
+.port-history-row { display: grid; grid-template-columns: 72px 64px 64px 88px minmax(0, 1fr); align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--stroke-base); font-size: 12px; color: var(--text-muted); }
+.port-history-row:last-child { border-bottom: none; }
+.port-history-time, .port-history-port, .port-history-pid { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.port-history-port { color: var(--text-strong); font-weight: 600; }
+.port-history-kind { font-weight: 600; }
+.port-history-kind[data-kind='start'] { color: color-mix(in srgb, var(--signal-live) 72%, var(--text-strong)); }
+.port-history-kind[data-kind='stop'] { color: var(--text-muted); }
+.port-history-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-strong); }
+.port-history-entry { margin-left: 8px; font-style: normal; color: var(--text-faint); }
+.port-history-note { margin: 8px 16px 0; font-size: 12px; color: var(--text-faint); }
 .svc-term { flex: 1; min-height: 260px; border-radius: 12px; overflow: hidden; background: var(--terminal-bg); border: 1px solid var(--stroke-base); }
 .svc-note { margin-bottom: 12px; color: var(--text-muted); }
+/* 启动顺序视图（P1-5）：只展示 startAfter，状态色只染节点描边 */
+.start-order { padding: 0; }
+.start-order-toggle { display: flex; width: 100%; align-items: center; gap: 8px; padding: 10px 14px; border: 0; border-radius: var(--radius-control); background: transparent; font-size: 13px; font-weight: 600; color: var(--text-strong); cursor: pointer; text-align: left; }
+.start-order-toggle:focus-visible { outline: 2px solid var(--signal-accent); outline-offset: -2px; }
+.start-order-caret { color: var(--text-muted); transform: rotate(-90deg); transition: transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+.start-order-caret[data-open='true'] { transform: rotate(0deg); }
+.start-order-count { margin-left: auto; font-size: 12px; font-weight: 500; color: var(--text-faint); }
+.start-order-body { display: flex; flex-direction: column; gap: 12px; padding: 0 14px 14px; overflow-x: auto; }
+.start-order-note { font-size: 12px; color: var(--text-faint); }
+.start-order-group { margin: 0; }
+.start-order-group figcaption { margin-bottom: 4px; font-size: 12px; font-weight: 600; color: var(--text-muted); }
+.start-order-node { cursor: pointer; outline: none; }
+.start-order-node:hover rect { fill: var(--surface-raised); }
+.start-order-node:focus-visible rect { stroke: var(--signal-accent); stroke-width: 3; }
+@media (prefers-reduced-motion: reduce) { .start-order-caret { transition: none; } }
 
 /* 配置标签的保存条（Q13）：有改动才出现，贴在详情底部 */
 .svc-config { display: flex; flex-direction: column; min-width: 0; }
@@ -1013,6 +1046,16 @@
 
 /* 分类标签：行副标题里的次级标签，不参与分组（分组只按工作组） */
 .svc-cat { display: inline-block; flex: none; max-width: 10em; padding: 0 7px; border: 1px solid var(--stroke-strong); border-radius: var(--radius-pill); font-style: normal; font-size: 12px; font-weight: 500; line-height: 16px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; vertical-align: bottom; }
+/* 运行监控（v14）：状态色只染图标与描边，不染行底 */
+.svc-health { display: inline-flex; flex: none; align-items: center; }
+.svc-health[data-health='ok'] { color: color-mix(in srgb, var(--signal-live) 72%, var(--text-strong)); }
+.svc-health[data-health='fail'] { color: color-mix(in srgb, var(--signal-fault) 72%, var(--text-strong)); }
+.svc-health[data-health='unknown'] { color: var(--text-muted); }
+.svc-alert { display: inline-flex; flex: none; align-items: center; gap: 2px; padding: 0 6px; border: 1px solid color-mix(in srgb, var(--signal-warn) 60%, var(--stroke-strong)); border-radius: var(--radius-pill); background: var(--surface-card); font-size: 12px; font-weight: 600; line-height: 16px; color: color-mix(in srgb, var(--signal-warn) 72%, var(--text-strong)); cursor: pointer; }
+.svc-restart { display: flex; align-items: center; gap: 8px; font-size: 12px; line-height: 18px; color: color-mix(in srgb, var(--signal-warn) 72%, var(--text-strong)); }
+.svc-restart[data-auto-restart='gave-up'] { color: color-mix(in srgb, var(--signal-fault) 72%, var(--text-strong)); }
+.svc-restart-cancel { padding: 0 8px; border: 1px solid var(--stroke-strong); border-radius: var(--radius-pill); background: var(--surface-card); font-size: 12px; line-height: 18px; color: var(--text-strong); cursor: pointer; }
+.svc-alert:focus-visible, .svc-restart-cancel:focus-visible { outline: 2px solid var(--signal-accent); outline-offset: 1px; }
 
 /* 诊断报告分段（原诊断页的端口、会话、环境、产物四段） */
 .svc-diag { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--stroke-base); }

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { ArrowDown, ArrowUp } from '@phosphor-icons/react'
 import type { ListenerGroup, ListenerSnapshot } from '@shared/types'
 import { LAUNCH_SOURCE_LABEL } from '../lib/entryMeta'
@@ -6,6 +6,7 @@ import { ellipsisPath, formatBytes, formatUptime } from '../lib/format'
 import { StatusPill } from './StatusPill'
 import { MenuButton, type MenuItem } from './ui'
 import { ICON } from '../lib/icons'
+import { copyText } from '../lib/clipboard'
 
 const COLS =
   'grid grid-cols-[1fr_64px_112px_1.1fr_76px_76px_64px_92px_60px_28px_28px] items-center gap-2.5'
@@ -28,7 +29,12 @@ export function ListenerTable({
   /** 本应用条目的行「查看服务」：切到服务页并选中它 */
   onFocusEntry?: (entryId: string) => void
 }): React.JSX.Element {
-  const hit = highlightPort ? listeners.find((l) => l.ports.includes(highlightPort)) : undefined
+  // 同一端口可能被两个进程分别绑 IPv4 / IPv6，全部高亮，滚动只对准第一行
+  const hitPids = useMemo(
+    () => new Set(highlightPort ? listeners.filter((l) => l.ports.includes(highlightPort)).map((l) => l.pid) : []),
+    [listeners, highlightPort]
+  )
+  const firstHit = listeners.find((l) => hitPids.has(l.pid))?.pid
   const rowRef = useRef<HTMLLIElement>(null)
 
   /**
@@ -80,12 +86,12 @@ export function ListenerTable({
         {listeners.map((l) => (
           <li
             key={l.pid}
-            ref={hit?.pid === l.pid ? rowRef : undefined}
-            data-highlighted={hit?.pid === l.pid || undefined}
+            ref={firstHit === l.pid ? rowRef : undefined}
+            data-highlighted={hitPids.has(l.pid) || undefined}
             data-listener-pid={l.pid}
             data-entry-id={l.entryId}
             className={`${COLS} border-b border-line px-4 py-2.5 last:border-b-0 ${
-              hit?.pid === l.pid ? 'bg-info-soft' : ''
+              hitPids.has(l.pid) ? 'bg-info-soft' : ''
             }`}
           >
             <span className="truncate text-[13px] text-ink-strong" title={l.processName}>
@@ -128,7 +134,7 @@ export function ListenerTable({
  * 本应用启动的进程去服务页停，那里走归属校验。打开目录只发这一行的 cwd，主进程 knownPath 把关。
  */
 function rowMenu(l: ListenerSnapshot, onFocusEntry?: (entryId: string) => void): MenuItem[] {
-  const copy = (text: string): void => void navigator.clipboard.writeText(text).catch(() => undefined)
+  const copy = (text: string): void => void copyText(text)
   const items: MenuItem[] = []
   if (l.entryId && onFocusEntry) {
     const id = l.entryId

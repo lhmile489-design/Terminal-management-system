@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { EntryDiagnosis, EntryRuntime, LaunchEntry, PrecheckFixAction, PrecheckResult, ProjectGroup } from '@shared/types'
 import { GROUP_ENV_LABEL } from '@shared/types'
 import { Button, IconButton, Pill, Tabs, tabPanelProps, type TabItem } from '../ui'
@@ -14,6 +14,8 @@ import { ICON } from '../../lib/icons'
 import { FRAMEWORK_LABEL, STATUS_META, isLiveStatus } from '../../lib/entryMeta'
 import { formatBytes, formatDuration, formatPercent, formatUptime } from '../../lib/format'
 import { RowToggle } from './GroupTile'
+import { Sparkline } from '../Sparkline'
+import { copyText } from '../../lib/clipboard'
 
 export type DetailTab = 'overview' | 'output' | 'diagnose' | 'build' | 'config'
 
@@ -171,17 +173,63 @@ function Overview({
   runtime: EntryRuntime
   group?: ProjectGroup
 }): React.JSX.Element {
-  const listener = useScanner((s) => (runtime.pid ? s.listeners.find((l) => l.pid === runtime.pid) : undefined))
+  // runtime.pid 是链条根（cmd.exe），真正监听的是末端 node.exe：按 entryId 聚合本条目的全部监听进程。
+  // selector 只取原数组，派生放 useMemo，避免每次返回新引用
+  const listeners = useScanner((s) => s.listeners)
+  const usage = useMemo(() => {
+    const seen = new Set<number>()
+    let cpu: number | null = null
+    let memory = 0
+    for (const l of listeners) {
+      if (l.entryId !== entry.id && !(runtime.pid && l.pid === runtime.pid)) continue
+      if (seen.has(l.pid)) continue
+      seen.add(l.pid)
+      if (l.cpu != null) cpu = (cpu ?? 0) + l.cpu
+      memory += l.memory
+    }
+    return seen.size > 0 ? { cpu, memory } : null
+  }, [listeners, entry.id, runtime.pid])
   const live = isLiveStatus(runtime.status)
   const task = entry.kind === 'task'
+  const trend = useScanner((s) => s.entryTrends[entry.id])
   return (
     <>
       <div className="svc-mini">
         <Mini k={task ? '上次退出码' : '运行时长'} v={task ? (entry.lastExitCode ?? '—') : live ? formatUptime(runtime.startedAt) : '—'} />
-        <Mini k="CPU" v={listener ? formatPercent(listener.cpu) : '—'} />
-        <Mini k="内存" v={listener ? formatBytes(listener.memory) : '—'} />
+        <Mini k="CPU" v={usage ? formatPercent(usage.cpu) : '—'} />
+        <Mini k="内存" v={usage ? formatBytes(usage.memory) : '—'} />
       </div>
+      {!task && (
+        <div className="svc-trend" data-entry-trend>
+          <span className="svc-trend-item" data-trend="cpu">
+            <span className="k">CPU 趋势</span>
+            <Sparkline points={trend?.cpu ?? []} tone="var(--signal-info)" />
+          </span>
+          <span className="svc-trend-item" data-trend="memory">
+            <span className="k">内存趋势</span>
+            <Sparkline points={trend?.memory ?? []} tone="var(--signal-accent)" />
+          </span>
+          <span className="svc-trend-note">约 2 分钟，只统计监听端口的进程</span>
+        </div>
+      )}
       <dl className="svc-kv">
+        {!task && (
+          <>
+            <dt>启动耗时</dt>
+            <dd data-ready-time>
+              {runtime.readyMs != null ? (
+                <>
+                  {`上次 ${formatDuration(runtime.readyMs)}（来源：${runtime.readySource === 'health' ? '健康检查' : '端口'}）`}
+                  {(runtime.readyHistory?.length ?? 0) >= 2 && (
+                    <span className="ml-2 inline-flex align-middle" title={`最近 ${runtime.readyHistory!.length} 次`}>
+                      <Sparkline points={runtime.readyHistory!} tone="var(--signal-live)" />
+                    </span>
+                  )}
+                </>
+              ) : runtime.portUnknown ? '未捕获到端口，无法计算' : '—'}
+            </dd>
+          </>
+        )}
         <dt>状态</dt>
         <dd>{STATUS_META[runtime.status].label}{runtime.exitCode != null && !live ? `（退出码 ${runtime.exitCode}）` : ''}</dd>
         <dt>PID</dt>
@@ -291,7 +339,8 @@ function CopyButton({ text, label }: { text: string; label: string }): React.JSX
     <IconButton
       icon={done ? ICON.copied : ICON.copy}
       label={done ? '已复制' : label}
-      onClick={() => void navigator.clipboard.writeText(text).then(() => setDone(true), () => setDone(true))}
+      // 只在真的写进去了才显示「已复制」：以前失败也显示，用户以为复制成功了
+      onClick={() => void copyText(text).then((ok) => setDone(ok))}
     />
   )
 }

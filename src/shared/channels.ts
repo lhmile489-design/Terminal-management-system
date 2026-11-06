@@ -59,6 +59,11 @@ export const Channels = {
   shellOpenPath: 'shell:openPath',
   /** 只接受 PROJECT_LINKS 的键名，URL 由主进程查表，渲染层给不出任意地址 */
   shellOpenProjectLink: 'shell:openProjectLink',
+  /**
+   * 写剪贴板。经主进程而不是 navigator.clipboard：后者要求文档有焦点，窗口失焦时直接拒绝。
+   * 只写不读，渲染层拿不到剪贴板里原有的内容
+   */
+  clipboardWriteText: 'clipboard:writeText',
   /** 用设置里选的外部终端打开条目目录；只收 entryId，目录由主进程按登记信息解析 */
   entryOpenExternalTerminal: 'entry:openExternalTerminal',
   scannerSnapshot: 'scanner:snapshot',
@@ -79,6 +84,9 @@ export const Channels = {
   themeChanged: 'theme:changed',
   windowIsMaximized: 'window:isMaximized',
   windowMaximizeChanged: 'window:maximizeChanged',
+  windowMinimize: 'window:minimize',
+  windowToggleMaximize: 'window:toggleMaximize',
+  windowClose: 'window:close',
   /** 应用基础信息：版本号、名称，由主进程从 app.getVersion() 读取 */
   appInfo: 'app:info',
   /**
@@ -125,7 +133,17 @@ export const Channels = {
    * 在系统资源管理器中定位最近打包成功的 jar 文件。
    * 主进程从 EntryRuntime.lastBuiltJar 构造绝对路径并校验边界。
    */
-  entryRevealLastJar: 'entry:revealLastJar'
+  entryRevealLastJar: 'entry:revealLastJar',
+
+  // ── U1：健康检查、自动重启、输出告警（docs/PRD-FEATURE-UPGRADE.md）──────────
+  /** 主进程推送单个条目的健康检查结果（EntryHealth），只在内存 */
+  entryHealth: 'entry:health',
+  /** 渲染层启动时拉一次全部条目的健康检查结果 */
+  entryHealthList: 'entry:healthList',
+  /** 取消某个条目排队中的自动重启，只收 entryId */
+  entryCancelAutoRestart: 'entry:cancelAutoRestart',
+  /** 主进程推送输出告警命中（OutputAlert），只在内存 */
+  entryAlert: 'entry:alert'
 } as const
 
 export type Channel = (typeof Channels)[keyof typeof Channels]

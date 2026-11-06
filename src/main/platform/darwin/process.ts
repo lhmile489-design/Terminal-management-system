@@ -44,7 +44,7 @@ export async function readListenPorts(timeoutMs = 4000): Promise<ListenRow[]> {
 
 export function parseLsof(stdout: string): ListenRow[] {
   const rows: ListenRow[] = []
-  const seen = new Set<string>()
+  const seen = new Map<string, ListenRow>()
   let pid = 0
   for (const line of stdout.split('\n')) {
     if (line.startsWith('p')) {
@@ -55,11 +55,18 @@ export function parseLsof(stdout: string): ListenRow[] {
     const addr = line.slice(1)
     const port = Number(addr.slice(addr.lastIndexOf(':') + 1))
     if (!Number.isInteger(port) || port < 1 || port > 65535) continue
+    // `[::1]:P` 是 IPv6，`127.0.0.1:P` 是 IPv4；`*:P` 在 -Fpn 下分不出族，记为未知
+    const family: 4 | 6 | null = addr.startsWith('[') ? 6 : addr.startsWith('*') ? null : 4
     // 与 Windows 一致：同一 (pid, port) 的 IPv4 / IPv6 两行只留一条，不同 PID 不合并
     const key = `${pid}:${port}`
-    if (seen.has(key)) continue
-    seen.add(key)
-    rows.push({ port, pid })
+    const existing = seen.get(key)
+    if (existing) {
+      if (family !== null && !existing.families.includes(family)) existing.families.push(family)
+      continue
+    }
+    const row: ListenRow = { port, pid, families: family === null ? [] : [family] }
+    seen.set(key, row)
+    rows.push(row)
   }
   return rows
 }

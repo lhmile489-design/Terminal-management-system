@@ -7,6 +7,7 @@ import type {
   DetectResult,
   EntryDiagnosis,
   EntryEdit,
+  EntryHealth,
   EntryRuntime,
   EntryStartResult,
   FocusEntryRequest,
@@ -19,6 +20,7 @@ import type {
   NewLaunchEntry,
   NewProjectGroup,
   OrderedStartResult,
+  OutputAlert,
   PrecheckResult,
   ProjectGroup,
   ScanDiff,
@@ -108,7 +110,16 @@ const api = {
     onRuntime: (cb: (runtime: EntryRuntime) => void): (() => void) =>
       subscribe(Channels.entryRuntimeChanged, cb),
     onWarning: (cb: (text: string) => void): (() => void) =>
-      subscribe(Channels.entryWarning, cb)
+      subscribe(Channels.entryWarning, cb),
+    /** 健康检查结果，只在内存；启动时拉一次全量，之后靠 onHealth 增量 */
+    healthList: (): Promise<EntryHealth[]> => ipcRenderer.invoke(Channels.entryHealthList),
+    onHealth: (cb: (health: EntryHealth) => void): (() => void) =>
+      subscribe(Channels.entryHealth, cb),
+    /** 只撤排队中的自动重启，不改条目配置 */
+    cancelAutoRestart: (id: string): Promise<EntryRuntime | null> =>
+      ipcRenderer.invoke(Channels.entryCancelAutoRestart, id),
+    onAlert: (cb: (alert: OutputAlert) => void): (() => void) =>
+      subscribe(Channels.entryAlert, cb)
   },
   log: {
     query: (query: LogQuery): Promise<LogResult> => ipcRenderer.invoke(Channels.logQuery, query),
@@ -125,6 +136,10 @@ const api = {
     openPath: (target: string): void => ipcRenderer.send(Channels.shellOpenPath, target),
     openProjectLink: (key: ProjectLink): void =>
       ipcRenderer.send(Channels.shellOpenProjectLink, key)
+  },
+  /** 只写不读；窗口失焦时也能写（navigator.clipboard 做不到） */
+  clipboard: {
+    writeText: (text: string): Promise<boolean> => ipcRenderer.invoke(Channels.clipboardWriteText, text)
   },
   scanner: {
     snapshot: (): Promise<ScanSnapshot | null> => ipcRenderer.invoke(Channels.scannerSnapshot),
@@ -160,9 +175,9 @@ const api = {
       subscribe(Channels.themeChanged, cb)
   },
   window: {
-    minimize: (): void => ipcRenderer.send('window:minimize'),
-    toggleMaximize: (): void => ipcRenderer.send('window:toggleMaximize'),
-    close: (): void => ipcRenderer.send('window:close'),
+    minimize: (): void => ipcRenderer.send(Channels.windowMinimize),
+    toggleMaximize: (): void => ipcRenderer.send(Channels.windowToggleMaximize),
+    close: (): void => ipcRenderer.send(Channels.windowClose),
     isMaximized: (): Promise<boolean> => ipcRenderer.invoke(Channels.windowIsMaximized),
     onMaximizeChange: (cb: (maximized: boolean) => void): (() => void) =>
       subscribe(Channels.windowMaximizeChanged, cb)

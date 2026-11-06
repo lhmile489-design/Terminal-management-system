@@ -2,10 +2,12 @@ import { bumpLaunch } from '../lib/launchStats'
 import { create } from 'zustand'
 import type {
   EntryEdit,
+  EntryHealth,
   EntryRuntime,
   LaunchEntry,
   MavenGoal,
   NewLaunchEntry,
+  OutputAlert,
   PrecheckResult
 } from '@shared/types'
 
@@ -49,6 +51,15 @@ interface EntriesStore {
   runScript: (id: string, script: string) => Promise<EntryRuntime | null>
   precheck: (id: string) => Promise<PrecheckResult>
   clearError: () => void
+  /** 健康检查结果（只在内存），按条目 id */
+  health: Record<string, EntryHealth>
+  setHealth: (h: EntryHealth) => void
+  /** 输出告警：每个条目最近一条命中与未读数，打开该条目的输出页时清零 */
+  alerts: Record<string, { last: OutputAlert; unread: number }>
+  addAlert: (a: OutputAlert) => void
+  clearAlerts: (id: string) => void
+  /** 撤掉排队中的自动重启，失败时错误落到 error 字段 */
+  cancelAutoRestart: (id: string) => Promise<void>
 }
 
 export const useEntries = create<EntriesStore>((set, get) => ({
@@ -56,13 +67,39 @@ export const useEntries = create<EntriesStore>((set, get) => ({
   runtimes: {},
   busy: {},
   error: null,
+  health: {},
+  alerts: {},
 
   init: async () => {
-    const [entries, runtimes] = await Promise.all([
+    const [entries, runtimes, health] = await Promise.all([
       window.mile.entry.list(),
-      window.mile.entry.runtimes()
+      window.mile.entry.runtimes(),
+      window.mile.entry.healthList()
     ])
-    set({ entries, runtimes: Object.fromEntries(runtimes.map((r) => [r.entryId, r])) })
+    set({
+      entries,
+      runtimes: Object.fromEntries(runtimes.map((r) => [r.entryId, r])),
+      health: Object.fromEntries(health.map((h) => [h.entryId, h]))
+    })
+  },
+
+  setHealth: (h) => set((s) => ({ health: { ...s.health, [h.entryId]: h } })),
+
+  addAlert: (a) =>
+    set((s) => ({
+      alerts: { ...s.alerts, [a.entryId]: { last: a, unread: (s.alerts[a.entryId]?.unread ?? 0) + 1 } }
+    })),
+
+  clearAlerts: (id) =>
+    set((s) => {
+      if (!s.alerts[id]) return s
+      const alerts = { ...s.alerts }
+      delete alerts[id]
+      return { alerts }
+    }),
+
+  cancelAutoRestart: async (id) => {
+    await guard(set, id, () => window.mile.entry.cancelAutoRestart(id))
   },
 
   setEntries: (entries) => set({ entries }),

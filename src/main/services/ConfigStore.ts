@@ -4,6 +4,9 @@ import { join } from 'node:path'
 import { CONFIG_VERSION, type AppConfig } from '@shared/types'
 import { platform } from '../platform'
 
+/** 「忽略此监听」列表上限：每条都在每个采集周期参与匹配，不让它无限增长 */
+export const MAX_IGNORED_LISTENERS = 500
+
 const DEFAULTS: AppConfig = {
   version: CONFIG_VERSION,
   entries: [],
@@ -179,11 +182,42 @@ export class ConfigStore {
       out.settings.externalTerminal = platform.defaultTerminal
     }
 
+    // v13 -> v14：条目新增可选 healthCheck / autoRestart / alertKeywords / alertOnErrors。
+    // 都不回填：缺省即「关」。v14 之前不可能合法地出现这几个键，手工塞进去的一律丢掉，
+    // 与 v4 丢弃未经白名单的 icon 同一个口径 —— 尤其 autoRestart，不能因为一份手改的
+    // 旧配置就让条目在无人值守时被自动拉起
+    if (from < 14 && Array.isArray(out.entries)) {
+      out.entries = out.entries.map((e) => {
+        if (e === null || typeof e !== 'object') return e
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { healthCheck, autoRestart, alertKeywords, alertOnErrors, ...rest } = e
+        return rest
+      })
+    }
+
     // 迁移后仍要校形：数组字段被手改成对象会让下游 .some / .filter 直接抛
     if (!Array.isArray(out.entries)) out.entries = []
     if (!Array.isArray(out.groups)) out.groups = []
     if (!Array.isArray(out.ignoredListeners)) out.ignoredListeners = []
+    // 元素结构不对（手改、旧版本 IPC 未校形时写进去的）会让 ScannerService 的匹配静默失效
+    out.ignoredListeners = out.ignoredListeners
+      .filter(
+        (i) =>
+          i !== null &&
+          typeof i === 'object' &&
+          typeof i.processName === 'string' &&
+          i.processName.length > 0 &&
+          i.processName.length <= 260 &&
+          Number.isInteger(i.port) &&
+          i.port >= 1 &&
+          i.port <= 65535
+      )
+      .slice(0, MAX_IGNORED_LISTENERS)
     if (!Array.isArray(out.groupOverrides)) out.groupOverrides = []
+    // 主题值手改坏了，ThemeService 构造时赋给 nativeTheme.themeSource 会直接抛，应用起不来
+    if (!['light', 'dark', 'system'].includes(out.settings.theme as string)) {
+      out.settings.theme = DEFAULTS.settings.theme
+    }
     if (!Array.isArray(out.watchedKeywords)) out.watchedKeywords = []
 
     return out

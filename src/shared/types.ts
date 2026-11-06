@@ -241,7 +241,7 @@ export interface Settings {
 }
 
 /** 当前配置结构版本。加字段就要加迁移，见 ConfigStore.migrate */
-export const CONFIG_VERSION = 13
+export const CONFIG_VERSION = 14
 
 /**
  * 主进程要求渲染层「定位到某个服务的某个标签」。只带条目 id 和两个标签枚举，
@@ -502,6 +502,61 @@ export interface LaunchEntry {
    * 主进程校验：不能指向自己、不能指向不存在的条目、不能成环。
    */
   startAfter?: string[]
+  /**
+   * 本机 HTTP 健康检查，v14 起。只存路径：主机、端口、地址族、协议都由主进程按本条目
+   * 自己的监听行决定，渲染层给不出任何别的目标。
+   */
+  healthCheck?: HealthCheckConfig
+  /** 意外退出时自动重启，v14 起。只对服务开放，且只在 dev / 未分组环境生效 */
+  autoRestart?: boolean
+  /** 输出关键词告警，v14 起。纯子串、不区分大小写，不接受正则 */
+  alertKeywords?: string[]
+  /** 同时对通用错误行（outputText.ts 的 ERROR_RE）告警，v14 起 */
+  alertOnErrors?: boolean
+}
+
+export interface HealthCheckConfig {
+  /** 以 `/` 开头的请求路径，sanitizeEdit 按字符白名单校形 */
+  path: string
+  enabled: boolean
+}
+
+/**
+ * 健康检查结果，只在内存。
+ * - ok：2xx / 3xx
+ * - fail：其他状态码、超时、连接被拒
+ * - unknown：条目在运行，但快照里还找不到它自己的监听行，没有发请求
+ * - off：未开启或条目不在运行
+ */
+export interface EntryHealth {
+  entryId: string
+  state: 'ok' | 'fail' | 'unknown' | 'off'
+  statusCode?: number
+  latencyMs?: number
+  /** fail 时的简短原因，不含响应体 */
+  reason?: string
+  checkedAt: number
+}
+
+/** 等待中的自动重启，挂在运行态上随现有推送下发 */
+export interface AutoRestartPending {
+  /** 计划重启的时刻，Unix ms */
+  nextAt: number
+  /** 第几次重启（从 1 开始） */
+  attempt: number
+  max: number
+}
+
+/** 输出告警命中，只在内存 */
+export interface OutputAlert {
+  entryId: string
+  sessionId: string
+  name: string
+  /** 命中的关键词；通用错误行命中时为 null */
+  keyword: string | null
+  /** 命中行，已去 ANSI，截断到 200 字符 */
+  line: string
+  at: number
 }
 
 /** 新建条目时的入参，id/order/createdAt 由主进程生成 */
@@ -609,6 +664,10 @@ export type EditableEntryField =
   | 'jarPath'
   | 'registerOnly'
   | 'startAfter'
+  | 'healthCheck'
+  | 'autoRestart'
+  | 'alertKeywords'
+  | 'alertOnErrors'
 
 /**
  * `expectedPort`、`outputDir`、`jarPath`、`launchMode` 额外接受 null 表示「显式清空」。
@@ -618,9 +677,24 @@ export type EditableEntryField =
 export type EntryEdit = Partial<
   Omit<
     Pick<LaunchEntry, EditableEntryField>,
-    'expectedPort' | 'outputDir' | 'icon' | 'imageId' | 'category' | 'groupId' | 'launchMode' | 'jarPath' | 'env' | 'startAfter'
+    | 'expectedPort'
+    | 'outputDir'
+    | 'icon'
+    | 'imageId'
+    | 'category'
+    | 'groupId'
+    | 'launchMode'
+    | 'jarPath'
+    | 'env'
+    | 'startAfter'
+    | 'healthCheck'
+    | 'alertKeywords'
   >
 > & {
+  /** null 关闭并清掉健康检查 */
+  healthCheck?: HealthCheckConfig | null
+  /** 空数组或 null 等于关闭关键词告警 */
+  alertKeywords?: string[] | null
   /**
    * 合并补丁，不是整体替换：字符串 = 新增或覆盖该变量，null = 删除，没提到的键保持原值。
    * 渲染层从不持有环境变量的值（条目里 env 的值恒为空串，只有键名可信），
@@ -667,6 +741,18 @@ export interface EntryRuntime {
    * 不持久化，key={entry.id} 切换条目时自动丢弃。
    */
   lastBuiltJar?: string
+  /** 等待中的自动重启；null / 缺省表示没有排队的重启 */
+  autoRestart?: AutoRestartPending | null
+  /** 10 分钟内已重启 3 次仍崩溃，停止自动重启。下一次手动启动时清掉 */
+  autoRestartGaveUp?: boolean
+  /**
+   * 本次启动耗时（毫秒）：从会话启动到就绪。开了健康检查取首次 ok，否则取输出里捕获到端口。
+   * 60 秒没捕获到端口（portUnknown）没有可信的就绪时刻，不记。只在内存
+   */
+  readyMs?: number
+  readySource?: 'port' | 'health'
+  /** 最近 10 次启动耗时，旧的在前。停止、崩溃后仍保留，应用重启后清空 */
+  readyHistory?: number[]
 }
 
 export interface EntryStartResult {

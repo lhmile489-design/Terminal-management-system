@@ -3,6 +3,7 @@ import type { EntryKind, EntryRuntime, LaunchEntry, NewLaunchEntry, ProjectGroup
 import { GROUP_ENV_LABEL } from '@shared/types'
 import { Button, Segmented, Select, TextInput, SplitPane, toast, type MenuItem } from '../components/ui'
 import { GroupTile, type RowActions } from '../components/services/GroupTile'
+import { StartOrderView } from '../components/services/StartOrderView'
 import { EntryDetail, effectiveTab, hasBuildTab, type DetailTab } from '../components/services/EntryDetail'
 import { hasOpenOverlay } from '../lib/overlay'
 import { IS_MAC, primaryKey } from '../lib/platform'
@@ -475,6 +476,11 @@ export function Services({
 
 
   const list = (
+    <>
+    {/* 启动顺序视图（P1-5）：筛选时不显示，那时列表只是部分条目，图会误导 */}
+    {!filtering && (
+      <StartOrderView entries={entries} groups={groups} runtimes={runtimes} onOpen={actions.select} />
+    )}
     <div className="svc-groups">
       {sections.length === 0 ? (
         <div className="ui-tile svc-empty-row" style={{ gridColumn: '1 / -1' }}>
@@ -508,6 +514,7 @@ export function Services({
         ))
       )}
     </div>
+    </>
   )
 
   return (

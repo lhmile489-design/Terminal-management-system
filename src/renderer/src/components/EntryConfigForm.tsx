@@ -16,7 +16,7 @@ import {
   SERVICE_ICON_META,
   isLiveStatus
 } from '../lib/entryMeta'
-import { Button } from './ui'
+import { Button, Switch } from './ui'
 import { useEntries } from '../store/entries'
 import { useGroups } from '../store/groups'
 
@@ -88,6 +88,14 @@ export function EntryConfigForm({
   const [jarPath, setJarPath] = useState(entry.jarPath ?? '')
   // 先等待：只能选同组的其他服务（整组按依赖顺序启动只看组内依赖）
   const [startAfter, setStartAfter] = useState<string[]>(entry.startAfter ?? [])
+  // 运行监控（v14）：健康检查只给路径，主机 / 端口 / 协议由主进程按本服务自己的监听决定
+  const [healthOn, setHealthOn] = useState(entry.healthCheck?.enabled ?? false)
+  const [healthPath, setHealthPath] = useState(entry.healthCheck?.path ?? '/')
+  const [autoRestart, setAutoRestart] = useState(entry.autoRestart ?? false)
+  // 关键词一行一个；保存时去空白、去空行，校形与上限在主进程
+  const [alertText, setAlertText] = useState((entry.alertKeywords ?? []).join('\n'))
+  const [alertOnErrors, setAlertOnErrors] = useState(entry.alertOnErrors ?? false)
+  const groupEnv = useGroups((s) => s.groups.find((g) => g.id === groupId)?.env ?? 'dev')
   const siblings = useEntries((st) => st.entries).filter(
     (e) => !!entry.groupId && e.groupId === entry.groupId && e.id !== entry.id && e.kind === 'service'
   )
@@ -185,7 +193,8 @@ export function EntryConfigForm({
 
   // 未保存判定：把所有表单字段拍成快照，与上次保存时的快照比较
   const snapshot = JSON.stringify([kind, name, groupId, icon, path, cwd, script, scripts,
-    envRows.map((r) => [r.key, r.value]), port, outputDir, framework, packageManager, launchMode, jarPath, startAfter])
+    envRows.map((r) => [r.key, r.value]), port, outputDir, framework, packageManager, launchMode, jarPath, startAfter,
+    healthOn, healthPath, autoRestart, alertText, alertOnErrors])
   const [baseline, setBaseline] = useState(snapshot)
   const dirty = snapshot !== baseline
   useEffect(() => {
@@ -219,7 +228,20 @@ export function EntryConfigForm({
         registerOnly: isLaunchable ? !mode : !script,
         // 只保留仍在同组里的，别把已移走的旧依赖再写回去
         // 换了工作组就清空：先等待只认同组条目，旧组的依赖带过去是无效的
-        startAfter: (() => { const keep = groupId === (entry.groupId ?? '') ? startAfter.filter((d) => siblings.some((x) => x.id === d)) : []; return keep.length ? keep : null })()
+        startAfter: (() => { const keep = groupId === (entry.groupId ?? '') ? startAfter.filter((d) => siblings.some((x) => x.id === d)) : []; return keep.length ? keep : null })(),
+        // 任务不支持这两项，主进程也会拒；这里直接发清空，免得改类型时报错
+        // 关闭时沿用已保存的路径：输入框里没填对的草稿不该挡住整次保存
+        healthCheck:
+          kind !== 'service'
+            ? null
+            : healthOn
+              ? { path: healthPath.trim() || '/', enabled: true }
+              : entry.healthCheck
+                ? { path: entry.healthCheck.path, enabled: false }
+                : null,
+        autoRestart: kind === 'service' && groupEnv === 'dev' ? autoRestart : false,
+        alertKeywords: alertWords(alertText),
+        alertOnErrors
       })
       if (ok) {
         setBaseline(snapshot)
@@ -514,6 +536,68 @@ export function EntryConfigForm({
               </div>
             </Field>
 
+            <h3 className="svc-sec">运行监控</h3>
+
+            {kind === 'service' && (
+              <>
+                <Field
+                  label="健康检查"
+                  hint="开启后每 15 秒向本服务自己的监听端口发一次 GET，只看是否有响应"
+                >
+                  <Switch
+                    checked={healthOn}
+                    onChange={setHealthOn}
+                    label="开启健康检查"
+                  />
+                </Field>
+                {healthOn && (
+                  <Field label="检查路径" hint="以 / 开头，例如 /actuator/health。主机与端口由应用决定">
+                    <input
+                      data-health-path
+                      value={healthPath}
+                      placeholder="/"
+                      maxLength={256}
+                      onChange={(e) => setHealthPath(e.target.value)}
+                      className="w-full rounded-control border border-line bg-card px-2.5 py-1.5 font-mono text-[12px] text-ink-strong outline-none focus:border-accent"
+                    />
+                  </Field>
+                )}
+                <Field
+                  label="意外退出时自动重启"
+                  hint={
+                    groupEnv === 'dev'
+                      ? '按 2 / 8 / 30 秒退避，10 分钟内最多 3 次'
+                      : `所在工作组是${groupEnv === 'prod' ? '生产' : '沙箱'}环境，每次启动都要人确认，不支持自动重启`
+                  }
+                >
+                  <Switch
+                    checked={groupEnv === 'dev' && autoRestart}
+                    onChange={setAutoRestart}
+                    label="意外退出时自动重启"
+                    disabled={groupEnv !== 'dev'}
+                  />
+                </Field>
+              </>
+            )}
+
+            <Field label="输出告警关键词" hint="一行一个，按文字匹配、不区分大小写，最多 10 个">
+              <textarea
+                data-alert-keywords
+                value={alertText}
+                rows={3}
+                placeholder={'OutOfMemoryError\nEADDRINUSE'}
+                onChange={(e) => setAlertText(e.target.value)}
+                className="w-full rounded-control border border-line bg-card px-2.5 py-1.5 font-mono text-[12px] text-ink-strong outline-none focus:border-accent"
+              />
+            </Field>
+            <Field label="同时对错误行告警" hint="输出里出现 error、exception 一类的行也提醒">
+              <Switch
+                checked={alertOnErrors}
+                onChange={setAlertOnErrors}
+                label="同时对错误行告警"
+              />
+            </Field>
+
             {kind !== 'service' && (
               <Field label="产物目录" hint="留空则按 dist / build / out 等约定探测">
                 <input
@@ -668,6 +752,12 @@ function envPatch(savedKeys: string[], rows: EnvRow[]): Record<string, string | 
   }
   for (const key of savedKeys) if (!kept.has(key)) patch[key] = null
   return patch
+}
+
+/** 告警关键词：一行一个，去首尾空白、去空行、去重。空列表发 null 表示关闭；上限与字符校验在主进程 */
+function alertWords(text: string): string[] | null {
+  const words = [...new Set(text.split(/\r?\n/).map((w) => w.trim()).filter(Boolean))]
+  return words.length ? words : null
 }
 
 function Field({
