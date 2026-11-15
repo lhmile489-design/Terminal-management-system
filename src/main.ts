@@ -1,6 +1,8 @@
 // 渲染层入口。原版 src/renderer/src/main.tsx 的搬运从 S26 开始；
 // 这一版只把适配层接上，验证 `mile` 可用（类型断言在 src/lib/mile.ts 里）。
 
+import "./styles/tokens.css";
+import "./styles/ui.css";
 import { mile } from "./lib/mile";
 
 const root = document.getElementById("root");

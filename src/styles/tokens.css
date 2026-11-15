@@ -1,0 +1,1055 @@
+@import 'tailwindcss';
+@import '@xterm/xterm/css/xterm.css';
+
+/* 主题由 <html data-theme> 驱动，不跟随 prefers-color-scheme —— 跟随系统由主进程 nativeTheme 解析后写入该属性 */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/*
+  语义令牌指向可翻转的原始变量。@theme inline 让生成的工具类直接引用
+  var(--surface-canvas) 而非拷贝其值，因此切换 data-theme 时无需重建样式。
+*/
+@theme inline {
+  --color-canvas: var(--surface-canvas);
+  --color-panel: var(--surface-panel);
+  --color-card: var(--surface-card);
+  --color-raised: var(--surface-raised);
+  /* 卡片内的凹陷块（迷你统计、诊断项、发现条目），比 card 略深 */
+  --color-sunken: var(--surface-sunken);
+
+  --color-line: var(--stroke-base);
+  --color-line-strong: var(--stroke-strong);
+
+  --color-ink: var(--text-primary);
+  --color-ink-strong: var(--text-strong);
+  --color-ink-muted: var(--text-muted);
+  --color-ink-faint: var(--text-faint);
+  --color-ink-inverse: var(--text-inverse);
+  /* ink-strong 作底时的前景。不能用 ink-inverse —— 那个是「相对页面底色」反转的，
+     而 ink-strong 本身已经反转过一次，两次抵消会让字和底同色 */
+  --color-on-ink: var(--text-on-ink);
+
+  --color-live: var(--signal-live);
+  --color-warn: var(--signal-warn);
+  --color-fault: var(--signal-fault);
+  --color-info: var(--signal-info);
+  --color-idle: var(--signal-idle);
+
+  --color-live-soft: var(--signal-live-soft);
+  --color-warn-soft: var(--signal-warn-soft);
+  --color-fault-soft: var(--signal-fault-soft);
+  --color-info-soft: var(--signal-info-soft);
+
+  /* 强调色：区块标签、端口、选中态。与 info 分开 —— info 只表状态，accent 是品牌线 */
+  --color-accent: var(--signal-accent);
+  --color-accent-soft: var(--signal-accent-soft);
+  --color-on-accent: var(--signal-on-accent);
+
+  --font-sans: 'Segoe UI Variable Text', 'Segoe UI', 'Microsoft YaHei UI', -apple-system, 'PingFang SC', system-ui, sans-serif;
+  /* 标题、数字、品牌。Manrope 没有中文字形，中文自然回落到雅黑 */
+  --font-display: 'Manrope', 'Segoe UI Variable Display', 'Segoe UI', 'Microsoft YaHei UI', 'PingFang SC', sans-serif;
+  --font-mono: 'Cascadia Code', 'JetBrains Mono', Consolas, 'SF Mono', Menlo, ui-monospace, monospace;
+
+  /* UI-REFACTOR §4.3：卡片 16 / 控件 10 / 胶囊 999 */
+  --radius-card: 16px;
+  --radius-control: 10px;
+  --radius-pill: 999px;
+
+  /* 阴影三档：静态 / 悬停 / 浮层。深色主题前两档为空，靠表面逐级变亮 + 描边 */
+  --shadow-tile: var(--shadow-lift);
+  --shadow-hover: var(--shadow-lift-lg);
+  --shadow-float: var(--shadow-float-raw);
+
+  /* 微交互时长与曲线，UI-REFACTOR §4.4 */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out: cubic-bezier(0.32, 0.72, 0.32, 1);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   浅色主题 —— 石板蓝调（v1.7）
+   设计语言：冷调中性，带蓝色底蕴；主按钮用品牌蓝而非极黑，
+   符合 Ops/Dev 工具的现代审美（Linear、GitHub Light、Vercel 同路线）。
+
+   核心变化：
+   1. btn-primary 专用变量：品牌蓝底 #2563eb + 白字，告别极黑按钮
+   2. text-strong 从 #161b22（接近纯黑）→ #1e2736（深蓝灰），
+      正文层次更自然，不再"打字机"
+   3. accent/signal 微调：与新主按钮蓝保持色相一致
+   4. canvas 保持浅灰底，panel/card 用纯白，层次分明
+   ══════════════════════════════════════════════════════════════════════════ */
+:root,
+[data-theme='light'] {
+  /* ── 表面层次（v2.0 便当网格：中性浅底 + 纯白磁贴） ── */
+  --surface-canvas: #f6f7fb;
+  --surface-panel:  #ffffff;
+  --surface-card:   #ffffff;
+  --surface-raised: #eef1f6;        /* 分段控件底、悬停底 */
+  --surface-sunken: #f1f3f8;        /* 磁贴内的凹陷块 */
+
+  /* ── 描边 ── */
+  --stroke-base:   #e3e7ee;
+  --stroke-strong: #cbd2dd;
+
+  /* ── 文字层次（白底对比度：16 / 12.7 / 7.8 / 5.7）──
+     规则：文字色禁止再加透明度。faint 是最弱一档，本身在 raised 上也 ≥ 4.5:1
+  */
+  --text-primary:  #2b3142;
+  --text-strong:   #1b1f2e;
+  --text-muted:    #4c5265;
+  --text-faint:    #5f6678;
+  --text-inverse:  #ffffff;
+  --text-on-ink:   #ffffff;
+
+  /* ── 信号色：白底上都 ≥ 5:1 ── */
+  --signal-live:   #15803d;
+  --signal-warn:   #92400e;
+  --signal-fault:  #b91c1c;
+  --signal-info:   #1d4ed8;
+  --signal-idle:   #6b7280;
+
+  --signal-live-soft:  #dcfce7;
+  --signal-warn-soft:  #fef3c7;
+  --signal-fault-soft: #fee2e2;
+  --signal-info-soft:  #dbeafe;
+
+  /* ── Accent：品牌蓝，与主按钮同色相 ── */
+  --signal-accent:      #2563eb;
+  --signal-accent-soft: #e3ecff;
+  --signal-on-accent:   #ffffff;
+
+  /* ── 主按钮专用（浅色模式）：品牌蓝底 + 白字，替代极黑底 ── */
+  --btn-primary-bg:        #2563eb;
+  --btn-primary-bg-hover:  #1d4ed8;   /* 稍深，悬停反馈 */
+  --btn-primary-bg-active: #1e40af;   /* 按下再深一档 */
+  --btn-primary-fg:        #ffffff;
+  --btn-primary-border:    transparent;
+
+  /* ── 投影三档：静态 / 悬停 / 浮层 ── */
+  --shadow-lift:      0 4px 14px rgb(20 28 48 / 0.07);
+  --shadow-lift-lg:   0 8px 22px rgb(20 28 48 / 0.12);
+  --shadow-float-raw: 0 16px 40px rgb(20 28 48 / 0.16);
+
+  --terminal-bg:   #ffffff;
+  --scroll-thumb:  #c1c8d2;
+  color-scheme: light;
+}
+
+/*
+  深色 —— v2.0 先保证可用（Q16：先打磨浅色，深色只要求不劣于基线，后续再微调）。
+  不用阴影表现层次：canvas → panel → card → raised 逐级变亮，再加 1px 描边。
+  soft 底用 color-mix 混成不透明色，避免叠在不同底上颜色不一。
+*/
+[data-theme='dark'] {
+  --surface-canvas: #0f1219;
+  --surface-panel: #151a23;
+  --surface-card: #1b212c;
+  --surface-raised: #232a37;
+  --surface-sunken: #171c26;
+
+  --stroke-base: #2a3240;
+  --stroke-strong: #3a4556;
+
+  --text-primary: #e4e8f0;
+  --text-strong: #f1f4f9;
+  --text-muted: #a3acbc;
+  /* card #1b212c 上约 6.3:1，raised 上约 5.7:1，深色分段选中底上约 4.9:1 */
+  --text-faint: #9aa4b5;
+  --text-inverse: #0f1219;
+  --text-on-ink: #0f1219;
+
+  --signal-live: #4ade80;
+  --signal-warn: #fbbf24;
+  --signal-fault: #f87171;
+  --signal-info: #7aa7ff;
+  --signal-idle: #8a94a6;
+
+  --signal-live-soft: color-mix(in srgb, #22c55e 15%, #1b212c);
+  --signal-warn-soft: color-mix(in srgb, #f59e0b 15%, #1b212c);
+  --signal-fault-soft: color-mix(in srgb, #ef4444 15%, #1b212c);
+  --signal-info-soft: color-mix(in srgb, #2563eb 18%, #1b212c);
+
+  /* 深色下 accent 作文字色要提亮；作底时前景用深色 */
+  --signal-accent: #7aa7ff;
+  --signal-accent-soft: color-mix(in srgb, #2563eb 20%, #1b212c);
+  --signal-on-accent: #0f1219;
+
+  /* 主按钮两套主题同为品牌蓝底白字（白字 5.2:1）。悬停往深走不往亮走：
+     #3b74f0 上白字只有 4.25:1，m12-press 在指针恰好停在按钮上时量到过 */
+  --btn-primary-bg: #2563eb;
+  --btn-primary-bg-hover: #1d4ed8;
+  --btn-primary-bg-active: #1e40af;
+  --btn-primary-fg: #ffffff;
+  --btn-primary-border: transparent;
+
+  --shadow-lift: 0 0 0 transparent;
+  --shadow-lift-lg: 0 0 0 transparent;
+  --shadow-float-raw: 0 16px 40px rgb(0 0 0 / 0.45);
+  --terminal-bg: #0f1419;
+  --scroll-thumb: #303c4d;
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--surface-canvas);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.6;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: default;
+}
+
+/* 焦点环：3px 品牌蓝，偏移 2px（UI-REFACTOR §4.4） */
+*:focus-visible {
+  outline: 3px solid var(--btn-primary-bg);
+  outline-offset: 2px;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scroll-thumb);
+  border: 3px solid transparent;
+  border-radius: 8px;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/*
+  卡片：统一 12px 圆角与 1px 边框。--glow 由状态决定，同时驱动图标瓦片底色与
+  边框着色 —— 用 color-mix 混入而非写死色值，深浅两模式自动成立。
+
+  hover 过渡使用 spring 曲线（cubic-bezier(0.34, 1.56, 0.64, 1)）：
+  Y 轴过冲约 0.3px，产生轻微弹性感，比 ease-out 更有"拿起卡片"的手感。
+  400ms → 确保弹性弧线能走完（spring 曲线时长要比 ease-out 长才明显）。
+*/
+.surface-card {
+  --glow: var(--signal-accent);
+  border-radius: var(--radius-card);
+  border: 1px solid var(--stroke-base);
+  background: var(--surface-card);
+  box-shadow: var(--shadow-lift);
+  transition:
+    transform 90ms var(--ease-out),
+    border-color 90ms var(--ease-out),
+    box-shadow 90ms var(--ease-out);
+}
+/* 浅色下磁贴靠阴影浮在画布上，描边弱化到透明；深色靠描边分层 */
+:root:not([data-theme='dark']) .surface-card:not([data-tone]) {
+  border-color: transparent;
+}
+
+/* 状态只染边框，不改底色 —— 大面积语义色会盖过内容 */
+.surface-card[data-tone='live'] {
+  border-color: color-mix(in srgb, var(--signal-live) 42%, var(--stroke-base));
+}
+.surface-card[data-tone='fault'] {
+  border-color: color-mix(in srgb, var(--signal-fault) 55%, var(--stroke-base));
+}
+.surface-card[data-tone='warn'] {
+  border-color: color-mix(in srgb, var(--signal-warn) 42%, var(--stroke-base));
+}
+
+.surface-card[data-interactive='true']:hover {
+  /* 上浮 1px + 阴影升一档。不用模板的 scale(1.02)：密集信息放大会让文字发虚 */
+  transform: translateY(-1px);
+  border-color: var(--stroke-strong);
+  box-shadow: var(--shadow-lift-lg);
+}
+
+/* 拖拽中的原位占位：虚线 + 压低，不要再抬升 */
+.surface-card[data-dragging='true'] {
+  transform: none;
+  border-style: dashed;
+  opacity: 0.4;
+}
+
+/*
+  拖拽进行中，transform 交给 useCardSort 的 FLIP 动画独占。
+  否则 .surface-card 的 transform 过渡 + :hover 抬升会与 card.animate() 抢同一属性 ——
+  重排时卡片从光标下滑过，:hover 反复开关 translateY，补间叠在 FLIP 上就「乱跳」。
+  只压制干扰源（hover 抬升 + transform 过渡），滑动本身仍由 FLIP 驱动；松手即恢复手感。
+*/
+[data-sorting='true'] .surface-card {
+  transition:
+    border-color 150ms ease-out,
+    box-shadow 150ms ease-out;
+}
+[data-sorting='true'] .surface-card[data-interactive='true']:hover {
+  transform: none;
+}
+
+/* KPI 使用固定最小列宽：宽屏自然形成 3×2，窄屏先降列而不是压缩读数和上下文。 */
+section[aria-labelledby='kpi-heading'] {
+  container-type: inline-size;
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@container (max-width: 56rem) {
+  .kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container (max-width: 38rem) {
+  .kpi-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .surface-card,
+  .surface-card[data-interactive='true']:hover {
+    transform: none;
+    transition: none;
+  }
+}
+
+/* 图标瓦片：圆角方块 + 同色系淡底，卡片 44px，KPI 34px */
+.icon-tile {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--stroke-base);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--glow) 16%, var(--surface-card));
+  color: var(--glow);
+}
+
+.icon-tile-sm {
+  border-radius: 9px;
+  border-color: transparent;
+  background: color-mix(in srgb, var(--glow) 15%, transparent);
+}
+
+/*
+  状态胶囊：同色系的底、边、字。三者同源才不会像是随便描了个框。
+*/
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 99px;
+  border: 1px solid color-mix(in srgb, var(--glow) 45%, transparent);
+  background: color-mix(in srgb, var(--glow) 10%, transparent);
+  /* 字色混入 28% 最强文字色：浅色下压暗、深色下提亮，保证在自身浅底上 ≥ 4.5:1。
+     直接用 --glow 时，#15803D 在 10% 浅底上只有 4.37:1（阶段 1 实测） */
+  color: color-mix(in srgb, var(--glow) 72%, var(--text-strong));
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+/* 状态圆点：外圈光环用 box-shadow 实心扩散，不用 blur —— blur 在深底上会发灰 */
+.status-dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 99px;
+  background: var(--glow);
+}
+
+.status-dot[data-halo='true'] {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--glow) 22%, transparent);
+}
+
+/* 迷你负载条：3px 轨道 + 实心填充，表格与 TOP5 共用 */
+.load-track {
+  overflow: hidden;
+  height: 3px;
+  border-radius: 99px;
+  background: var(--stroke-base);
+}
+
+.load-fill {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: var(--glow, var(--signal-accent));
+}
+
+/*
+  分段控件：凹槽底 + 选中项浮起。参考项目里那种「按进去」的观感靠的是
+  外层暗一档、选中项用卡片色顶起来，而不是给选中项描边。
+  不做顶部视图切换器 —— 左导航轨已经是唯一的视图入口，两套导航会让人
+  以为它们切的是不同东西。这里只服务于同一视图内的口径切换。
+*/
+.segmented {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--stroke-base);
+  border-radius: 8px;
+  background: var(--surface-raised);
+}
+
+.segmented-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  /* 未选中项坐在 raised 底上（比卡片更暗/更亮一档），faint 在这里量到 4.12:1 与
+     3.02:1，都不到 AA。这一档要用 primary —— 未选中不等于读不出来 */
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition:
+    background 150ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    color 150ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.segmented-item:hover:not([aria-checked='true']):not([aria-selected='true']) {
+  color: var(--text-primary);
+}
+
+/* 分段项挤在凹槽里，缩放会跟邻项产生视觉重叠，只下沉 */
+.segmented-item:active:not(:disabled) {
+  transform: translateY(1px);
+  transition:
+    transform 60ms cubic-bezier(0.55, 0, 1, 0.45),
+    background 60ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    color 60ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.segmented-item[aria-checked='true'],
+.segmented-item[aria-selected='true'] {
+  border-color: var(--stroke-base);
+  background: var(--surface-card);
+  color: var(--text-strong);
+  box-shadow: var(--shadow-lift);
+}
+
+/*
+  按压反馈。此前所有按钮只有 transition-colors，按下去没有任何位移，手感很硬。
+
+  形状：按下缩 0.96 并下沉 1px，松开弹回。按下用 60ms、回弹用 200ms spring ——
+  两段不等时长才像「碰到底了再松开」；等时长会像橡皮筋。
+  spring 曲线（cubic-bezier(0.34, 1.56, 0.64, 1)）让松手后有轻微过冲弹回感，
+  比 ease-out 更有物理重量感。回弹时长延长到 200ms 让弹性弧线完整走完。
+
+  只动 transform，不动 opacity 也不动色值：
+  - 压 opacity 会把文字一起拖淡，禁用态踩过这个坑（见下方 .btn-primary:disabled）。
+  - 色值归各组件自己的 hover/active 规则管，这个类只负责位移，才能铺到所有按钮上
+    而不跟任何配色打架。
+  禁用态不给反馈 —— 按下去有动静会让人以为点成了。
+
+  这两个类的 transition 必须把配色也一起写上，不能只写 transform：本文件是无 layer 的，
+  会盖过 Tailwind `transition-colors`（在 @layer utilities 里）。只写 transform 的话，
+  凡是挂了 .pressable 的按钮 hover 变色就变成硬切了。同理，本文件里自带 transition
+  简写的 .btn-primary 与 .segmented-item 排在这两个类之后、会盖回来，所以它们各自的
+  简写里也补了 transform。
+*/
+.pressable {
+  transition:
+    transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    background-color 150ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    border-color 150ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    color 150ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    box-shadow 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.pressable:active:not(:disabled):not([aria-disabled='true']) {
+  transform: scale(0.96) translateY(1px);
+  /* 按下用更快的曲线（有质量感的短促），松手才用 spring 弹回 */
+  transition:
+    transform 60ms cubic-bezier(0.55, 0, 1, 0.45),
+    background-color 60ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    border-color 60ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    color 60ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    box-shadow 60ms cubic-bezier(0.55, 0, 1, 0.45);
+}
+
+/*
+  宽条目（命令面板的结果行、会话列表、脚本选择项）用这一档。
+  整行缩放看着像橡皮，只下沉 1px 就够 —— 位移量要跟控件尺寸成反比。
+*/
+.pressable-flat {
+  transition:
+    transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    background-color 150ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    border-color 150ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    color 150ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    box-shadow 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.pressable-flat:active:not(:disabled):not([aria-disabled='true']) {
+  transform: translateY(1px);
+  transition:
+    transform 60ms cubic-bezier(0.55, 0, 1, 0.45),
+    background-color 60ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    border-color 60ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    color 60ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    box-shadow 60ms cubic-bezier(0.55, 0, 1, 0.45);
+}
+
+/*
+  主按钮：统一走 --btn-primary-* 变量，浅/深模式各自在主题块里定义。
+  浅色 → 品牌蓝底（#2563eb）+ 白字；深色 → 蓝灰底（#253040）+ 柔蓝白字。
+  不再用 --text-strong 作底，彻底告别「极黑按钮」。
+
+  禁用态不整块压 opacity：那会把文字一起拖到 1.26:1，用户连按钮写的是什么都读不出。
+  改为换一套弱化的底色与边框，文字仍守住 AA。
+*/
+.btn-primary {
+  border: 1px solid var(--btn-primary-border);
+  border-radius: 6px;
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-fg);
+  transition:
+    background 150ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    color 150ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    border-color 150ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--btn-primary-bg-hover);
+}
+
+/*
+  必须排在 :hover 之后：按下时元素同时命中 hover 与 active，两条选择器特异性相等，
+  后写的才生效。反过来写的话按下去底色不会变。
+*/
+.btn-primary:active:not(:disabled) {
+  transform: scale(0.96) translateY(1px);
+  background: var(--btn-primary-bg-active);
+  transition:
+    transform 60ms cubic-bezier(0.55, 0, 1, 0.45),
+    background 60ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    color 60ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    border-color 60ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.btn-primary:disabled {
+  cursor: not-allowed;
+  border-color: var(--stroke-strong);
+  background: var(--surface-raised);
+  /* 浅色：primary(#374151) 在 raised(#eaedf2) 上 ≈ 5.2:1 ✅
+     深色：primary(#c9d3e0) 在 raised(#222c3a) 上 ≈ 5.8:1 ✅ */
+  color: var(--text-primary);
+}
+
+/*
+  reduced-motion 下退掉位移，只留配色反馈。
+
+  两件事都不能省，第一版各踩了一次：
+  1. **必须排在所有 :active 规则之后。** 媒体查询不加特异性，@media 里的
+     `.pressable:active` 与外面的 `.pressable:active:not(...)` 特异性并不相等 ——
+     后者还多两个 :not()，写在前面就被反压回去。实测开着 reduce 按下去仍是
+     matrix(0.96,…,0.96)。
+  2. **选择器要跟被覆盖的那条一样长。** 只写 `.pressable:active` 盖不住
+     `.pressable:active:not(:disabled):not([aria-disabled='true'])`。
+  transition-duration 一并压到 0：位移没了，配色还留一点时长也没意义，直接同步切。
+*/
+@media (prefers-reduced-motion: reduce) {
+  .pressable:active:not(:disabled):not([aria-disabled='true']),
+  .pressable-flat:active:not(:disabled):not([aria-disabled='true']),
+  .btn-primary:active:not(:disabled),
+  .segmented-item:active:not(:disabled) {
+    transform: none;
+  }
+}
+
+/* 只给读屏：aria-live 播报区不能用 display:none，那样不会被朗读 */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/*
+  区块标签：等宽小号大写 + 前置实心方块 + 尾随发丝线。
+  方块用 accent 而非 currentColor —— 标签文字本身要弱，方块要是那一点强调。
+*/
+/* 区块标题，UI-REFACTOR §4.2：Manrope 15px，不再用等宽大写、方块与发丝线 */
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text-strong);
+}
+.eyebrow-tight { font-size: 13px; }
+
+/*
+  展示型标题（不再用于 ViewHeader，保留给内容页中的大型强调区）：
+  副标用 em 单位跟随主标缩放，窗口变窄时两者比例不变。
+*/
+.display-title {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6em;
+  font-size: clamp(22px, 2.4vw, 30px);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1.15;
+  color: var(--text-strong);
+}
+
+.display-title > .romanized {
+  font-family: var(--font-mono);
+  font-size: 0.32em;
+  font-weight: 400;
+  letter-spacing: 0.26em;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+.drag-region {
+  --app-region: drag;
+}
+
+.no-drag {
+  --app-region: no-drag;
+}
+
+/* 主题切换时抑制过渡，避免整屏闪烁 */
+.theme-switching * {
+  transition: none !important;
+}
+
+/* ── badge-neutral：框架/脚本名徽章 ── */
+.badge-neutral {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--surface-raised);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  line-height: 1.6;
+}
+
+/*
+  深色模式下 raised 底（#222c3a）上 muted 文字（#8b97a8）约 3.0:1，不达 AA。
+  升至 text-primary（#c9d3e0），在 #222c3a 上约 5.8:1，满足 AA。
+*/
+[data-theme='dark'] .badge-neutral {
+  color: var(--text-primary);
+}
+
+/*
+  卡片左侧状态色条（::before 伪元素）。
+  surface-card 有 position: relative（来自 border-radius 计算）。
+  色条两端用 border-radius 跟随卡片圆角，不再依赖 overflow: hidden ——
+  overflow: hidden 会裁剪绝对定位的浮层（如下拉菜单），导致菜单被遮住。
+*/
+.surface-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--glow, transparent);
+  opacity: 0;
+  border-radius: var(--radius-card) 0 0 var(--radius-card);
+  transition: opacity 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.surface-card[data-tone='live']::before,
+.surface-card[data-tone='warn']::before,
+.surface-card[data-tone='fault']::before {
+  opacity: 1;
+}
+
+/* busy（启动中/停止中）时色条做扫描动画 */
+@keyframes status-scan {
+  0%   { top: -30%; height: 30%; opacity: 0.5; }
+  50%  { opacity: 1; }
+  100% { top: 100%; height: 30%; opacity: 0.5; }
+}
+
+.surface-card[data-tone='busy']::before {
+  opacity: 1;
+  height: 30%;
+  animation: status-scan 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* ── 卡片底部不确定进度条（busy 时显示） ── */
+@keyframes indeterminate {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+
+.card-progress-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: color-mix(in srgb, var(--glow) 15%, transparent);
+  overflow: hidden;
+}
+
+.card-progress-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 25%;
+  height: 100%;
+  background: var(--glow);
+  animation: indeterminate 1.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .surface-card[data-tone='busy']::before {
+    animation: none;
+    opacity: 1;
+    height: 100%;
+  }
+  .card-progress-bar::after {
+    animation: none;
+    width: 40%;
+    transform: translateX(0);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   高斯模糊 + 半透明表面（v1.6）
+   只允许用在固定/粘性层（遮罩、命令面板）——不能用于滚动容器，会引发持续 GPU 重绘。
+   深色模式下 --surface-frosted-bg 更暗，浅色模式下偏白，变量已跟随主题切换。
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/*
+  遮罩层（Scrim）：命令面板、对话框背后的全屏蒙版。
+  用 backdrop-blur 替代纯黑半透明，让背景内容若隐若现，增加层次感。
+  深色：模糊 + 深藏青蒙版；浅色：模糊 + 浅灰蒙版。
+*/
+.scrim-frosted {
+  background: var(--scrim-bg, color-mix(in srgb, var(--surface-canvas) 55%, transparent));
+  backdrop-filter: blur(8px) saturate(160%);
+  -webkit-backdrop-filter: blur(8px) saturate(160%);
+}
+
+[data-theme='dark'] .scrim-frosted,
+[data-theme='dark'].scrim-frosted {
+  --scrim-bg: color-mix(in srgb, #060a0f 62%, transparent);
+}
+
+[data-theme='light'] .scrim-frosted,
+[data-theme='light'].scrim-frosted {
+  --scrim-bg: color-mix(in srgb, #dde2e9 45%, transparent);
+}
+
+/*
+  磨砂玻璃卡片（overlay 专用）：命令面板、浮层弹窗背景。
+  不用于普通内容卡片 —— 那些需要清晰底色支撑对比度。
+  背景色混入 panel 色减少纯透明的"空洞感"。
+*/
+.surface-frosted {
+  background: color-mix(in srgb, var(--surface-panel) 80%, transparent);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid color-mix(in srgb, var(--stroke-strong) 60%, transparent);
+}
+
+[data-theme='dark'] .surface-frosted,
+[data-theme='dark'].surface-frosted {
+  background: color-mix(in srgb, #1a2230 82%, transparent);
+  border-color: color-mix(in srgb, var(--stroke-strong) 50%, transparent);
+  /* 深色磨砂面板顶部高光线，产生"玻璃厚度"感 */
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #ffffff 6%, transparent),
+    0 16px 48px rgb(0 0 0 / 0.4),
+    0 4px 12px rgb(0 0 0 / 0.3);
+}
+
+[data-theme='light'] .surface-frosted,
+[data-theme='light'].surface-frosted {
+  background: color-mix(in srgb, #ffffff 88%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #ffffff 80%, transparent),
+    0 16px 48px rgb(0 0 0 / 0.12),
+    0 4px 12px rgb(0 0 0 / 0.08);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   非线性入场动画（v1.6）
+   所有 keyframe 只动 transform + opacity，不动 layout 属性。
+   spring 感来自两阶段：入场用 cubic-bezier(0.34, 1.56, 0.64, 1)（过冲弹性），
+   离场用 cubic-bezier(0.55, 0, 1, 0.45)（快速收起）。
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/*
+  命令面板对话框入场：从略高于最终位置落下 + 轻微缩放。
+  类似 macOS Spotlight 的出现方式——不是从底部爬上来，而是从上方轻落。
+*/
+@keyframes dialog-drop-in {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes dialog-drop-out {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+}
+
+/*
+  遮罩层入场：纯淡入，比对话框稍慢，错开时间轴让对话框更突出。
+*/
+@keyframes scrim-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes scrim-fade-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+/*
+  侧边滑入（Tooltip、浮层菜单等从按钮侧面出现）：
+  translateX(-4px) → 0 + opacity 0 → 1，配合 spring 曲线。
+*/
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(-6px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+/*
+  向上弹出（下拉菜单、端口选项气泡）：从下方 spring 弹出。
+*/
+@keyframes pop-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/*
+  状态标识切换淡入（用于状态色条从 invisible 到 visible 的首次显示）。
+  已有 200ms cubic-bezier(0.4,0,0.2,1) 的 opacity 过渡，这里升级曲线。
+*/
+.surface-card::before {
+  transition: opacity 280ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/*
+  命令面板遮罩：从 bg-black/45 升级为 scrim-frosted，
+  并挂上入场动画类（open 时添加 .cmd-scrim-open）。
+*/
+.cmd-scrim {
+  animation: scrim-fade-in 180ms cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+.cmd-dialog {
+  animation: dialog-drop-in 260ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Tooltip 滑入（NavRail tooltip 专用）
+   原方案只做 opacity-0 → opacity-100，无位移感。
+   升级为从右侧 4px 处 spring 滑入，配合 opacity。
+   className 不再只靠 group-hover:opacity-100，改为 group-hover:animate-tooltip。
+   ═══════════════════════════════════════════════════════════════════════════ */
+.tooltip-enter {
+  animation: slide-in-right 200ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   prefers-reduced-motion 兜底：禁用所有入场/离场动画，保留瞬间切换。
+   已有的 .surface-card hover、.pressable、.btn-primary 的规则在上方，
+   这里补充新增 keyframe 类。
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  .cmd-scrim,
+  .cmd-dialog,
+  .tooltip-enter {
+    animation: none;
+  }
+
+  /* 确保 scrim-frosted 的 blur 在 reduce 下也保留（只是跳过动画），
+     但如果用户明确反对运动效果，blur 本身不是运动，可以保留 */
+  .surface-card::before {
+    transition: opacity 100ms linear;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   全局入场动画系统（v1.6）
+   ─────────────────────────────────────────────────────────────────────────
+   设计原则：
+   1. 只动 transform + opacity，绝不动 layout 属性（避免重排）
+   2. 交错延迟用 CSS 变量 --i（索引），由组件内联 style 注入：
+        style={{ '--i': index } as React.CSSProperties}
+      CSS 里用 calc(var(--i, 0) * 40ms) 计算 delay
+   3. 视图切换用 .view-enter 类（App.tsx 切换时加 key 触发重新挂载）
+   4. 列表项用 .item-enter（EntryCard、KpiCard、ActivityEvent 等）
+   5. 所有动画统一在 prefers-reduced-motion 下 animation: none
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/*
+  视图内容区整体入场：从下方 12px 弹起 + 淡入。
+  给 App.tsx 的滚动内容容器套上此类，切视图时配合 key 重新触发。
+  spring 曲线：translateY 过冲后稳落，比 ease-out 更有质感。
+*/
+@keyframes view-enter {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.view-enter {
+  animation: view-enter 380ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/*
+  列表/网格项入场：从下方 10px 弹起 + 淡入。
+  比 view-enter 位移更小，因为已在入场的容器内，再大会显得两层动画叠加。
+  --i 注入索引，最多 10 档（超过的不再延迟，避免列表太长时末尾项等太久）。
+*/
+@keyframes item-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.item-enter {
+  animation: item-enter 320ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  /* clamp delay：最多 10 项有交错，后续不再等待 */
+  animation-delay: calc(min(var(--i, 0), 10) * 35ms);
+}
+
+/*
+  活动事件新增：从顶部滑下（新事件 prepend 到列表头）。
+  translateY(-8px) → 0，让新条目"从上方插入"而非凭空出现。
+*/
+@keyframes event-slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.event-enter {
+  animation: event-slide-down 240ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/*
+  ViewHeader 标题换视图淡入（比 view-enter 更快更轻，标题不需要大幅位移）。
+*/
+@keyframes header-enter {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.header-enter {
+  animation: header-enter 280ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/*
+  进度条/负载条宽度从 0 增长：用 scaleX 替代 width 动画（不触发重排）。
+  调用方需要在容器上设 transform-origin: left center。
+*/
+@keyframes bar-grow {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+.bar-grow {
+  transform-origin: left center;
+  animation: bar-grow 600ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation-delay: calc(min(var(--i, 0), 10) * 40ms + 100ms);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   prefers-reduced-motion：以上所有新增动画全部关闭
+   ───────────────────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .view-enter,
+  .item-enter,
+  .event-enter,
+  .header-enter,
+  .bar-grow {
+    animation: none;
+  }
+}

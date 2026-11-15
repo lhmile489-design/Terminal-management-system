@@ -77,7 +77,7 @@ ConPTY 不在依赖链最前，但它是迁移里风险最大的一项：做不�
 | S23 | H 条目 | 配置导入导出与旧版导入 | `ConfigTransferService.ts`(248) | S11 S15 S21a | M1 | [x] |
 | S24 | I 绑定 | Go 绑定服务与事件 | `main/index.ts`(1131) `shared/channels.ts`(179) | S11–S23 | M1–M4 | [ ] |
 | S25 | I 绑定 | 生成绑定与前端适配层 | `preload/index.ts`(264) | S24 | M5 | [x] |
-| S26 | J 渲染 | 样式原文复制 | `styles/tokens.css`(1055) `ui.css`(1438) | S01 | M5 | [ ] |
+| S26 | J 渲染 | 样式原文复制 | `styles/tokens.css`(1055) `ui.css`(1438) | S01 | M5 | [x] |
 | S27 | J 渲染 | 基础组件与浮层栈 | `components/ui/*`(1121) `lib/overlay.ts`(76) | S26 | M5 | [ ] |
 | S28 | J 渲染 | 前端工具与 store | 其余 `lib/*`(907) `store/*`(867) | S25 S27 | M5 | [ ] |
 | S29 | J 渲染 | 业务组件 | `components/**`(除 ui 与外壳组件，6825) | S28 | M5 | [ ] |
@@ -675,6 +675,12 @@ EntryService（2161 行）按方法边界拆成四步，四步的产物都在 `i
 - **规则**：两份文件都没有 `@layer`，搬过来也不加；Manrope 随 `@fontsource/manrope` 打包，不引 CDN
 - **验收**：`diff` 原文件与新文件，差异只有 `app-region` 那几行；CDP 读 `:root` 上的令牌计算值与原版一致（`verify-ui`、`verify-m7-visual` 的令牌断言）
 - **证据**：
+  - 产物：`src/styles/tokens.css`（1055 行）、`src/styles/ui.css`（1438 行），`src/main.ts` 里 import 两份
+  - 逐字复制：`cp` 原文件后只改两行 —— `tokens.css:641/645` 的 `-webkit-app-region` 换成 `--app-region`（mygo 的窗口拖动约定，见其 `docs/frontend.md` §285）。`diff` 结果：`ui.css` 与原文件完全一致，`tokens.css` 只有这两行不同
+  - 没有加 `@layer`；Manrope 仍随 `@fontsource/manrope` 打包，没引 CDN
+  - 构建验证：`bun run build:web`（`tsc --noEmit && vite build`）通过，产出 `index.css` 112.63 kB（gzip 20.59 kB）
+  - 编码扫描的一处说明：`tokens.css:560–561` 有两处 ✅（对比度注释里的 U+2705），属于**原版原文**，按卡片「其余一字不动」保留，未改成别的符号；这是本仓库里唯一的 emoji 例外，特此记录
+
 
 #### S27 基础组件与浮层栈
 
