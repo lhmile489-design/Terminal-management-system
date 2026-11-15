@@ -12,6 +12,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/egoist/mygo"
+
 	"mile-console/internal/contract"
 	"mile-console/internal/events"
 	"mile-console/internal/groups"
@@ -165,6 +167,8 @@ func (s ThemeService) Set(_ context.Context, pref string) (contract.ThemeState, 
 	if _, err := s.deps.Cfg.PatchSettings(func(st *contract.Settings) { st.Theme = clean }); err != nil {
 		return contract.ThemeState{}, err
 	}
+	// 同步给运行时：页面据 resolved 写 <html data-theme>，系统外观也跟着变
+	mygo.Theme.SetSource(mygo.ThemeSource(clean))
 	return contract.ThemeState{Preference: clean, Resolved: s.resolve(clean)}, nil
 }
 

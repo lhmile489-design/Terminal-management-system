@@ -15,6 +15,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log"
 	"os/exec"
 	"time"
@@ -59,16 +60,40 @@ var (
 	evScannerDiff    = mygo.NewEvent[contract.ScanDiff]("scannerDiff")
 )
 
-// windowAdapter 把 mygo 的窗口方法包成 app.WindowOS（那边要 error 与返回值）。
-type windowAdapter struct{ w *mygo.Window }
+// mainWin 主窗口，WhenReady 里赋值。
+//
+// 为什么不让适配器直接持有窗口：`mygo generate` 只扫**顶层**的 mygo.Bind，
+// 把 Bind 放进 WhenReady 会生成不出 WindowService / ThemeService / ShellService /
+// ClipboardService 四个服务（实测过）。所以四个绑定放顶层，窗口在用时惰性取。
+var mainWin *mygo.Window
 
-func (a windowAdapter) Minimize() error { a.w.Minimize(); return nil }
-func (a windowAdapter) ToggleMaximize() (bool, error) {
-	a.w.ToggleMaximize()
-	return a.w.IsMaximized(), nil
+// windowAdapter 把 mygo 的窗口方法包成 app.WindowOS（那边要 error 与返回值）。
+type windowAdapter struct{}
+
+func (windowAdapter) Minimize() error {
+	if mainWin == nil {
+		return errNoWindow
+	}
+	mainWin.Minimize()
+	return nil
 }
-func (a windowAdapter) Close() error      { a.w.Close(); return nil }
-func (a windowAdapter) IsMaximized() bool { return a.w.IsMaximized() }
+func (windowAdapter) ToggleMaximize() (bool, error) {
+	if mainWin == nil {
+		return false, errNoWindow
+	}
+	mainWin.ToggleMaximize()
+	return mainWin.IsMaximized(), nil
+}
+func (windowAdapter) Close() error {
+	if mainWin == nil {
+		return errNoWindow
+	}
+	mainWin.Close()
+	return nil
+}
+func (windowAdapter) IsMaximized() bool { return mainWin != nil && mainWin.IsMaximized() }
+
+var errNoWindow = errors.New("窗口尚未创建")
 
 // shellAdapter 把 mygo.Shell 包成 app.ShellOS。
 type shellAdapter struct{}
@@ -257,6 +282,22 @@ func main() {
 		app.NewLogService(app.Deps{Logs: logsSvc}),
 		app.NewScannerService(sc, cfg),
 		app.NewSettingsService(app.Deps{Cfg: cfg}),
+		app.NewWindowService(app.Deps{Window: windowAdapter{}}),
+		app.NewThemeService(app.Deps{Cfg: cfg}, func(p contract.ThemePreference) contract.ResolvedTheme {
+			switch p {
+			case contract.ThemeLight:
+				return contract.ResolvedLight
+			case contract.ThemeDark:
+				return contract.ResolvedDark
+			default:
+				if mygo.Theme.IsDark() {
+					return contract.ResolvedDark
+				}
+				return contract.ResolvedLight
+			}
+		}),
+		app.NewShellService(app.Deps{Shell: shellAdapter{}}),
+		app.NewClipboardService(app.Deps{Clipboard: clipboardAdapter{}}),
 	)
 
 	mygo.App.WhenReady(func() {
@@ -270,29 +311,11 @@ func main() {
 			StateKey:        "main",
 			URL:             "/",
 		})
+		mainWin = win
 		bus.SetSend(emitFor(win))
 
 		// 主题偏好同步给运行时，页面再据 resolved 写 <html data-theme>
 		mygo.Theme.SetSource(mygo.ThemeSource(cfg.Get().Settings.Theme))
-
-		mygo.Bind(
-			app.NewWindowService(app.Deps{Window: windowAdapter{w: win}}),
-			themeBinding{app.NewThemeService(app.Deps{Cfg: cfg}, func(p contract.ThemePreference) contract.ResolvedTheme {
-				switch p {
-				case contract.ThemeLight:
-					return contract.ResolvedLight
-				case contract.ThemeDark:
-					return contract.ResolvedDark
-				default:
-					if mygo.Theme.IsDark() {
-						return contract.ResolvedDark
-					}
-					return contract.ResolvedLight
-				}
-			})},
-			app.NewShellService(app.Deps{Shell: shellAdapter{}}),
-			app.NewClipboardService(app.Deps{Clipboard: clipboardAdapter{}}),
-		)
 
 		sc.Start()
 		healthSvc.Start()
