@@ -923,4 +923,7 @@ export const events = {
   plannerReminder: event<ReminderFire>("plannerReminder"),
   sessionExit: event<SessionExitEvent>("sessionExit"),
   scannerDiff: event<ScanDiff>("scannerDiff"),
+  windowMaximizeChanged: event<boolean>("windowMaximizeChanged"),
+  themeChanged: event<ThemeState>("themeChanged"),
+  settingsChanged: event<Settings>("settingsChanged"),
 } as const;

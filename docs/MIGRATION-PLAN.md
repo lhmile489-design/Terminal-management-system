@@ -198,6 +198,8 @@ M0 ──► M1 ──► M3 ──► M4
 | 扫描器字符串截断的孤立代理（S15） | `truncate` / 关键字 `slice(0, 64)` 切在代理对中间时留下孤立高位代理 | 丢掉那半个字符 | Go 字符串是 UTF-8，装不下孤立代理 | 命令行第 160 个码元正好是 emoji 前半时，原版末尾显示一个替换符，新版不显示 |
 | 扫描器方法的同步性与错误（S15） | `ignore` / `setGroup` / `setWatchedKeywords` 落盘失败时同步抛错；`table()` 是 Promise；`setWatchedKeywords(unknown)` | 返回 `error`；`SetWatchedKeywords` 收 `json.RawMessage`，同样判「不是数组」与跳过非字符串；`void this.tick()` 换成 `Options.Go`（默认起协程）；App ctx 取消后不再采集也不再排定时器 | Go 没有异常与 Promise；绑定入参是 JSON | 无：错误文案相同，绑定层把 error 原样转给页面 |
 | 系统 CPU 基线的作用域（S15） | 模块级变量 `prevTicks` | `Service` 实例字段 | 全应用只有一个扫描器，等价；放实例上测试才能隔离 | 无 |
+| 窗口最小尺寸（S31 修正） | `MIN_WIDTH 1180` / `MIN_HEIGHT 760`（`lib/windowState.ts`） | S24 的 main.go 写成了 960×600，S31 按原版改回 1180×760 | 迁移时凭印象写，违反「常量逐字搬」 | 无（改正后与原版一致） |
+| 就绪握手（S31） | 无：Electron 的 `webContents.send` 在页面加载后才投递，渲染层不握手 | `App` 在全部订阅 effect 之后调一次 `mile.app.ready()` | mygo 事件要走契约 §2 的就绪握手，未就绪期间进队列 | 无 |
 | planner JSON 里的孤立代理项（S12） | `"\ud800"` 原样保留，`length` 计 1 | `encoding/json` 解码成 U+FFFD，长度同样计 1 | Go 字符串是 UTF-8 | 无：长度上限的判定结果相同；只有这种手工构造的输入会碰到 |
 | scanChildren 目录排序（S16，用户 2026-11-15 选定 x/text/collate） | `names.sort((a, b) => a.localeCompare(b))`，本机 node 默认区域 zh-CN，走 ICU 的 zh 规则 | `golang.org/x/text/collate` 的 zh 表，主权重重映射把汉字块挪回数字与拉丁字母之间（`internal/detect/collate.go`） | x/text 没实现 CLDR 的脚本重排，两边 CLDR 版本也不同 | 只影响「批量导入」列表的显示顺序。BMP 内的拉丁、汉字、标点、数字混排与 node 逐个一致；增补平面汉字、假名 / 谚文 / 注音之间的相对位置、部首与带圈汉字、少数生僻字的拼音先后可能不同 |
 | `scripts` 字段的类型（S16） | JS 对象，键序随 `package.json` | `contract.Scripts` 保序类型，JSON 形状不变；TS 生成为 `unknown`，`src/lib/mile.ts` 断言成 `Record<string, string>`（BINDINGS-CONTRACT §1.3 第 7 条） | Go 的 map 无序，`map[string]string` 会让脚本下拉的顺序变成字母序 | 无 |

@@ -74,6 +74,9 @@ type Deps struct {
 	Clipboard ClipboardOS
 	Transfer  Transfer
 	Events    *events.Bus
+	// AfterSettingsPatch 设置落盘后的副作用（原版 index.ts settingsPatch 处理器的后半段：
+	// 采集周期立即生效、主题同步运行时、广播 settingsChanged）。nil 表示没有副作用。
+	AfterSettingsPatch func(patch contract.SettingsPatch, next contract.Settings)
 }
 
 // AppService 对应 §3.1。
@@ -134,7 +137,8 @@ func (s WindowService) IsMaximized(_ context.Context) bool {
 type ThemeService struct {
 	deps    Deps
 	resolve func(contract.ThemePreference) contract.ResolvedTheme
-	// apply 把偏好同步给运行时（main 里接 mygo.Theme.SetSource）。
+	// apply 把偏好同步给运行时并广播 themeChanged（main 里接 mygo.Theme.SetSource + 事件总线），
+	// 对应原版 ThemeService.set 的 nativeTheme.themeSource 赋值与 emit('changed')。
 	// 做成注入而不是直接调 mygo：单测环境里没有 App，直接调会卡住。
 	apply func(contract.ThemePreference)
 }
@@ -205,6 +209,9 @@ func (s SettingsService) Patch(_ context.Context, patch contract.SettingsPatch) 
 	}
 	if _, err := s.deps.Cfg.PatchSettings(func(st *contract.Settings) { *st = next }); err != nil {
 		return contract.Settings{}, err
+	}
+	if s.deps.AfterSettingsPatch != nil {
+		s.deps.AfterSettingsPatch(patch, next)
 	}
 	return next, nil
 }

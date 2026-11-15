@@ -58,6 +58,9 @@ var (
 	evPlannerRemind  = mygo.NewEvent[contract.ReminderFire]("plannerReminder")
 	evSessionExit    = mygo.NewEvent[contract.SessionExitEvent]("sessionExit")
 	evScannerDiff    = mygo.NewEvent[contract.ScanDiff]("scannerDiff")
+	evWinMaximize    = mygo.NewEvent[bool]("windowMaximizeChanged")
+	evThemeChanged   = mygo.NewEvent[contract.ThemeState]("themeChanged")
+	evSettings       = mygo.NewEvent[contract.Settings]("settingsChanged")
 )
 
 // mainWin 主窗口，WhenReady 里赋值。
@@ -114,18 +117,6 @@ func (clipboardAdapter) WriteText(text string) error {
 	return nil
 }
 
-// themeBinding 在 app.ThemeService 之外再把偏好同步给运行时（页面据 resolved 写 data-theme）。
-type themeBinding struct{ app.ThemeService }
-
-func (t themeBinding) Set(ctx context.Context, pref string) (contract.ThemeState, error) {
-	state, err := t.ThemeService.Set(ctx, pref)
-	if err != nil {
-		return state, err
-	}
-	mygo.Theme.SetSource(mygo.ThemeSource(pref))
-	return state, nil
-}
-
 // emitFor 把事件总线的一次投递分发到对应的事件实例。
 func emitFor(win *mygo.Window) events.SendFunc {
 	return func(name string, payload any) error {
@@ -165,6 +156,18 @@ func emitFor(win *mygo.Window) events.SendFunc {
 		case "sessionExit":
 			if v, ok := payload.(contract.SessionExitEvent); ok {
 				return evSessionExit.Emit(win, v)
+			}
+		case "themeChanged":
+			if v, ok := payload.(contract.ThemeState); ok {
+				return evThemeChanged.Emit(win, v)
+			}
+		case "settingsChanged":
+			if v, ok := payload.(contract.Settings); ok {
+				return evSettings.Emit(win, v)
+			}
+		case "windowMaximizeChanged":
+			if v, ok := payload.(bool); ok {
+				return evWinMaximize.Emit(win, v)
 			}
 		case "scannerDiff":
 			if v, ok := payload.(contract.ScanDiff); ok {
@@ -269,6 +272,40 @@ func main() {
 		OnReminder: func(f contract.ReminderFire) { notify("plannerReminder", f) },
 	})
 
+	// 对应原版 ThemeService：resolved 跟随运行时；set 时同步 themeSource 并广播 changed；
+	// 系统外观变化只在偏好为 system 时广播
+	resolveTheme := func(p contract.ThemePreference) contract.ResolvedTheme {
+		switch p {
+		case contract.ThemeLight:
+			return contract.ResolvedLight
+		case contract.ThemeDark:
+			return contract.ResolvedDark
+		default:
+			if mygo.Theme.IsDark() {
+				return contract.ResolvedDark
+			}
+			return contract.ResolvedLight
+		}
+	}
+	applyTheme := func(p contract.ThemePreference) {
+		mygo.Theme.SetSource(mygo.ThemeSource(p))
+		notify("themeChanged", contract.ThemeState{Preference: p, Resolved: resolveTheme(p)})
+	}
+
+	// 对应原版 index.ts settingsPatch 处理器落盘之后的那几步
+	afterSettings := func(patch contract.SettingsPatch, next contract.Settings) {
+		// 采集周期改了要立刻生效，否则要等下一轮才换节奏
+		if patch.ScanIntervalMs != nil {
+			sc.Reschedule()
+		}
+		// 主题同步运行时并广播（落盘已由 SettingsService 做过）
+		if patch.Theme != nil {
+			applyTheme(next.Theme)
+		}
+		// hideFromTaskbar / globalHotkey 的即时生效随 S32 托盘与全局快捷键接入
+		notify("settingsChanged", next)
+	}
+
 	// 与窗口无关的服务先绑上；窗口相关的在 WhenReady 里绑
 	mygo.Bind(
 		app.NewAppService(app.Deps{
@@ -281,41 +318,44 @@ func main() {
 		app.NewSessionService(sess),
 		app.NewLogService(app.Deps{Logs: logsSvc}),
 		app.NewScannerService(sc, cfg),
-		app.NewSettingsService(app.Deps{Cfg: cfg}),
+		app.NewSettingsService(app.Deps{Cfg: cfg, AfterSettingsPatch: afterSettings}),
 		app.NewWindowService(app.Deps{Window: windowAdapter{}}),
-		app.NewThemeService(app.Deps{Cfg: cfg}, func(p contract.ThemePreference) contract.ResolvedTheme {
-			switch p {
-			case contract.ThemeLight:
-				return contract.ResolvedLight
-			case contract.ThemeDark:
-				return contract.ResolvedDark
-			default:
-				if mygo.Theme.IsDark() {
-					return contract.ResolvedDark
-				}
-				return contract.ResolvedLight
-			}
-		}, func(p contract.ThemePreference) { mygo.Theme.SetSource(mygo.ThemeSource(p)) }),
+		app.NewThemeService(app.Deps{Cfg: cfg}, resolveTheme, applyTheme),
 		app.NewShellService(app.Deps{Shell: shellAdapter{}}),
 		app.NewClipboardService(app.Deps{Clipboard: clipboardAdapter{}}),
 	)
 
 	mygo.App.WhenReady(func() {
 		win := mygo.NewWindow(mygo.WindowOptions{
-			Title:           appName,
-			Width:           1440,
-			Height:          900,
-			MinWidth:        960,
-			MinHeight:       600,
-			BackgroundColor: "light-dark(#f6f7fb, #0f1219)",
-			StateKey:        "main",
-			URL:             "/",
+			Title: appName,
+			// 对应原版 lib/windowState.ts：DEFAULT_STATE 1440×900，MIN_WIDTH 1180，MIN_HEIGHT 760
+			Width:     1440,
+			Height:    900,
+			MinWidth:  1180,
+			MinHeight: 760,
+			// 原版 Windows 是 titleBarStyle: hidden + 页面自绘三个窗口控件（CLAUDE.md §8）。
+			// HideWindowButtons 保留阴影、圆角与四边缩放，只把系统按钮让给页面的 TitleBar
+			TitleBarStyle:     mygo.TitleBarHidden,
+			HideWindowButtons: true,
+			TitleBarHeight:    40,
+			BackgroundColor:   "light-dark(#f6f7fb, #0f1219)",
+			StateKey:          "main",
+			URL:               "/",
 		})
 		mainWin = win
+		// 原版 index.ts 的 notifyMaximize：最大化 / 还原都推一次当前状态，TitleBar 据此换图标
+		notifyMaximize := func() { notify("windowMaximizeChanged", win.IsMaximized()) }
+		win.OnMaximize(notifyMaximize)
+		win.OnUnmaximize(notifyMaximize)
 		bus.SetSend(emitFor(win))
 
 		// 主题偏好同步给运行时，页面再据 resolved 写 <html data-theme>
 		mygo.Theme.SetSource(mygo.ThemeSource(cfg.Get().Settings.Theme))
+		mygo.Theme.OnUpdated(func() {
+			if p := cfg.Get().Settings.Theme; p == contract.ThemeSystem {
+				notify("themeChanged", contract.ThemeState{Preference: p, Resolved: resolveTheme(p)})
+			}
+		})
 
 		sc.Start()
 		healthSvc.Start()

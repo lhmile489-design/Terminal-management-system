@@ -1,7 +1,7 @@
-// 对应 src/renderer/src/main.tsx。S30 先挂视图台架（ViewHarness），S31 换成原版 App。
+// 对应 src/renderer/src/main.tsx。
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { ViewHarness } from './renderer/ViewHarness'
+import { App } from './renderer/App'
 import { useTheme } from './renderer/store/theme'
 // Manrope 只用于标题、数字、品牌；只带 latin 子集 600/700/800，中文回落到雅黑
 import '@fontsource/manrope/latin-600.css'
@@ -15,6 +15,6 @@ await useTheme.getState().init()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <ViewHarness />
+    <App />
   </StrictMode>
 )

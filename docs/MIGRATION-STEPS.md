@@ -82,7 +82,7 @@ ConPTY 不在依赖链最前，但它是迁移里风险最大的一项：做不�
 | S28 | J 渲染 | 前端工具与 store | 其余 `lib/*`(907) `store/*`(867) | S25 S27 | M5 | [x] |
 | S29 | J 渲染 | 业务组件 | `components/**`(除 ui 与外壳组件，6825) | S28 | M5 | [x] |
 | S30 | J 渲染 | 六个视图逐页 | `views/*`(7 个文件 2244，含 `LogCenter`) | S29 | M5 | [x] |
-| S31 | J 渲染 | 应用外壳 | `App.tsx`(507) `main.tsx`(19) + 外壳组件(832) | S30 | M5 | [ ] |
+| S31 | J 渲染 | 应用外壳 | `App.tsx`(507) `main.tsx`(19) + 外壳组件(832) | S30 | M5 | [x] |
 | S32 | K 原生 | 托盘、通知、单实例、快捷键、退出清理 | `main/index.ts` 原生部分 | S31 | M6 | [ ] |
 | S33 | L 收尾 | 视觉对等 | — | S32 | M7 | [ ] |
 | S34 | L 收尾 | 打包发布 | — | S33 | M7 | [ ] |
@@ -764,7 +764,31 @@ EntryService（2161 行）按方法边界拆成四步，四步的产物都在 `i
 - **产物**：`src/renderer/App.tsx`、`src/main.tsx`、对应组件
 - **改动**：`TitleBar` 自绘 46×40 的三个窗口控件，调 `currentWindow.minimize / toggleMaximize / close`（CLAUDE.md §8）；其余照搬
 - **验收**（`verify-ui`、`verify-m6-palette`、`verify-review-palette2`、`verify-review-keys`）：导航 6 项、`Ctrl+1–6`、`Ctrl+K` 命令面板、`?` 快捷键浮层；焦点在输入框或终端里时单键快捷键不生效；命令面板空查询给出内置动作，`>` 前缀进入动作模式
-- **证据**：
+- **证据**（2026-11-15）：
+  - 产物：`src/renderer/App.tsx` 与五个外壳组件（TitleBar / NavRail / CommandPalette / ShortcutOverlay / ActivityDrawer）原文复制，`window.mile.*` 换成 `mile.`；`src/main.tsx` 改为挂 `<App />`；S30 的临时 `ViewHarness.tsx` 已删
+  - `TitleBar` 不用改：原版 Windows 分支本来就自绘三个 `.ui-chrome` 按钮，调 `mile.window.minimize / toggleMaximize / close`，适配层接到 `WindowService`
+  - App 里唯一的新增：全部订阅 effect 之后补一条 `mile.app.ready()`（契约 §2 就绪握手，原版没有这一步，已登记 MIGRATION-PLAN §6）
+  - `main.go`：
+    - 窗口改为 `TitleBarStyle: TitleBarHidden` + `HideWindowButtons: true` + `TitleBarHeight: 40`（CLAUDE.md §8）
+    - **最小尺寸改回原版 1180×760**（S24 误写成 960×600，已登记 §6）
+    - 新增三个事件：`windowMaximizeChanged`（`win.OnMaximize / OnUnmaximize`，对应原版 `notifyMaximize`）、`themeChanged`（`ThemeService.Set` 之后，以及偏好为 system 时 `mygo.Theme.OnUpdated`，对应原版 `ThemeService` 的两处 `emit(changed)`）、`settingsChanged`
+    - `SettingsService.Patch` 落盘后的副作用通过 `Deps.AfterSettingsPatch` 注入，对应原版 `settingsPatch` 处理器的后半段：采集周期变了 `sc.Reschedule()`、主题变了同步运行时并广播、最后广播 `settingsChanged`。`hideFromTaskbar` / `globalHotkey` 的即时生效随 S32 接入
+    - 删掉早已不用的 `themeBinding` 类型
+  - 适配层：`theme.onChange` / `settings.onChange` / `window.onMaximizeChange` 接上真实事件；仍是空退订的只剩 `app.onFocusEntry` / `app.onOpenPalette` / `planner.onFocus`（都由托盘、通知点击、全局快捷键触发，S32）
+  - **这一步抓到的缺陷**：第一次跑验收「主题动作真的生效」失败（light → light）。原因是 `theme.set` 的返回值里 resolved 正确，但 `useTheme` 订阅的 `themeChanged` 当时没有 Go 侧事件，而命令面板走的是 `setPreference` 后等广播的那条路。补上 `themeChanged` 后通过
+  - 验收脚本 `scripts/cdp-s31-shell.mjs`（真实 `bun run dev` 窗口 + CDP；键盘一律 `Input.dispatchKeyEvent`，点击 `Input.dispatchMouseEvent`）：**35/35 通过**
+    - 标题栏：高 40；整条 `--app-region: drag`，搜索入口与三个控件 `no-drag`；控件依次为最小化 / 最大化 / 关闭，46×40，关闭贴右边；真实点击最大化后按钮变「还原」、再点变回「最大化」（证明 `windowMaximizeChanged` 到达页面）
+    - 导航：6 项齐全；`Ctrl+1–6` 逐个切到总览 / 服务 / 进度 / 终端 / 设置 / 关于
+    - 命令面板：`Ctrl+K` 唤起，`aria-modal`，输入框自动聚焦；空查询给出内置动作；`>` 进入动作模式；「> 主题」恰好三项；方向键移动选中项；回车执行主题切换后面板关闭且 `data-theme` 真的翻转（截图 `build/s31-theme-dark.jpg`），随后恢复原偏好并核对；「> 前往服务」切换视图
+    - 快捷键浮层：`?` 打开、Esc 关闭；焦点在命令面板输入框、服务页搜索框里时 `?` 不弹
+    - 整窗无滚动条；控制台无错误
+  - `go vet`、`go test ./internal/app/`、`bun run typecheck` 全部通过
+  - 编码扫描：`App.tsx:281` 原版注释里有一个 U+26A0 警示符号，与 S27 `tokens.css` 那两处同样按原文保留；其余 13 个文件干净
+  - 截图核对：深色主题的「关于」页与浅色主题的「服务」页（`build/s31-*.jpg`），标题栏、导航、主题切换入口、空态与原版结构一致
+  - 未做：
+    - `verify-review-palette2` 里要登记夹具项目、真的启停服务的断言（组启停、查看详情、打开目录、在此目录开终端）：需要往配置里加条目，留给 S33 端到端回归
+    - 终端里按单键快捷键不生效（`.xterm` 焦点）这一条：代码与原版逐字一致，脚本只覆盖了 input 焦点，没有起会话聚焦 xterm
+    - 品牌文案仍是原版的「Mile Terminal」（标题栏、About）。产品名 D3 定的是 Mile Console，界面文案是否跟着改等用户决定，没有擅自改
 
 ### K 原生集成
 

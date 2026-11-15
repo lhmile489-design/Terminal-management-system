@@ -13,8 +13,8 @@
 //      收到的帧再分发给 `onData` 的订阅者，TerminalView 不用改。
 //   2. 文件对话框：mygo v0.8.3 的 Dialog 只有 Error，没有选择框，`dialog.pickDirectory`
 //      与 `config.export/import` 直接以错误拒绝（MIGRATION-PLAN §6 已登记）。
-//   3. 若干「变化通知」事件 Go 侧还没发（settingsChanged / themeChanged /
-//      windowMaximizeChanged / appFocusEntry / appOpenPalette / plannerFocus），
+//   3. 若干「变化通知」事件 Go 侧还没发（appFocusEntry / appOpenPalette / plannerFocus，
+//      都由托盘、通知点击、全局快捷键触发），
 //      `on*` 先返回空退订函数，随 S32 原生集成补齐。
 
 import { Channel } from "mygo-runtime";
@@ -214,13 +214,13 @@ export const mile: MileApi = {
   settings: {
     get: () => narrow(SettingsService.get()),
     patch: (patch) => narrow(SettingsService.patch(loose(patch))),
-    onChange: noopOff,
+    onChange: (cb) => listen(events.settingsChanged, cb),
   },
 
   theme: {
     get: () => narrow(ThemeService.get()),
     set: (preference) => narrow(ThemeService.set(preference)),
-    onChange: noopOff,
+    onChange: (cb) => listen(events.themeChanged, cb),
   },
 
   window: {
@@ -234,7 +234,7 @@ export const mile: MileApi = {
       void WindowService.close();
     },
     isMaximized: () => WindowService.isMaximized(),
-    onMaximizeChange: noopOff,
+    onMaximizeChange: (cb) => listen(events.windowMaximizeChanged, cb),
   },
 
   app: {

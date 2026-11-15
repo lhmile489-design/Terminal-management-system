@@ -1,0 +1,514 @@
+import { mile } from "../lib/mile";
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { ArrowsClockwise, Command } from '@phosphor-icons/react'
+import { ViewHeader } from './components/ViewHeader'
+import { TitleBar } from './components/TitleBar'
+import { NavRail, NAV_HOTKEYS, type ViewId } from './components/NavRail'
+import { ActivityDrawer, type ActivityEvent } from './components/ActivityDrawer'
+import { ShortcutOverlay } from './components/ShortcutOverlay'
+import { Button, ConfirmHost, ToastHost, toast } from './components/ui'
+import { hasOpenOverlay } from './lib/overlay'
+import { primaryKey } from './lib/platform'
+import { ICON } from './lib/icons'
+import { Dashboard } from './views/Dashboard'
+import { Services } from './views/Services'
+import { TerminalWorkspace } from './views/TerminalWorkspace'
+import { Planner } from './views/Planner'
+import { ReminderStack, pushReminder } from './components/planner/ReminderStack'
+import { usePlanner } from './store/planner'
+import { Settings } from './views/Settings'
+import { About } from './views/About'
+import { CommandPalette, type PaletteAction } from './components/CommandPalette'
+import { startEntry as startWithConfirm, startGroup, stopGroup } from './lib/services'
+import type { DetailTab } from './components/services/EntryDetail'
+import { useSessions } from './store/sessions'
+import type { EntryKind } from '@shared/types'
+import { useScanner } from './store/scanner'
+import { useEntries } from './store/entries'
+import { useSettings } from './store/settings'
+import { useGroups } from './store/groups'
+import { STATUS_META } from './lib/entryMeta'
+
+const TITLES: Record<
+  ViewId,
+  { title: string; caption: string }
+> = {
+  services: {
+    title: '服务',
+    caption: '按工作组启停前端、后端与任务，点一个服务看详情'
+  },
+  dashboard: {
+    title: '总览',
+    caption: '实时掌握本机监听端口与进程负载'
+  },
+  planner: {
+    title: '进度',
+    caption: '按工作组记录项目进度、开始与预计结束时间'
+  },
+  terminal: {
+    title: '终端',
+    caption: '自建终端、服务会话与全部输出检索'
+  },
+  settings: {
+    title: '设置',
+    caption: '采集周期、主题与终端偏好'
+  },
+  about: {
+    title: '关于',
+    caption: '版本信息、使用教程与项目介绍'
+  }
+}
+
+const VIEW_KEY = 'mile.view'
+const VIEW_IDS: ViewId[] = ['dashboard', 'services', 'planner', 'terminal', 'settings', 'about']
+
+function readView(): ViewId {
+  const v = localStorage.getItem(VIEW_KEY)
+  return VIEW_IDS.includes(v as ViewId) ? (v as ViewId) : 'dashboard'
+}
+
+export function App(): React.JSX.Element {
+  // 默认进入总览；上次停留的页面记在 localStorage，重启后回到那里
+  const [view, setViewState] = useState<ViewId>(readView)
+  const setView = useCallback((v: ViewId) => {
+    setViewState(v)
+    try { localStorage.setItem(VIEW_KEY, v) } catch { /* 记不住页面不影响使用 */ }
+  }, [])
+  const [events, setEvents] = useState<ActivityEvent[]>([])
+  // 实时动态改为抽屉（UI-REFACTOR Q1）：关着时新事件计入未读，失败类让角标变红
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const drawerOpenRef = useRef(false)
+  drawerOpenRef.current = drawerOpen
+  const [unread, setUnread] = useState(0)
+  const [unreadFault, setUnreadFault] = useState(false)
+  const [keysOpen, setKeysOpen] = useState(false)
+  /** 每个条目上一次的状态，只在「进入」失败态时弹通知，同一状态重复推送不再弹 */
+  const lastStatus = useRef(new Map<string, string>())
+  const [pendingAdd, setPendingAdd] = useState<{ path: string; name: string } | null>(null)
+  /** 从通知条、命令面板、总览跳进服务页并打开某个服务的某个标签；nonce 让同一目标能重复触发 */
+  const [svcFocus, setSvcFocus] = useState<{ id: string; tab: DetailTab; nonce: number } | null>(null)
+  const focusService = useCallback((id: string, tab: DetailTab) => {
+    setSvcFocus({ id, tab, nonce: Date.now() })
+    setView('services')
+  }, [])
+  /** 日程提醒：定位到某看板的某个标签；nonce 让同一目标能重复触发 */
+  const [plannerFocus, setPlannerFocus] = useState<{ boardId: string; taskId?: string; tab?: 'tasks' | 'schedules' | 'overview'; nonce: number } | null>(null)
+  const focusPlanner = useCallback((boardId: string, taskId?: string, tab: 'tasks' | 'schedules' | 'overview' = 'schedules') => {
+    setPlannerFocus({ boardId, taskId, tab, nonce: Date.now() })
+    setView('planner')
+  }, [])
+  const [paletteOpen, setPaletteOpen] = useState(false)
+  /** 命令面板发起的「添加服务/任务」，交给启动台弹出既有的识别对话框 */
+  const [paletteAdd, setPaletteAdd] = useState<EntryKind | null>(null)
+  /** 命令面板定位端口后，工作台高亮对应表格行 */
+  const [highlightPort, setHighlightPort] = useState<number | null>(null)
+  const refresh = useSessions((s) => s.refresh)
+  const focusSession = useSessions((s) => s.focus)
+  const markExited = useSessions((s) => s.markExited)
+  const initScanner = useScanner((s) => s.init)
+  const applyDiff = useScanner((s) => s.applyDiff)
+  const listeners = useScanner((s) => s.listeners)
+  const initEntries = useEntries((s) => s.init)
+  const setEntries = useEntries((s) => s.setEntries)
+  const setRuntime = useEntries((s) => s.setRuntime)
+  const entries = useEntries((s) => s.entries)
+  const runtimes = useEntries((s) => s.runtimes)
+  const stopEntry = useEntries((s) => s.stop)
+  const runScript = useEntries((s) => s.runScript)
+  const initSettings = useSettings((s) => s.init)
+  const setSettings = useSettings((s) => s.set)
+  const initGroups = useGroups((s) => s.init)
+  const setGroups = useGroups((s) => s.setGroups)
+  const groups = useGroups((s) => s.groups)
+  const initPlanner = usePlanner((s) => s.init)
+  const applyPlanner = usePlanner((s) => s.apply)
+
+  useEffect(() => {
+    void refresh()
+    void initScanner()
+    void initEntries()
+    void initSettings()
+    void initGroups()
+    void initPlanner()
+  }, [refresh, initScanner, initEntries, initSettings, initGroups, initPlanner])
+  useEffect(() => mile.planner.onChange(applyPlanner), [applyPlanner])
+
+  useEffect(() => mile.scanner.onDiff(applyDiff), [applyDiff])
+  useEffect(() => mile.entry.onChange(setEntries), [setEntries])
+  useEffect(() => mile.settings.onChange(setSettings), [setSettings])
+  useEffect(() => mile.group.onChange(setGroups), [setGroups])
+
+  const pushEvent = useCallback((level: ActivityEvent['level'], text: string) => {
+    setEvents((prev) =>
+      [{ id: `${Date.now()}-${Math.random()}`, at: Date.now(), level, text }, ...prev].slice(0, 100)
+    )
+    if (!drawerOpenRef.current) {
+      setUnread((n) => n + 1)
+      if (level === 'fault') setUnreadFault(true)
+    }
+  }, [])
+
+  useEffect(
+    () =>
+      mile.entry.onRuntime((runtime) => {
+        setRuntime(runtime)
+        const meta = STATUS_META[runtime.status]
+        pushEvent(
+          meta.tone === 'fault' ? 'fault' : meta.tone === 'warn' ? 'warn' : 'info',
+          `条目状态：${meta.label}${runtime.port ? ` · :${runtime.port}` : ''}`
+        )
+
+        // 失败通知条常驻到手动关闭（Q14）。阶段 4 有详情面板后，「查看输出」改为打开详情的输出标签
+        const prev = lastStatus.current.get(runtime.entryId)
+        lastStatus.current.set(runtime.entryId, runtime.status)
+        if (meta.tone === 'fault' && prev !== runtime.status) {
+          const name = useEntries.getState().entries.find((e) => e.id === runtime.entryId)?.name ?? '条目'
+          const sid = runtime.sessionId
+          const blocked = runtime.status === 'blocked'
+          toast({
+            tone: 'fault',
+            title: `${name}：${meta.label}`,
+            body: blocked ? '启动前检查没通过，诊断里有原因和修复入口' : '输出里能看到退出前的最后几行',
+            action: blocked
+              ? { label: '查看诊断', run: () => focusService(runtime.entryId, 'diagnose') }
+              : sid
+                ? { label: '查看输出', run: () => { void focusSession(sid); setView('terminal') } }
+                : undefined
+          })
+        }
+      }),
+    [setRuntime, pushEvent, focusSession]
+  )
+
+  useEffect(() => mile.entry.onWarning((text) => pushEvent('warn', text)), [pushEvent])
+  // 健康检查与输出告警（v14）：结果只在内存，渲染层只做展示
+  const setHealth = useEntries((s) => s.setHealth)
+  const addAlert = useEntries((s) => s.addAlert)
+  useEffect(() => mile.entry.onHealth(setHealth), [setHealth])
+  useEffect(
+    () =>
+      mile.entry.onAlert((a) => {
+        addAlert(a)
+        pushEvent('warn', `输出告警 · ${a.name}：${a.keyword ? `命中「${a.keyword}」` : '错误行'} · ${a.line}`)
+      }),
+    [addAlert, pushEvent]
+  )
+
+  // 系统通知被点击：主进程只给条目 id 和标签枚举，这里负责切页并打开对应标签
+  useEffect(
+    () => mile.app.onFocusEntry((req) => focusService(req.id, req.tab)),
+    [focusService]
+  )
+
+  // 日程提醒（P2 §5.2）：主进程推一条就在右下角弹一张卡片，同时进实时动态
+  useEffect(
+    () =>
+      mile.planner.onReminder((fire) => {
+        pushReminder(fire)
+        pushEvent('info', `日程提醒 · ${fire.groupName}：${fire.title}`)
+      }),
+    [pushEvent]
+  )
+  // 通知点击 / 卡片「知道了」：切到进度页并打开对应看板
+  useEffect(
+    () => mile.planner.onFocus((req) => focusPlanner(req.boardId, req.taskId, req.tab)),
+    [focusPlanner]
+  )
+
+  // 全局快捷键唤起：只打开不切换，已开着时再按一次保持打开
+  useEffect(() => mile.app.onOpenPalette(() => setPaletteOpen(true)), [])
+
+
+  const openLogs = useCallback(
+    (sessionId: string) => {
+      void focusSession(sessionId)
+      setView('terminal')
+    },
+    [focusSession]
+  )
+
+  /**
+   * 命令面板发起的停止 / 重启失败时，错误只进了 store.error，而它的横幅只在服务页渲染。
+   * 面板常在别的页面用，所以这里读出来弹一条 toast 再清掉，否则用户看到的是「没反应」。
+   */
+  const notifyStoreError = useCallback((name: string, verb: string) => {
+    const { error, clearError } = useEntries.getState()
+    if (!error) return
+    toast({ tone: 'fault', title: `没能${verb}「${name}」`, body: error })
+    clearError()
+  }, [])
+
+  const openShellAt = useSessions((s) => s.openShellAt)
+  const openTerminalAt = useCallback(
+    (entryId: string) => {
+      void openShellAt(entryId).then(
+        () => setView('terminal'),
+        (err: unknown) => {
+          const msg = (err instanceof Error ? err.message : String(err)).replace(/^Error invoking remote method '[^']+': (Error: )?/, '')
+          toast({ tone: 'fault', title: '没能在此目录开终端', body: msg })
+        }
+      )
+    },
+    [openShellAt]
+  )
+
+  const requestAdd = useCallback((path: string, name: string) => {
+    setPendingAdd({ path, name })
+    setView('services')
+  }, [])
+
+  // 主进程的 minimize/restore 覆盖不了「窗口被其他窗口完全遮挡」，这里补一层
+  useEffect(() => {
+    const sync = (): void => mile.scanner.setVisible(!document.hidden)
+    document.addEventListener('visibilitychange', sync)
+    return () => document.removeEventListener('visibilitychange', sync)
+  }, [])
+
+  useEffect(
+    () =>
+      mile.session.onExit((e) => {
+        markExited(e.id, e.exitCode)
+        pushEvent(
+          e.exitCode === 0 ? 'info' : 'fault',
+          e.exitCode === 0 ? '会话结束，退出码 0' : `会话异常退出，退出码 ${e.exitCode}`
+        )
+      }),
+    [markExited, pushEvent]
+  )
+
+  // Ctrl+K 全局唤起命令面板，PRD §9.5。用 capture 抢在终端 xterm 之前，
+  // 否则焦点在终端里时按键会被当成输入吞掉。
+  // ⚠️ 扩展注意：向此 handler 添加新快捷键时，应避免与 xterm 默认快捷键冲突
+  // （Ctrl+C/D/Z/L/R 等）。若必须覆盖，需先检查焦点是否在终端内并决定是否 preventDefault。
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      if (primaryKey(e) && !e.altKey && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault()
+        setPaletteOpen((v) => !v)
+        return
+      }
+      // Ctrl+1..6 切换导航（UI-REFACTOR §5.2）。xterm 不占用这组键，终端里也能切
+      if (primaryKey(e) && !e.altKey && !e.shiftKey && /^[1-6]$/.test(e.key)) {
+        const target = NAV_HOTKEYS[Number(e.key)]
+        if (target) {
+          e.preventDefault()
+          setView(target)
+        }
+        return
+      }
+      // 单键快捷键：焦点在输入框或终端里时不生效，避免打字误触发
+      const el = e.target as HTMLElement | null
+      const typing = !!el?.closest?.('input, textarea, select, [contenteditable="true"], .xterm')
+      if (e.key === '?' && !primaryKey(e) && !e.altKey && !typing && !hasOpenOverlay()) {
+        e.preventDefault()
+        setKeysOpen(true)
+      }
+    }
+    document.addEventListener('keydown', onKey, true)
+    return () => document.removeEventListener('keydown', onKey, true)
+  }, [])
+
+  const runPalette = useCallback(
+    async (action: PaletteAction): Promise<void> => {
+      switch (action.type) {
+        case 'startEntry': {
+          // 与服务页同一套规则：prod / sandbox 先确认；预检拦下时打开该服务的「诊断」标签
+          setView('services')
+          await startWithConfirm(action.entry, useGroups.getState().groupOf(action.entry.groupId ?? ''), {
+            onBlocked: (e) => focusService(e.id, 'diagnose')
+          })
+          return
+        }
+        case 'stopEntry':
+          await stopEntry(action.entry.id)
+          notifyStoreError(action.entry.name, '停止')
+          return
+        case 'restartEntry': {
+          const blocked = await useEntries.getState().restart(action.entry.id)
+          if (blocked) focusService(action.entry.id, 'diagnose')
+          else notifyStoreError(action.entry.name, '重启')
+          return
+        }
+        case 'focusEntry':
+          focusService(action.entry.id, 'overview')
+          return
+        case 'openDir':
+          // 主进程只放行已登记目录（knownPath 白名单）
+          mile.shell.openPath(action.entry.path)
+          return
+        case 'openTerminal':
+          openTerminalAt(action.entry.id)
+          return
+        case 'openExternalTerminal':
+          void mile.entry.openExternalTerminal(action.entry.id).catch((err: unknown) => {
+            const msg = (err instanceof Error ? err.message : String(err)).replace(/^Error invoking remote method '[^']+': (Error: )?/, '')
+            toast({ tone: 'fault', title: '没能在外部终端打开', body: msg })
+          })
+          return
+        case 'startGroup': {
+          // 同服务页「全部启动」：prod / sandbox 先确认，汇总通知；被拦的打开诊断
+          const members = useEntries.getState().entries.filter((e) => e.groupId === action.group.id)
+          setView('services')
+          await startGroup(action.group, members, { onBlocked: (e) => focusService(e.id, 'diagnose') })
+          return
+        }
+        case 'stopGroup': {
+          const members = useEntries.getState().entries.filter((e) => e.groupId === action.group.id)
+          await stopGroup(action.group, members)
+          return
+        }
+        case 'openPlanner': {
+          // 打开这个工作组的进度看板；没看板时提示，不静默没反应
+          const board = usePlanner.getState().boards.find((b) => b.groupId === action.group.id)
+          if (!board) {
+            toast({ tone: 'info', title: `「${action.group.name}」还没有进度看板`, body: '在进度页把它加进来' })
+            setView('planner')
+            return
+          }
+          focusPlanner(board.id, undefined, 'tasks')
+          return
+        }
+        case 'locatePort':
+          setView('dashboard')
+          setHighlightPort(action.port)
+          return
+        case 'runScript': {
+          // 只把 id + 脚本名交给主进程，命令构造与脚本校验都在那边，PRD §11
+          const runtime = await runScript(action.entry.id, action.script)
+          if (runtime?.sessionId) openLogs(runtime.sessionId)
+          return
+        }
+        case 'addEntry':
+          setPaletteAdd(action.kind)
+          setView('services')
+          return
+        case 'refresh':
+          mile.scanner.refresh()
+          return
+        case 'setTheme':
+          await mile.theme.set(action.preference)
+          return
+        case 'goto':
+          setView(action.view)
+          return
+      }
+    },
+    [stopEntry, runScript, openLogs, focusService, openTerminalAt, notifyStoreError]
+  )
+
+  const clearEvents = useCallback(() => setEvents([]), [])
+  const openDrawer = useCallback(() => {
+    setDrawerOpen((v) => !v)
+    setUnread(0)
+    setUnreadFault(false)
+  }, [])
+  // mygo 版新增（契约 §2 就绪握手）：放在所有订阅 effect 之后，React 按声明顺序执行，
+  // 这时上面的 on* 都已挂上，Go 侧排队的事件补投过来不会丢。原版 Electron 没有这一步。
+  useEffect(() => {
+    void mile.app.ready()
+  }, [])
+
+  const meta = TITLES[view]
+
+  return (
+    <div className="flex h-full flex-col bg-canvas">
+      <TitleBar
+        onSearch={() => setPaletteOpen(true)}
+        onActivity={openDrawer}
+        unread={unread}
+        unreadFault={unreadFault}
+      />
+
+      <div className="flex min-h-0 flex-1">
+        <NavRail active={view} onChange={setView} />
+
+        <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
+          {/* 视图头随内容滚动，只有标题栏吸顶（UI-REFACTOR §3.2）。key=view 切换时重播 view-enter */}
+          <div key={view} className="view-enter flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-6">
+            <ViewHeader
+              title={meta.title}
+              caption={meta.caption}
+              actions={<QuickActions view={view} onAdd={(k) => { setPaletteAdd(k); setView('services') }} />}
+            />
+            {view === 'dashboard' && (
+              <Dashboard
+                onRequestAdd={requestAdd}
+                highlightPort={highlightPort}
+                onHighlightConsumed={() => setHighlightPort(null)}
+                onOpenLogs={openLogs}
+                onFocusService={focusService}
+              />
+            )}
+            {view === 'services' && (
+              <Services
+                onOpenLogs={openLogs}
+                onOpenTerminal={openTerminalAt}
+                focus={svcFocus}
+                pendingAdd={pendingAdd}
+                onPendingConsumed={() => setPendingAdd(null)}
+                pendingKind={paletteAdd}
+                onPendingKindConsumed={() => setPaletteAdd(null)}
+                onOpenPlanner={(boardId) => focusPlanner(boardId, undefined, 'tasks')}
+              />
+            )}
+            {view === 'planner' && (
+              <Planner
+                onGoServices={() => setView('services')}
+                focus={plannerFocus}
+                onFocusConsumed={() => setPlannerFocus(null)}
+              />
+            )}
+            {view === 'terminal' && <TerminalWorkspace />}
+            {view === 'settings' && <Settings />}
+            {view === 'about' && <About />}
+          </div>
+        </main>
+
+      </div>
+
+      <CommandPalette
+        open={paletteOpen}
+        entries={entries}
+        groups={groups}
+        listeners={listeners}
+        runtimeStatus={(id) => runtimes[id]?.status ?? 'idle'}
+        onClose={() => setPaletteOpen(false)}
+        onRun={(action) => void runPalette(action)}
+      />
+
+
+      {drawerOpen && (
+        <ActivityDrawer events={events} onClear={clearEvents} onClose={() => setDrawerOpen(false)} />
+      )}
+      {keysOpen && <ShortcutOverlay onClose={() => setKeysOpen(false)} />}
+      <ConfirmHost />
+      <ToastHost />
+      <ReminderStack onFocus={(boardId, taskId) => focusPlanner(boardId, taskId, 'schedules')} />
+    </div>
+  )
+}
+
+
+/** 视图头右侧的常用动作。只在与当前视图相关时出现，避免每页都摆一排无关按钮 */
+function QuickActions({
+  view,
+  onAdd
+}: {
+  view: ViewId
+  onAdd: (kind: EntryKind) => void
+}): React.JSX.Element | null {
+  if (view !== 'dashboard') return null
+  return (
+    <>
+      <Button variant="ghost" icon={ArrowsClockwise} onClick={() => mile.scanner.refresh()}>
+        刷新状态
+      </Button>
+      <Button variant="secondary" icon={Command} onClick={() => onAdd('task')}>
+        添加任务
+      </Button>
+      <Button variant="primary" icon={ICON.add} onClick={() => onAdd('service')}>
+        添加服务
+      </Button>
+    </>
+  )
+}
