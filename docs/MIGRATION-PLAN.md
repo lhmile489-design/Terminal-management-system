@@ -162,12 +162,14 @@ M0 ──► M1 ──► M3 ──► M4
 | I7 | 只在关注列表里、不在监听表里的进程 CPU 永远显示「—」。`attachMetrics` 给关注进程记了 CPU 基线，紧接着 `publish()` 的清理只保留 `this.previous`（监听表）里的 PID，把关注进程的基线删掉；下一轮又是「首轮无基线」。S15 对拍实测：场景 `watched` 里 pid 20（redis-server，只命中关注关键字）连续两轮都是 `cpu: null`，内存正常 | `ScannerService.ts` 的 `publish()`（`for (const pid of this.cpuBaseline.keys()) if (!this.previous.has(pid)) this.cpuBaseline.delete(pid)`） | 关注面板的 CPU 列对大多数进程（数据库、后台服务这类不监听端口或端口被别的进程占的）永远是空的；内存列不受影响 |
 | I3 | PowerShell 5.1 与 `netstat.exe` 的管道输出按控制台代码页编码（中文系统 936 / GBK），原版 `execFile` 按 UTF-8 解码。CIM 返回的命令行、可执行路径里的非 ASCII 字符变成 U+FFFD；netstat 只有表头是中文，被 `LISTENING` 过滤掉，不影响解析。本机未装 PowerShell 7，`runPowerShell` 落到 5.1。2026-11-14 实测：本机 497 个进程里 7 行的命令行或路径含 U+FFFD | `platform/win32/powershell.ts` 的 `runPowerShell`、`process.ts` 的 `readListenPorts` | 中文路径下的服务：进程表里的 cwd 推断、启动来源的命令行匹配、诊断里的命令行显示可能不对 |
 | I8 | `package.json` 的内容是字面量 `null` 时预检整体抛错。`JSON.parse` 成功得 `null`，「可解析」项已记 pass，紧接着读 `pkg.scripts` 抛 `TypeError: Cannot read properties of null (reading 'scripts')`，`run()` reject，界面拿不到任何预检项 | `PrecheckService.ts` 的 `run()` 第 2、3 项之间 | 极少见；用户看到的是启动失败的报错，而不是「package.json 内容不对」的提示。Go 侧 `Run` 返回同文案的 `ErrNullPackageJSON`，专项测试 `TestKnownIssueI8NullPackageJSON`，对拍场景 `pkg-null` 也钉住 |
+| I9 | `.surface-card` 缺 `position: relative`，而它的 `::before` 状态色条是 `position: absolute; left: 0; top: 0; bottom: 0; width: 3px`。没有定位祖先时色条以 `.ui-split`（服务页分栏，`position: relative`）为含块，画成一条贯满内容区高度的竖线。`PrecheckPanel` 用内联 `--glow` 把色条染成 `--signal-fault`，所以预检失败时表现为**服务页左侧一条红线**；`DiscoveredListeners` 的 `warn` 卡片同理是黄线。原版 `tokens.css` 里那句注释「surface-card 有 position: relative（来自 border-radius 计算）」与规则不符 | `styles/tokens.css` 的 `.surface-card` / PrecheckPanel 的 `--glow` 内联样式 | 选中预检失败的条目时，详情面板一出现就有一条 3px 竖线贴在内容区最左侧，窗口最大最小化、重启都在，因为它是真实 DOM 而非渲染残留。**mygo 已修**（用户 2026-11-16 反馈后确认），原版仍存在，修法是给 `.surface-card` 补一行 `position: relative` |
 
 迁移时的处理：
 
 - 全部按原样搬，**不静默修**。I4 / I5 / I6 有专项测试 `TestKnownIssueI4EditScheduleWipesTitle`、`TestKnownIssueI5AddScheduleSkipsRange`、`TestKnownIssueI6DailyLead1440EveryOtherDay`（`internal/planner/service_extra_test.go`），I6 另有对拍场景 `tick-known-issue-i6`。I6 的修法要动触发窗口（窗口改按提醒时刻算，或去重只看 `at` 不看窗口起点），会改变对拍数据，等用户决定。I4 的修法：`sanitizeScheduleInput` 只在补丁带 `title` 时才写 `out.title`，改动一行，但对拍数据要一起重新生成。I3 的 Go 侧用 `jsDecodeUTF8` 逐字节复现 `Buffer.toString('utf8')` 的替换规则。修法有两种：Go 侧按代码页解码（要引入 `golang.org/x/text`，新增依赖），或在 `META_SCRIPT` 开头加 `[Console]::OutputEncoding = [Text.Encoding]::UTF8`（改了逐字照搬的脚本）。两种都改变行为，等用户选。
 - I7 有专项测试 `TestKnownIssueI7WatchedCPUAlwaysNull`（`internal/scanner/scanner_extra_test.go`），对拍场景 `watched` 也钉住了它。修法：清理时把本轮关注进程的 PID 一起保留（改一行），对拍数据要重新生成。**用户 2026-11-14 决定：不修，保持原版行为。**
 - I8 有专项测试 `TestKnownIssueI8NullPackageJSON`（`internal/precheck/unit_test.go`），对拍场景 `pkg-null` 也钉住了它。修法：`JSON.parse` 结果不是对象时按「package.json 存在且能解析」fail 处理
+- **I9 已修**（用户 2026-11-16 反馈「服务页左侧一条红线」后定位到）：`.surface-card` 补 `position: relative`，色条不再以 `.ui-split` 为含块。实测修复前 1778×1500 截图里红线竖贯 y=270..1461，修复后同一探针只剩卡片内部 40px 高的一小段。原版未改，若同步修，把这一行抄回去即可
 - Go 侧把行为写成测试并标注 `// 已知原版问题 C2 / I1 / I2 / I3，见 docs/MIGRATION-PLAN.md`，修的时候测试一起改。
 - 用户决定修之后，同步回写本节状态与对应测试。
 
@@ -234,6 +236,7 @@ M0 ──► M1 ──► M3 ──► M4
 | 单实例锁的作用域（S32） | 只在打包后（或 `MILE_FORCE_SINGLE_INSTANCE=1`）启用：Electron 的锁按 userData，开发期与本机其他 Electron 项目共用会互相挤掉 | `IsPackaged()` 或同一环境变量时启用；`mygo dev` 产出的也是打包形态，所以开发期同样单实例 | mygo 的锁按应用名 + 标识符区分，不与别的应用冲突，没有原版要避开的问题 | 开发期再启动一次 dev exe 会直接退出并唤回已开的窗口（原版开发期会起第二个实例） |
 | 托盘双击（S32） | `tray.on('click')` 与 `on('double-click')` 都显示主窗口 | 只挂 `OnClick` | mygo 的 Windows 托盘没有双击事件；双击的第一下已经触发单击 | 无 |
 | 通知图标（S32） | `new Notification({ icon })` | `NotificationOptions.Image`（Windows 上是气泡的大图标） | mygo 通知没有单独的 icon 字段，小图标固定用应用图标 | 通知左侧小图标是 exe 图标；原版 icon 显示的位置改由 Image 显示 |
+| 状态色条逃逸（I9，2026-11-16 修） | `.surface-card` 没写 `position: relative`（同文件注释里却写着有），`::before` 那根 3px 色条以最近的定位祖先为含块。服务页选中预检失败的条目时，色条直接画成一条贯满内容区高度的竖线——预检 `fault` 是红线，`warn` 是黄线 | `.surface-card` 补 `position: relative` | 行为缺陷而非平台差异：原版「服务页左侧一条红线」的根因，实测红线 bbox 为内容区全高（1778×1500 截图里 y=270..1461） | 色条回到卡片内部、跟随卡片圆角和高度；页面其余部分不变 |
 
 > 新增偏差必须写进本表并说明用户可见差异；「看起来一样」不算理由。
 

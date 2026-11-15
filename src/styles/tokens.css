@@ -242,6 +242,10 @@ button {
   400ms → 确保弹性弧线能走完（spring 曲线时长要比 ease-out 长才明显）。
 */
 .surface-card {
+  /* 必须定位：左侧状态色条是绝对定位的 ::before（见本文件下方），
+     卡片不定位时它会以最近的定位祖先（服务页的 .ui-split）为含块，
+     直接画成一条贯满内容区高度的竖线。原版缺这一行，见 MIGRATION-PLAN §5 I9 */
+  position: relative;
   --glow: var(--signal-accent);
   border-radius: var(--radius-card);
   border: 1px solid var(--stroke-base);
@@ -557,8 +561,8 @@ section[aria-labelledby='kpi-heading'] {
   cursor: not-allowed;
   border-color: var(--stroke-strong);
   background: var(--surface-raised);
-  /* 浅色：primary(#374151) 在 raised(#eaedf2) 上 ≈ 5.2:1 ✅
-     深色：primary(#c9d3e0) 在 raised(#222c3a) 上 ≈ 5.8:1 ✅ */
+  /* 浅色：primary(#374151) 在 raised(#eaedf2) 上 ≈ 5.2:1，达标
+     深色：primary(#c9d3e0) 在 raised(#222c3a) 上 ≈ 5.8:1，达标 */
   color: var(--text-primary);
 }
 
@@ -675,7 +679,7 @@ section[aria-labelledby='kpi-heading'] {
 
 /*
   卡片左侧状态色条（::before 伪元素）。
-  surface-card 有 position: relative（来自 border-radius 计算）。
+  surface-card 必须是定位元素，色条才会跟着卡片走（原版漏了 position: relative，见 MIGRATION-PLAN §5 I9）。
   色条两端用 border-radius 跟随卡片圆角，不再依赖 overflow: hidden ——
   overflow: hidden 会裁剪绝对定位的浮层（如下拉菜单），导致菜单被遮住。
 */
