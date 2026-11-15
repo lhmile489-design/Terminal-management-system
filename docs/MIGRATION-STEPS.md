@@ -640,7 +640,10 @@ EntryService（2161 行）按方法边界拆成四步，四步的产物都在 `i
   - 已完成：`contract.AppInfo` / `contract.SettingsPatch` 两个绑定专用类型；`internal/app/sanitize.go` 的 `SanitizeSettings`（采集周期、主题、外部终端、字号 10–22、回滚 1000–50000、十个布尔项，报文带全部合法值）与 `SanitizeLogQuery`（级别白名单、关键字截 200 码元、limit 透传、空查询合法）；7 个单测 + 7 处变异全部变红
   - 已完成：`internal/app/bindings.go` 的十个薄封装服务 —— App（Info / Ready）、Window（四个方法，OS 能力注入）、Theme（Get / Set，偏好换算注入）、Settings（Get / Patch，非法值不落盘）、Log（Query / Clear）、Group（List / Add / Patch / Reorder，落盘走 config.Patch）、Dialog（PickDirectory）、Shell（OpenLocalhost 端口 1–65535、OpenPath 非空、OpenProjectLink 键名白名单）、Clipboard（只写、64KB 上限）、Config（Export / Import）
   - 已完成：四个大绑定 `internal/app/bindings_large.go` —— Entry（约 30 个方法，Detect / DetectProfiles 走识别服务、HealthList 走健康检查，RevealLastJar 与 OpenExternalTerminal 明确报「随 S32 原生集成接入」）、Planner（14 个方法，`json.RawMessage` 原样透传给 S12 服务）、Session（List / CreateShell / History / Stop / Write / Resize / Attach）、Scanner（Snapshot / Refresh / SetVisible / Ignore / HideOnce / SetGroup / WatchedKeywords / SetWatchedKeywords）；5 个单测验证「未接入」错误与转发
-  - 待续：`main.go` 的 `mygo.Bind` 装配（按 App → Ownership → Sessions → Logs → Scanner → Entries → Health/Alerts/Transfer 的顺序建服务，再接窗口与事件总线）、频道对照表逐条打勾
+  - 已完成：`main.go` 装配 —— 根 ctx（`main` 里 `WithCancel`，`App.Run()` 返回后取消）、配置 → 归属 → 会话 → 日志 → 识别 → 预检 → 扫描器 → 条目 → 扫描器回注期望来源（两边的 EntryExpectation 做一次转换）→ 健康 / 告警 / 导入导出 / 进度；十类事件各有 `mygo.NewEvent[T]`，总线按名字分发；窗口 / 主题 / 外链 / 剪贴板四个适配器在 `WhenReady` 里绑上
+  - 未绑定：`DialogService.PickDirectory` 与 `ConfigService.Export / Import` —— **mygo v0.8.3 的 Dialog 只有 `Error`，没有文件 / 目录选择框**，而红线要求路径只能来自系统对话框。已登记 MIGRATION-PLAN §6「运行时缺少文件选择对话框」，等运行时补上或换方案
+  - 顺带确认：`mygo.Shell` 有 `OpenExternal` / `OpenPath` / `ShowItemInFolder`，所以 S21d 里挂起的 `RevealOutput` / `RevealLastJar` 其实现在就能接（本步先把 `RevealOutput` 接到绑定，`RevealLastJar` 仍归 S32）
+  - 待续：`src/mygo.ts` 由 `bun run generate` 重新生成（S25），以及频道对照表逐条打勾
   - 说明：本步的绑定层要参照 `BINDINGS-CONTRACT §3` 的 60 余个方法逐个落地，并按 §5 把安全不变量接到具体方法上；`contract` 里还缺 `SettingsPatch` / `AppInfo` 两个绑定专用类型，实现时要一并补
 
 #### S25 生成绑定与前端适配层
