@@ -162,3 +162,29 @@ type AppConfig struct {
 	WatchedKeywords []string `json:"watchedKeywords"`
 	Settings        Settings `json:"settings"`
 }
+
+// AppInfo 应用信息（绑定层 AppService.Info）。
+type AppInfo struct {
+	Version string `json:"version"`
+	Name    string `json:"name"`
+}
+
+// SettingsPatch 设置补丁：只覆盖出现的字段，没带的不动。
+// 指针即「出现过」，与原版 `raw.x !== undefined` 同一判定。
+type SettingsPatch struct {
+	ScanIntervalMs           *int              `json:"scanIntervalMs,omitempty"`
+	Theme                    *ThemePreference  `json:"theme,omitempty"`
+	ExternalTerminal         *ExternalTerminal `json:"externalTerminal,omitempty"`
+	TerminalFontSize         *int              `json:"terminalFontSize,omitempty"`
+	Scrollback               *int              `json:"scrollback,omitempty"`
+	KillOwnedOnQuit          *bool             `json:"killOwnedOnQuit,omitempty"`
+	CloseToTray              *bool             `json:"closeToTray,omitempty"`
+	NotifyOnTaskDone         *bool             `json:"notifyOnTaskDone,omitempty"`
+	HideFromTaskbar          *bool             `json:"hideFromTaskbar,omitempty"`
+	NotifyOnCrash            *bool             `json:"notifyOnCrash,omitempty"`
+	NotifyOnlyWhenBackground *bool             `json:"notifyOnlyWhenBackground,omitempty"`
+	GlobalHotkey             *bool             `json:"globalHotkey,omitempty"`
+	LoginShellPath           *bool             `json:"loginShellPath,omitempty"`
+	PlannerNotify            *bool             `json:"plannerNotify,omitempty"`
+	PlannerSound             *bool             `json:"plannerSound,omitempty"`
+}
