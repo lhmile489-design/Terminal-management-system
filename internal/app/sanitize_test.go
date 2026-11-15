@@ -154,7 +154,7 @@ func TestThemeServiceSetValidates(t *testing.T) {
 			return contract.ResolvedDark
 		}
 		return contract.ResolvedLight
-	})
+	}, nil)
 	state, err := svc.Set(context.Background(), "dark")
 	if err != nil || state.Preference != contract.ThemeDark || state.Resolved != contract.ResolvedDark {
 		t.Fatalf("设置主题：%+v %v", state, err)

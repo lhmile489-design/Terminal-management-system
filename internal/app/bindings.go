@@ -12,8 +12,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/egoist/mygo"
-
 	"mile-console/internal/contract"
 	"mile-console/internal/events"
 	"mile-console/internal/groups"
@@ -136,14 +134,24 @@ func (s WindowService) IsMaximized(_ context.Context) bool {
 type ThemeService struct {
 	deps    Deps
 	resolve func(contract.ThemePreference) contract.ResolvedTheme
+	// apply 把偏好同步给运行时（main 里接 mygo.Theme.SetSource）。
+	// 做成注入而不是直接调 mygo：单测环境里没有 App，直接调会卡住。
+	apply func(contract.ThemePreference)
 }
 
 // NewThemeService 构造。resolve 把偏好换算成实际主题（跟随系统时由窗口层决定）。
-func NewThemeService(d Deps, resolve func(contract.ThemePreference) contract.ResolvedTheme) ThemeService {
+func NewThemeService(
+	d Deps,
+	resolve func(contract.ThemePreference) contract.ResolvedTheme,
+	apply func(contract.ThemePreference),
+) ThemeService {
 	if resolve == nil {
 		resolve = func(contract.ThemePreference) contract.ResolvedTheme { return contract.ResolvedLight }
 	}
-	return ThemeService{deps: d, resolve: resolve}
+	if apply == nil {
+		apply = func(contract.ThemePreference) {}
+	}
+	return ThemeService{deps: d, resolve: resolve, apply: apply}
 }
 
 // Get 当前外观。
@@ -168,7 +176,7 @@ func (s ThemeService) Set(_ context.Context, pref string) (contract.ThemeState, 
 		return contract.ThemeState{}, err
 	}
 	// 同步给运行时：页面据 resolved 写 <html data-theme>，系统外观也跟着变
-	mygo.Theme.SetSource(mygo.ThemeSource(clean))
+	s.apply(clean)
 	return contract.ThemeState{Preference: clean, Resolved: s.resolve(clean)}, nil
 }
 

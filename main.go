@@ -295,7 +295,7 @@ func main() {
 				}
 				return contract.ResolvedLight
 			}
-		}),
+		}, func(p contract.ThemePreference) { mygo.Theme.SetSource(mygo.ThemeSource(p)) }),
 		app.NewShellService(app.Deps{Shell: shellAdapter{}}),
 		app.NewClipboardService(app.Deps{Clipboard: clipboardAdapter{}}),
 	)
