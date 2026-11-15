@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { useOverlay } from '../lib/overlay'
 import { X } from '@phosphor-icons/react'
-import { scriptsOf, type LaunchEntry } from '@shared/types'
+import type { LaunchEntry } from '@shared/types'
 
 /**
  * 选择其他脚本，PRD §5.3。候选只来自该项目 package.json 的 scripts 快照 ——
@@ -16,7 +16,7 @@ export function ScriptPickerDialog({
   onPick: (script: string) => void
   onClose: () => void
 }): React.JSX.Element {
-  const names = Object.keys(scriptsOf(entry))
+  const names = Object.keys(entry.scripts)
   const [selected, setSelected] = useState(entry.script ?? names[0] ?? '')
   const closeRef = useRef<HTMLButtonElement>(null)
 
@@ -74,7 +74,7 @@ export function ScriptPickerDialog({
                     <span className="flex min-w-0 flex-col gap-0.5">
                       <span className="font-mono text-[12.5px] text-ink-strong">{name}</span>
                       <span className="font-mono text-[12px] break-all text-ink-faint">
-                        {scriptsOf(entry)[name]}
+                        {entry.scripts[name]}
                       </span>
                     </span>
                   </label>

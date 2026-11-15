@@ -80,7 +80,7 @@ ConPTY 不在依赖链最前，但它是迁移里风险最大的一项：做不�
 | S26 | J 渲染 | 样式原文复制 | `styles/tokens.css`(1055) `ui.css`(1438) | S01 | M5 | [x] |
 | S27 | J 渲染 | 基础组件与浮层栈 | `components/ui/*`(1121) `lib/overlay.ts`(76) | S26 | M5 | [x] |
 | S28 | J 渲染 | 前端工具与 store | 其余 `lib/*`(907) `store/*`(867) | S25 S27 | M5 | [x] |
-| S29 | J 渲染 | 业务组件 | `components/**`(除 ui 与外壳组件，6825) | S28 | M5 | [ ] |
+| S29 | J 渲染 | 业务组件 | `components/**`(除 ui 与外壳组件，6825) | S28 | M5 | [x] |
 | S30 | J 渲染 | 六个视图逐页 | `views/*`(7 个文件 2244，含 `LogCenter`) | S29 | M5 | [ ] |
 | S31 | J 渲染 | 应用外壳 | `App.tsx`(507) `main.tsx`(19) + 外壳组件(832) | S30 | M5 | [ ] |
 | S32 | K 原生 | 托盘、通知、单实例、快捷键、退出清理 | `main/index.ts` 原生部分 | S31 | M6 | [ ] |
@@ -679,7 +679,7 @@ EntryService（2161 行）按方法边界拆成四步，四步的产物都在 `i
   - 逐字复制：`cp` 原文件后只改两行 —— `tokens.css:641/645` 的 `-webkit-app-region` 换成 `--app-region`（mygo 的窗口拖动约定，见其 `docs/frontend.md` §285）。`diff` 结果：`ui.css` 与原文件完全一致，`tokens.css` 只有这两行不同
   - 没有加 `@layer`；Manrope 仍随 `@fontsource/manrope` 打包，没引 CDN
   - 构建验证：`bun run build:web`（`tsc --noEmit && vite build`）通过，产出 `index.css` 112.63 kB（gzip 20.59 kB）
-  - 编码扫描的一处说明：`tokens.css:560–561` 有两处 ✅（对比度注释里的 U+2705），属于**原版原文**，按卡片「其余一字不动」保留，未改成别的符号；这是本仓库里唯一的 emoji 例外，特此记录
+  - 编码扫描的一处说明：`tokens.css:560–561` 有两处 U+2705 符号（对比度注释里），属于**原版原文**，按卡片「其余一字不动」保留，未改成别的符号；这是本仓库里唯一的 emoji 例外，特此记录
 
 
 #### S27 基础组件与浮层栈
@@ -723,7 +723,18 @@ EntryService（2161 行）按方法边界拆成四步，四步的产物都在 `i
 - **顺序**：通用展示组件（`StatusPill`、`Sparkline`、`KpiCard`、`EntryGlyph`、`ViewHeader` 等）→ `services/` 下的组件与对话框 → `planner/` 下的组件 → `TerminalView`（接 S25 的终端流）
 - **规则**：加一个 `Framework` 值时，`GLYPH` 映射和 `entryMeta.ts` 的 `FRAMEWORK_LABEL` 要与 S04 的联合类型一起改；`category` 只显示，不加输入入口
 - **验收**（`verify-review-termsearch`、`verify-review-panel`、`verify-review-groupselect`、`verify-review-todo`）：每个对话框开关都走浮层栈；终端输入输出、搜索、复制可用
-- **证据**：
+- **证据**（2026-11-15）：
+  - 产物：`src/renderer/components/` 下 27 个文件原文复制（根目录 16 个、`planner/` 6 个、`services/` 5 个），外壳组件（TitleBar / NavRail / CommandPalette / ShortcutOverlay / ActivityDrawer）留给 S31；`ScriptPickerDialog` 换回原文（S28 时为了 `scriptsOf` 改过一行，现在不需要了）
+  - 调用点：10 个文件的 `window.mile.*` 机械替换成 `mile.` 并在顶部加 import；全仓 `grep window.mile` 为 **0**；组件正文除此之外一字未改
+  - **类型方案调整（推翻 S28 的做法）**：生成层没有字符串字面量联合与判别联合（`ResolvedTheme` / `HealthState` / `ServiceIcon` 是 `string`，`ScheduleRepeat` 是 `{kind: string; days?; day?}`，`scripts` 是 `unknown`），组件按原版写法有 50 处编不过。改成：
+    - `src/shared/types.ts`、`src/shared/planner.ts` 改为**原版原文复制**（只在末尾补 Go 侧新增的 `AppInfo` / `SettingsPatch` 两个类型转出），渲染层只认原版类型
+    - `src/lib/mile-api.ts` 的类型改从 `../shared/*` 取
+    - `src/lib/mile.ts` 是唯一同时见到两套类型的地方，出参 `narrow`、入参 `loose`、事件 `listen`，在边界断言一次（契约 §1.3）。两套类型字段名一致，因为 Go 的 contract 包本来就按原版逐字搬
+    - 风险：Go 侧字段若与原版漂移，这里的断言会把它藏住。防线是 Go 侧的 contract 对拍测试（S04），不在前端
+  - 终端输出：原版 TerminalView 是「先 `history` 再 `onData`」。`mile.session.history(id)` 首次调用时发起 attach 并返回空串，历史随 attach 流到达（Go 侧快照与订阅在同一把锁里登记，不丢不重）；同一会话再次挂载时照原版拉一次历史，实时输出走已有的流。TerminalView 不用改
+  - 验收：`bun run typecheck` 零错误；`bun run build:web` 通过（组件还没被页面引用，产物体积要到 S31 接上 App 才有意义）
+  - 编码扫描：`BuildPanel.tsx` 第 500、529 行的 U+2715、U+2713 两个符号被扫描脚本标出。两者是原版文案里的 Dingbat 字符，不是 emoji，按「中文文案逐字照搬」保留；其余文件干净
+  - 未做：卡片验收里的对话框浮层栈、终端输入输出 / 搜索 / 复制要在真实页面上跑 CDP，等 S30 视图与 S31 外壳接上后一起做
 
 #### S30 六个视图逐页
 

@@ -1,0 +1,786 @@
+import { mile } from "../../lib/mile";
+import { useEffect, useRef, useState } from 'react'
+import { ArrowsClockwise, FolderOpen, Lock, Plus, Stop, Trash } from '@phosphor-icons/react'
+import {
+  SERVICE_ICON_IDS,
+  type EntryEdit,
+  type EntryKind,
+  type EntryRuntime,
+  type LaunchEntry,
+  type LaunchMode,
+  type ServiceIcon
+} from '@shared/types'
+import {
+  FRAMEWORK_LABEL,
+  FRAMEWORK_LAUNCH_MODES,
+  LAUNCH_MODE_LABEL,
+  SERVICE_ICON_META,
+  isLiveStatus
+} from '../lib/entryMeta'
+import { Button, Switch } from './ui'
+import { useEntries } from '../store/entries'
+import { useGroups } from '../store/groups'
+
+/** 需要在 jarPath 字段填「路径/模块」的启动方式（其余方式命令自足，无需额外输入） */
+const MODES_NEEDING_PATH = new Set<LaunchMode>([
+  'jar',
+  'cpp-exe',
+  'python-file',
+  'python-module',
+  'uvicorn'
+])
+
+/** 各 mode 的输入框提示文案 */
+const PATH_HINT: Partial<Record<LaunchMode, { label: string; hint: string; placeholder: string }>> = {
+  jar: { label: 'jar 路径', hint: '相对项目根，须以 .jar 结尾', placeholder: 'target/app.jar' },
+  'cpp-exe': { label: '可执行文件路径', hint: '相对项目根，须以 .exe 结尾', placeholder: 'build/app.exe' },
+  'python-file': { label: '入口文件', hint: '相对项目根的 .py 文件', placeholder: 'main.py' },
+  'python-module': { label: '模块名', hint: 'python -m 的模块，如 app.main', placeholder: 'app.main' },
+  uvicorn: { label: 'ASGI app', hint: 'uvicorn 的 app 规格，如 main:app', placeholder: 'main:app' }
+}
+
+/**
+ * 条目编辑，PRD §4.6。
+ *
+ * 名称、工作组、置顶与图标运行中可直接改；类型、目录、脚本、端口、环境变量决定
+ * 「这张卡片是谁」，必须先停止 —— 运行中改了它们，停止时的归属校验会拿新配置去对旧进程。
+ *
+ * 面板内提供停止入口，且停止不关面板、不清草稿：让人把填好的东西丢掉再去外面点停止，
+ * 是把实现的限制转嫁给使用者。
+ */
+export function EntryConfigForm({
+  entry,
+  runtime,
+  onSubmit,
+  onStop,
+  onDiscard,
+  onDirtyChange,
+  error
+}: {
+  entry: LaunchEntry
+  runtime: EntryRuntime
+  onSubmit: (patch: EntryEdit) => Promise<boolean>
+  onStop: () => void
+  /** 放弃改动：父组件换 key 重挂载表单，回到已保存的值 */
+  onDiscard: () => void
+  /** 未保存状态变化时通知父组件，用于切换服务 / 关闭详情前的提醒 */
+  onDirtyChange?: (dirty: boolean) => void
+  /** 主进程校验失败的原因，显示在面板内而不是外面的横幅 */
+  error: string | null
+}): React.JSX.Element {
+  const [kind, setKind] = useState<EntryKind>(entry.kind)
+  const [name, setName] = useState(entry.name)
+  const groups = useGroups((s) => s.groups)
+  const [groupId, setGroupId] = useState(entry.groupId ?? '')
+  const [icon, setIcon] = useState<ServiceIcon | null>(entry.icon ?? null)
+  const [path, setPath] = useState(entry.path)
+  const [cwd, setCwd] = useState(entry.cwd ?? '')
+  const [script, setScript] = useState(entry.script ?? '')
+  const [scripts, setScripts] = useState(entry.scripts)
+  // 渲染层拿不到环境变量的值：已有变量只有键名，值框留空表示「保持不变」
+  const [envRows, setEnvRows] = useState<EnvRow[]>(() =>
+    Object.keys(entry.env).map((key, id) => ({ id, key, value: '', existing: true }))
+  )
+  const [port, setPort] = useState(entry.expectedPort ? String(entry.expectedPort) : '')
+  const [outputDir, setOutputDir] = useState(entry.outputDir ?? '')
+  const [framework, setFramework] = useState(entry.framework)
+  const [packageManager, setPackageManager] = useState(entry.packageManager)
+  const [launchMode, setLaunchMode] = useState<LaunchMode | ''>(entry.launchMode ?? '')
+  const [jarPath, setJarPath] = useState(entry.jarPath ?? '')
+  // 先等待：只能选同组的其他服务（整组按依赖顺序启动只看组内依赖）
+  const [startAfter, setStartAfter] = useState<string[]>(entry.startAfter ?? [])
+  // 运行监控（v14）：健康检查只给路径，主机 / 端口 / 协议由主进程按本服务自己的监听决定
+  const [healthOn, setHealthOn] = useState(entry.healthCheck?.enabled ?? false)
+  const [healthPath, setHealthPath] = useState(entry.healthCheck?.path ?? '/')
+  const [autoRestart, setAutoRestart] = useState(entry.autoRestart ?? false)
+  // 关键词一行一个；保存时去空白、去空行，校形与上限在主进程
+  const [alertText, setAlertText] = useState((entry.alertKeywords ?? []).join('\n'))
+  const [alertOnErrors, setAlertOnErrors] = useState(entry.alertOnErrors ?? false)
+  const groupEnv = useGroups((s) => s.groups.find((g) => g.id === groupId)?.env ?? 'dev')
+  const siblings = useEntries((st) => st.entries).filter(
+    (e) => !!entry.groupId && e.groupId === entry.groupId && e.id !== entry.id && e.kind === 'service'
+  )
+  // 自定义图片预览（data URL）。图片改动即时经 setImage/clearImage 落盘，不随保存按钮走 ——
+  // 它是展示字段（同 icon），运行中也能改，不影响运行身份。
+  const [imageUrl, setImageUrl] = useState<string | null>(null)
+  const [hasImage, setHasImage] = useState(!!entry.imageId)
+  const [imageBusy, setImageBusy] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [redetecting, setRedetecting] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const nextEnvRowId = useRef(Object.keys(entry.env).length)
+  // 挂载时的变量名快照，与 envRows 同一时刻。保存时只对这批键发 null 删除：
+  // 面板打开期间 entry:changed 会把 entry.env 换成新列表，若用实时 prop，
+  // 别处新增的变量不在 envRows 里，会被误判成「用户删了」
+  const savedEnvKeys = useRef(Object.keys(entry.env))
+
+  const live = isLiveStatus(runtime.status)
+
+  // 载入当前自定义图片作预览（有则显示缩略图 + 移除按钮）
+  useEffect(() => {
+    if (!entry.imageId) return
+    let alive = true
+    void mile.entry.image(entry.id).then((url) => {
+      if (alive) setImageUrl(url)
+    })
+    return () => {
+      alive = false
+    }
+  }, [entry.id, entry.imageId])
+
+  // 上传图片：读文件字节交主进程压缩落盘，回填后刷新预览。图片改动即时生效。
+  const onPickImage = async (file: File | undefined): Promise<void> => {
+    if (!file) return
+    setImageBusy(true)
+    try {
+      const bytes = await file.arrayBuffer()
+      await mile.entry.setImage(entry.id, bytes)
+      const url = await mile.entry.image(entry.id)
+      setImageUrl(url)
+      setHasImage(true)
+    } catch {
+      // 解码失败 / 过大：主进程已拒绝，保持原样，用户可重选
+    } finally {
+      setImageBusy(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  const onRemoveImage = async (): Promise<void> => {
+    setImageBusy(true)
+    try {
+      await mile.entry.clearImage(entry.id)
+      setImageUrl(null)
+      setHasImage(false)
+    } finally {
+      setImageBusy(false)
+    }
+  }
+
+  // 换目录要重认框架与脚本表，否则「脚本已声明」的校验参照的是上一个项目
+  const pick = async (): Promise<void> => {
+    const target = await mile.dialog.pickDirectory()
+    if (!target) return
+    setRedetecting(true)
+    try {
+      const detected = await mile.entry.detect(target)
+      setPath(detected.path)
+      setFramework(detected.framework)
+      setPackageManager(detected.packageManager)
+      setScripts(detected.scripts)
+      setCwd('')
+      // 换目录后按识别结果预填启动方式（可启动的非 npm 生态）；否则清空这两个字段
+      if (FRAMEWORK_LAUNCH_MODES[detected.framework]) {
+        setLaunchMode(detected.detectedLaunchMode ?? '')
+        setJarPath('')
+      } else {
+        setLaunchMode('')
+        setJarPath('')
+      }
+      // 新目录里同名脚本还在就留着，否则回落到它的 dev / build
+      setScript((current) =>
+        current && detected.scripts[current]
+          ? current
+          : ((kind === 'service' ? detected.devScript : detected.buildScript) ?? '')
+      )
+    } finally {
+      setRedetecting(false)
+    }
+  }
+
+  const launchModeOptions = FRAMEWORK_LAUNCH_MODES[framework]
+  const isLaunchable = !!launchModeOptions
+  const modeNeedsPath = launchMode !== '' && MODES_NEEDING_PATH.has(launchMode)
+
+  // 未保存判定：把所有表单字段拍成快照，与上次保存时的快照比较
+  const snapshot = JSON.stringify([kind, name, groupId, icon, path, cwd, script, scripts,
+    envRows.map((r) => [r.key, r.value]), port, outputDir, framework, packageManager, launchMode, jarPath, startAfter,
+    healthOn, healthPath, autoRestart, alertText, alertOnErrors])
+  const [baseline, setBaseline] = useState(snapshot)
+  const dirty = snapshot !== baseline
+  useEffect(() => {
+    onDirtyChange?.(dirty)
+  }, [dirty, onDirtyChange])
+
+  const save = async (): Promise<void> => {
+    setSaving(true)
+    try {
+      const mode = isLaunchable ? launchMode || null : null
+      const ok = await onSubmit({
+        kind,
+        name,
+        groupId: groupId || null,
+        icon: kind === 'service' ? icon : null,
+        path,
+        cwd,
+        // 可启动的非 npm 生态无 npm 脚本，脚本字段恒为空
+        script: isLaunchable ? null : script || null,
+        scripts: isLaunchable ? {} : scripts,
+        framework,
+        packageManager,
+        env: envPatch(savedEnvKeys.current, envRows),
+        // 空串表示清掉端口，用 null 让主进程按「显式清空」处理而不是「没提这个字段」
+        expectedPort: kind === 'task' || !port ? null : Number(port),
+        outputDir,
+        // 可启动生态显式写 launchMode / jarPath（null 清空）
+        launchMode: isLaunchable ? mode : null,
+        jarPath: isLaunchable && mode && MODES_NEEDING_PATH.has(mode) ? jarPath.trim() || null : null,
+        // 选了启动方式才可启动；npm 项目按有无脚本判定
+        registerOnly: isLaunchable ? !mode : !script,
+        // 只保留仍在同组里的，别把已移走的旧依赖再写回去
+        // 换了工作组就清空：先等待只认同组条目，旧组的依赖带过去是无效的
+        startAfter: (() => { const keep = groupId === (entry.groupId ?? '') ? startAfter.filter((d) => siblings.some((x) => x.id === d)) : []; return keep.length ? keep : null })(),
+        // 任务不支持这两项，主进程也会拒；这里直接发清空，免得改类型时报错
+        // 关闭时沿用已保存的路径：输入框里没填对的草稿不该挡住整次保存
+        healthCheck:
+          kind !== 'service'
+            ? null
+            : healthOn
+              ? { path: healthPath.trim() || '/', enabled: true }
+              : entry.healthCheck
+                ? { path: entry.healthCheck.path, enabled: false }
+                : null,
+        autoRestart: kind === 'service' && groupEnv === 'dev' ? autoRestart : false,
+        alertKeywords: alertWords(alertText),
+        alertOnErrors
+      })
+      if (ok) {
+        setBaseline(snapshot)
+        // 保存后面板里的行就是磁盘上的这批键：下次再删其中某个要能发出 null
+        savedEnvKeys.current = envRows.map((r) => r.key.trim()).filter(Boolean)
+      }
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const scriptNames = Object.keys(scripts)
+  // 需要填路径的模式必须填了才能保存
+  const launchIncomplete = isLaunchable && modeNeedsPath && !jarPath.trim()
+  const updateEnvRow = (id: number, field: 'key' | 'value', value: string): void => {
+    setEnvRows((rows) => rows.map((row) => (row.id === id ? { ...row, [field]: value } : row)))
+  }
+
+  const addEnvRow = (): void => {
+    setEnvRows((rows) => [...rows, { id: nextEnvRowId.current++, key: '', value: '', existing: false }])
+  }
+
+  const removeEnvRow = (id: number): void => {
+    setEnvRows((rows) => rows.filter((row) => row.id !== id))
+  }
+
+  return (
+    <div className="svc-config">
+      <div className="flex flex-col">
+
+        {/* 运行中的锁定说明必须给出停止入口，否则只是告诉人「不行」却不告诉怎么行 */}
+        {live && (
+          <div
+            data-tone="warn"
+            style={{ '--glow': 'var(--signal-warn)' } as React.CSSProperties}
+            className="mb-4 flex items-center gap-3 rounded-control bg-warn-soft px-4 py-2.5"
+          >
+            <Lock size={14} weight="bold" className="shrink-0 text-warn" aria-hidden />
+            <p className="min-w-0 flex-1 text-[12px] text-warn">
+              运行中只能改名称、工作组、置顶与图标。类型、目录、脚本、端口与环境变量需先停止。
+            </p>
+            <button
+              type="button"
+              onClick={onStop}
+              className="pressable flex shrink-0 items-center gap-1.5 rounded-control border border-warn/40 px-2.5 py-1 text-[12px] text-warn hover:bg-warn/15 hover:text-warn"
+            >
+              <Stop size={12} weight="fill" />
+              停止服务
+            </button>
+          </div>
+        )}
+
+        <div className="flex flex-col gap-4">
+          {error && (
+            <p role="alert" className="rounded-control bg-fault-soft px-3 py-2 text-[12px] text-fault">
+              {error}
+            </p>
+          )}
+
+          <h3 className="svc-sec">常用</h3>
+          <Field label="名称">
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full rounded-control border border-line bg-card px-2.5 py-1.5 text-[13px] text-ink-strong outline-none focus:border-accent"
+            />
+          </Field>
+
+          <Field label="工作组">
+            <select
+              data-entry-group-select
+              value={groupId}
+              onChange={(e) => setGroupId(e.target.value)}
+              className="w-full rounded-control border border-line bg-card px-2.5 py-1.5 text-[13px] text-ink-strong outline-none focus:border-accent"
+            >
+              <option value="">未分组</option>
+              {groups.map((g) => (
+                <option key={g.id} value={g.id}>
+                  {g.name}
+                </option>
+              ))}
+            </select>
+          </Field>
+
+          {isLaunchable ? (
+            <>
+              <Field label="启动方式" hint="留空表示仅登记，可监控不可启动" locked={live}>
+                <select
+                  value={launchMode}
+                  disabled={live}
+                  onChange={(e) => setLaunchMode(e.target.value as LaunchMode | '')}
+                  className="w-full rounded-control border border-line bg-card px-2.5 py-1.5 font-mono text-[12px] text-ink-strong outline-none focus:border-accent disabled:border-line disabled:bg-raised disabled:text-ink-faint"
+                >
+                  <option value="">不设置（仅登记）</option>
+                  {launchModeOptions.map((m) => (
+                    <option key={m} value={m}>
+                      {LAUNCH_MODE_LABEL[m]}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+
+              {modeNeedsPath && (
+                <Field
+                  label={PATH_HINT[launchMode]?.label ?? '路径'}
+                  hint={PATH_HINT[launchMode]?.hint ?? ''}
+                  locked={live}
+                >
+                  <input
+                    value={jarPath}
+                    disabled={live}
+                    placeholder={PATH_HINT[launchMode]?.placeholder ?? ''}
+                    onChange={(e) => setJarPath(e.target.value)}
+                    className="w-full rounded-control border border-line bg-card px-2.5 py-1.5 font-mono text-[12px] text-ink-strong outline-none focus:border-accent disabled:border-line disabled:bg-raised disabled:text-ink-faint"
+                  />
+                </Field>
+              )}
+            </>
+          ) : (
+            <Field
+              label={kind === 'service' ? '启动脚本' : '执行脚本'}
+              hint="留空表示仅登记，可监控不可启动"
+              locked={live}
+            >
+              {scriptNames.length === 0 ? (
+                <p className="text-[12px] text-ink-faint">该项目没有可用脚本，只能仅登记</p>
+              ) : (
+                <select
+                  value={script}
+                  disabled={live}
+                  onChange={(e) => setScript(e.target.value)}
+                  className="w-full rounded-control border border-line bg-card px-2.5 py-1.5 font-mono text-[12px] text-ink-strong outline-none focus:border-accent disabled:border-line disabled:bg-raised disabled:text-ink-faint"
+                >
+                  <option value="">不设置（仅登记）</option>
+                  {scriptNames.map((s) => (
+                    <option key={s} value={s}>
+                      {s} — {scripts[s]}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </Field>
+          )}
+
+          {/* 任务不监听端口，PRD §4.6 强制为空 —— 直接不给这个字段，比给了再报错清楚 */}
+          {kind === 'service' && (
+            <Field label="预期端口" hint="供预检与冲突判定参照，实际端口由项目决定" locked={live}>
+              <input
+                type="number"
+                min={1}
+                max={65535}
+                value={port}
+                disabled={live}
+                onChange={(e) => setPort(e.target.value)}
+                className="w-full rounded-control border border-line bg-card px-2.5 py-1.5 font-mono text-[12.5px] text-ink-strong outline-none focus:border-accent disabled:border-line disabled:bg-raised disabled:text-ink-faint"
+              />
+            </Field>
+          )}
+
+          <details className="svc-adv">
+            <summary>高级<span>类型、目录、环境变量、图标</span></summary>
+            <div className="flex flex-col gap-4">
+            <Field label="类型" locked={live}>
+              <div role="radiogroup" className="segmented">
+                {(['service', 'task'] as const).map((k) => (
+                  <button
+                    key={k}
+                    type="button"
+                    role="radio"
+                    aria-checked={kind === k}
+                    disabled={live}
+                    onClick={() => setKind(k)}
+                    className="segmented-item disabled:cursor-not-allowed disabled:border-line disabled:bg-raised disabled:text-ink-faint"
+                  >
+                    {k === 'service' ? '服务' : '任务'}
+                  </button>
+                ))}
+              </div>
+            </Field>
+
+            <Field label="项目目录" locked={live}>
+              <div className="flex items-center gap-2">
+                <span
+                  className="min-w-0 flex-1 truncate rounded-control border border-line bg-card px-2.5 py-1.5 font-mono text-[12px] text-ink-muted"
+                  title={path}
+                >
+                  {path}
+                </span>
+                <button
+                  type="button"
+                  disabled={live || redetecting}
+                  onClick={() => void pick()}
+                  className="pressable flex shrink-0 items-center gap-1.5 rounded-control border border-line-strong bg-card px-2.5 py-1.5 text-[12px] text-ink-muted hover:text-ink-strong disabled:cursor-not-allowed disabled:border-line disabled:bg-raised disabled:text-ink-faint"
+                >
+                  <FolderOpen size={13} weight="bold" />
+                  {redetecting ? '识别中' : '更换'}
+                </button>
+              </div>
+            </Field>
+
+            <Field label="子目录" hint="monorepo 子包，相对项目根，留空表示用根目录" locked={live}>
+              <input
+                value={cwd}
+                disabled={live}
+                placeholder="packages/web"
+                onChange={(e) => setCwd(e.target.value)}
+                className="w-full rounded-control border border-line bg-card px-2.5 py-1.5 font-mono text-[12px] text-ink-strong outline-none focus:border-accent disabled:border-line disabled:bg-raised disabled:text-ink-faint"
+              />
+            </Field>
+
+            {entry.kind === 'service' && entry.groupId && (
+              <Field label="先等待" hint="整组启动时，等勾选的服务进入运行中（报出端口，或 60 秒后）再启动这一个">
+                {siblings.length ? (
+                  <div data-start-after className="flex flex-col gap-1.5">
+                    {siblings.map((x) => (
+                      <label key={x.id} className="flex items-center gap-2 text-[13px] text-ink-strong">
+                        <input
+                          type="checkbox"
+                          data-start-after-id={x.id}
+                          checked={startAfter.includes(x.id)}
+                          onChange={(e) =>
+                            setStartAfter((cur) => (e.target.checked ? [...cur, x.id] : cur.filter((d) => d !== x.id)))
+                          }
+                        />
+                        {x.name}
+                      </label>
+                    ))}
+                  </div>
+                ) : (
+                  <p data-start-after className="text-[12px] text-ink-faint">组里没有别的服务</p>
+                )}
+              </Field>
+            )}
+
+            <Field label="识别结果">
+              <p className="font-mono text-[12px] text-ink-muted">
+                {FRAMEWORK_LABEL[framework]} · {packageManager}
+              </p>
+            </Field>
+
+            <Field
+              label="环境变量"
+              hint="值以密码形式遮盖；诊断中只显示变量名"
+              locked={live}
+            >
+              <div data-env-editor className="flex flex-col gap-2">
+                {envRows.map((row, index) => (
+                  <div key={row.id} data-env-row className="flex items-center gap-2">
+                    <input
+                      data-env-key
+                      value={row.key}
+                      disabled={live || row.existing}
+                      title={row.existing ? '已保存的变量不能改名，删掉后重新添加' : undefined}
+                      aria-label={`环境变量名称 ${index + 1}`}
+                      placeholder="NAME"
+                      onChange={(e) => updateEnvRow(row.id, 'key', e.target.value)}
+                      className="min-w-0 flex-1 rounded-control border border-line bg-card px-2.5 py-1.5 font-mono text-[12px] text-ink-strong outline-none focus:border-accent disabled:border-line disabled:bg-raised disabled:text-ink-faint"
+                    />
+                    <input
+                      data-env-value
+                      type="password"
+                      value={row.value}
+                      disabled={live}
+                      autoComplete="new-password"
+                      aria-label={`环境变量值 ${index + 1}`}
+                      placeholder={row.existing ? '已设置，留空保持不变' : 'value'}
+                      onChange={(e) => updateEnvRow(row.id, 'value', e.target.value)}
+                      className="min-w-0 flex-1 rounded-control border border-line bg-card px-2.5 py-1.5 font-mono text-[12px] text-ink-strong outline-none focus:border-accent disabled:border-line disabled:bg-raised disabled:text-ink-faint"
+                    />
+                    <button
+                      type="button"
+                      aria-label="删除环境变量"
+                      title="删除环境变量"
+                      disabled={live}
+                      onClick={() => removeEnvRow(row.id)}
+                      className="pressable flex h-8 w-8 shrink-0 items-center justify-center rounded-control border border-line text-ink-faint hover:border-fault/50 hover:text-fault disabled:cursor-not-allowed disabled:border-line disabled:bg-raised disabled:text-ink-faint"
+                    >
+                      <Trash size={14} weight="bold" />
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  aria-label="添加环境变量"
+                  title="添加环境变量"
+                  disabled={live}
+                  onClick={addEnvRow}
+                  className="pressable flex h-8 w-8 items-center justify-center rounded-control border border-line-strong bg-card text-ink-muted hover:text-ink-strong disabled:cursor-not-allowed disabled:border-line disabled:bg-raised disabled:text-ink-faint"
+                >
+                  <Plus size={14} weight="bold" />
+                </button>
+              </div>
+            </Field>
+
+            <h3 className="svc-sec">运行监控</h3>
+
+            {kind === 'service' && (
+              <>
+                <Field
+                  label="健康检查"
+                  hint="开启后每 15 秒向本服务自己的监听端口发一次 GET，只看是否有响应"
+                >
+                  <Switch
+                    checked={healthOn}
+                    onChange={setHealthOn}
+                    label="开启健康检查"
+                  />
+                </Field>
+                {healthOn && (
+                  <Field label="检查路径" hint="以 / 开头，例如 /actuator/health。主机与端口由应用决定">
+                    <input
+                      data-health-path
+                      value={healthPath}
+                      placeholder="/"
+                      maxLength={256}
+                      onChange={(e) => setHealthPath(e.target.value)}
+                      className="w-full rounded-control border border-line bg-card px-2.5 py-1.5 font-mono text-[12px] text-ink-strong outline-none focus:border-accent"
+                    />
+                  </Field>
+                )}
+                <Field
+                  label="意外退出时自动重启"
+                  hint={
+                    groupEnv === 'dev'
+                      ? '按 2 / 8 / 30 秒退避，10 分钟内最多 3 次'
+                      : `所在工作组是${groupEnv === 'prod' ? '生产' : '沙箱'}环境，每次启动都要人确认，不支持自动重启`
+                  }
+                >
+                  <Switch
+                    checked={groupEnv === 'dev' && autoRestart}
+                    onChange={setAutoRestart}
+                    label="意外退出时自动重启"
+                    disabled={groupEnv !== 'dev'}
+                  />
+                </Field>
+              </>
+            )}
+
+            <Field label="输出告警关键词" hint="一行一个，按文字匹配、不区分大小写，最多 10 个">
+              <textarea
+                data-alert-keywords
+                value={alertText}
+                rows={3}
+                placeholder={'OutOfMemoryError\nEADDRINUSE'}
+                onChange={(e) => setAlertText(e.target.value)}
+                className="w-full rounded-control border border-line bg-card px-2.5 py-1.5 font-mono text-[12px] text-ink-strong outline-none focus:border-accent"
+              />
+            </Field>
+            <Field label="同时对错误行告警" hint="输出里出现 error、exception 一类的行也提醒">
+              <Switch
+                checked={alertOnErrors}
+                onChange={setAlertOnErrors}
+                label="同时对错误行告警"
+              />
+            </Field>
+
+            {kind !== 'service' && (
+              <Field label="产物目录" hint="留空则按 dist / build / out 等约定探测">
+                <input
+                  value={outputDir}
+                  placeholder="dist"
+                  onChange={(e) => setOutputDir(e.target.value)}
+                  className="w-full rounded-control border border-line bg-card px-2.5 py-1.5 font-mono text-[12px] text-ink-strong outline-none focus:border-accent"
+                />
+              </Field>
+            )}
+
+            {/* 自定义图片：服务与任务都可用，优先级高于预设图标与 favicon。图片即时压缩落盘 */}
+            <Field
+              label="自定义图片"
+              hint="上传后压缩存本地，卡片与列表都用它显示；优先于预设图标与 favicon"
+            >
+              <div className="flex items-center gap-3">
+                <span
+                  className="icon-tile flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden"
+                  aria-hidden
+                >
+                  {imageUrl ? (
+                    <img
+                      src={imageUrl}
+                      className="h-9 w-9 object-contain"
+                      style={{ borderRadius: 8 }}
+                      alt=""
+                      draggable={false}
+                    />
+                  ) : (
+                    <span className="font-mono text-[12px] text-ink-faint">无</span>
+                  )}
+                </span>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/gif,image/bmp"
+                  className="hidden"
+                  onChange={(e) => void onPickImage(e.target.files?.[0])}
+                />
+                <button
+                  type="button"
+                  disabled={imageBusy}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="pressable rounded-control border border-line-strong bg-card px-2.5 py-1.5 text-[12px] text-ink-muted hover:text-ink-strong disabled:border-line disabled:bg-raised disabled:text-ink-faint"
+                >
+                  {imageBusy ? '处理中…' : hasImage ? '更换图片' : '上传图片'}
+                </button>
+                {hasImage && (
+                  <button
+                    type="button"
+                    disabled={imageBusy}
+                    onClick={() => void onRemoveImage()}
+                    className="pressable rounded-control border border-line-strong bg-card px-2.5 py-1.5 text-[12px] text-ink-muted hover:text-ink-strong disabled:border-line disabled:bg-raised disabled:text-ink-faint"
+                  >
+                    移除
+                  </button>
+                )}
+              </div>
+            </Field>
+
+            {kind === 'service' && (
+              <Field
+                label="服务卡片图标"
+                hint={hasImage ? '已上传自定义图片，将优先显示' : '选择自动时沿用已识别的框架字标'}
+              >
+                <div
+                  data-icon-picker
+                  role="group"
+                  aria-label="服务卡片图标"
+                  className="grid grid-cols-3 gap-1.5 sm:grid-cols-9"
+                >
+                  <button
+                    type="button"
+                    data-icon-option="auto"
+                    aria-label="自动（框架图标）"
+                    title="自动（框架图标）"
+                    aria-pressed={icon === null}
+                    onClick={() => setIcon(null)}
+                    className={`pressable flex h-9 w-full items-center justify-center rounded-control border text-ink-muted hover:text-ink-strong ${
+                      icon === null
+                        ? 'border-accent bg-accent-soft text-accent'
+                        : 'border-line-strong bg-card'
+                    }`}
+                  >
+                    <ArrowsClockwise size={15} weight="bold" aria-hidden />
+                  </button>
+                  {SERVICE_ICON_IDS.map((option) => {
+                    const { icon: IconCmp, label } = SERVICE_ICON_META[option]
+                    const selected = icon === option
+                    return (
+                      <button
+                        key={option}
+                        type="button"
+                        data-icon-option={option}
+                        aria-label={label}
+                        title={label}
+                        aria-pressed={selected}
+                        onClick={() => setIcon(option)}
+                        className={`pressable flex h-9 w-full items-center justify-center rounded-control border text-ink-muted hover:text-ink-strong ${
+                          selected
+                            ? 'border-accent bg-accent-soft text-accent'
+                            : 'border-line-strong bg-card'
+                        }`}
+                      >
+                        <IconCmp size={16} weight="bold" aria-hidden />
+                      </button>
+                    )
+                  })}
+                </div>
+              </Field>
+            )}
+            </div>
+          </details>
+        </div>
+
+        {dirty && (
+          <div className="svc-savebar" role="region" aria-label="未保存的改动">
+            <span className="svc-savebar-msg">有未保存的改动</span>
+            <Button variant="ghost" size="sm" onClick={onDiscard}>放弃</Button>
+            <Button variant="primary" size="sm" onClick={() => void save()} disabled={saving || !name.trim() || launchIncomplete}>
+              {saving ? '保存中' : '保存'}
+            </Button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+interface EnvRow {
+  id: number
+  key: string
+  value: string
+  /** 来自已保存的条目：值在主进程，这里只知道键名 */
+  existing: boolean
+}
+
+/**
+ * 环境变量合并补丁：新值（非空）设置或覆盖；已有变量值框留空 = 不动；
+ * 已有变量的行被删掉 = null 删除。
+ */
+function envPatch(savedKeys: string[], rows: EnvRow[]): Record<string, string | null> {
+  const patch: Record<string, string | null> = {}
+  const kept = new Set<string>()
+  for (const row of rows) {
+    const key = row.key.trim()
+    if (!key) continue
+    kept.add(key)
+    if (row.value !== '') patch[key] = row.value
+    else if (!row.existing) patch[key] = ''
+  }
+  for (const key of savedKeys) if (!kept.has(key)) patch[key] = null
+  return patch
+}
+
+/** 告警关键词：一行一个，去首尾空白、去空行、去重。空列表发 null 表示关闭；上限与字符校验在主进程 */
+function alertWords(text: string): string[] | null {
+  const words = [...new Set(text.split(/\r?\n/).map((w) => w.trim()).filter(Boolean))]
+  return words.length ? words : null
+}
+
+function Field({
+  label,
+  hint,
+  locked,
+  children
+}: {
+  label: string
+  hint?: string
+  /** 运行中锁定的字段加个锁标，让人知道禁用是有原因的而不是坏了 */
+  locked?: boolean
+  children: React.ReactNode
+}): React.JSX.Element {
+  return (
+    <label className="ui-field">
+      <span className="ui-field-label">
+        {label}
+        {locked && <span className="ui-field-lock"><Lock size={12} aria-hidden />停止后可改</span>}
+      </span>
+      {children}
+      {hint && <span className="ui-field-hint">{hint}</span>}
+    </label>
+  )
+}

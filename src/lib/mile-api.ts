@@ -1,14 +1,11 @@
 // 原版 src/preload/index.ts 第 264 行导出的 `MileApi = typeof api` 的手抄版。
 //
-// preload 依赖 electron 类型，不能直接 import，所以按契约 §1.1 把形状抄成接口；
-// src/lib/mile.ts 末尾有一条 `const _check: MileApi = mile` 的类型断言，
-// 少方法或签名不符都会编译失败。
+// preload 依赖 electron 类型，不能直接 import，所以按契约 §1.1 把形状抄成接口。
+// 这里的类型全部来自原版的 @shared（原文复制），不是生成层：渲染层只认原版类型，
+// 生成类型与原版类型的换算只发生在 src/lib/mile.ts（`export const mile: MileApi`，少方法会编译失败）。
 
 import type {
   AppInfo,
-  PlannerBoard,
-  PlannerSchedule,
-  PlannerTask,
   CreateShellSessionInput,
   LaunchEntry,
   LogQuery,
@@ -32,8 +29,14 @@ import type {
   DetectResult,
   OrderedStartResult,
   PrecheckResult,
+} from "../shared/types";
+import type {
+  PlannerBoard,
+  PlannerSchedule,
   PlannerSnapshot,
-} from "../mygo";
+  PlannerTask,
+  ReminderFire,
+} from "../shared/planner";
 
 /** 与原版 window 上的 mile 命名空间完全同形。 */
 export interface MileApi {
@@ -182,7 +185,7 @@ export interface MileApi {
     dismissMissed(boardId: string, scheduleId: string, at?: number): Promise<void>;
     clearMissed(): Promise<void>;
     onChange(cb: (snap: PlannerSnapshot) => void): () => void;
-    onReminder(cb: (fire: unknown) => void): () => void;
+    onReminder(cb: (fire: ReminderFire) => void): () => void;
     onFocus(cb: (req: unknown) => void): () => void;
   };
 }

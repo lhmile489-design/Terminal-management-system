@@ -1,56 +1,855 @@
-// 原版 `@shared/types` 的落点。
+// 对应 src/shared/types.ts（原文复制，一字未改）。
 //
-// 类型全部由 `mygo generate` 从 Go 的 contract 包生成，所以这里只做一次转出，
-// 不手写第二份；搬过来的渲染层照旧 `import type { ... } from '@shared/types'`。
+// 不直接转出生成层的类型：Go 没有字符串字面量联合与判别联合，生成的 ResolvedTheme / HealthState /
+// ServiceIcon 等都是 string，scripts 是 unknown，搬来的组件按原版写法会编不过。
+// 渲染层因此只认原版类型；src/lib/mile.ts 是唯一用到生成类型的地方，在那里断言一次（契约 §1.3）。
+// 末尾补两个 Go 侧新增、原版没有的类型。
 
-export type * from "../mygo";
+export type SessionKind = 'dev' | 'build' | 'install' | 'shell' | 'script'
 
-/** 原版 `SpringBootLaunchMode` 是 `LaunchMode` 的子集；Go 侧只有 `SpringBootLaunchModes` 列表，
- *  这里按同一组取值补一个联合类型（与 contract 逐字一致）。 */
-export type SpringBootLaunchMode =
-  | "maven-wrapper"
-  | "gradle-wrapper"
-  | "jar"
-  | "system-maven"
-  | "system-gradle";
+export type SessionStatus = 'starting' | 'running' | 'building' | 'stopped' | 'crashed'
 
-/** 原版 WEB_FRAMEWORKS：会产出网站首页、因此有本地 favicon 可读的前端生态。 */
+export interface SessionMeta {
+  id: string
+  projectId: string | null
+  kind: SessionKind
+  title: string
+  command: string
+  cwd: string
+  pid: number
+  status: SessionStatus
+  port?: number
+  startedAt: number
+  exitCode?: number
+}
+
+/**
+ * 渲染层「新建终端」唯一能提的请求。可执行文件、参数、工作目录、环境变量
+ * 一律由主进程决定 —— 渲染层传来的其他字段在 IPC 边界被丢弃，PRD §11。
+ */
+export interface CreateShellSessionInput {
+  kind: 'shell'
+  title?: string
+  /** 开在该已登记条目的目录里；目录由主进程解析，渲染层给不出路径 */
+  entryId?: string
+}
+
+/**
+ * 主进程内部的完整会话规格（EntryService 用固定模板构造），不经过 IPC。
+ * 渲染层拿不到这个入口。
+ */
+export interface CreateSessionInput {
+  kind: SessionKind
+  /** 省略时回退到用户主目录 */
+  cwd?: string
+  projectId?: string | null
+  title?: string
+  /** 可执行文件，缺省时使用系统默认 shell */
+  file?: string
+  /** 参数数组形式，绝不拼接成 shell 字符串 */
+  args?: string[]
+  env?: Record<string, string>
+}
+
+export interface SessionDataEvent {
+  id: string
+  chunk: string
+}
+
+export interface SessionExitEvent {
+  id: string
+  exitCode: number
+  signal?: number
+}
+
+// ── 日志中心，PRD §4.8 ──────────────────────────────────────────────────────
+
+export type LogLevel = 'info' | 'warn' | 'error'
+
+export interface LogLine {
+  /** 全局单调序号，供渲染层做 key 与「有没有新行」判断 */
+  seq: number
+  sessionId: string
+  /** 会话所属条目，shell 会话为 null */
+  entryId: string | null
+  title: string
+  ts: number
+  level: LogLevel
+  text: string
+}
+
+export interface LogQuery {
+  sessionId?: string | null
+  entryId?: string | null
+  level?: LogLevel | null
+  text?: string | null
+  limit?: number
+}
+
+export interface LogResult {
+  /** 按时间正序，最多 limit 条 */
+  lines: LogLine[]
+  /** 命中筛选的总条数，可能大于 lines.length */
+  total: number
+  /** 被环形缓冲挤掉的行数 */
+  dropped: number
+  capacity: number
+  sources: { sessionId: string; title: string; count: number }[]
+}
+
+/** 归属判定，见 PRD §6.2。foreign 已在采集层过滤，不下发渲染层 */
+export type Ownership = 'owned' | 'external' | 'foreign'
+
+/** 单条凭据的校验结果，读不到环境块时为 unknown */
+export type CredentialResult = 'hit' | 'miss' | 'unknown'
+
+export interface OwnershipVerdict {
+  pid: number
+  ownership: Ownership
+  token: CredentialResult
+  processGroup: CredentialResult
+  sameUser: CredentialResult
+  sessionId?: string
+}
+
+/**
+ * 监听分组，PRD §5.2。开发运行时与常见服务进程归「我的服务」，
+ * GUI 应用与系统路径进程归「应用后台」。
+ */
+export type ListenerGroup = 'mine' | 'background'
+
+/**
+ * 启动来源，PRD §5.3。**仅用于展示**。
+ *
+ * 这个值来自父进程链上的进程名与命令行，二者都是进程自己可以随便写的东西，
+ * 当不了安全凭据。归属判定只认 OwnershipService 的三重凭据，与此无关。
+ */
+export type LaunchSource =
+  | 'mile'
+  | 'vscode'
+  | 'cursor'
+  | 'jetbrains'
+  | 'claude'
+  | 'codex'
+  | 'terminal'
+  | 'explorer'
+  | 'service'
+  | 'unknown'
+
+/** 一次采集中单个监听进程的快照 */
+export interface ListenerSnapshot {
+  pid: number
+  ports: number[]
+  processName: string
+  execPath?: string
+  cwd?: string
+  /** 首轮无增量基线，为 null 而非 0 */
+  cpu: number | null
+  memory: number
+  startedAt?: number
+  ownership: Ownership
+  entryId?: string
+  sessionId?: string
+  group: ListenerGroup
+  /** 用户手动提升或移回过，界面据此提示这是人定的而非推断的 */
+  groupOverridden: boolean
+  launchSource: LaunchSource
+}
+
+/**
+ * 关注进程命中项，PRD §5.5。不监听端口也能被观察到。
+ *
+ * 命令行按 `WATCHED_CMD_MAX` 截断后下发：匹配是在命令行上做的，不给出片段用户
+ * 就不知道为什么命中；但完整参数里可能带 token，全量下发等于把它摊到界面上。
+ */
+export interface WatchedProcess {
+  pid: number
+  processName: string
+  /** 命中的关键字，一个进程可能同时命中多个，取首个 */
+  keyword: string
+  commandLine?: string
+  cpu: number | null
+  memory: number
+  startedAt?: number
+}
+
+export interface SystemLoad {
+  cpu: number | null
+  memory: number
+}
+
+/** 本次窗口会话期间新出现的未纳管监听，见 PRD §7 */
+export interface UnmanagedListener {
+  pid: number
+  port: number
+  processName: string
+  cwd?: string
+  guessedName: string
+  startedAt?: number
+}
+
+export interface ScanSnapshot {
+  at: number
+  listeners: ListenerSnapshot[]
+  unmanaged: UnmanagedListener[]
+  watched: WatchedProcess[]
+  system: SystemLoad
+  /** 预期端口被非本条目占用的数量 */
+  portConflicts: number
+  /** 采集失败时保留上次成功时间，渲染层据此标黄 */
+  failed: boolean
+  lastSuccessAt: number | null
+}
+
+export interface ScanDiff {
+  at: number
+  added: ListenerSnapshot[]
+  updated: ListenerSnapshot[]
+  removedPids: number[]
+  unmanaged: UnmanagedListener[]
+  watched: WatchedProcess[]
+  system: SystemLoad
+  portConflicts: number
+  failed: boolean
+  lastSuccessAt: number | null
+}
+
+export type ThemePreference = 'light' | 'dark' | 'system'
+
+/** 解析后的实际外观，渲染层据此设置 data-theme */
+export type ResolvedTheme = 'light' | 'dark'
+
+export interface ThemeState {
+  preference: ThemePreference
+  resolved: ResolvedTheme
+}
+
+export interface Settings {
+  scanIntervalMs: 1000 | 2000 | 5000 | 10000
+  theme: ThemePreference
+  /** Windows：wt / pwsh / powershell / cmd / gitbash；macOS：terminal / iterm。按平台校验 */
+  externalTerminal: 'wt' | 'pwsh' | 'powershell' | 'cmd' | 'gitbash' | 'terminal' | 'iterm'
+  terminalFontSize: number
+  scrollback: number
+  killOwnedOnQuit: boolean
+  closeToTray: boolean
+  /** 任务跑完弹系统通知，PRD §4.7，v3 起 */
+  notifyOnTaskDone: boolean
+  /** 从 Windows 任务栏隐藏，只保留系统托盘图标，v6 起 */
+  hideFromTaskbar: boolean
+  /** 服务崩溃、启动被预检拦下时弹系统通知，v10 起 */
+  notifyOnCrash: boolean
+  /** 通知只在窗口收起、最小化或失焦时弹，前台已有应用内提示，避免重复打扰，v10 起 */
+  notifyOnlyWhenBackground: boolean
+  /** 全局快捷键 Ctrl+Alt+M 唤起窗口并打开命令面板，托盘驻留时也可用，v11 起 */
+  globalHotkey: boolean
+  /** macOS：从登录 shell 读 PATH（会执行用户自己的 .zshrc），默认关；Windows 忽略。v13 起 */
+  loginShellPath: boolean
+  /** 日程提醒到点弹系统通知 + 应用内提醒卡片，v16 起。关掉后到点只记进「错过的提醒」 */
+  plannerNotify: boolean
+  /** 日程提醒系统通知带声音，v16 起；「日程提醒」关掉时这个开关禁用 */
+  plannerSound: boolean
+}
+
+/** 当前配置结构版本。加字段就要加迁移，见 ConfigStore.migrate */
+export const CONFIG_VERSION = 16
+
+/**
+ * 主进程要求渲染层「定位到某个服务的某个标签」。只带条目 id 和两个标签枚举，
+ * 通知点击不触发任何写操作。
+ */
+export interface FocusEntryRequest {
+  id: string
+  tab: 'output' | 'diagnose'
+}
+
+/** 主进程要求渲染层定位到某看板（通知点击 / 提醒卡片）；taskId 可选，定位到具体任务 */
+export interface PlannerFocusRequest {
+  boardId: string
+  taskId?: string
+  tab?: 'tasks' | 'schedules' | 'overview'
+}
+
+/**
+ * 关于页可打开的外部链接。渲染层只传键名，地址只在这里定义、由主进程查表打开 ——
+ * 这样外链白名单只有这两个固定地址，不放宽「只允许 localhost」的总口径。
+ */
+export const PROJECT_LINKS = {
+  repo: 'https://github.com/lhmile489-design/Terminal-management-system',
+  issues: 'https://github.com/lhmile489-design/Terminal-management-system/issues'
+} as const
+
+export type ProjectLink = keyof typeof PROJECT_LINKS
+
+/** 用户手动改过分组的进程，PRD §5.2。按进程名而非 PID —— PID 每次重启都换 */
+export interface GroupOverride {
+  processName: string
+  group: ListenerGroup
+}
+
+// ── 工作组，PRD-WORKGROUPS §2 ─────────────────────────────────────────────────
+
+/**
+ * 工作组运行环境。决定 Java 启动时的提示级别与默认 profile 高亮。
+ * - dev：无提示，正常启动
+ * - sandbox：黄色警示横幅，用户确认后启动
+ * - prod：红色强提示横幅，强调影响真实业务
+ */
+export type GroupEnvironment = 'dev' | 'sandbox' | 'prod'
+
+export const GROUP_ENV_LABEL: Record<GroupEnvironment, string> = {
+  dev: '开发',
+  sandbox: '沙箱',
+  prod: '生产'
+}
+
+/** 用户定义的项目工作组。条目通过 LaunchEntry.groupId 关联。*/
+export interface ProjectGroup {
+  /** UUID，主进程生成 */
+  id: string
+  /** 显示名称，最长 40 字 */
+  name: string
+  /** 可选描述，最长 120 字 */
+  description?: string
+  /** 当前激活环境；新建时默认 'dev' */
+  env: GroupEnvironment
+  createdAt: number
+  order: number
+  /** 置顶，v15 起。置顶的组排在最前，置顶组之间仍按 order 排 */
+  pinned?: boolean
+}
+
+/**
+ * 工作组的显示顺序：置顶的在前，各自内部按 order。服务页、启动顺序视图、托盘、
+ * 命令面板都用这一处，避免各写一份排序后对不上。
+ */
+export function orderGroups(groups: readonly ProjectGroup[]): ProjectGroup[] {
+  return [...groups].sort((a, b) => Number(!!b.pinned) - Number(!!a.pinned) || a.order - b.order)
+}
+
+export type NewProjectGroup = Omit<ProjectGroup, 'id' | 'createdAt' | 'order' | 'env' | 'pinned'> &
+  Partial<Pick<ProjectGroup, 'env' | 'description'>>
+
+export type GroupPatch = Partial<Pick<ProjectGroup, 'name' | 'description' | 'env' | 'order' | 'pinned'>>
+
+export interface AppConfig {
+  version: number
+  entries: LaunchEntry[]
+  /** 用户创建的项目工作组，v9 起；旧版迁移时初始化为 [] */
+  groups: ProjectGroup[]
+  ignoredListeners: { processName: string; port: number }[]
+  /** 手动提升到「我的服务」或移回后台的进程名，v2 起 */
+  groupOverrides: GroupOverride[]
+  /** 关注进程关键字，PRD §5.5，v2 起 */
+  watchedKeywords: string[]
+  settings: Settings
+}
+
+// ── 启动台，PRD §4 / §8 / §10 ──────────────────────────────────────────────
+
+export type Framework =
+  | 'next'
+  | 'nuxt'
+  | 'angular'
+  | 'vue-vite'
+  | 'vue-cli'
+  | 'react-vite'
+  | 'react-cra'
+  | 'svelte'
+  | 'electron'
+  | 'hexo'
+  | 'node'
+  // Spring Boot 非 npm 生态，但命令形状固定（mvnw/gradlew + 硬编码子命令），
+  // 因此可启动、不标 registerOnly，走 EntryService 的第二条命令构造路径
+  | 'spring-boot'
+  // uniapp（纯 HBuilderX 项目）：有 package.json 但无编译脚本，编译器内置在 HBuilderX 里。
+  // 能识别、仅登记（registerOnly），启动交给 HBuilderX（EntryService.openInHBuilderX）。
+  | 'uniapp'
+  // 以下为非 npm 生态。命令形状固定、推得出的（python/go/rust/cpp）走 EntryService 的
+  // 第 N 条命令构造路径，可启动；命令形状推不出的（hugo/jekyll/docker-compose/static）仍仅登记。
+  | 'hugo'
+  | 'jekyll'
+  | 'django'
+  | 'fastapi'
+  | 'flask'
+  | 'streamlit'
+  | 'python'
+  | 'docker-compose'
+  | 'go'
+  | 'rust'
+  // C++：只跑项目内已构建的 exe（不代编译），命令形状 = 固定的可执行产物路径
+  | 'cpp'
+  | 'static'
+  | 'unknown'
+
+export type PackageManager = 'npm' | 'pnpm' | 'yarn' | 'bun'
+
+/**
+ * 会产出「网站首页」、因此有本地 favicon 可读的前端生态。
+ *
+ * 只对这些框架尝试读 favicon —— 后端/CLI 生态（go/rust/python/spring-boot 等）
+ * 目录里就算有 .ico 也不是网站图标，读了反而误导。两端共用这一份，避免漂移。
+ */
 export const WEB_FRAMEWORKS = [
-  "next",
-  "nuxt",
-  "angular",
-  "vue-vite",
-  "vue-cli",
-  "react-vite",
-  "react-cra",
-  "svelte",
-  "electron",
-  "hexo",
-  "uniapp",
-  "hugo",
-  "jekyll",
-  "static",
-] as const;
+  'next',
+  'nuxt',
+  'angular',
+  'vue-vite',
+  'vue-cli',
+  'react-vite',
+  'react-cra',
+  'svelte',
+  'hexo',
+  'hugo',
+  'jekyll',
+  'static'
+] as const
 
-/** 即原版 isWebFramework。 */
-export function isWebFramework(f: string): boolean {
-  return (WEB_FRAMEWORKS as readonly string[]).includes(f);
+export function isWebFramework(f: Framework): boolean {
+  return (WEB_FRAMEWORKS as readonly string[]).includes(f)
 }
 
-/** 即原版 GROUP_ENV_LABEL。 */
-export const GROUP_ENV_LABEL: Record<string, string> = {
-  dev: "开发",
-  sandbox: "沙箱",
-  prod: "生产",
-};
+/**
+ * Spring Boot 启动方式，仅 framework === 'spring-boot' 使用。
+ *
+ * 每种方式的可执行文件与子命令都是固定的（见 EntryService.buildSpringBootCommand）：
+ * - wrapper 模式执行项目根自带的 mvnw.cmd / gradlew.bat，子命令写死 spring-boot:run / bootRun
+ * - jar 模式只跑已构建产物，不碰任何 wrapper 脚本
+ * - system 模式用 PATH 里的 mvn / gradle
+ * 用户只能选「哪种方式」，改不了命令本身 —— 这是替代「脚本必须在 package.json」的可信来源判定。
+ */
+export type SpringBootLaunchMode =
+  | 'maven-wrapper'
+  | 'gradle-wrapper'
+  | 'jar'
+  | 'system-maven'
+  | 'system-gradle'
 
-/** 原版 MavenGoal；Go 侧是 MavenGoals 列表，这里补联合类型。 */
-export type MavenGoal = "clean" | "compile" | "package" | "test" | "install" | "verify";
+/**
+ * Maven/Gradle 构建目标，用于后端控制台的构建操作。
+ * 值是固定枚举，不接受用户自由输入字符串 —— 安全约束同 LaunchMode：
+ * 命令由 EntryService.buildMavenCommand 按 launchMode + goal 映射成固定 args 数组。
+ */
+export type MavenGoal = 'clean' | 'compile' | 'package' | 'test' | 'install' | 'verify'
 
-/** Go 侧把 `scripts` 生成成 unknown（保序对象），渲染层按契约 §1.3 断言成普通记录。 */
-export type Scripts = Record<string, string>;
+/**
+ * 跨语言的启动方式枚举，`LaunchEntry.launchMode` 使用。
+ *
+ * 与 Spring Boot 同一可信性模型：每个 mode 的可执行文件与子命令都固定（见 EntryService
+ * 的 build<Lang>Command），用户只能选「哪种方式」，改不了命令本身。这替代了 npm 的
+ * 「脚本必须在 package.json」判定，是把非 npm 生态移出「仅登记」的合法依据。
+ *
+ * - python-*：file=python(whichAny)，子命令/flag 硬编码；入口文件/模块经白名单 + 项目内校验
+ * - go-run：file=go，args=['run', <项目内包路径|.>]
+ * - cargo-run[-release]：file=cargo，args=['run'] 或 ['run','--release']
+ * - cpp-exe：只跑项目内已构建的 .exe（相对项目根、禁 ..、须存在），不代编译
+ */
+export type LaunchMode =
+  | SpringBootLaunchMode
+  | 'python-file'
+  | 'python-module'
+  | 'uvicorn'
+  | 'flask'
+  | 'django'
+  | 'go-run'
+  | 'cargo-run'
+  | 'cargo-run-release'
+  | 'cpp-exe'
 
-/** 取条目脚本表，形状与原版的 Record<string, string> 一致。 */
-export function scriptsOf(e: { scripts?: unknown }): Scripts {
-  return (e.scripts ?? {}) as Scripts;
+export type EntryKind = 'service' | 'task'
+
+/** 服务卡片允许持久化的图标标识；缺省时沿用框架字标。 */
+export const SERVICE_ICON_IDS = [
+  'rocket',
+  'globe',
+  'database',
+  'terminal',
+  'code',
+  'cube',
+  'cloud',
+  'gear'
+] as const
+
+export type ServiceIcon = (typeof SERVICE_ICON_IDS)[number]
+
+export interface LaunchEntry {
+  id: string
+  kind: EntryKind
+  name: string
+  /** User-defined Launchpad category; unset entries belong to the unclassified panel. */
+  category?: string
+  /** 仅服务使用；未设置时按已识别框架显示默认字标。 */
+  icon?: ServiceIcon
+  /**
+   * 自定义图片文件名（存于 %APPDATA%/mile-terminal/images/），服务与任务均可用。
+   * 显示优先级高于 icon 与 favicon。仅由主进程 entry.setImage 压缩落盘后写入，
+   * 渲染层不可通过 edit 直接指定文件名（防路径穿越 / 探测任意文件存在性）。
+   */
+  imageId?: string
+  /** 项目根绝对路径 */
+  path: string
+  /** monorepo 子包相对路径 */
+  cwd?: string
+  framework: Framework
+  packageManager: PackageManager
+  /** 服务用 dev 脚本，任务用其命令脚本 */
+  script: string | null
+  /** package.json scripts 快照 */
+  scripts: Record<string, string>
+  env: Record<string, string>
+  expectedPort?: number
+  outputDir?: string
+  /**
+   * 决定 spawnSession 走哪条命令构造路径。仅命令形状固定的非 npm 生态使用
+   * （spring-boot / python / go / rust / cpp）；npm 生态与仅登记条目为 undefined。
+   */
+  launchMode?: LaunchMode
+  /**
+   * 可执行产物或入口的相对路径（相对项目根，禁 `..`）。约束同 outputDir，会参与
+   * shell.openPath 的白名单推断。按 launchMode 决定语义与后缀校验：
+   * - jar（Spring Boot）→ 须以 .jar 结尾的 jar 产物
+   * - cpp-exe（C++）→ 须以 .exe 结尾的已构建可执行文件
+   * - python-file（Python）→ 项目内的入口 .py 文件
+   * - python-module（Python）→ 模块名（点分标识符，非路径）
+   */
+  jarPath?: string
+  /** true = 仅监控不可启动 */
+  registerOnly: boolean
+  pinned: boolean
+  order: number
+  createdAt: number
+  lastStartedAt?: number
+  lastExitCode?: number
+  /**
+   * 所属工作组 ID，由 group:assignEntries 或 entry:edit 写入。
+   * 未设置表示该条目不属于任何工作组（仍可在「全部」视图下操作）。
+   */
+  groupId?: string
+  /**
+   * 整组启动时先等这些条目进入运行中再启动本条目，v12 起。只认同组条目 id，
+   * 主进程校验：不能指向自己、不能指向不存在的条目、不能成环。
+   */
+  startAfter?: string[]
+  /**
+   * 本机 HTTP 健康检查，v14 起。只存路径：主机、端口、地址族、协议都由主进程按本条目
+   * 自己的监听行决定，渲染层给不出任何别的目标。
+   */
+  healthCheck?: HealthCheckConfig
+  /** 意外退出时自动重启，v14 起。只对服务开放，且只在 dev / 未分组环境生效 */
+  autoRestart?: boolean
+  /** 输出关键词告警，v14 起。纯子串、不区分大小写，不接受正则 */
+  alertKeywords?: string[]
+  /** 同时对通用错误行（outputText.ts 的 ERROR_RE）告警，v14 起 */
+  alertOnErrors?: boolean
 }
+
+export interface HealthCheckConfig {
+  /** 以 `/` 开头的请求路径，sanitizeEdit 按字符白名单校形 */
+  path: string
+  enabled: boolean
+}
+
+/**
+ * 健康检查结果，只在内存。
+ * - ok：2xx / 3xx
+ * - fail：其他状态码、超时、连接被拒
+ * - unknown：条目在运行，但快照里还找不到它自己的监听行，没有发请求
+ * - off：未开启或条目不在运行
+ */
+export interface EntryHealth {
+  entryId: string
+  state: 'ok' | 'fail' | 'unknown' | 'off'
+  statusCode?: number
+  latencyMs?: number
+  /** fail 时的简短原因，不含响应体 */
+  reason?: string
+  checkedAt: number
+}
+
+/** 等待中的自动重启，挂在运行态上随现有推送下发 */
+export interface AutoRestartPending {
+  /** 计划重启的时刻，Unix ms */
+  nextAt: number
+  /** 第几次重启（从 1 开始） */
+  attempt: number
+  max: number
+}
+
+/** 输出告警命中，只在内存 */
+export interface OutputAlert {
+  entryId: string
+  sessionId: string
+  name: string
+  /** 命中的关键词；通用错误行命中时为 null */
+  keyword: string | null
+  /** 命中行，已去 ANSI，截断到 200 字符 */
+  line: string
+  at: number
+}
+
+/** 新建条目时的入参，id/order/createdAt 由主进程生成 */
+export type NewLaunchEntry = Omit<LaunchEntry, 'id' | 'order' | 'createdAt'> &
+  Partial<Pick<LaunchEntry, 'pinned' | 'registerOnly'>>
+
+export interface DetectResult {
+  path: string
+  /** 存在 package.json 才算可推断，否则只能仅登记 */
+  hasPackageJson: boolean
+  name: string
+  framework: Framework
+  packageManager: PackageManager
+  scripts: Record<string, string>
+  devScript: string | null
+  buildScript: string | null
+  /** 根目录无 dev 脚本时为 true，需用户指定子包，PRD §8.5 */
+  monorepoHint: boolean
+  registerOnly: boolean
+  /**
+   * 识别时探测到的默认启动方式，供新建向导预填 launchMode。
+   * Spring Boot 有 mvnw 优先 wrapper 否则 system；Python 按入口文件/框架；Go/Rust 各自默认。
+   * 命令形状推不出的生态（hugo/static 等）为 undefined。
+   */
+  detectedLaunchMode?: LaunchMode
+  /**
+   * 从 application.properties / application.yml 的 server.port 读到的端口。
+   * 读不到为 undefined，靠日志捕获兜底。
+   */
+  detectedPort?: number
+  warnings: string[]
+}
+
+export type PrecheckLevel = 'pass' | 'warn' | 'fail'
+
+/** 修复入口的动作标识，渲染层据此决定点击行为，PRD §5.3 */
+export type PrecheckFixAction =
+  | 'pickDirectory'
+  | 'removeEntry'
+  | 'openInEditor'
+  | 'pickScript'
+  | 'useNpm'
+  | 'createInstallSession'
+  | 'showNodeRequirement'
+  | 'resolvePort'
+  /** 将条目的 expectedPort 切换到主进程扫描出的空闲端口 */
+  | 'switchPort'
+
+export interface PrecheckItem {
+  id: string
+  label: string
+  level: PrecheckLevel
+  detail?: string
+  fix?: {
+    action: PrecheckFixAction
+    label: string
+    /** switchPort 动作时主进程预扫描的候选空闲端口 */
+    suggestedPort?: number
+  }
+}
+
+export interface PrecheckResult {
+  ok: boolean
+  items: PrecheckItem[]
+}
+
+export type EntryStatus =
+  | 'idle'
+  | 'precheck'
+  | 'blocked'
+  | 'starting'
+  | 'running'
+  | 'stopping'
+  | 'stopped'
+  | 'crashed'
+  | 'succeeded'
+  | 'failed'
+  /** 任务以 130 退出，即脚本自报的用户取消，PRD §4.6 */
+  | 'canceled'
+
+/**
+ * 用户可编辑的字段，PRD §4.6。
+ *
+ * 白名单而非黑名单：`id` / `order` / `createdAt` / `lastExitCode` 这类由主进程维护的
+ * 字段，一旦允许渲染层覆盖就等于把落盘结构交给了界面。
+ */
+export type EditableEntryField =
+  | 'name'
+  | 'category'
+  | 'groupId'
+  | 'pinned'
+  | 'kind'
+  | 'path'
+  | 'cwd'
+  | 'script'
+  | 'scripts'
+  | 'framework'
+  | 'packageManager'
+  | 'env'
+  | 'icon'
+  | 'imageId'
+  | 'expectedPort'
+  | 'outputDir'
+  | 'launchMode'
+  | 'jarPath'
+  | 'registerOnly'
+  | 'startAfter'
+  | 'healthCheck'
+  | 'autoRestart'
+  | 'alertKeywords'
+  | 'alertOnErrors'
+
+/**
+ * `expectedPort`、`outputDir`、`jarPath`、`launchMode` 额外接受 null 表示「显式清空」。
+ * 用 undefined 表达清空在 IPC 上不成立 —— 结构化克隆会把 undefined 的键丢掉，
+ * 到了主进程就变成「没提这个字段」，值永远删不掉。
+ */
+export type EntryEdit = Partial<
+  Omit<
+    Pick<LaunchEntry, EditableEntryField>,
+    | 'expectedPort'
+    | 'outputDir'
+    | 'icon'
+    | 'imageId'
+    | 'category'
+    | 'groupId'
+    | 'launchMode'
+    | 'jarPath'
+    | 'env'
+    | 'startAfter'
+    | 'healthCheck'
+    | 'alertKeywords'
+  >
+> & {
+  /** null 关闭并清掉健康检查 */
+  healthCheck?: HealthCheckConfig | null
+  /** 空数组或 null 等于关闭关键词告警 */
+  alertKeywords?: string[] | null
+  /**
+   * 合并补丁，不是整体替换：字符串 = 新增或覆盖该变量，null = 删除，没提到的键保持原值。
+   * 渲染层从不持有环境变量的值（条目里 env 的值恒为空串，只有键名可信），
+   * 所以不可能、也不需要回传旧值。
+   */
+  env?: Record<string, string | null>
+  expectedPort?: number | null
+  outputDir?: string | null
+  /** null 是跨 IPC 显式恢复自动框架图标的哨兵值。 */
+  icon?: ServiceIcon | null
+  /**
+   * 只接受 null —— 显式清除自定义图片，回退到 icon / favicon / 字标。
+   * 设置图片不走 edit，走专用的 entry.setImage(bytes)：由主进程压缩落盘并回填文件名，
+   * 渲染层无从指定任意文件名。
+   */
+  imageId?: null
+  /** null explicitly clears the category and returns the entry to the unclassified panel. */
+  category?: string | null
+  /** null 显式清空工作组归属，将条目移出工作组。 */
+  groupId?: string | null
+  /** null 显式清空启动方式。 */
+  launchMode?: LaunchMode | null
+  /** null 显式清空可执行产物/入口路径。 */
+  jarPath?: string | null
+  /** null 清空「先等待」 */
+  startAfter?: string[] | null
+}
+
+/** 条目运行态，不持久化 */
+export interface EntryRuntime {
+  entryId: string
+  status: EntryStatus
+  sessionId?: string
+  pid?: number
+  port?: number
+  /** 服务 60s 未捕获端口但进程存活，PRD §4.3 */
+  portUnknown: boolean
+  startedAt?: number
+  exitCode?: number
+  precheck?: PrecheckResult
+  /**
+   * 最近一次 packageWithProfile 成功后扫描到的 jar 相对路径（相对项目根）。
+   * 渲染层据此展示"打包完成"操作横幅；下一次 build 开始时清空。
+   * 不持久化，key={entry.id} 切换条目时自动丢弃。
+   */
+  lastBuiltJar?: string
+  /** 等待中的自动重启；null / 缺省表示没有排队的重启 */
+  autoRestart?: AutoRestartPending | null
+  /** 10 分钟内已重启 3 次仍崩溃，停止自动重启。下一次手动启动时清掉 */
+  autoRestartGaveUp?: boolean
+  /**
+   * 本次启动耗时（毫秒）：从会话启动到就绪。开了健康检查取首次 ok，否则取输出里捕获到端口。
+   * 60 秒没捕获到端口（portUnknown）没有可信的就绪时刻，不记。只在内存
+   */
+  readyMs?: number
+  readySource?: 'port' | 'health'
+  /** 最近 10 次启动耗时，旧的在前。停止、崩溃后仍保留，应用重启后清空 */
+  readyHistory?: number[]
+}
+
+export interface EntryStartResult {
+  ok: boolean
+  precheck: PrecheckResult
+  runtime?: EntryRuntime
+}
+
+/** 按依赖顺序整组启动的逐条结果 */
+/** 配置导出结果（2.3.0）。环境变量只导出变量名 */
+export interface ConfigExportResult {
+  path: string
+  entries: number
+  groups: number
+}
+
+/** 配置导入结果（2.3.0）。导入前的备份位置、新增数、跳过原因、要重填的环境变量名 */
+export interface ConfigImportResult {
+  backup: string
+  added: number
+  groupsAdded: number
+  skipped: { name: string; reason: string }[]
+  envToRefill: { id: string; name: string; keys: string[] }[]
+}
+
+export interface OrderedStartResult {
+  id: string
+  ok: boolean
+  /** 被预检拦下时的结果 */
+  precheck?: PrecheckResult
+  /** 没有启动的原因（前置没起来、启动抛错），给界面汇总用 */
+  skipped?: string
+}
+
+export interface PortHolder {
+  pid: number
+  processName: string
+  ownership: Ownership
+  /** 仅在主进程能够按会话归属精确映射到受控条目时提供 */
+  entryId?: string
+}
+
+export interface EntryDiagnosis {
+  entryId: string
+  precheck: PrecheckResult
+  /** 被诊断的预期端口，无则 null */
+  port: number | null
+  /** 预期端口现状，无预期端口或空闲时为 null */
+  portHolder: PortHolder | null
+  lastExitCode?: number
+  lastStartedAt?: number
+  /** 上次运行时长（毫秒），未运行过为 undefined */
+  lastRunMs?: number
+  firstErrorLine?: string
+  /** 退出前输出里的最后一个错误行（npm 收尾块之外优先），只在内存 */
+  lastErrorLine?: string
+  /** 退出前最后 30 行可见输出（已去 ANSI），只在内存，不落盘 */
+  tailLines: string[]
+  node: string
+  packageManager: PackageManager
+  /** 包管理器可执行文件路径，PATH 中找不到时为 null */
+  packageManagerPath: string | null
+  /** 只给键名，绝不含值，PRD §4.4 */
+  envKeys: string[]
+  /** 任务产物目录，不存在为 null */
+  outputDir: string | null
+}
+
+
+// ── Go 侧新增 ─────────────────────────────────────────────────────────────
+
+export type { AppInfo, SettingsPatch } from "../mygo";
