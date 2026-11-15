@@ -84,7 +84,7 @@ ConPTY 不在依赖链最前，但它是迁移里风险最大的一项：做不�
 | S30 | J 渲染 | 六个视图逐页 | `views/*`(7 个文件 2244，含 `LogCenter`) | S29 | M5 | [x] |
 | S31 | J 渲染 | 应用外壳 | `App.tsx`(507) `main.tsx`(19) + 外壳组件(832) | S30 | M5 | [x] |
 | S32 | K 原生 | 托盘、通知、单实例、快捷键、退出清理 | `main/index.ts` 原生部分 | S31 | M6 | [x] |
-| S33 | L 收尾 | 视觉对等 | — | S32 | M7 | [ ] |
+| S33 | L 收尾 | 视觉对等 | — | S32 | M7 | [x] |
 | S34 | L 收尾 | 打包发布 | — | S33 | M7 | [ ] |
 
 ### 3.1 可并行的段
@@ -847,7 +847,21 @@ EntryService（2161 行）按方法边界拆成四步，四步的产物都在 `i
 
 - **做法**：1440×900、浅色与深色各一轮，六个页面与原版并排截图；最小窗口 1180×760 下布局不破；按压动画走真实输入
 - **验收**（`verify-m7-visual`、`verify-m12-press`、`verify-ui`）：差异清单要么修掉，要么登记进 MIGRATION-PLAN §6 并写明用户可见差异；页面上渐变背景为 0 处；文字对比度 ≥ 4.5:1（含按钮启用 / 禁用两态）
-- **证据**：
+- **证据**（2026-11-15）：
+  - 做法：两边跑**同一份**页面端探针 `scripts/s33-probe.cjs`（同一套 v1 播种配置、同一流程、CDP `Emulation.setDeviceMetricsOverride` 固定 1440×900 / dsf 1、`Page.captureScreenshot`），再用 `scripts/s33-diff.mjs` 按 (标签 + 类名 + 文字，数字归一) 做 LCS 对齐、盒子 ±1px、11 项计算样式逐项比
+    - 原版：`scripts/s33-orig.cjs` 用原项目 `node_modules/electron` 加载原项目 `out/`（只读），require 前 `setPath('appData' / 'userData', 沙箱)`，不碰真实 `%APPDATA%\mile-terminal\`，也不动在跑的 Mile Terminal 2.5.1
+    - mygo：`internal/config` 新增 `MILE_CONSOLE_DATA_DIR`（整个数据目录落到沙箱，对应原版 harness 的 setPath），`scripts/cdp-s33-visual.mjs seed <目录>` 播种后 `bun run dev` + CDP
+    - 截图与指纹在 `build/s33/orig/`、`build/s33/mygo/`（六页 × 深浅 = 12 对 PNG + JSON + `summary.json`）
+  - 结果：
+    - 服务 / 进度 / 终端 / 设置四页，深浅两色：元素数相同（205 / 81 / 81 / 188），**指纹差异 0**；dark-services 两张截图目视逐像素无差
+    - 关于页：唯一差异是版本 pill（`v43.4.0` → `v0.1.0`）。原版那个是未打包加载时 `app.getVersion()` 退回 Electron 版本号，属于 harness 现象；mygo 版本号归 S34
+    - 总览页：差异全部来自动态数据，不是样式——CPU 采样点数（「1 点」/「2 点」决定 Sparkline 画不画，进而决定标签宽 144 / 208）、监听列表行数（mygo 一侧多了 dev 进程自己的 Vite 端口 41644 等）、端口「历史」计数（原版 16：它是冷启动，首份快照前监听全以 added 到达；mygo 窗口早已在跑，0）。端口历史逻辑另起一个 127.0.0.1:47913 临时监听实测：先记 `start:47913`，关掉后记 `stop:47913`，与原版 `nextPortHistory` 一致（store 代码与原版逐行相同，只改 `window.mile` → `mile`）
+    - verify-m7-visual 口径（12 个视图键全等）：标题 22px / 700 / Manrope，Manrope 已加载；磁贴 16px 圆角，浅色有静态阴影、深色无阴影靠描边；**渐变背景 0 处**；无横竖整窗滚动
+    - verify-ui MEASURE，1180×760，深浅 × 六页共 12 组**逐项相等**：低对比 0、<3:1 为 0，最小对比度浅色 4.84 / 深色 5.13–5.34（≥ 4.5，按钮禁用态按原版口径豁免、启用态计入）；<12px 文字 0；标题栏 1180×40、导航 184×720、内容区 996×720；无横向滚动。两边各有 1 个 <24px 目标（服务页进度胶囊 88×22），原版同样如此，照原样
+    - verify-m12-press，真实 `Input.dispatchMouseEvent`、捕获阶段吃掉 click：工具栏主按钮按下 scale 0.96、ty 0、`:active` 为真、背景变化；松开回 1。两边完全相同
+  - 顺带修掉的 mygo 缺陷：`src/lib/mile.ts` 的 `toRaw` 先 `JSON.stringify` 再交给运行时，planner 的对象入参被**二次编码**，Go 侧收到 JSON 字符串，`addTask` / `editBoard` / `editTask` 等一律报「任务内容必须是对象」——进度页新建任务、编辑看板在 S25 起就是坏的（S12 / S25 的场景脚本直连 Go 或传字符串 id，没覆盖到）。生成的类型早已是 `unknown`，改为原样传值；播种阶段 `addBoard` + 3 次 `addTask` 经由适配层成功即为证据
+  - `go build ./...`、`go test ./internal/config/`（11 passed）、`bun run typecheck` 通过
+  - 未做：深浅色切换、按压以外的悬停 / 焦点环逐个对拍（探针把鼠标停在页面外、焦点 blur 掉以排除悬停态）；需要真机服务启停的状态（运行中徽标、崩溃态）仍归人工回归
 
 #### S34 打包发布
 

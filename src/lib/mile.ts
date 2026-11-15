@@ -276,9 +276,13 @@ export const mile: MileApi = {
   },
 };
 
-/** planner 的入参在 Go 侧是 json.RawMessage，生成的类型是 string。 */
-function toRaw(v: unknown): string {
-  return typeof v === "string" ? v : JSON.stringify(v);
+/**
+ * planner 的入参在 Go 侧是 json.RawMessage（生成的类型是 unknown）：原样传值，由运行时序列化一次，
+ * Go 侧拿到的就是页面传的 JSON。S33 实测：先 JSON.stringify 再交给运行时会二次编码，
+ * 对象到 Go 侧变成 JSON 字符串，addTask / editBoard 等一律报「…必须是对象」。
+ */
+function toRaw(v: unknown): unknown {
+  return v;
 }
 
 /** 终端挂载时调一次：把该会话的输出接到 `onData` 的订阅者上。 */

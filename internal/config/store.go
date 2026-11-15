@@ -23,8 +23,16 @@ import (
 // DirName 数据目录名（D4 定案：%APPDATA%\mile-console\，与原版 mile-terminal 分开）。
 const DirName = "mile-console"
 
+// DataDirEnv 验收沙箱用：设置后整个数据目录（config.json、planner.json、images/）都落在这里。
+// 对应原版 harness 在 require 主进程之前 `app.setPath('appData', tmpdir)` 的做法，
+// 避免验收脚本读写真实配置（原项目 CLAUDE.md「修改 harness 夹具时」）。
+const DataDirEnv = "MILE_CONSOLE_DATA_DIR"
+
 // DataDir 即原版 join(app.getPath('appData'), 'mile-terminal')，目录名换成 DirName。
 func DataDir() (string, error) {
+	if dir := os.Getenv(DataDirEnv); dir != "" {
+		return dir, nil
+	}
 	base, err := os.UserConfigDir()
 	if err != nil {
 		return "", err
