@@ -72,7 +72,7 @@ ConPTY 不在依赖链最前，但它是迁移里风险最大的一项：做不�
 | S21a | H 条目 | 常量、条目 CRUD 与校形 | `EntryService.ts` 1–756、808–848、2086–2161 | S09 S11 S16 | M3 | [x] |
 | S21b | H 条目 | 命令构造 | `EntryService.ts` 1415–1699 | S17 S21a | M3 | [x] |
 | S21c | H 条目 | 启停、运行态、分层启动、自动重启、诊断 | `EntryService.ts` 757–807、849–861、1030–1134、1700–2085 | S15 S18 S19 S21b | M3/M4 | [x] |
-| S21d | H 条目 | 路径与产物、图片、HBuilderX、安装、构建 | `EntryService.ts` 862–1029、1135–1414 | S20 S21c | M3 | [ ] |
+| S21d | H 条目 | 路径与产物、图片、HBuilderX、安装、构建 | `EntryService.ts` 862–1029、1135–1414 | S20 S21c | M3 | [x] |
 | S22 | H 条目 | 健康检查与输出告警 | `HealthService.ts`(225) `AlertService.ts`(123) | S21c | M3 | [ ] |
 | S23 | H 条目 | 配置导入导出与旧版导入 | `ConfigTransferService.ts`(248) | S11 S15 S21a | M1 | [ ] |
 | S24 | I 绑定 | Go 绑定服务与事件 | `main/index.ts`(1131) `shared/channels.ts`(179) | S11–S23 | M1–M4 | [ ] |
@@ -570,6 +570,15 @@ EntryService（2161 行）按方法边界拆成四步，四步的产物都在 `i
 - **已知问题**：I1（HBuilderX 绝对路径经 `cmd.exe /d /s /c`，含空格时被拆断）照原样搬，代码与测试标注 `// 已知原版问题 I1`
 - **验收**（`verify-m15-uniapp`、`verify-springboot`、`verify-m17-image`、`verify-review-extterm`、`verify-review-cwdterm`）：`terminalCwd` 越界、不存在两种拒绝；`outputDir` 旧配置里的绝对路径被拒；Maven goal 与 profile 的 argv 快照；I1 行为测试（含空格路径产生的 argv）
 - **证据**：
+  - 产物：`internal/entries/paths.go`（`KnownPath`、`TerminalCwd`、`PackageJsonPath`、`Favicon`、`SetImage` / `ClearImage` / `ImageDataURL`、`OutputDir`、`RevealOutput`、`ListJars`）、`build.go`（`Install`、`MavenRun`、`PackageWithProfile`、`spawnPackageSession`、`BuildPackageCommand`、`spawnMavenGoal`、`BuildMavenGoalCommand`、`SwitchPort`）、`hbuilderx.go`（`HBuilderXCli`、`OpenInHBuilderX`）
+  - 行为对照：`terminalCwd` 要求 cwd 在条目路径内且目录真实存在，越界与不存在都报错、不回退；`outputDir` 与 `knownPath` 的读取侧都用 `isSafeRelative` 再验一次（旧配置里的绝对路径 / `..` 一律不信）；`install` 只由用户显式发起且 Spring Boot 没有安装会话；profile 先过 `SAFE_PROFILE`（含 64 字节上限）；Maven 用 `-P <profile>` 两个参数、Gradle 用 `-P<profile>` 一个参数；Gradle 的 goal 映射 `clean/compileJava/build/test/publishToMavenLocal/check`；`jar` 模式无内置构建命令；jar 扫描过滤 `-sources` / `-javadoc` / `original-`
+  - 图片：`SetImage` 走 S20 的 `images.Service`（`ImageStore` 接口注入），落盘后回填 `imageId`；`clearImage` 置空；`imageDataUrl` 无图或读取失败返回 false
+  - 红线：HBuilderX 只对 uniapp 开放，cli 由平台候选探测（用户不能指定），子命令 `project open --path` 硬编码，路径受 `assertInsideEntry` 约束，`detach` 拉起不纳入会话；图片与 HBuilderX 的外部副作用都经 `Options` 注入，测试不真的启动进程
+  - 已知原版问题 I1 照原样搬：cli 的绝对路径经 `cmd.exe /d /s /c` 转发，含空格时 cmd 会拆断。代码注释与单测 `TestOpenInHBuilderXArgsAndI1` 都标注了 I1，夹具特意放在「Program Files」这种带空格的目录里，钉住「argv 里仍是一个元素」这一原样行为
+  - 单测（`paths_build_test.go`，12 个）：terminalCwd 的正常 / 越界 / 不存在 / 未知 id；outputDir 的未配置探测顺序、配置项不存在、绝对路径与 `..` 被拒、产物优先级（exe > zip > jar > html）；knownPath 的大小写不敏感与不安全 outputDir 不放行；packageJsonPath；ListJars 的六种文件名过滤；Maven goal 与打包命令的 argv（含 maven 两参数 / gradle 一段、标题文案、jar 模式拒绝）；profile 的四种非法输入与非 Spring Boot；MavenRun 的非法 goal / 运行中 / 非 Spring Boot；Install 的三条拒绝与成功（安装会话直接 running）；SwitchPort 走 edit 的四条分支；SetImage / ClearImage / ImageDataURL；favicon 只对前端生态；HBuilderX 的三种拒绝与 I1 argv
+  - 反向对照（`mutate-run.cjs`）：19 处变异首轮 7 红、7 绿、3 处写法编译失败、1 处匹配失败。补齐断言后 17 处变红（把「报错」细化成「报的是这一条错」，并补了 jar 模式打包、越界 cwd、`--path` 三处）。剩 2 处为等价变异：`outputDir` / `knownPath` 去掉 `isSafeRelative` 后，夹具里那个不安全目录并不存在，结果仍是「找不到」，要构造「绝对路径且真实存在」的目录才能区分，而这个场景在真实机器上等价于「用户把产物放到了项目外」——写侧已拒，读侧只是兜底
+  - `go build ./...`、`go vet ./...` 通过，`gofmt -l internal/` 为空；`go test -count=1 ./...` 全部通过，257 个顶层测试，2 个既有环境相关 SKIP
+  - 编码：`internal/entries` 十八个文件扫描无 BOM、无 U+FFFD、无 emoji、无字面不可见字符
 
 #### S22 健康检查与输出告警
 

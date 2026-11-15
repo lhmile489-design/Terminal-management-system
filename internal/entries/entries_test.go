@@ -109,6 +109,8 @@ func (fakePlatform) WrapperFile() platform.WrapperFiles {
 	return platform.WrapperFiles{Maven: "mvnw.cmd", Gradle: "gradlew.bat"}
 }
 
+func (fakePlatform) HBuilderXCandidates() []string { return nil }
+
 func (fakePlatform) WrapBatch(file string, args []string) (string, []string) {
 	return "cmd.exe", append([]string{"/d", "/s", "/c", file}, args...)
 }

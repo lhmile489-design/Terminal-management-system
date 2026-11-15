@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"mile-console/internal/contract"
+	"mile-console/internal/detect"
 	"mile-console/internal/platform"
 )
 
@@ -40,6 +41,8 @@ type Platform interface {
 	WrapperFile() platform.WrapperFiles
 	// WrapBatch 批处理文件（.cmd / .bat）的执行包装，Windows 经 cmd /d /s /c。
 	WrapBatch(file string, args []string) (string, []string)
+	// HBuilderXCandidates HBuilderX 命令行的探测位置；空表示本平台不支持。
+	HBuilderXCandidates() []string
 }
 
 // Sessions 条目服务用到的会话能力：建会话与终止会话（S21c 会再加订阅输出）。
@@ -50,6 +53,12 @@ type Sessions interface {
 	History(id string) string
 	OnData(fn func(contract.SessionDataEvent)) (unsubscribe func())
 	OnExit(fn func(contract.SessionExitEvent)) (unsubscribe func())
+}
+
+// ImageStore 自定义图片服务（由 *images.Service 满足）。
+type ImageStore interface {
+	SaveFromData(data []byte) (string, error)
+	Read(imageID string) (string, bool)
 }
 
 // Scanner 采集快照与进程表（由 *scanner.Service 满足）。
@@ -87,6 +96,12 @@ type Options struct {
 	OutputDir func(entryID string) *string
 	// NodeVersion 诊断面板展示的「当前 Node 版本」（S17 读的是 PATH 里 node.exe 的版本资源）。
 	NodeVersion func() string
+	// Images 自定义图片读写（S20）。未注入时 SetImage 报错、读取返回空。
+	Images ImageStore
+	// ReadFavicon 读前端条目的本地 favicon（S16）。未注入时 Favicon 恒为空。
+	ReadFavicon func(dir string) *detect.Favicon
+	// SpawnDetached 拉起独立 GUI 进程（HBuilderX）。未注入时 OpenInHBuilderX 报错。
+	SpawnDetached func(file string, args []string) error
 	// After 可注入的等待，默认 time.After。
 	After     func(d time.Duration) <-chan time.Time
 	AfterFunc func(d time.Duration, f func()) Timer
