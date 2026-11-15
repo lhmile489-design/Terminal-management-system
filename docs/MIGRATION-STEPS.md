@@ -70,7 +70,7 @@ ConPTY 不在依赖链最前，但它是迁移里风险最大的一项：做不�
 | S19 | G 会话 | 日志聚合 | `LogService.ts`(166) | S05 S18 | M4 | [x] |
 | S20 | G 会话 | 自定义图片 | `ImageService.ts`(81) | S09（D2 定案） | M3 | [x] |
 | S21a | H 条目 | 常量、条目 CRUD 与校形 | `EntryService.ts` 1–756、808–848、2086–2161 | S09 S11 S16 | M3 | [x] |
-| S21b | H 条目 | 命令构造 | `EntryService.ts` 1415–1699 | S17 S21a | M3 | [ ] |
+| S21b | H 条目 | 命令构造 | `EntryService.ts` 1415–1699 | S17 S21a | M3 | [x] |
 | S21c | H 条目 | 启停、运行态、分层启动、自动重启、诊断 | `EntryService.ts` 757–807、849–861、1030–1134、1700–2085 | S15 S18 S19 S21b | M3/M4 | [ ] |
 | S21d | H 条目 | 路径与产物、图片、HBuilderX、安装、构建 | `EntryService.ts` 862–1029、1135–1414 | S20 S21c | M3 | [ ] |
 | S22 | H 条目 | 健康检查与输出告警 | `HealthService.ts`(225) `AlertService.ts`(123) | S21c | M3 | [ ] |
@@ -527,6 +527,15 @@ EntryService（2161 行）按方法边界拆成四步，四步的产物都在 `i
 - **红线**：每条路径只产出 `file + args`，绝不拼 shell 字符串；npm 生态先过 `SAFE_SCRIPT`，再由 `assertScriptDeclared` **重读磁盘** `package.json` 确认脚本在 `scripts` 里；`.cmd` / `.bat` 经 `platform.wrapBatch` 包装；`assertInsideEntry` 用 `filepath.Rel` 判断，结果以 `..` 开头或是绝对路径即拒
 - **验收**：命令构造快照测试，每个生态 × 每种启动方式一组期望 argv；非法脚本名、脚本不在 `package.json`、cwd 越界、包管理器缺失各自抛对应文案；测试用临时目录造 `package.json`，不碰原版夹具
 - **证据**：
+  - 产物：`internal/entries/command.go`（`LaunchCommand`、`BuildCommand` 与七条生态分支、`resolveBinPath` / `resolveJarPath` / `assertInsideEntry` / `assertScriptDeclared`、`which`）、`spawn.go`（`SpawnSession`：解析目录 → 断言在条目内 → 构造命令 → 建会话 → 写 lastStartedAt 与运行态）。`Platform` 接口扩到 `Binaries` / `WrapperFile` / `WrapBatch`，`Sessions` 扩到 `Create`
+  - 命令构造的红线逐条落地：只产出 file + args 数组；子命令全部硬编码（`spring-boot:run`、`bootRun`、`java -jar`、`run`、`run --release`、`-m flask run`、`manage.py runserver`）；可执行文件经 `Options.Which`（接 S17 的 `precheck.Service.WhichAny`）定位；wrapper 用常量文件名拼绝对路径；`.cmd` / `.bat` 经 `platform.WrapBatch` 包装；npm 脚本先过 `SAFE_SCRIPT`，再由 `assertScriptDeclared` 重读磁盘上的 `package.json`
+  - 对拍数据由原版生成（`scripts/gen-command-cases.mjs` 跑原版 `EntryService.buildCommand` 与 `spawnSession`；夹具目录含假可执行文件与 package.json / manage.py / mvnw.cmd / gradlew.bat / app.jar / main.py / app.exe，PATH 只留夹具 bin，`'../platform'` 用 `platform-stub-entry.mjs`，`setTimeout` 换成不触发的桩）：5 个场景 56 步，逐项比对 `{file, args, title}`、错误文案、`sessions.create` 入参、`config.patch` 与 `changed` 广播。覆盖 npm 的四个包管理器与脚本 / install 两种形态、Spring Boot 五种启动方式与缺 wrapper / 缺 jar / 后缀不符 / 绝对路径 / `..` / 空 launchMode、Python 五种方式（含 manage.py 缺失、模块名非法、入口后缀与字符）、Go 的默认包与 `..` 与非法字符、Rust 两种方式、C++ 的 exe、以及 spawn 的三种 kind 与 cwd 越界
+  - 单测（`unit_test.go` 增补）：PATH 里缺 npm / python / go / cargo / java / mvn / gradle 七条报错文案（脚手架齐全时对拍走不到）；`package.json` 是字面量 `null` 时报 `Cannot read properties of null (reading 'scripts')`；`assertInsideEntry` 的三个内 / 三个外样例
+  - 反向对照（`mutate-run.cjs`）：30 处变异首轮 27 红、1 处写法编译失败、1 处匹配到两处、1 处漏网。修正后 29 处变红。剩 1 处为等价变异：Go 包路径的 `assertInsideEntry` 在 `SAFE_GO_PKG`（不允许反斜杠）与 `..` 已拒的前提下，`detect.Join(cwd, pkg)` 不可能跳出条目，该检查是防御性冗余
+  - 覆盖的变异：framework 分派、py 入口字符与后缀、python-module / uvicorn / flask / django 的参数、manage.py 存在性、go 默认包与 `..`、cargo 的 release 参数与顺序、cpp 启动方式、npm 白名单与重读 package.json 与 `run` 与 cmd 包装、两个 wrapper 的绝对路径与存在性、jar 的 `-jar`、`resolveBinPath` 的四道校验、cwd 越界、脚本声明、空值文案
+  - 偏差登记：读 `package.json` 失败时的文案沿用 S16 已登记的 §6 条目（Go 的 I/O 错误文本），对拍里特意不放这条路径
+  - `go build ./...`、`go vet ./...` 通过，`gofmt -l internal/` 为空；`go test -count=1 ./...` 全部通过，224 个顶层测试，2 个既有环境相关 SKIP
+  - 编码：`internal/entries` 八个文件、对拍数据与三个脚本共 13 个文件扫描无 BOM、无 U+FFFD、无 emoji、无字面不可见字符
 
 #### S21c 启停、运行态、分层启动、自动重启、诊断
 

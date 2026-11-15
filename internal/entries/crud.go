@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"mile-console/internal/contract"
+	"mile-console/internal/platform"
 )
 
 // Store 条目服务用到的配置能力，由 *config.Store 满足。
@@ -31,11 +32,18 @@ type Platform interface {
 	PathKey(p string) string
 	UnsupportedLaunchModes() map[contract.LaunchMode]bool
 	RequiresExecBit() bool
+	// Binaries 各语言 / 包管理器的可执行文件候选名，命令构造按需 whichAny 定位。
+	Binaries() map[platform.BinaryName][]string
+	// WrapperFile 项目自带 wrapper 的文件名（mvnw.cmd / gradlew.bat）。
+	WrapperFile() platform.WrapperFiles
+	// WrapBatch 批处理文件（.cmd / .bat）的执行包装，Windows 经 cmd /d /s /c。
+	WrapBatch(file string, args []string) (string, []string)
 }
 
-// Sessions 本步骤只用到「终止会话」；S21c 会扩到订阅输出。
+// Sessions 条目服务用到的会话能力：建会话与终止会话（S21c 会再加订阅输出）。
 type Sessions interface {
 	Kill(ctx context.Context, id string)
+	Create(in contract.CreateSessionInput) (contract.SessionMeta, error)
 }
 
 // Timer 与 sessions / logs 同形，便于测试注入手动定时器。
@@ -47,6 +55,9 @@ type Options struct {
 	NewID     func() string
 	OnChanged func(entries []contract.LaunchEntry)
 	AfterFunc func(d time.Duration, f func()) Timer
+	// Which 即原版 whichAny：按 PATH 目录顺序定位可执行文件，只 stat 不执行。
+	// 绑定层接 S17 的 precheck.Service.WhichAny；未注入时命令构造一律报「PATH 中找不到 X」。
+	Which func(candidates []string) (string, bool)
 }
 
 // Service 即原版 EntryService。S21b / S21c / S21d 在同一个结构体上加方法。
@@ -64,6 +75,10 @@ type Service struct {
 	restartTimers map[string]Timer
 	// restartHistory 每个条目最近的自动重启时刻，S21c 维护。
 	restartHistory map[string][]int64
+	// lastErrorLine 会话退出后留档的最后一个错误行，只在内存（S21c 写，SpawnSession 清）。
+	lastErrorLine map[string]string
+	// awaitingHealthReady 端口已捕获、正在等健康检查首次 ok 的条目（S21c 用）。
+	awaitingHealthReady map[string]bool
 }
 
 // New 构造条目服务。ctx 用于 Remove 时后台终止会话；绑定层不得传 context.Background()。
@@ -79,9 +94,11 @@ func New(ctx context.Context, cfg Store, plat Platform, sess Sessions, opt Optio
 	}
 	return &Service{
 		ctx: ctx, cfg: cfg, plat: plat, sess: sess, opt: opt,
-		runtimes:       map[string]contract.EntryRuntime{},
-		restartTimers:  map[string]Timer{},
-		restartHistory: map[string][]int64{},
+		runtimes:            map[string]contract.EntryRuntime{},
+		restartTimers:       map[string]Timer{},
+		restartHistory:      map[string][]int64{},
+		lastErrorLine:       map[string]string{},
+		awaitingHealthReady: map[string]bool{},
 	}
 }
 

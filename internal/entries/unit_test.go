@@ -233,3 +233,94 @@ func TestStoppingLocksIdentityFields(t *testing.T) {
 		t.Fatalf("idle 状态不该锁：%v", err)
 	}
 }
+
+// PATH 里缺东西时每个生态各自的报错文案（对拍里夹具齐全，这几条走不到）。
+func TestMissingBinaryMessages(t *testing.T) {
+	rig := newUnitRig(t, nil)
+	rig.svc.opt.Which = func([]string) (string, bool) { return "", false }
+	dir := t.TempDir()
+	// npm 分支的脚本声明校验在读 PATH 之前，所以目录里要有 package.json
+	if err := os.WriteFile(filepath.Join(dir, "package.json"), []byte(`{"scripts":{"dev":"next dev"}}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	cases := []struct {
+		name string
+		e    contract.LaunchEntry
+		want string
+	}{
+		{"npm", mkEntry("e", func(e *contract.LaunchEntry) { e.Path = dir }), "PATH 中找不到 npm"},
+		{"python", mkEntry("e", func(e *contract.LaunchEntry) {
+			e.Framework, e.LaunchMode = contract.FrameworkPython, contract.LaunchModeFlask
+		}), "PATH 中找不到 python"},
+		{"go", mkEntry("e", func(e *contract.LaunchEntry) {
+			e.Framework, e.LaunchMode = contract.FrameworkGo, contract.LaunchModeGoRun
+		}), "PATH 中找不到 go"},
+		{"cargo", mkEntry("e", func(e *contract.LaunchEntry) {
+			e.Framework, e.LaunchMode = contract.FrameworkRust, contract.LaunchModeCargoRun
+		}), "PATH 中找不到 cargo"},
+	}
+	for _, c := range cases {
+		script := (*string)(nil)
+		if c.name == "npm" {
+			s := "dev"
+			script = &s
+		}
+		_, err := rig.svc.BuildCommand(c.e, dir, script)
+		if err == nil || err.Error() != c.want {
+			t.Errorf("%s: got %v want %q", c.name, err, c.want)
+		}
+	}
+
+	// Spring Boot 的 java / mvn / gradle
+	for _, m := range []struct {
+		mode contract.LaunchMode
+		jar  string
+		want string
+	}{
+		{contract.LaunchModeJar, "a.jar", "PATH 中找不到 java"},
+		{contract.LaunchModeSystemMaven, "", "PATH 中找不到 mvn"},
+		{contract.LaunchModeSystemGradle, "", "PATH 中找不到 gradle"},
+	} {
+		e := mkEntry("e", func(e *contract.LaunchEntry) {
+			e.Framework, e.LaunchMode, e.JarPath = contract.FrameworkSpringBoot, m.mode, m.jar
+		})
+		if m.jar != "" {
+			if err := os.WriteFile(filepath.Join(dir, "a.jar"), []byte("x"), 0o644); err != nil {
+				t.Fatal(err)
+			}
+		}
+		_, err := rig.svc.BuildCommand(e, dir, nil)
+		if err == nil || err.Error() != m.want {
+			t.Errorf("%s: got %v want %q", m.mode, err, m.want)
+		}
+	}
+}
+
+// package.json 是字面量 null 时，原版抛 TypeError，这里给同文案。
+func TestScriptDeclaredNullPackageJSON(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "package.json"), []byte("null"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	err := assertScriptDeclared(dir, "dev")
+	if err == nil || err.Error() != "Cannot read properties of null (reading 'scripts')" {
+		t.Fatalf("got %v", err)
+	}
+}
+
+func TestAssertInsideEntry(t *testing.T) {
+	root := filepath.Join(t.TempDir(), "proj")
+	entry := mkEntry("e", func(e *contract.LaunchEntry) { e.Path = root })
+	inside := []string{root, filepath.Join(root, "sub"), filepath.Join(root, "a", "b")}
+	for _, p := range inside {
+		if err := assertInsideEntry(entry, p); err != nil {
+			t.Errorf("%q 应该在条目内：%v", p, err)
+		}
+	}
+	outside := []string{filepath.Dir(root), filepath.Join(root, "..", "escape"), filepath.Join(filepath.Dir(root), "other")}
+	for _, p := range outside {
+		if err := assertInsideEntry(entry, p); err == nil {
+			t.Errorf("%q 应该被拒", p)
+		}
+	}
+}

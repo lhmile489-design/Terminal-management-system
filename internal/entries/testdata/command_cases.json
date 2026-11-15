@@ -1,0 +1,2066 @@
+{
+ "generatedFrom": "mile-terminal-management/src/main/services/EntryService.ts + node v22.23.4",
+ "cases": [
+  {
+   "name": "npm",
+   "steps": [
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "next",
+      "packageManager": "npm",
+      "script": "dev",
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000
+     },
+     "script": "dev",
+     "result": {
+      "file": "cmd.exe",
+      "args": [
+       "/d",
+       "/s",
+       "/c",
+       "<FIX>\\bin\\npm.cmd",
+       "run",
+       "dev"
+      ],
+      "title": "dev"
+     },
+     "calls": [],
+     "events": []
+    },
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "next",
+      "packageManager": "npm",
+      "script": "dev",
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000
+     },
+     "script": null,
+     "result": {
+      "file": "cmd.exe",
+      "args": [
+       "/d",
+       "/s",
+       "/c",
+       "<FIX>\\bin\\npm.cmd",
+       "install"
+      ],
+      "title": "install"
+     },
+     "calls": [],
+     "events": []
+    },
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "next",
+      "packageManager": "npm",
+      "script": "dev",
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000
+     },
+     "script": "build",
+     "result": {
+      "file": "cmd.exe",
+      "args": [
+       "/d",
+       "/s",
+       "/c",
+       "<FIX>\\bin\\npm.cmd",
+       "run",
+       "build"
+      ],
+      "title": "build"
+     },
+     "calls": [],
+     "events": []
+    },
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "next",
+      "packageManager": "npm",
+      "script": "dev",
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000
+     },
+     "script": "nope",
+     "error": "nope \u4e0d\u5728 package.json scripts \u4e2d\uff0c\u62d2\u7edd\u6267\u884c",
+     "calls": [],
+     "events": []
+    },
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "next",
+      "packageManager": "npm",
+      "script": "dev",
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000
+     },
+     "script": "a b",
+     "error": "\u811a\u672c\u540d\u542b\u975e\u6cd5\u5b57\u7b26\uff0c\u62d2\u7edd\u6267\u884c\uff1aa b",
+     "calls": [],
+     "events": []
+    },
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "next",
+      "packageManager": "pnpm",
+      "script": "dev",
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000
+     },
+     "script": "dev",
+     "result": {
+      "file": "cmd.exe",
+      "args": [
+       "/d",
+       "/s",
+       "/c",
+       "<FIX>\\bin\\pnpm.cmd",
+       "run",
+       "dev"
+      ],
+      "title": "dev"
+     },
+     "calls": [],
+     "events": []
+    },
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "next",
+      "packageManager": "yarn",
+      "script": "dev",
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000
+     },
+     "script": "dev",
+     "result": {
+      "file": "cmd.exe",
+      "args": [
+       "/d",
+       "/s",
+       "/c",
+       "<FIX>\\bin\\yarn.cmd",
+       "run",
+       "dev"
+      ],
+      "title": "dev"
+     },
+     "calls": [],
+     "events": []
+    },
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "next",
+      "packageManager": "bun",
+      "script": "dev",
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000
+     },
+     "script": "dev",
+     "result": {
+      "file": "cmd.exe",
+      "args": [
+       "/d",
+       "/s",
+       "/c",
+       "<FIX>\\bin\\bun.exe",
+       "run",
+       "dev"
+      ],
+      "title": "dev"
+     },
+     "calls": [],
+     "events": []
+    }
+   ]
+  },
+  {
+   "name": "spring-boot",
+   "steps": [
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "spring-boot",
+      "packageManager": "npm",
+      "script": null,
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000,
+      "launchMode": "maven-wrapper"
+     },
+     "script": null,
+     "result": {
+      "file": "cmd.exe",
+      "args": [
+       "/d",
+       "/s",
+       "/c",
+       "<FIX>\\proj\\mvnw.cmd",
+       "spring-boot:run"
+      ],
+      "title": "spring-boot:run"
+     },
+     "calls": [],
+     "events": []
+    },
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "spring-boot",
+      "packageManager": "npm",
+      "script": null,
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000,
+      "launchMode": "gradle-wrapper"
+     },
+     "script": null,
+     "result": {
+      "file": "cmd.exe",
+      "args": [
+       "/d",
+       "/s",
+       "/c",
+       "<FIX>\\proj\\gradlew.bat",
+       "bootRun"
+      ],
+      "title": "bootRun"
+     },
+     "calls": [],
+     "events": []
+    },
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "spring-boot",
+      "packageManager": "npm",
+      "script": null,
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000,
+      "launchMode": "jar",
+      "jarPath": "target/app.jar"
+     },
+     "script": null,
+     "result": {
+      "file": "<FIX>\\bin\\java.exe",
+      "args": [
+       "-jar",
+       "<FIX>\\proj\\target\\app.jar"
+      ],
+      "title": "java -jar target/app.jar"
+     },
+     "calls": [],
+     "events": []
+    },
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "spring-boot",
+      "packageManager": "npm",
+      "script": null,
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000,
+      "launchMode": "jar",
+      "jarPath": "target/app.zip"
+     },
+     "script": null,
+     "error": "\u8def\u5f84\u5fc5\u987b\u4ee5 .jar \u7ed3\u5c3e",
+     "calls": [],
+     "events": []
+    },
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "spring-boot",
+      "packageManager": "npm",
+      "script": null,
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000,
+      "launchMode": "jar",
+      "jarPath": "target/missing.jar"
+     },
+     "script": null,
+     "error": "jar \u6587\u4ef6\u4e0d\u5b58\u5728\uff1atarget/missing.jar",
+     "calls": [],
+     "events": []
+    },
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "spring-boot",
+      "packageManager": "npm",
+      "script": null,
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000,
+      "launchMode": "jar",
+      "jarPath": "C:\\abs\\app.jar"
+     },
+     "script": null,
+     "error": "\u8def\u5f84\u5fc5\u987b\u662f\u76f8\u5bf9\u9879\u76ee\u6839\u7684\u8def\u5f84",
+     "calls": [],
+     "events": []
+    },
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "spring-boot",
+      "packageManager": "npm",
+      "script": null,
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000,
+      "launchMode": "jar",
+      "jarPath": "../app.jar"
+     },
+     "script": null,
+     "error": "\u8def\u5f84\u4e0d\u80fd\u8df3\u51fa\u9879\u76ee\u6839",
+     "calls": [],
+     "events": []
+    },
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "spring-boot",
+      "packageManager": "npm",
+      "script": null,
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000,
+      "launchMode": "jar"
+     },
+     "script": null,
+     "error": "\u672a\u914d\u7f6e jar \u8def\u5f84",
+     "calls": [],
+     "events": []
+    },
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "spring-boot",
+      "packageManager": "npm",
+      "script": null,
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000,
+      "launchMode": "system-maven"
+     },
+     "script": null,
+     "result": {
+      "file": "cmd.exe",
+      "args": [
+       "/d",
+       "/s",
+       "/c",
+       "<FIX>\\bin\\mvn.cmd",
+       "spring-boot:run"
+      ],
+      "title": "mvn spring-boot:run"
+     },
+     "calls": [],
+     "events": []
+    },
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "spring-boot",
+      "packageManager": "npm",
+      "script": null,
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000,
+      "launchMode": "system-gradle"
+     },
+     "script": null,
+     "result": {
+      "file": "cmd.exe",
+      "args": [
+       "/d",
+       "/s",
+       "/c",
+       "<FIX>\\bin\\gradle.bat",
+       "bootRun"
+      ],
+      "title": "gradle bootRun"
+     },
+     "calls": [],
+     "events": []
+    },
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "spring-boot",
+      "packageManager": "npm",
+      "script": null,
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000
+     },
+     "script": null,
+     "error": "Spring Boot \u6761\u76ee\u7f3a\u5c11\u5408\u6cd5\u7684\u542f\u52a8\u65b9\u5f0f\uff08launchMode\uff09",
+     "calls": [],
+     "events": []
+    },
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "spring-boot",
+      "packageManager": "npm",
+      "script": null,
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000,
+      "launchMode": "go-run"
+     },
+     "script": null,
+     "error": "Spring Boot \u6761\u76ee\u7f3a\u5c11\u5408\u6cd5\u7684\u542f\u52a8\u65b9\u5f0f\uff08launchMode\uff09",
+     "calls": [],
+     "events": []
+    },
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj2",
+      "framework": "spring-boot",
+      "packageManager": "npm",
+      "script": null,
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000,
+      "launchMode": "maven-wrapper"
+     },
+     "script": null,
+     "error": "\u672a\u627e\u5230 mvnw.cmd\uff0c\u65e0\u6cd5\u7528 Maven Wrapper \u542f\u52a8",
+     "calls": [],
+     "events": []
+    },
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj2",
+      "framework": "spring-boot",
+      "packageManager": "npm",
+      "script": null,
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000,
+      "launchMode": "gradle-wrapper"
+     },
+     "script": null,
+     "error": "\u672a\u627e\u5230 gradlew.bat\uff0c\u65e0\u6cd5\u7528 Gradle Wrapper \u542f\u52a8",
+     "calls": [],
+     "events": []
+    }
+   ]
+  },
+  {
+   "name": "python",
+   "steps": [
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "python",
+      "packageManager": "npm",
+      "script": "dev",
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000,
+      "launchMode": "python-file",
+      "jarPath": "main.py"
+     },
+     "script": null,
+     "result": {
+      "file": "<FIX>\\bin\\python.exe",
+      "args": [
+       "<FIX>\\proj\\main.py"
+      ],
+      "title": "python main.py"
+     },
+     "calls": [],
+     "events": []
+    },
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "python",
+      "packageManager": "npm",
+      "script": "dev",
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000,
+      "launchMode": "python-file",
+      "jarPath": "missing.py"
+     },
+     "script": null,
+     "error": "py \u6587\u4ef6\u4e0d\u5b58\u5728\uff1amissing.py",
+     "calls": [],
+     "events": []
+    },
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "python",
+      "packageManager": "npm",
+      "script": "dev",
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000,
+      "launchMode": "python-file",
+      "jarPath": "main.txt"
+     },
+     "script": null,
+     "error": "\u8def\u5f84\u5fc5\u987b\u4ee5 .py \u7ed3\u5c3e",
+     "calls": [],
+     "events": []
+    },
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "python",
+      "packageManager": "npm",
+      "script": "dev",
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000,
+      "launchMode": "python-file",
+      "jarPath": "main file.py"
+     },
+     "script": null,
+     "error": "\u5165\u53e3\u6587\u4ef6\u540d\u542b\u975e\u6cd5\u5b57\u7b26\uff1amain file.py",
+     "calls": [],
+     "events": []
+    },
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "python",
+      "packageManager": "npm",
+      "script": "dev",
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000,
+      "launchMode": "python-file"
+     },
+     "script": null,
+     "error": "Python \u5165\u53e3\u6587\u4ef6\u672a\u914d\u7f6e",
+     "calls": [],
+     "events": []
+    },
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "python",
+      "packageManager": "npm",
+      "script": "dev",
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000,
+      "launchMode": "python-module",
+      "jarPath": "app.main"
+     },
+     "script": null,
+     "result": {
+      "file": "<FIX>\\bin\\python.exe",
+      "args": [
+       "-m",
+       "app.main"
+      ],
+      "title": "python -m app.main"
+     },
+     "calls": [],
+     "events": []
+    },
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "python",
+      "packageManager": "npm",
+      "script": "dev",
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000,
+      "launchMode": "python-module",
+      "jarPath": "bad-name"
+     },
+     "script": null,
+     "error": "Python \u6a21\u5757\u540d\u975e\u6cd5\uff1abad-name",
+     "calls": [],
+     "events": []
+    },
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "python",
+      "packageManager": "npm",
+      "script": "dev",
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000,
+      "launchMode": "python-module"
+     },
+     "script": null,
+     "error": "Python \u6a21\u5757\u540d\u975e\u6cd5\uff1a\uff08\u7a7a\uff09",
+     "calls": [],
+     "events": []
+    },
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "fastapi",
+      "packageManager": "npm",
+      "script": "dev",
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000,
+      "launchMode": "uvicorn",
+      "jarPath": "app.main:app"
+     },
+     "script": null,
+     "result": {
+      "file": "<FIX>\\bin\\python.exe",
+      "args": [
+       "-m",
+       "uvicorn",
+       "app.main:app"
+      ],
+      "title": "uvicorn app.main:app"
+     },
+     "calls": [],
+     "events": []
+    },
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "fastapi",
+      "packageManager": "npm",
+      "script": "dev",
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000,
+      "launchMode": "uvicorn",
+      "jarPath": "bad app"
+     },
+     "script": null,
+     "error": "uvicorn app \u89c4\u683c\u975e\u6cd5\uff1abad app",
+     "calls": [],
+     "events": []
+    },
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "flask",
+      "packageManager": "npm",
+      "script": "dev",
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000,
+      "launchMode": "flask"
+     },
+     "script": null,
+     "result": {
+      "file": "<FIX>\\bin\\python.exe",
+      "args": [
+       "-m",
+       "flask",
+       "run"
+      ],
+      "title": "flask run"
+     },
+     "calls": [],
+     "events": []
+    },
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "django",
+      "packageManager": "npm",
+      "script": "dev",
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000,
+      "launchMode": "django"
+     },
+     "script": null,
+     "result": {
+      "file": "<FIX>\\bin\\python.exe",
+      "args": [
+       "<FIX>\\proj\\manage.py",
+       "runserver"
+      ],
+      "title": "manage.py runserver"
+     },
+     "calls": [],
+     "events": []
+    },
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj2",
+      "framework": "django",
+      "packageManager": "npm",
+      "script": "dev",
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000,
+      "launchMode": "django"
+     },
+     "script": null,
+     "error": "\u672a\u627e\u5230 manage.py\uff0c\u65e0\u6cd5\u542f\u52a8 Django",
+     "calls": [],
+     "events": []
+    },
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "python",
+      "packageManager": "npm",
+      "script": "dev",
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000,
+      "launchMode": "jar"
+     },
+     "script": null,
+     "error": "Python \u6761\u76ee\u7f3a\u5c11\u5408\u6cd5\u7684\u542f\u52a8\u65b9\u5f0f\uff08launchMode\uff09\uff1ajar",
+     "calls": [],
+     "events": []
+    },
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "streamlit",
+      "packageManager": "npm",
+      "script": "dev",
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000,
+      "launchMode": "flask"
+     },
+     "script": null,
+     "result": {
+      "file": "<FIX>\\bin\\python.exe",
+      "args": [
+       "-m",
+       "flask",
+       "run"
+      ],
+      "title": "flask run"
+     },
+     "calls": [],
+     "events": []
+    }
+   ]
+  },
+  {
+   "name": "go-rust-cpp",
+   "steps": [
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "go",
+      "packageManager": "npm",
+      "script": "dev",
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000,
+      "launchMode": "go-run"
+     },
+     "script": null,
+     "result": {
+      "file": "<FIX>\\bin\\go.exe",
+      "args": [
+       "run",
+       "."
+      ],
+      "title": "go run ."
+     },
+     "calls": [],
+     "events": []
+    },
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "go",
+      "packageManager": "npm",
+      "script": "dev",
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000,
+      "launchMode": "go-run",
+      "jarPath": "cmd/app"
+     },
+     "script": null,
+     "result": {
+      "file": "<FIX>\\bin\\go.exe",
+      "args": [
+       "run",
+       "cmd/app"
+      ],
+      "title": "go run cmd/app"
+     },
+     "calls": [],
+     "events": []
+    },
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "go",
+      "packageManager": "npm",
+      "script": "dev",
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000,
+      "launchMode": "go-run",
+      "jarPath": "  ./cmd  "
+     },
+     "script": null,
+     "result": {
+      "file": "<FIX>\\bin\\go.exe",
+      "args": [
+       "run",
+       "./cmd"
+      ],
+      "title": "go run ./cmd"
+     },
+     "calls": [],
+     "events": []
+    },
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "go",
+      "packageManager": "npm",
+      "script": "dev",
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000,
+      "launchMode": "go-run",
+      "jarPath": "../escape"
+     },
+     "script": null,
+     "error": "Go \u5305\u8def\u5f84\u975e\u6cd5\uff1a../escape",
+     "calls": [],
+     "events": []
+    },
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "go",
+      "packageManager": "npm",
+      "script": "dev",
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000,
+      "launchMode": "go-run",
+      "jarPath": "bad pkg"
+     },
+     "script": null,
+     "error": "Go \u5305\u8def\u5f84\u975e\u6cd5\uff1abad pkg",
+     "calls": [],
+     "events": []
+    },
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "go",
+      "packageManager": "npm",
+      "script": "dev",
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000,
+      "launchMode": "python-file"
+     },
+     "script": null,
+     "error": "Go \u6761\u76ee\u542f\u52a8\u65b9\u5f0f\u975e\u6cd5\uff1apython-file",
+     "calls": [],
+     "events": []
+    },
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "rust",
+      "packageManager": "npm",
+      "script": "dev",
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000,
+      "launchMode": "cargo-run"
+     },
+     "script": null,
+     "result": {
+      "file": "<FIX>\\bin\\cargo.exe",
+      "args": [
+       "run"
+      ],
+      "title": "cargo run"
+     },
+     "calls": [],
+     "events": []
+    },
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "rust",
+      "packageManager": "npm",
+      "script": "dev",
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000,
+      "launchMode": "cargo-run-release"
+     },
+     "script": null,
+     "result": {
+      "file": "<FIX>\\bin\\cargo.exe",
+      "args": [
+       "run",
+       "--release"
+      ],
+      "title": "cargo run --release"
+     },
+     "calls": [],
+     "events": []
+    },
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "rust",
+      "packageManager": "npm",
+      "script": "dev",
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000,
+      "launchMode": "go-run"
+     },
+     "script": null,
+     "error": "Rust \u6761\u76ee\u542f\u52a8\u65b9\u5f0f\u975e\u6cd5\uff1ago-run",
+     "calls": [],
+     "events": []
+    },
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "cpp",
+      "packageManager": "npm",
+      "script": "dev",
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000,
+      "launchMode": "cpp-exe",
+      "jarPath": "bin/app.exe"
+     },
+     "script": null,
+     "result": {
+      "file": "<FIX>\\proj\\bin\\app.exe",
+      "args": [],
+      "title": "bin/app.exe"
+     },
+     "calls": [],
+     "events": []
+    },
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "cpp",
+      "packageManager": "npm",
+      "script": "dev",
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000,
+      "launchMode": "cpp-exe",
+      "jarPath": "bin/app"
+     },
+     "script": null,
+     "error": "\u8def\u5f84\u5fc5\u987b\u4ee5 .exe \u7ed3\u5c3e",
+     "calls": [],
+     "events": []
+    },
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "cpp",
+      "packageManager": "npm",
+      "script": "dev",
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000,
+      "launchMode": "cpp-exe"
+     },
+     "script": null,
+     "error": "\u672a\u914d\u7f6e exe \u8def\u5f84",
+     "calls": [],
+     "events": []
+    },
+    {
+     "op": "build",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "cpp",
+      "packageManager": "npm",
+      "script": "dev",
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000,
+      "launchMode": "jar"
+     },
+     "script": null,
+     "error": "C++ \u6761\u76ee\u542f\u52a8\u65b9\u5f0f\u975e\u6cd5\uff1ajar",
+     "calls": [],
+     "events": []
+    }
+   ]
+  },
+  {
+   "name": "spawn",
+   "steps": [
+    {
+     "op": "spawn",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "next",
+      "packageManager": "npm",
+      "script": "dev",
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000
+     },
+     "script": "dev",
+     "kind": "dev",
+     "result": {
+      "entryId": "e1",
+      "status": "starting",
+      "portUnknown": false,
+      "sessionId": "sess-1",
+      "pid": 4000,
+      "startedAt": 1700000000000
+     },
+     "calls": [
+      [
+       "sessions.create",
+       {
+        "kind": "dev",
+        "cwd": "<FIX>/proj",
+        "projectId": "e1",
+        "title": "\u670d\u52a1\u4e00 \u00b7 dev",
+        "file": "cmd.exe",
+        "args": [
+         "/d",
+         "/s",
+         "/c",
+         "<FIX>\\bin\\npm.cmd",
+         "run",
+         "dev"
+        ],
+        "env": {
+         "PORT": "3000"
+        }
+       }
+      ],
+      [
+       "config.patch",
+       {
+        "entries": [
+         {
+          "id": "e1",
+          "kind": "service",
+          "name": "\u670d\u52a1\u4e00",
+          "path": "<FIX>/proj",
+          "framework": "next",
+          "packageManager": "npm",
+          "script": "dev",
+          "scripts": {
+           "dev": "next dev"
+          },
+          "env": {
+           "PORT": "3000"
+          },
+          "registerOnly": false,
+          "pinned": false,
+          "order": 0,
+          "createdAt": 1700000000000,
+          "lastStartedAt": 1700000000000
+         }
+        ]
+       }
+      ]
+     ],
+     "events": [
+      [
+       {
+        "id": "e1",
+        "kind": "service",
+        "name": "\u670d\u52a1\u4e00",
+        "path": "<FIX>/proj",
+        "framework": "next",
+        "packageManager": "npm",
+        "script": "dev",
+        "scripts": {
+         "dev": "next dev"
+        },
+        "env": {
+         "PORT": "3000"
+        },
+        "registerOnly": false,
+        "pinned": false,
+        "order": 0,
+        "createdAt": 1700000000000,
+        "lastStartedAt": 1700000000000
+       }
+      ]
+     ]
+    },
+    {
+     "op": "spawn",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "next",
+      "packageManager": "npm",
+      "script": "dev",
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000,
+      "cwd": "cmd"
+     },
+     "script": "dev",
+     "kind": "dev",
+     "result": {
+      "entryId": "e1",
+      "status": "starting",
+      "portUnknown": false,
+      "sessionId": "sess-1",
+      "pid": 4000,
+      "startedAt": 1700000000000
+     },
+     "calls": [
+      [
+       "sessions.create",
+       {
+        "kind": "dev",
+        "cwd": "<FIX>\\proj\\cmd",
+        "projectId": "e1",
+        "title": "\u670d\u52a1\u4e00 \u00b7 dev",
+        "file": "cmd.exe",
+        "args": [
+         "/d",
+         "/s",
+         "/c",
+         "<FIX>\\bin\\npm.cmd",
+         "run",
+         "dev"
+        ],
+        "env": {
+         "PORT": "3000"
+        }
+       }
+      ],
+      [
+       "config.patch",
+       {
+        "entries": [
+         {
+          "id": "e1",
+          "kind": "service",
+          "name": "\u670d\u52a1\u4e00",
+          "path": "<FIX>/proj",
+          "framework": "next",
+          "packageManager": "npm",
+          "script": "dev",
+          "scripts": {
+           "dev": "next dev"
+          },
+          "env": {
+           "PORT": "3000"
+          },
+          "registerOnly": false,
+          "pinned": false,
+          "order": 0,
+          "createdAt": 1700000000000,
+          "cwd": "cmd",
+          "lastStartedAt": 1700000000000
+         }
+        ]
+       }
+      ]
+     ],
+     "events": [
+      [
+       {
+        "id": "e1",
+        "kind": "service",
+        "name": "\u670d\u52a1\u4e00",
+        "path": "<FIX>/proj",
+        "framework": "next",
+        "packageManager": "npm",
+        "script": "dev",
+        "scripts": {
+         "dev": "next dev"
+        },
+        "env": {
+         "PORT": "3000"
+        },
+        "registerOnly": false,
+        "pinned": false,
+        "order": 0,
+        "createdAt": 1700000000000,
+        "cwd": "cmd",
+        "lastStartedAt": 1700000000000
+       }
+      ]
+     ]
+    },
+    {
+     "op": "spawn",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "next",
+      "packageManager": "npm",
+      "script": "dev",
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000
+     },
+     "script": null,
+     "kind": "install",
+     "result": {
+      "entryId": "e1",
+      "status": "running",
+      "portUnknown": false,
+      "sessionId": "sess-1",
+      "pid": 4000,
+      "startedAt": 1700000000000
+     },
+     "calls": [
+      [
+       "sessions.create",
+       {
+        "kind": "install",
+        "cwd": "<FIX>/proj",
+        "projectId": "e1",
+        "title": "\u670d\u52a1\u4e00 \u00b7 install",
+        "file": "cmd.exe",
+        "args": [
+         "/d",
+         "/s",
+         "/c",
+         "<FIX>\\bin\\npm.cmd",
+         "install"
+        ],
+        "env": {
+         "PORT": "3000"
+        }
+       }
+      ],
+      [
+       "config.patch",
+       {
+        "entries": [
+         {
+          "id": "e1",
+          "kind": "service",
+          "name": "\u670d\u52a1\u4e00",
+          "path": "<FIX>/proj",
+          "framework": "next",
+          "packageManager": "npm",
+          "script": "dev",
+          "scripts": {
+           "dev": "next dev"
+          },
+          "env": {
+           "PORT": "3000"
+          },
+          "registerOnly": false,
+          "pinned": false,
+          "order": 0,
+          "createdAt": 1700000000000,
+          "lastStartedAt": 1700000000000
+         }
+        ]
+       }
+      ]
+     ],
+     "events": [
+      [
+       {
+        "id": "e1",
+        "kind": "service",
+        "name": "\u670d\u52a1\u4e00",
+        "path": "<FIX>/proj",
+        "framework": "next",
+        "packageManager": "npm",
+        "script": "dev",
+        "scripts": {
+         "dev": "next dev"
+        },
+        "env": {
+         "PORT": "3000"
+        },
+        "registerOnly": false,
+        "pinned": false,
+        "order": 0,
+        "createdAt": 1700000000000,
+        "lastStartedAt": 1700000000000
+       }
+      ]
+     ]
+    },
+    {
+     "op": "spawn",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "next",
+      "packageManager": "npm",
+      "script": "dev",
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000
+     },
+     "script": "dev",
+     "kind": "build",
+     "result": {
+      "entryId": "e1",
+      "status": "starting",
+      "portUnknown": false,
+      "sessionId": "sess-1",
+      "pid": 4000,
+      "startedAt": 1700000000000
+     },
+     "calls": [
+      [
+       "sessions.create",
+       {
+        "kind": "build",
+        "cwd": "<FIX>/proj",
+        "projectId": "e1",
+        "title": "\u670d\u52a1\u4e00 \u00b7 dev",
+        "file": "cmd.exe",
+        "args": [
+         "/d",
+         "/s",
+         "/c",
+         "<FIX>\\bin\\npm.cmd",
+         "run",
+         "dev"
+        ],
+        "env": {
+         "PORT": "3000"
+        }
+       }
+      ],
+      [
+       "config.patch",
+       {
+        "entries": [
+         {
+          "id": "e1",
+          "kind": "service",
+          "name": "\u670d\u52a1\u4e00",
+          "path": "<FIX>/proj",
+          "framework": "next",
+          "packageManager": "npm",
+          "script": "dev",
+          "scripts": {
+           "dev": "next dev"
+          },
+          "env": {
+           "PORT": "3000"
+          },
+          "registerOnly": false,
+          "pinned": false,
+          "order": 0,
+          "createdAt": 1700000000000,
+          "lastStartedAt": 1700000000000
+         }
+        ]
+       }
+      ]
+     ],
+     "events": [
+      [
+       {
+        "id": "e1",
+        "kind": "service",
+        "name": "\u670d\u52a1\u4e00",
+        "path": "<FIX>/proj",
+        "framework": "next",
+        "packageManager": "npm",
+        "script": "dev",
+        "scripts": {
+         "dev": "next dev"
+        },
+        "env": {
+         "PORT": "3000"
+        },
+        "registerOnly": false,
+        "pinned": false,
+        "order": 0,
+        "createdAt": 1700000000000,
+        "lastStartedAt": 1700000000000
+       }
+      ]
+     ]
+    },
+    {
+     "op": "spawn",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "next",
+      "packageManager": "npm",
+      "script": "dev",
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000,
+      "cwd": "<FIX>/outside"
+     },
+     "script": "dev",
+     "kind": "dev",
+     "error": "\u5de5\u4f5c\u76ee\u5f55 <FIX>/outside \u4e0d\u5728\u6761\u76ee\u8def\u5f84 <FIX>/proj \u5185",
+     "calls": [],
+     "events": []
+    },
+    {
+     "op": "spawn",
+     "entry": {
+      "id": "e1",
+      "kind": "service",
+      "name": "\u670d\u52a1\u4e00",
+      "path": "<FIX>/proj",
+      "framework": "next",
+      "packageManager": "npm",
+      "script": "dev",
+      "scripts": {
+       "dev": "next dev"
+      },
+      "env": {
+       "PORT": "3000"
+      },
+      "registerOnly": false,
+      "pinned": false,
+      "order": 0,
+      "createdAt": 1700000000000,
+      "cwd": "../outside"
+     },
+     "script": "dev",
+     "kind": "dev",
+     "error": "\u5de5\u4f5c\u76ee\u5f55 <FIX>\\outside \u4e0d\u5728\u6761\u76ee\u8def\u5f84 <FIX>/proj \u5185",
+     "calls": [],
+     "events": []
+    }
+   ]
+  }
+ ]
+}

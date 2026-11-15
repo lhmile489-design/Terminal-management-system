@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"mile-console/internal/contract"
+	"mile-console/internal/platform"
 )
 
 // recorder 记录调用与广播。Remove 会在后台协程里终止会话，所以读写都加锁。
@@ -87,7 +88,37 @@ func (fakePlatform) UnsupportedLaunchModes() map[contract.LaunchMode]bool {
 
 func (fakePlatform) RequiresExecBit() bool { return false }
 
+func (fakePlatform) Binaries() map[platform.BinaryName][]string {
+	return map[platform.BinaryName][]string{
+		platform.BinaryNpm:    {"npm.cmd", "npm.exe"},
+		platform.BinaryPnpm:   {"pnpm.cmd", "pnpm.exe"},
+		platform.BinaryYarn:   {"yarn.cmd", "yarn.exe"},
+		platform.BinaryBun:    {"bun.exe"},
+		platform.BinaryJava:   {"java.exe"},
+		platform.BinaryMvn:    {"mvn.cmd", "mvn.bat", "mvn"},
+		platform.BinaryGradle: {"gradle.cmd", "gradle.bat", "gradle"},
+		platform.BinaryPython: {"python.exe", "python3.exe", "py.exe", "python", "python3"},
+		platform.BinaryGo:     {"go.exe", "go"},
+		platform.BinaryCargo:  {"cargo.exe", "cargo"},
+	}
+}
+
+func (fakePlatform) WrapperFile() platform.WrapperFiles {
+	return platform.WrapperFiles{Maven: "mvnw.cmd", Gradle: "gradlew.bat"}
+}
+
+func (fakePlatform) WrapBatch(file string, args []string) (string, []string) {
+	return "cmd.exe", append([]string{"/d", "/s", "/c", file}, args...)
+}
+
 type fakeSessions struct{ rec *recorder }
+
+func (f fakeSessions) Create(in contract.CreateSessionInput) (contract.SessionMeta, error) {
+	if f.rec != nil {
+		f.rec.add([]any{"sessions.create", in})
+	}
+	return contract.SessionMeta{ID: "sess-1", Pid: 4000, StartedAt: 1_700_000_000_000}, nil
+}
 
 func (f fakeSessions) Kill(_ context.Context, id string) {
 	if f.rec != nil {
