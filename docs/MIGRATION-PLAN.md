@@ -228,6 +228,7 @@ M0 ──► M1 ──► M3 ──► M4
 | 多字段同时非法时取哪条错误（S21a） | 按页面传来的键顺序逐字段校验，先撞到哪条报哪条（`{kind:'task', expectedPort:3000}` 报「任务不设置端口」，反过来则先设端口再被清理） | 按 `contract.EntryEdit` 的固定字段顺序（`kind` 先于 `icon` / `expectedPort`），等价于「`kind` 先处理」 | Go 的结构体没有键顺序 | 只有一次提交里同时改多个非法字段时，弹出的错误文案可能不同；单字段非法时完全一致 |
 | `env: null` 的含义（S21a） | `env` 是 null 时报「环境变量必须是对象」 | JSON `null` 与「没带这个键」都解成 nil 映射，按「没提」处理（保留原 env） | Go 的 map 字段分不出 null 与缺省 | 只有绕开页面显式传 `env: null` 才会不同；页面发的是对象 |
 | `healthCheck` 缺 `enabled`（S21a） | `typeof enabled !== 'boolean'` 报「健康检查开关必须是布尔值」 | `contract.HealthCheckConfig.Enabled` 是 bool，缺省即 false，不报错 | 契约里的结构体没有三态布尔 | 只有绕开页面只传 `{path}` 时才不同；页面总是两个字段一起发 |
+| 运行时没有文件 / 目录选择对话框（S24） | `dialog.showOpenDialog` / `showSaveDialog` 可选目录或文件 | mygo v0.8.3 的 `Dialog` 只有 `Error(title, content)`，没有选择框。`DialogService.PickDirectory` 与 `ConfigService.Export / Import` 因此**未绑定**，页面调用会失败 | 运行时能力缺失；红线要求文件路径只能来自系统对话框刚返回的结果，不能改用页面 `<input type=file>` | 新增条目时无法选目录、配置导入导出不可用。需要 mygo 补上对话框 API，或自己调 win32 的 `IFileOpenDialog`（S32 的候选方案） |
 
 > 新增偏差必须写进本表并说明用户可见差异；「看起来一样」不算理由。
 
