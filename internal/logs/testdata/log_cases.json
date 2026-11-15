@@ -1,0 +1,3383 @@
+{
+ "generatedFrom": "mile-terminal-management/src/main/services/LogService.ts + node v22.23.4",
+ "cases": [
+  {
+   "name": "lines-basic",
+   "clock": 1700000000000,
+   "recordLines": true,
+   "steps": [
+    {
+     "op": "session",
+     "id": "s1",
+     "title": "\u7ec8\u7aef\u4e00",
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "data",
+     "id": "s1",
+     "data": "hello\nworld\n",
+     "events": [
+      {
+       "seq": 1,
+       "sessionId": "s1",
+       "entryId": null,
+       "title": "\u7ec8\u7aef\u4e00",
+       "ts": 1700000000000,
+       "level": "info",
+       "text": "hello"
+      },
+      {
+       "seq": 2,
+       "sessionId": "s1",
+       "entryId": null,
+       "title": "\u7ec8\u7aef\u4e00",
+       "ts": 1700000000000,
+       "level": "info",
+       "text": "world"
+      }
+     ],
+     "timers": []
+    },
+    {
+     "op": "query",
+     "q": {},
+     "result": {
+      "lines": [
+       {
+        "seq": 1,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "hello"
+       },
+       {
+        "seq": 2,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "world"
+       }
+      ],
+      "total": 2,
+      "dropped": 0,
+      "capacity": 5000,
+      "sources": [
+       {
+        "sessionId": "s1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "count": 2
+       }
+      ]
+     },
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "data",
+     "id": "s1",
+     "data": "abc",
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "query",
+     "q": {},
+     "result": {
+      "lines": [
+       {
+        "seq": 1,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "hello"
+       },
+       {
+        "seq": 2,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "world"
+       }
+      ],
+      "total": 2,
+      "dropped": 0,
+      "capacity": 5000,
+      "sources": [
+       {
+        "sessionId": "s1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "count": 2
+       }
+      ]
+     },
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "data",
+     "id": "s1",
+     "data": "def\n",
+     "events": [
+      {
+       "seq": 3,
+       "sessionId": "s1",
+       "entryId": null,
+       "title": "\u7ec8\u7aef\u4e00",
+       "ts": 1700000000000,
+       "level": "info",
+       "text": "abcdef"
+      }
+     ],
+     "timers": []
+    },
+    {
+     "op": "query",
+     "q": {},
+     "result": {
+      "lines": [
+       {
+        "seq": 1,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "hello"
+       },
+       {
+        "seq": 2,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "world"
+       },
+       {
+        "seq": 3,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "abcdef"
+       }
+      ],
+      "total": 3,
+      "dropped": 0,
+      "capacity": 5000,
+      "sources": [
+       {
+        "sessionId": "s1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "count": 3
+       }
+      ]
+     },
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "data",
+     "id": "s1",
+     "data": "crlf\r\nlone\rmore\n",
+     "events": [
+      {
+       "seq": 4,
+       "sessionId": "s1",
+       "entryId": null,
+       "title": "\u7ec8\u7aef\u4e00",
+       "ts": 1700000000000,
+       "level": "info",
+       "text": "crlf"
+      },
+      {
+       "seq": 5,
+       "sessionId": "s1",
+       "entryId": null,
+       "title": "\u7ec8\u7aef\u4e00",
+       "ts": 1700000000000,
+       "level": "info",
+       "text": "more"
+      }
+     ],
+     "timers": []
+    },
+    {
+     "op": "query",
+     "q": {},
+     "result": {
+      "lines": [
+       {
+        "seq": 1,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "hello"
+       },
+       {
+        "seq": 2,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "world"
+       },
+       {
+        "seq": 3,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "abcdef"
+       },
+       {
+        "seq": 4,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "crlf"
+       },
+       {
+        "seq": 5,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "more"
+       }
+      ],
+      "total": 5,
+      "dropped": 0,
+      "capacity": 5000,
+      "sources": [
+       {
+        "sessionId": "s1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "count": 5
+       }
+      ]
+     },
+     "events": [],
+     "timers": []
+    }
+   ]
+  },
+  {
+   "name": "cursor-col1",
+   "clock": 1700000000000,
+   "recordLines": true,
+   "steps": [
+    {
+     "op": "session",
+     "id": "s1",
+     "title": "\u7ec8\u7aef\u4e00",
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "data",
+     "id": "s1",
+     "data": "first\u001b[5;1Hsecond\u001b[12;1Hthird",
+     "events": [
+      {
+       "seq": 1,
+       "sessionId": "s1",
+       "entryId": null,
+       "title": "\u7ec8\u7aef\u4e00",
+       "ts": 1700000000000,
+       "level": "info",
+       "text": "first"
+      },
+      {
+       "seq": 2,
+       "sessionId": "s1",
+       "entryId": null,
+       "title": "\u7ec8\u7aef\u4e00",
+       "ts": 1700000000000,
+       "level": "info",
+       "text": "second"
+      }
+     ],
+     "timers": []
+    },
+    {
+     "op": "query",
+     "q": {},
+     "result": {
+      "lines": [
+       {
+        "seq": 1,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "first"
+       },
+       {
+        "seq": 2,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "second"
+       }
+      ],
+      "total": 2,
+      "dropped": 0,
+      "capacity": 5000,
+      "sources": [
+       {
+        "sessionId": "s1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "count": 2
+       }
+      ]
+     },
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "data",
+     "id": "s1",
+     "data": "\nfourth\n",
+     "events": [
+      {
+       "seq": 3,
+       "sessionId": "s1",
+       "entryId": null,
+       "title": "\u7ec8\u7aef\u4e00",
+       "ts": 1700000000000,
+       "level": "info",
+       "text": "third"
+      },
+      {
+       "seq": 4,
+       "sessionId": "s1",
+       "entryId": null,
+       "title": "\u7ec8\u7aef\u4e00",
+       "ts": 1700000000000,
+       "level": "info",
+       "text": "fourth"
+      }
+     ],
+     "timers": []
+    },
+    {
+     "op": "query",
+     "q": {},
+     "result": {
+      "lines": [
+       {
+        "seq": 1,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "first"
+       },
+       {
+        "seq": 2,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "second"
+       },
+       {
+        "seq": 3,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "third"
+       },
+       {
+        "seq": 4,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "fourth"
+       }
+      ],
+      "total": 4,
+      "dropped": 0,
+      "capacity": 5000,
+      "sources": [
+       {
+        "sessionId": "s1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "count": 4
+       }
+      ]
+     },
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "data",
+     "id": "s1",
+     "data": "aaa\u001b[1;5Hbbb\n",
+     "events": [
+      {
+       "seq": 5,
+       "sessionId": "s1",
+       "entryId": null,
+       "title": "\u7ec8\u7aef\u4e00",
+       "ts": 1700000000000,
+       "level": "info",
+       "text": "aaabbb"
+      }
+     ],
+     "timers": []
+    },
+    {
+     "op": "query",
+     "q": {},
+     "result": {
+      "lines": [
+       {
+        "seq": 1,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "first"
+       },
+       {
+        "seq": 2,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "second"
+       },
+       {
+        "seq": 3,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "third"
+       },
+       {
+        "seq": 4,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "fourth"
+       },
+       {
+        "seq": 5,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "aaabbb"
+       }
+      ],
+      "total": 5,
+      "dropped": 0,
+      "capacity": 5000,
+      "sources": [
+       {
+        "sessionId": "s1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "count": 5
+       }
+      ]
+     },
+     "events": [],
+     "timers": []
+    }
+   ]
+  },
+  {
+   "name": "ansi-and-redraw",
+   "clock": 1700000000000,
+   "recordLines": true,
+   "steps": [
+    {
+     "op": "session",
+     "id": "s1",
+     "title": "\u7ec8\u7aef\u4e00",
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "data",
+     "id": "s1",
+     "data": "\u001b[32m[ok]\u001b[0m \u6784\u5efa\u5b8c\u6210\n",
+     "events": [
+      {
+       "seq": 1,
+       "sessionId": "s1",
+       "entryId": null,
+       "title": "\u7ec8\u7aef\u4e00",
+       "ts": 1700000000000,
+       "level": "info",
+       "text": "[ok] \u6784\u5efa\u5b8c\u6210"
+      }
+     ],
+     "timers": []
+    },
+    {
+     "op": "data",
+     "id": "s1",
+     "data": "\u001b]0;my title\u0007done\n",
+     "events": [
+      {
+       "seq": 2,
+       "sessionId": "s1",
+       "entryId": null,
+       "title": "\u7ec8\u7aef\u4e00",
+       "ts": 1700000000000,
+       "level": "info",
+       "text": "done"
+      }
+     ],
+     "timers": []
+    },
+    {
+     "op": "data",
+     "id": "s1",
+     "data": "# 10%\r# 50%\r# 100%\n",
+     "events": [
+      {
+       "seq": 3,
+       "sessionId": "s1",
+       "entryId": null,
+       "title": "\u7ec8\u7aef\u4e00",
+       "ts": 1700000000000,
+       "level": "info",
+       "text": "# 100%"
+      }
+     ],
+     "timers": []
+    },
+    {
+     "op": "data",
+     "id": "s1",
+     "data": "payload\r\u001b[K",
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "data",
+     "id": "s1",
+     "data": "\n",
+     "events": [
+      {
+       "seq": 4,
+       "sessionId": "s1",
+       "entryId": null,
+       "title": "\u7ec8\u7aef\u4e00",
+       "ts": 1700000000000,
+       "level": "info",
+       "text": "payload"
+      }
+     ],
+     "timers": []
+    },
+    {
+     "op": "data",
+     "id": "s1",
+     "data": "\u001b[2K\r\n   \n",
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "query",
+     "q": {},
+     "result": {
+      "lines": [
+       {
+        "seq": 1,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "[ok] \u6784\u5efa\u5b8c\u6210"
+       },
+       {
+        "seq": 2,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "done"
+       },
+       {
+        "seq": 3,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "# 100%"
+       },
+       {
+        "seq": 4,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "payload"
+       }
+      ],
+      "total": 4,
+      "dropped": 0,
+      "capacity": 5000,
+      "sources": [
+       {
+        "sessionId": "s1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "count": 4
+       }
+      ]
+     },
+     "events": [],
+     "timers": []
+    }
+   ]
+  },
+  {
+   "name": "levels",
+   "clock": 1700000000000,
+   "recordLines": true,
+   "steps": [
+    {
+     "op": "session",
+     "id": "s1",
+     "title": "\u7ec8\u7aef\u4e00",
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "data",
+     "id": "s1",
+     "data": "ok\n",
+     "events": [
+      {
+       "seq": 1,
+       "sessionId": "s1",
+       "entryId": null,
+       "title": "\u7ec8\u7aef\u4e00",
+       "ts": 1700000000000,
+       "level": "info",
+       "text": "ok"
+      }
+     ],
+     "timers": []
+    },
+    {
+     "op": "data",
+     "id": "s1",
+     "data": "TypeError: boom\n",
+     "events": [
+      {
+       "seq": 2,
+       "sessionId": "s1",
+       "entryId": null,
+       "title": "\u7ec8\u7aef\u4e00",
+       "ts": 1700000000000,
+       "level": "error",
+       "text": "TypeError: boom"
+      }
+     ],
+     "timers": []
+    },
+    {
+     "op": "data",
+     "id": "s1",
+     "data": "warning: deprecated api\n",
+     "events": [
+      {
+       "seq": 3,
+       "sessionId": "s1",
+       "entryId": null,
+       "title": "\u7ec8\u7aef\u4e00",
+       "ts": 1700000000000,
+       "level": "warn",
+       "text": "warning: deprecated api"
+      }
+     ],
+     "timers": []
+    },
+    {
+     "op": "data",
+     "id": "s1",
+     "data": "\u542f\u52a8\u5931\u8d25\n",
+     "events": [
+      {
+       "seq": 4,
+       "sessionId": "s1",
+       "entryId": null,
+       "title": "\u7ec8\u7aef\u4e00",
+       "ts": 1700000000000,
+       "level": "error",
+       "text": "\u542f\u52a8\u5931\u8d25"
+      }
+     ],
+     "timers": []
+    },
+    {
+     "op": "data",
+     "id": "s1",
+     "data": "\u8b66\u544a\uff1a\u7aef\u53e3\u5360\u7528\n",
+     "events": [
+      {
+       "seq": 5,
+       "sessionId": "s1",
+       "entryId": null,
+       "title": "\u7ec8\u7aef\u4e00",
+       "ts": 1700000000000,
+       "level": "warn",
+       "text": "\u8b66\u544a\uff1a\u7aef\u53e3\u5360\u7528"
+      }
+     ],
+     "timers": []
+    },
+    {
+     "op": "data",
+     "id": "s1",
+     "data": "EADDRINUSE :::3000\n",
+     "events": [
+      {
+       "seq": 6,
+       "sessionId": "s1",
+       "entryId": null,
+       "title": "\u7ec8\u7aef\u4e00",
+       "ts": 1700000000000,
+       "level": "error",
+       "text": "EADDRINUSE :::3000"
+      }
+     ],
+     "timers": []
+    },
+    {
+     "op": "data",
+     "id": "s1",
+     "data": "error and warn together\n",
+     "events": [
+      {
+       "seq": 7,
+       "sessionId": "s1",
+       "entryId": null,
+       "title": "\u7ec8\u7aef\u4e00",
+       "ts": 1700000000000,
+       "level": "error",
+       "text": "error and warn together"
+      }
+     ],
+     "timers": []
+    },
+    {
+     "op": "query",
+     "q": {},
+     "result": {
+      "lines": [
+       {
+        "seq": 1,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "ok"
+       },
+       {
+        "seq": 2,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "error",
+        "text": "TypeError: boom"
+       },
+       {
+        "seq": 3,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "warn",
+        "text": "warning: deprecated api"
+       },
+       {
+        "seq": 4,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "error",
+        "text": "\u542f\u52a8\u5931\u8d25"
+       },
+       {
+        "seq": 5,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "warn",
+        "text": "\u8b66\u544a\uff1a\u7aef\u53e3\u5360\u7528"
+       },
+       {
+        "seq": 6,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "error",
+        "text": "EADDRINUSE :::3000"
+       },
+       {
+        "seq": 7,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "error",
+        "text": "error and warn together"
+       }
+      ],
+      "total": 7,
+      "dropped": 0,
+      "capacity": 5000,
+      "sources": [
+       {
+        "sessionId": "s1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "count": 7
+       }
+      ]
+     },
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "query",
+     "q": {
+      "level": "error"
+     },
+     "result": {
+      "lines": [
+       {
+        "seq": 2,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "error",
+        "text": "TypeError: boom"
+       },
+       {
+        "seq": 4,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "error",
+        "text": "\u542f\u52a8\u5931\u8d25"
+       },
+       {
+        "seq": 6,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "error",
+        "text": "EADDRINUSE :::3000"
+       },
+       {
+        "seq": 7,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "error",
+        "text": "error and warn together"
+       }
+      ],
+      "total": 4,
+      "dropped": 0,
+      "capacity": 5000,
+      "sources": [
+       {
+        "sessionId": "s1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "count": 7
+       }
+      ]
+     },
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "query",
+     "q": {
+      "level": "warn"
+     },
+     "result": {
+      "lines": [
+       {
+        "seq": 3,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "warn",
+        "text": "warning: deprecated api"
+       },
+       {
+        "seq": 5,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "warn",
+        "text": "\u8b66\u544a\uff1a\u7aef\u53e3\u5360\u7528"
+       }
+      ],
+      "total": 2,
+      "dropped": 0,
+      "capacity": 5000,
+      "sources": [
+       {
+        "sessionId": "s1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "count": 7
+       }
+      ]
+     },
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "query",
+     "q": {
+      "level": "info"
+     },
+     "result": {
+      "lines": [
+       {
+        "seq": 1,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "ok"
+       }
+      ],
+      "total": 1,
+      "dropped": 0,
+      "capacity": 5000,
+      "sources": [
+       {
+        "sessionId": "s1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "count": 7
+       }
+      ]
+     },
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "query",
+     "q": {
+      "level": ""
+     },
+     "result": {
+      "lines": [
+       {
+        "seq": 1,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "ok"
+       },
+       {
+        "seq": 2,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "error",
+        "text": "TypeError: boom"
+       },
+       {
+        "seq": 3,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "warn",
+        "text": "warning: deprecated api"
+       },
+       {
+        "seq": 4,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "error",
+        "text": "\u542f\u52a8\u5931\u8d25"
+       },
+       {
+        "seq": 5,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "warn",
+        "text": "\u8b66\u544a\uff1a\u7aef\u53e3\u5360\u7528"
+       },
+       {
+        "seq": 6,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "error",
+        "text": "EADDRINUSE :::3000"
+       },
+       {
+        "seq": 7,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "error",
+        "text": "error and warn together"
+       }
+      ],
+      "total": 7,
+      "dropped": 0,
+      "capacity": 5000,
+      "sources": [
+       {
+        "sessionId": "s1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "count": 7
+       }
+      ]
+     },
+     "events": [],
+     "timers": []
+    }
+   ]
+  },
+  {
+   "name": "truncate",
+   "clock": 1700000000000,
+   "recordLines": true,
+   "steps": [
+    {
+     "op": "session",
+     "id": "s1",
+     "title": "\u7ec8\u7aef\u4e00",
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "dataRepeat",
+     "id": "s1",
+     "unit": "a",
+     "count": 600,
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "data",
+     "id": "s1",
+     "data": "\n",
+     "events": [
+      {
+       "seq": 1,
+       "sessionId": "s1",
+       "entryId": null,
+       "title": "\u7ec8\u7aef\u4e00",
+       "ts": 1700000000000,
+       "level": "info",
+       "text": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+     ],
+     "timers": []
+    },
+    {
+     "op": "query",
+     "q": {},
+     "result": {
+      "lines": [
+       {
+        "seq": 1,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+       }
+      ],
+      "total": 1,
+      "dropped": 0,
+      "capacity": 5000,
+      "sources": [
+       {
+        "sessionId": "s1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "count": 1
+       }
+      ]
+     },
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "dataRepeat",
+     "id": "s1",
+     "unit": "\u6c49",
+     "count": 600,
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "data",
+     "id": "s1",
+     "data": "\n",
+     "events": [
+      {
+       "seq": 2,
+       "sessionId": "s1",
+       "entryId": null,
+       "title": "\u7ec8\u7aef\u4e00",
+       "ts": 1700000000000,
+       "level": "info",
+       "text": "\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49"
+      }
+     ],
+     "timers": []
+    },
+    {
+     "op": "query",
+     "q": {},
+     "result": {
+      "lines": [
+       {
+        "seq": 1,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+       },
+       {
+        "seq": 2,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49"
+       }
+      ],
+      "total": 2,
+      "dropped": 0,
+      "capacity": 5000,
+      "sources": [
+       {
+        "sessionId": "s1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "count": 2
+       }
+      ]
+     },
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "dataRepeat",
+     "id": "s1",
+     "unit": "a",
+     "count": 499,
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "data",
+     "id": "s1",
+     "data": "\ud83d\ude00\n",
+     "events": [
+      {
+       "seq": 3,
+       "sessionId": "s1",
+       "entryId": null,
+       "title": "\u7ec8\u7aef\u4e00",
+       "ts": 1700000000000,
+       "level": "info",
+       "text": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\ud83d"
+      }
+     ],
+     "timers": []
+    },
+    {
+     "op": "query",
+     "q": {},
+     "result": {
+      "lines": [
+       {
+        "seq": 1,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+       },
+       {
+        "seq": 2,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49"
+       },
+       {
+        "seq": 3,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\ud83d"
+       }
+      ],
+      "total": 3,
+      "dropped": 0,
+      "capacity": 5000,
+      "sources": [
+       {
+        "sessionId": "s1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "count": 3
+       }
+      ]
+     },
+     "events": [],
+     "timers": []
+    }
+   ]
+  },
+  {
+   "name": "ring-buffer",
+   "clock": 1700000000000,
+   "recordLines": false,
+   "steps": [
+    {
+     "op": "session",
+     "id": "s1",
+     "title": "\u7ec8\u7aef\u4e00",
+     "timers": []
+    },
+    {
+     "op": "dataRepeat",
+     "id": "s1",
+     "unit": "x\n",
+     "count": 5005,
+     "timers": []
+    },
+    {
+     "op": "query",
+     "q": {
+      "limit": 3
+     },
+     "result": {
+      "lines": [
+       {
+        "seq": 5003,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "x"
+       },
+       {
+        "seq": 5004,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "x"
+       },
+       {
+        "seq": 5005,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "x"
+       }
+      ],
+      "total": 5000,
+      "dropped": 5,
+      "capacity": 5000,
+      "sources": [
+       {
+        "sessionId": "s1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "count": 5000
+       }
+      ]
+     },
+     "timers": []
+    },
+    {
+     "op": "dataRepeat",
+     "id": "s1",
+     "unit": "y\n",
+     "count": 10,
+     "timers": []
+    },
+    {
+     "op": "query",
+     "q": {
+      "limit": 2
+     },
+     "result": {
+      "lines": [
+       {
+        "seq": 5014,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "y"
+       },
+       {
+        "seq": 5015,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "y"
+       }
+      ],
+      "total": 5000,
+      "dropped": 15,
+      "capacity": 5000,
+      "sources": [
+       {
+        "sessionId": "s1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "count": 5000
+       }
+      ]
+     },
+     "timers": []
+    },
+    {
+     "op": "query",
+     "q": {
+      "limit": 1
+     },
+     "result": {
+      "lines": [
+       {
+        "seq": 5015,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "y"
+       }
+      ],
+      "total": 5000,
+      "dropped": 15,
+      "capacity": 5000,
+      "sources": [
+       {
+        "sessionId": "s1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "count": 5000
+       }
+      ]
+     },
+     "timers": []
+    },
+    {
+     "op": "clear",
+     "timers": []
+    },
+    {
+     "op": "query",
+     "q": {},
+     "result": {
+      "lines": [],
+      "total": 0,
+      "dropped": 0,
+      "capacity": 5000,
+      "sources": []
+     },
+     "timers": []
+    },
+    {
+     "op": "data",
+     "id": "s1",
+     "data": "after clear\n",
+     "timers": []
+    },
+    {
+     "op": "query",
+     "q": {},
+     "result": {
+      "lines": [
+       {
+        "seq": 5016,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "after clear"
+       }
+      ],
+      "total": 1,
+      "dropped": 0,
+      "capacity": 5000,
+      "sources": [
+       {
+        "sessionId": "s1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "count": 1
+       }
+      ]
+     },
+     "timers": []
+    }
+   ]
+  },
+  {
+   "name": "exit-race",
+   "clock": 1700000000000,
+   "recordLines": true,
+   "steps": [
+    {
+     "op": "session",
+     "id": "s1",
+     "title": "\u7ec8\u7aef\u4e00",
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "data",
+     "id": "s1",
+     "data": "head\nlast line without newline",
+     "events": [
+      {
+       "seq": 1,
+       "sessionId": "s1",
+       "entryId": null,
+       "title": "\u7ec8\u7aef\u4e00",
+       "ts": 1700000000000,
+       "level": "info",
+       "text": "head"
+      }
+     ],
+     "timers": []
+    },
+    {
+     "op": "exit",
+     "id": "s1",
+     "events": [],
+     "timers": [
+      120
+     ]
+    },
+    {
+     "op": "query",
+     "q": {},
+     "result": {
+      "lines": [
+       {
+        "seq": 1,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "head"
+       }
+      ],
+      "total": 1,
+      "dropped": 0,
+      "capacity": 5000,
+      "sources": [
+       {
+        "sessionId": "s1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "count": 1
+       }
+      ]
+     },
+     "events": [],
+     "timers": [
+      120
+     ]
+    },
+    {
+     "op": "data",
+     "id": "s1",
+     "data": " continued\n",
+     "events": [
+      {
+       "seq": 2,
+       "sessionId": "s1",
+       "entryId": null,
+       "title": "\u7ec8\u7aef\u4e00",
+       "ts": 1700000000000,
+       "level": "info",
+       "text": "last line without newline continued"
+      }
+     ],
+     "timers": [
+      120
+     ]
+    },
+    {
+     "op": "query",
+     "q": {},
+     "result": {
+      "lines": [
+       {
+        "seq": 1,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "head"
+       },
+       {
+        "seq": 2,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "last line without newline continued"
+       }
+      ],
+      "total": 2,
+      "dropped": 0,
+      "capacity": 5000,
+      "sources": [
+       {
+        "sessionId": "s1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "count": 2
+       }
+      ]
+     },
+     "events": [],
+     "timers": [
+      120
+     ]
+    },
+    {
+     "op": "fire",
+     "ms": 120,
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "query",
+     "q": {},
+     "result": {
+      "lines": [
+       {
+        "seq": 1,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "head"
+       },
+       {
+        "seq": 2,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "last line without newline continued"
+       }
+      ],
+      "total": 2,
+      "dropped": 0,
+      "capacity": 5000,
+      "sources": [
+       {
+        "sessionId": "s1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "count": 2
+       }
+      ]
+     },
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "data",
+     "id": "s1",
+     "data": "dangling",
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "exit",
+     "id": "s1",
+     "events": [],
+     "timers": [
+      120
+     ]
+    },
+    {
+     "op": "fire",
+     "ms": 120,
+     "events": [
+      {
+       "seq": 3,
+       "sessionId": "s1",
+       "entryId": null,
+       "title": "\u7ec8\u7aef\u4e00",
+       "ts": 1700000000000,
+       "level": "info",
+       "text": "dangling"
+      }
+     ],
+     "timers": []
+    },
+    {
+     "op": "query",
+     "q": {},
+     "result": {
+      "lines": [
+       {
+        "seq": 1,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "head"
+       },
+       {
+        "seq": 2,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "last line without newline continued"
+       },
+       {
+        "seq": 3,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "dangling"
+       }
+      ],
+      "total": 3,
+      "dropped": 0,
+      "capacity": 5000,
+      "sources": [
+       {
+        "sessionId": "s1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "count": 3
+       }
+      ]
+     },
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "data",
+     "id": "s1",
+     "data": "later",
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "exit",
+     "id": "s1",
+     "events": [],
+     "timers": [
+      120
+     ]
+    },
+    {
+     "op": "query",
+     "q": {},
+     "result": {
+      "lines": [
+       {
+        "seq": 1,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "head"
+       },
+       {
+        "seq": 2,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "last line without newline continued"
+       },
+       {
+        "seq": 3,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "dangling"
+       }
+      ],
+      "total": 3,
+      "dropped": 0,
+      "capacity": 5000,
+      "sources": [
+       {
+        "sessionId": "s1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "count": 3
+       }
+      ]
+     },
+     "events": [],
+     "timers": [
+      120
+     ]
+    },
+    {
+     "op": "fire",
+     "ms": 120,
+     "events": [
+      {
+       "seq": 4,
+       "sessionId": "s1",
+       "entryId": null,
+       "title": "\u7ec8\u7aef\u4e00",
+       "ts": 1700000000000,
+       "level": "info",
+       "text": "later"
+      }
+     ],
+     "timers": []
+    },
+    {
+     "op": "query",
+     "q": {},
+     "result": {
+      "lines": [
+       {
+        "seq": 1,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "head"
+       },
+       {
+        "seq": 2,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "last line without newline continued"
+       },
+       {
+        "seq": 3,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "dangling"
+       },
+       {
+        "seq": 4,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "later"
+       }
+      ],
+      "total": 4,
+      "dropped": 0,
+      "capacity": 5000,
+      "sources": [
+       {
+        "sessionId": "s1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "count": 4
+       }
+      ]
+     },
+     "events": [],
+     "timers": []
+    }
+   ]
+  },
+  {
+   "name": "clear",
+   "clock": 1700000000000,
+   "recordLines": true,
+   "steps": [
+    {
+     "op": "session",
+     "id": "s1",
+     "title": "\u7ec8\u7aef\u4e00",
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "data",
+     "id": "s1",
+     "data": "kept\npending",
+     "events": [
+      {
+       "seq": 1,
+       "sessionId": "s1",
+       "entryId": null,
+       "title": "\u7ec8\u7aef\u4e00",
+       "ts": 1700000000000,
+       "level": "info",
+       "text": "kept"
+      }
+     ],
+     "timers": []
+    },
+    {
+     "op": "exit",
+     "id": "s1",
+     "events": [],
+     "timers": [
+      120
+     ]
+    },
+    {
+     "op": "clear",
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "fire",
+     "ms": 120,
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "query",
+     "q": {},
+     "result": {
+      "lines": [],
+      "total": 0,
+      "dropped": 0,
+      "capacity": 5000,
+      "sources": []
+     },
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "data",
+     "id": "s1",
+     "data": "after\n",
+     "events": [
+      {
+       "seq": 2,
+       "sessionId": "s1",
+       "entryId": null,
+       "title": "\u7ec8\u7aef\u4e00",
+       "ts": 1700000000000,
+       "level": "info",
+       "text": "after"
+      }
+     ],
+     "timers": []
+    },
+    {
+     "op": "query",
+     "q": {},
+     "result": {
+      "lines": [
+       {
+        "seq": 2,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "after"
+       }
+      ],
+      "total": 1,
+      "dropped": 0,
+      "capacity": 5000,
+      "sources": [
+       {
+        "sessionId": "s1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "count": 1
+       }
+      ]
+     },
+     "events": [],
+     "timers": []
+    }
+   ]
+  },
+  {
+   "name": "query-filters",
+   "clock": 1700000000000,
+   "recordLines": false,
+   "steps": [
+    {
+     "op": "session",
+     "id": "s1",
+     "title": "\u7ec8\u7aef\u4e00",
+     "projectId": "p1",
+     "timers": []
+    },
+    {
+     "op": "session",
+     "id": "s2",
+     "title": "\u7ec8\u7aef\u4e8c",
+     "projectId": "p2",
+     "timers": []
+    },
+    {
+     "op": "session",
+     "id": "s3",
+     "title": "\u81ea\u7531\u7ec8\u7aef",
+     "timers": []
+    },
+    {
+     "op": "data",
+     "id": "s1",
+     "data": "Alpha\nbeta\nerror one\n",
+     "timers": []
+    },
+    {
+     "op": "data",
+     "id": "s2",
+     "data": "gamma\nDELTA\nerror two\n",
+     "timers": []
+    },
+    {
+     "op": "data",
+     "id": "s3",
+     "data": "epsilon\n",
+     "timers": []
+    },
+    {
+     "op": "query",
+     "q": {},
+     "result": {
+      "lines": [
+       {
+        "seq": 1,
+        "sessionId": "s1",
+        "entryId": "p1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "Alpha"
+       },
+       {
+        "seq": 2,
+        "sessionId": "s1",
+        "entryId": "p1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "beta"
+       },
+       {
+        "seq": 3,
+        "sessionId": "s1",
+        "entryId": "p1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "error",
+        "text": "error one"
+       },
+       {
+        "seq": 4,
+        "sessionId": "s2",
+        "entryId": "p2",
+        "title": "\u7ec8\u7aef\u4e8c",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "gamma"
+       },
+       {
+        "seq": 5,
+        "sessionId": "s2",
+        "entryId": "p2",
+        "title": "\u7ec8\u7aef\u4e8c",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "DELTA"
+       },
+       {
+        "seq": 6,
+        "sessionId": "s2",
+        "entryId": "p2",
+        "title": "\u7ec8\u7aef\u4e8c",
+        "ts": 1700000000000,
+        "level": "error",
+        "text": "error two"
+       },
+       {
+        "seq": 7,
+        "sessionId": "s3",
+        "entryId": null,
+        "title": "\u81ea\u7531\u7ec8\u7aef",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "epsilon"
+       }
+      ],
+      "total": 7,
+      "dropped": 0,
+      "capacity": 5000,
+      "sources": [
+       {
+        "sessionId": "s1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "count": 3
+       },
+       {
+        "sessionId": "s2",
+        "title": "\u7ec8\u7aef\u4e8c",
+        "count": 3
+       },
+       {
+        "sessionId": "s3",
+        "title": "\u81ea\u7531\u7ec8\u7aef",
+        "count": 1
+       }
+      ]
+     },
+     "timers": []
+    },
+    {
+     "op": "query",
+     "q": {
+      "sessionId": "s2"
+     },
+     "result": {
+      "lines": [
+       {
+        "seq": 4,
+        "sessionId": "s2",
+        "entryId": "p2",
+        "title": "\u7ec8\u7aef\u4e8c",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "gamma"
+       },
+       {
+        "seq": 5,
+        "sessionId": "s2",
+        "entryId": "p2",
+        "title": "\u7ec8\u7aef\u4e8c",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "DELTA"
+       },
+       {
+        "seq": 6,
+        "sessionId": "s2",
+        "entryId": "p2",
+        "title": "\u7ec8\u7aef\u4e8c",
+        "ts": 1700000000000,
+        "level": "error",
+        "text": "error two"
+       }
+      ],
+      "total": 3,
+      "dropped": 0,
+      "capacity": 5000,
+      "sources": [
+       {
+        "sessionId": "s1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "count": 3
+       },
+       {
+        "sessionId": "s2",
+        "title": "\u7ec8\u7aef\u4e8c",
+        "count": 3
+       },
+       {
+        "sessionId": "s3",
+        "title": "\u81ea\u7531\u7ec8\u7aef",
+        "count": 1
+       }
+      ]
+     },
+     "timers": []
+    },
+    {
+     "op": "query",
+     "q": {
+      "sessionId": ""
+     },
+     "result": {
+      "lines": [
+       {
+        "seq": 1,
+        "sessionId": "s1",
+        "entryId": "p1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "Alpha"
+       },
+       {
+        "seq": 2,
+        "sessionId": "s1",
+        "entryId": "p1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "beta"
+       },
+       {
+        "seq": 3,
+        "sessionId": "s1",
+        "entryId": "p1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "error",
+        "text": "error one"
+       },
+       {
+        "seq": 4,
+        "sessionId": "s2",
+        "entryId": "p2",
+        "title": "\u7ec8\u7aef\u4e8c",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "gamma"
+       },
+       {
+        "seq": 5,
+        "sessionId": "s2",
+        "entryId": "p2",
+        "title": "\u7ec8\u7aef\u4e8c",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "DELTA"
+       },
+       {
+        "seq": 6,
+        "sessionId": "s2",
+        "entryId": "p2",
+        "title": "\u7ec8\u7aef\u4e8c",
+        "ts": 1700000000000,
+        "level": "error",
+        "text": "error two"
+       },
+       {
+        "seq": 7,
+        "sessionId": "s3",
+        "entryId": null,
+        "title": "\u81ea\u7531\u7ec8\u7aef",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "epsilon"
+       }
+      ],
+      "total": 7,
+      "dropped": 0,
+      "capacity": 5000,
+      "sources": [
+       {
+        "sessionId": "s1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "count": 3
+       },
+       {
+        "sessionId": "s2",
+        "title": "\u7ec8\u7aef\u4e8c",
+        "count": 3
+       },
+       {
+        "sessionId": "s3",
+        "title": "\u81ea\u7531\u7ec8\u7aef",
+        "count": 1
+       }
+      ]
+     },
+     "timers": []
+    },
+    {
+     "op": "query",
+     "q": {
+      "entryId": "p1"
+     },
+     "result": {
+      "lines": [
+       {
+        "seq": 1,
+        "sessionId": "s1",
+        "entryId": "p1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "Alpha"
+       },
+       {
+        "seq": 2,
+        "sessionId": "s1",
+        "entryId": "p1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "beta"
+       },
+       {
+        "seq": 3,
+        "sessionId": "s1",
+        "entryId": "p1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "error",
+        "text": "error one"
+       }
+      ],
+      "total": 3,
+      "dropped": 0,
+      "capacity": 5000,
+      "sources": [
+       {
+        "sessionId": "s1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "count": 3
+       },
+       {
+        "sessionId": "s2",
+        "title": "\u7ec8\u7aef\u4e8c",
+        "count": 3
+       },
+       {
+        "sessionId": "s3",
+        "title": "\u81ea\u7531\u7ec8\u7aef",
+        "count": 1
+       }
+      ]
+     },
+     "timers": []
+    },
+    {
+     "op": "query",
+     "q": {
+      "entryId": "nope"
+     },
+     "result": {
+      "lines": [],
+      "total": 0,
+      "dropped": 0,
+      "capacity": 5000,
+      "sources": [
+       {
+        "sessionId": "s1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "count": 3
+       },
+       {
+        "sessionId": "s2",
+        "title": "\u7ec8\u7aef\u4e8c",
+        "count": 3
+       },
+       {
+        "sessionId": "s3",
+        "title": "\u81ea\u7531\u7ec8\u7aef",
+        "count": 1
+       }
+      ]
+     },
+     "timers": []
+    },
+    {
+     "op": "query",
+     "q": {
+      "text": "ERROR"
+     },
+     "result": {
+      "lines": [
+       {
+        "seq": 3,
+        "sessionId": "s1",
+        "entryId": "p1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "error",
+        "text": "error one"
+       },
+       {
+        "seq": 6,
+        "sessionId": "s2",
+        "entryId": "p2",
+        "title": "\u7ec8\u7aef\u4e8c",
+        "ts": 1700000000000,
+        "level": "error",
+        "text": "error two"
+       }
+      ],
+      "total": 2,
+      "dropped": 0,
+      "capacity": 5000,
+      "sources": [
+       {
+        "sessionId": "s1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "count": 3
+       },
+       {
+        "sessionId": "s2",
+        "title": "\u7ec8\u7aef\u4e8c",
+        "count": 3
+       },
+       {
+        "sessionId": "s3",
+        "title": "\u81ea\u7531\u7ec8\u7aef",
+        "count": 1
+       }
+      ]
+     },
+     "timers": []
+    },
+    {
+     "op": "query",
+     "q": {
+      "text": "  delta  "
+     },
+     "result": {
+      "lines": [
+       {
+        "seq": 5,
+        "sessionId": "s2",
+        "entryId": "p2",
+        "title": "\u7ec8\u7aef\u4e8c",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "DELTA"
+       }
+      ],
+      "total": 1,
+      "dropped": 0,
+      "capacity": 5000,
+      "sources": [
+       {
+        "sessionId": "s1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "count": 3
+       },
+       {
+        "sessionId": "s2",
+        "title": "\u7ec8\u7aef\u4e8c",
+        "count": 3
+       },
+       {
+        "sessionId": "s3",
+        "title": "\u81ea\u7531\u7ec8\u7aef",
+        "count": 1
+       }
+      ]
+     },
+     "timers": []
+    },
+    {
+     "op": "query",
+     "q": {
+      "text": ""
+     },
+     "result": {
+      "lines": [
+       {
+        "seq": 1,
+        "sessionId": "s1",
+        "entryId": "p1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "Alpha"
+       },
+       {
+        "seq": 2,
+        "sessionId": "s1",
+        "entryId": "p1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "beta"
+       },
+       {
+        "seq": 3,
+        "sessionId": "s1",
+        "entryId": "p1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "error",
+        "text": "error one"
+       },
+       {
+        "seq": 4,
+        "sessionId": "s2",
+        "entryId": "p2",
+        "title": "\u7ec8\u7aef\u4e8c",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "gamma"
+       },
+       {
+        "seq": 5,
+        "sessionId": "s2",
+        "entryId": "p2",
+        "title": "\u7ec8\u7aef\u4e8c",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "DELTA"
+       },
+       {
+        "seq": 6,
+        "sessionId": "s2",
+        "entryId": "p2",
+        "title": "\u7ec8\u7aef\u4e8c",
+        "ts": 1700000000000,
+        "level": "error",
+        "text": "error two"
+       },
+       {
+        "seq": 7,
+        "sessionId": "s3",
+        "entryId": null,
+        "title": "\u81ea\u7531\u7ec8\u7aef",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "epsilon"
+       }
+      ],
+      "total": 7,
+      "dropped": 0,
+      "capacity": 5000,
+      "sources": [
+       {
+        "sessionId": "s1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "count": 3
+       },
+       {
+        "sessionId": "s2",
+        "title": "\u7ec8\u7aef\u4e8c",
+        "count": 3
+       },
+       {
+        "sessionId": "s3",
+        "title": "\u81ea\u7531\u7ec8\u7aef",
+        "count": 1
+       }
+      ]
+     },
+     "timers": []
+    },
+    {
+     "op": "query",
+     "q": {
+      "text": "\u4e0d\u5b58\u5728"
+     },
+     "result": {
+      "lines": [],
+      "total": 0,
+      "dropped": 0,
+      "capacity": 5000,
+      "sources": [
+       {
+        "sessionId": "s1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "count": 3
+       },
+       {
+        "sessionId": "s2",
+        "title": "\u7ec8\u7aef\u4e8c",
+        "count": 3
+       },
+       {
+        "sessionId": "s3",
+        "title": "\u81ea\u7531\u7ec8\u7aef",
+        "count": 1
+       }
+      ]
+     },
+     "timers": []
+    },
+    {
+     "op": "query",
+     "q": {
+      "level": "error",
+      "text": "one"
+     },
+     "result": {
+      "lines": [
+       {
+        "seq": 3,
+        "sessionId": "s1",
+        "entryId": "p1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "error",
+        "text": "error one"
+       }
+      ],
+      "total": 1,
+      "dropped": 0,
+      "capacity": 5000,
+      "sources": [
+       {
+        "sessionId": "s1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "count": 3
+       },
+       {
+        "sessionId": "s2",
+        "title": "\u7ec8\u7aef\u4e8c",
+        "count": 3
+       },
+       {
+        "sessionId": "s3",
+        "title": "\u81ea\u7531\u7ec8\u7aef",
+        "count": 1
+       }
+      ]
+     },
+     "timers": []
+    },
+    {
+     "op": "query",
+     "q": {
+      "level": "info",
+      "sessionId": "s3"
+     },
+     "result": {
+      "lines": [
+       {
+        "seq": 7,
+        "sessionId": "s3",
+        "entryId": null,
+        "title": "\u81ea\u7531\u7ec8\u7aef",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "epsilon"
+       }
+      ],
+      "total": 1,
+      "dropped": 0,
+      "capacity": 5000,
+      "sources": [
+       {
+        "sessionId": "s1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "count": 3
+       },
+       {
+        "sessionId": "s2",
+        "title": "\u7ec8\u7aef\u4e8c",
+        "count": 3
+       },
+       {
+        "sessionId": "s3",
+        "title": "\u81ea\u7531\u7ec8\u7aef",
+        "count": 1
+       }
+      ]
+     },
+     "timers": []
+    },
+    {
+     "op": "query",
+     "q": {
+      "limit": 1
+     },
+     "result": {
+      "lines": [
+       {
+        "seq": 7,
+        "sessionId": "s3",
+        "entryId": null,
+        "title": "\u81ea\u7531\u7ec8\u7aef",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "epsilon"
+       }
+      ],
+      "total": 7,
+      "dropped": 0,
+      "capacity": 5000,
+      "sources": [
+       {
+        "sessionId": "s1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "count": 3
+       },
+       {
+        "sessionId": "s2",
+        "title": "\u7ec8\u7aef\u4e8c",
+        "count": 3
+       },
+       {
+        "sessionId": "s3",
+        "title": "\u81ea\u7531\u7ec8\u7aef",
+        "count": 1
+       }
+      ]
+     },
+     "timers": []
+    },
+    {
+     "op": "query",
+     "q": {
+      "limit": 0
+     },
+     "result": {
+      "lines": [
+       {
+        "seq": 7,
+        "sessionId": "s3",
+        "entryId": null,
+        "title": "\u81ea\u7531\u7ec8\u7aef",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "epsilon"
+       }
+      ],
+      "total": 7,
+      "dropped": 0,
+      "capacity": 5000,
+      "sources": [
+       {
+        "sessionId": "s1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "count": 3
+       },
+       {
+        "sessionId": "s2",
+        "title": "\u7ec8\u7aef\u4e8c",
+        "count": 3
+       },
+       {
+        "sessionId": "s3",
+        "title": "\u81ea\u7531\u7ec8\u7aef",
+        "count": 1
+       }
+      ]
+     },
+     "timers": []
+    },
+    {
+     "op": "query",
+     "q": {
+      "limit": -3
+     },
+     "result": {
+      "lines": [
+       {
+        "seq": 7,
+        "sessionId": "s3",
+        "entryId": null,
+        "title": "\u81ea\u7531\u7ec8\u7aef",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "epsilon"
+       }
+      ],
+      "total": 7,
+      "dropped": 0,
+      "capacity": 5000,
+      "sources": [
+       {
+        "sessionId": "s1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "count": 3
+       },
+       {
+        "sessionId": "s2",
+        "title": "\u7ec8\u7aef\u4e8c",
+        "count": 3
+       },
+       {
+        "sessionId": "s3",
+        "title": "\u81ea\u7531\u7ec8\u7aef",
+        "count": 1
+       }
+      ]
+     },
+     "timers": []
+    },
+    {
+     "op": "query",
+     "q": {
+      "limit": 5001
+     },
+     "result": {
+      "lines": [
+       {
+        "seq": 1,
+        "sessionId": "s1",
+        "entryId": "p1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "Alpha"
+       },
+       {
+        "seq": 2,
+        "sessionId": "s1",
+        "entryId": "p1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "beta"
+       },
+       {
+        "seq": 3,
+        "sessionId": "s1",
+        "entryId": "p1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "error",
+        "text": "error one"
+       },
+       {
+        "seq": 4,
+        "sessionId": "s2",
+        "entryId": "p2",
+        "title": "\u7ec8\u7aef\u4e8c",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "gamma"
+       },
+       {
+        "seq": 5,
+        "sessionId": "s2",
+        "entryId": "p2",
+        "title": "\u7ec8\u7aef\u4e8c",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "DELTA"
+       },
+       {
+        "seq": 6,
+        "sessionId": "s2",
+        "entryId": "p2",
+        "title": "\u7ec8\u7aef\u4e8c",
+        "ts": 1700000000000,
+        "level": "error",
+        "text": "error two"
+       },
+       {
+        "seq": 7,
+        "sessionId": "s3",
+        "entryId": null,
+        "title": "\u81ea\u7531\u7ec8\u7aef",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "epsilon"
+       }
+      ],
+      "total": 7,
+      "dropped": 0,
+      "capacity": 5000,
+      "sources": [
+       {
+        "sessionId": "s1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "count": 3
+       },
+       {
+        "sessionId": "s2",
+        "title": "\u7ec8\u7aef\u4e8c",
+        "count": 3
+       },
+       {
+        "sessionId": "s3",
+        "title": "\u81ea\u7531\u7ec8\u7aef",
+        "count": 1
+       }
+      ]
+     },
+     "timers": []
+    },
+    {
+     "op": "query",
+     "q": {
+      "limit": 2
+     },
+     "result": {
+      "lines": [
+       {
+        "seq": 6,
+        "sessionId": "s2",
+        "entryId": "p2",
+        "title": "\u7ec8\u7aef\u4e8c",
+        "ts": 1700000000000,
+        "level": "error",
+        "text": "error two"
+       },
+       {
+        "seq": 7,
+        "sessionId": "s3",
+        "entryId": null,
+        "title": "\u81ea\u7531\u7ec8\u7aef",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "epsilon"
+       }
+      ],
+      "total": 7,
+      "dropped": 0,
+      "capacity": 5000,
+      "sources": [
+       {
+        "sessionId": "s1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "count": 3
+       },
+       {
+        "sessionId": "s2",
+        "title": "\u7ec8\u7aef\u4e8c",
+        "count": 3
+       },
+       {
+        "sessionId": "s3",
+        "title": "\u81ea\u7531\u7ec8\u7aef",
+        "count": 1
+       }
+      ]
+     },
+     "timers": []
+    },
+    {
+     "op": "dropSession",
+     "id": "s1",
+     "timers": []
+    },
+    {
+     "op": "data",
+     "id": "s1",
+     "data": "from gone session\n",
+     "timers": []
+    },
+    {
+     "op": "query",
+     "q": {},
+     "result": {
+      "lines": [
+       {
+        "seq": 1,
+        "sessionId": "s1",
+        "entryId": "p1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "Alpha"
+       },
+       {
+        "seq": 2,
+        "sessionId": "s1",
+        "entryId": "p1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "beta"
+       },
+       {
+        "seq": 3,
+        "sessionId": "s1",
+        "entryId": "p1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "error",
+        "text": "error one"
+       },
+       {
+        "seq": 4,
+        "sessionId": "s2",
+        "entryId": "p2",
+        "title": "\u7ec8\u7aef\u4e8c",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "gamma"
+       },
+       {
+        "seq": 5,
+        "sessionId": "s2",
+        "entryId": "p2",
+        "title": "\u7ec8\u7aef\u4e8c",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "DELTA"
+       },
+       {
+        "seq": 6,
+        "sessionId": "s2",
+        "entryId": "p2",
+        "title": "\u7ec8\u7aef\u4e8c",
+        "ts": 1700000000000,
+        "level": "error",
+        "text": "error two"
+       },
+       {
+        "seq": 7,
+        "sessionId": "s3",
+        "entryId": null,
+        "title": "\u81ea\u7531\u7ec8\u7aef",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "epsilon"
+       },
+       {
+        "seq": 8,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "s1",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "from gone session"
+       }
+      ],
+      "total": 8,
+      "dropped": 0,
+      "capacity": 5000,
+      "sources": [
+       {
+        "sessionId": "s1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "count": 4
+       },
+       {
+        "sessionId": "s2",
+        "title": "\u7ec8\u7aef\u4e8c",
+        "count": 3
+       },
+       {
+        "sessionId": "s3",
+        "title": "\u81ea\u7531\u7ec8\u7aef",
+        "count": 1
+       }
+      ]
+     },
+     "timers": []
+    },
+    {
+     "op": "query",
+     "q": {
+      "sessionId": "s1"
+     },
+     "result": {
+      "lines": [
+       {
+        "seq": 1,
+        "sessionId": "s1",
+        "entryId": "p1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "Alpha"
+       },
+       {
+        "seq": 2,
+        "sessionId": "s1",
+        "entryId": "p1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "beta"
+       },
+       {
+        "seq": 3,
+        "sessionId": "s1",
+        "entryId": "p1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "error",
+        "text": "error one"
+       },
+       {
+        "seq": 8,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "s1",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "from gone session"
+       }
+      ],
+      "total": 4,
+      "dropped": 0,
+      "capacity": 5000,
+      "sources": [
+       {
+        "sessionId": "s1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "count": 4
+       },
+       {
+        "sessionId": "s2",
+        "title": "\u7ec8\u7aef\u4e8c",
+        "count": 3
+       },
+       {
+        "sessionId": "s3",
+        "title": "\u81ea\u7531\u7ec8\u7aef",
+        "count": 1
+       }
+      ]
+     },
+     "timers": []
+    }
+   ]
+  },
+  {
+   "name": "sources",
+   "clock": 1700000000000,
+   "recordLines": false,
+   "steps": [
+    {
+     "op": "session",
+     "id": "s1",
+     "title": "\u7ec8\u7aef\u4e00",
+     "timers": []
+    },
+    {
+     "op": "session",
+     "id": "s2",
+     "title": "\u7ec8\u7aef\u4e8c",
+     "timers": []
+    },
+    {
+     "op": "data",
+     "id": "s2",
+     "data": "b1\nb2\n",
+     "timers": []
+    },
+    {
+     "op": "data",
+     "id": "s1",
+     "data": "a1\n",
+     "timers": []
+    },
+    {
+     "op": "data",
+     "id": "s2",
+     "data": "b3\n",
+     "timers": []
+    },
+    {
+     "op": "query",
+     "q": {},
+     "result": {
+      "lines": [
+       {
+        "seq": 1,
+        "sessionId": "s2",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e8c",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "b1"
+       },
+       {
+        "seq": 2,
+        "sessionId": "s2",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e8c",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "b2"
+       },
+       {
+        "seq": 3,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "a1"
+       },
+       {
+        "seq": 4,
+        "sessionId": "s2",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e8c",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "b3"
+       }
+      ],
+      "total": 4,
+      "dropped": 0,
+      "capacity": 5000,
+      "sources": [
+       {
+        "sessionId": "s2",
+        "title": "\u7ec8\u7aef\u4e8c",
+        "count": 3
+       },
+       {
+        "sessionId": "s1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "count": 1
+       }
+      ]
+     },
+     "timers": []
+    },
+    {
+     "op": "dropSession",
+     "id": "s2",
+     "timers": []
+    },
+    {
+     "op": "query",
+     "q": {},
+     "result": {
+      "lines": [
+       {
+        "seq": 1,
+        "sessionId": "s2",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e8c",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "b1"
+       },
+       {
+        "seq": 2,
+        "sessionId": "s2",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e8c",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "b2"
+       },
+       {
+        "seq": 3,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "a1"
+       },
+       {
+        "seq": 4,
+        "sessionId": "s2",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e8c",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "b3"
+       }
+      ],
+      "total": 4,
+      "dropped": 0,
+      "capacity": 5000,
+      "sources": [
+       {
+        "sessionId": "s2",
+        "title": "\u7ec8\u7aef\u4e8c",
+        "count": 3
+       },
+       {
+        "sessionId": "s1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "count": 1
+       }
+      ]
+     },
+     "timers": []
+    },
+    {
+     "op": "clear",
+     "timers": []
+    },
+    {
+     "op": "query",
+     "q": {},
+     "result": {
+      "lines": [],
+      "total": 0,
+      "dropped": 0,
+      "capacity": 5000,
+      "sources": []
+     },
+     "timers": []
+    }
+   ]
+  },
+  {
+   "name": "bad-listener",
+   "clock": 1700000000000,
+   "recordLines": true,
+   "steps": [
+    {
+     "op": "session",
+     "id": "s1",
+     "title": "\u7ec8\u7aef\u4e00",
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "data",
+     "id": "s1",
+     "data": "before\n",
+     "events": [
+      {
+       "seq": 1,
+       "sessionId": "s1",
+       "entryId": null,
+       "title": "\u7ec8\u7aef\u4e00",
+       "ts": 1700000000000,
+       "level": "info",
+       "text": "before"
+      }
+     ],
+     "timers": []
+    },
+    {
+     "op": "badListener",
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "data",
+     "id": "s1",
+     "data": "after\n",
+     "events": [
+      {
+       "seq": 2,
+       "sessionId": "s1",
+       "entryId": null,
+       "title": "\u7ec8\u7aef\u4e00",
+       "ts": 1700000000000,
+       "level": "info",
+       "text": "after"
+      }
+     ],
+     "timers": []
+    },
+    {
+     "op": "query",
+     "q": {},
+     "result": {
+      "lines": [
+       {
+        "seq": 1,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "before"
+       },
+       {
+        "seq": 2,
+        "sessionId": "s1",
+        "entryId": null,
+        "title": "\u7ec8\u7aef\u4e00",
+        "ts": 1700000000000,
+        "level": "info",
+        "text": "after"
+       }
+      ],
+      "total": 2,
+      "dropped": 0,
+      "capacity": 5000,
+      "sources": [
+       {
+        "sessionId": "s1",
+        "title": "\u7ec8\u7aef\u4e00",
+        "count": 2
+       }
+      ]
+     },
+     "events": [],
+     "timers": []
+    }
+   ]
+  }
+ ]
+}

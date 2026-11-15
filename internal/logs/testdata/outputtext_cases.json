@@ -1,0 +1,565 @@
+{
+ "generatedFrom": "mile-terminal-management/src/main/lib/outputText.ts",
+ "classify": [
+  {
+   "text": "npm ERR! code ELIFECYCLE",
+   "error": true,
+   "warn": false
+  },
+  {
+   "text": "npm error Lifecycle script \"dev\" failed",
+   "error": true,
+   "warn": false
+  },
+  {
+   "text": "Error: listen EADDRINUSE: address already in use :::3000",
+   "error": true,
+   "warn": false
+  },
+  {
+   "text": "[ERROR] BUILD FAILURE",
+   "error": true,
+   "warn": false
+  },
+  {
+   "text": "***************************\nAPPLICATION FAILED TO START",
+   "error": true,
+   "warn": false
+  },
+  {
+   "text": "APPLICATION FAILED TO \u017fTART",
+   "error": true,
+   "warn": false
+  },
+  {
+   "text": "listen EADDRINU\u017fE",
+   "error": false,
+   "warn": false
+  },
+  {
+   "text": "java.lang.RuntimeException: boom",
+   "error": true,
+   "warn": false
+  },
+  {
+   "text": "TypeError: x is not a function",
+   "error": true,
+   "warn": false
+  },
+  {
+   "text": "typeerror in lower case",
+   "error": true,
+   "warn": false
+  },
+  {
+   "text": "Uncaught ReferenceError",
+   "error": true,
+   "warn": false
+  },
+  {
+   "text": "\u7f16\u8bd1\u9519\u8bef\uff1a\u627e\u4e0d\u5230\u7b26\u53f7",
+   "error": true,
+   "warn": false
+  },
+  {
+   "text": "\u542f\u52a8\u5931\u8d25",
+   "error": true,
+   "warn": false
+  },
+  {
+   "text": "\u6784\u5efa\u6210\u529f",
+   "error": false,
+   "warn": false
+  },
+  {
+   "text": "warning: something",
+   "error": false,
+   "warn": true
+  },
+  {
+   "text": "(node:1234) DeprecationWarning: Buffer() is deprecated",
+   "error": false,
+   "warn": true
+  },
+  {
+   "text": "deprecation notice",
+   "error": false,
+   "warn": true
+  },
+  {
+   "text": "\u8b66\u544a\uff1a\u78c1\u76d8\u7a7a\u95f4\u4e0d\u8db3",
+   "error": false,
+   "warn": true
+  },
+  {
+   "text": "WARN some thing",
+   "error": false,
+   "warn": true
+  },
+  {
+   "text": "warned",
+   "error": false,
+   "warn": false
+  },
+  {
+   "text": "no problems here",
+   "error": false,
+   "warn": false
+  },
+  {
+   "text": "errors: 0",
+   "error": false,
+   "warn": false
+  },
+  {
+   "text": "stderr output",
+   "error": false,
+   "warn": false
+  },
+  {
+   "text": "terror",
+   "error": true,
+   "warn": false
+  },
+  {
+   "text": "Errors found",
+   "error": false,
+   "warn": false
+  },
+  {
+   "text": "\u4e2d\u6587error\u4e2d\u6587",
+   "error": true,
+   "warn": false
+  },
+  {
+   "text": "ERRORS",
+   "error": false,
+   "warn": false
+  },
+  {
+   "text": "failed.",
+   "error": true,
+   "warn": false
+  },
+  {
+   "text": "refailed",
+   "error": false,
+   "warn": false
+  },
+  {
+   "text": "Cannot find module x",
+   "error": true,
+   "warn": false
+  },
+  {
+   "text": "cannot  find x",
+   "error": false,
+   "warn": false
+  },
+  {
+   "text": "Not Found",
+   "error": true,
+   "warn": false
+  },
+  {
+   "text": "ENOENTX",
+   "error": false,
+   "warn": false
+  },
+  {
+   "text": "ENOENT: no such file",
+   "error": true,
+   "warn": false
+  },
+  {
+   "text": "ERR!x",
+   "error": true,
+   "warn": false
+  },
+  {
+   "text": "err! ",
+   "error": false,
+   "warn": false
+  },
+  {
+   "text": "exception_handler",
+   "error": false,
+   "warn": false
+  },
+  {
+   "text": "MyCustomException",
+   "error": true,
+   "warn": false
+  },
+  {
+   "text": "Exception",
+   "error": true,
+   "warn": false
+  },
+  {
+   "text": "\u212aERROR",
+   "error": true,
+   "warn": false
+  },
+  {
+   "text": "error\u212a",
+   "error": true,
+   "warn": false
+  },
+  {
+   "text": "warning\u017f",
+   "error": false,
+   "warn": true
+  },
+  {
+   "text": "",
+   "error": false,
+   "warn": false
+  },
+  {
+   "text": "\u001b[31merror\u001b[0m",
+   "error": true,
+   "warn": false
+  }
+ ],
+ "paint": [
+  {
+   "raw": "progress 10%\rprogress 50%\rprogress 100%",
+   "out": "progress 100%"
+  },
+  {
+   "raw": "done\r\u001b[K",
+   "out": "done"
+  },
+  {
+   "raw": "text\r\r",
+   "out": "text"
+  },
+  {
+   "raw": "\u001b[32mgreen\u001b[0m",
+   "out": "green"
+  },
+  {
+   "raw": "\u001b]0;title\u0007shown",
+   "out": "shown"
+  },
+  {
+   "raw": "\u001b]0;title\u001b\\shown2",
+   "out": "shown2"
+  },
+  {
+   "raw": "a\bb\u0007c",
+   "out": "abc"
+  },
+  {
+   "raw": "trail \u00a0\u3000\ufeff",
+   "out": "trail"
+  },
+  {
+   "raw": "x\u0085",
+   "out": "x\u0085"
+  },
+  {
+   "raw": "\u0085",
+   "out": "\u0085"
+  },
+  {
+   "raw": "\u3000\u3000",
+   "out": ""
+  },
+  {
+   "raw": "   ",
+   "out": ""
+  },
+  {
+   "raw": "tab\t\u000b\f",
+   "out": "tab"
+  },
+  {
+   "raw": "",
+   "out": ""
+  },
+  {
+   "raw": "mid\u001b[5Gend",
+   "out": "midend"
+  },
+  {
+   "raw": "\u2028line",
+   "out": "\u2028line"
+  },
+  {
+   "raw": "  lead and trail  ",
+   "out": "  lead and trail"
+  },
+  {
+   "raw": "first\r   \r\u001b[2K",
+   "out": "first"
+  },
+  {
+   "raw": "\u001b[?25l\u001b[?25h",
+   "out": ""
+  }
+ ],
+ "tail": [
+  {
+   "raw": "\u001b[1;1Hline one\u001b[2;1Hline two\u001b[3;5Hsame line\r\nprogress 1%\rprogress 99%\r\u001b[K\r\nlast",
+   "limit": 30,
+   "maxChars": null,
+   "out": [
+    "line one",
+    "line twosame line",
+    "progress 99%",
+    "last"
+   ]
+  },
+  {
+   "raw": "\u001b[1;1Hline one\u001b[2;1Hline two\u001b[3;5Hsame line\r\nprogress 1%\rprogress 99%\r\u001b[K\r\nlast",
+   "limit": 2,
+   "maxChars": null,
+   "out": [
+    "progress 99%",
+    "last"
+   ]
+  },
+  {
+   "raw": "\u001b[1;1Hline one\u001b[2;1Hline two\u001b[3;5Hsame line\r\nprogress 1%\rprogress 99%\r\u001b[K\r\nlast",
+   "limit": 1,
+   "maxChars": null,
+   "out": [
+    "last"
+   ]
+  },
+  {
+   "raw": "\u001b[1;1Hline one\u001b[2;1Hline two\u001b[3;5Hsame line\r\nprogress 1%\rprogress 99%\r\u001b[K\r\nlast",
+   "limit": 0,
+   "maxChars": null,
+   "out": [
+    "line one",
+    "line twosame line",
+    "progress 99%",
+    "last"
+   ]
+  },
+  {
+   "raw": "\u001b[1;1Hline one\u001b[2;1Hline two\u001b[3;5Hsame line\r\nprogress 1%\rprogress 99%\r\u001b[K\r\nlast",
+   "limit": -1,
+   "maxChars": null,
+   "out": [
+    "line twosame line",
+    "progress 99%",
+    "last"
+   ]
+  },
+  {
+   "raw": "\u001b[1;1Hline one\u001b[2;1Hline two\u001b[3;5Hsame line\r\nprogress 1%\rprogress 99%\r\u001b[K\r\nlast",
+   "limit": 99,
+   "maxChars": null,
+   "out": [
+    "line one",
+    "line twosame line",
+    "progress 99%",
+    "last"
+   ]
+  },
+  {
+   "raw": "a\n\nb\r\n\r\nc\n",
+   "limit": 30,
+   "maxChars": null,
+   "out": [
+    "a",
+    "b",
+    "c"
+   ]
+  },
+  {
+   "raw": "x\u001b[10;1fy\u001b[;1Hz",
+   "limit": 30,
+   "maxChars": null,
+   "out": [
+    "x",
+    "yz"
+   ]
+  },
+  {
+   "raw": "abcd\ud83d\ude00ef",
+   "limit": 30,
+   "maxChars": 5,
+   "out": [
+    "abcd\ud83d"
+   ]
+  },
+  {
+   "raw": "abcd\ud83d\ude00ef",
+   "limit": 30,
+   "maxChars": 6,
+   "out": [
+    "abcd\ud83d\ude00"
+   ]
+  },
+  {
+   "raw": "abcd\ud83d\ude00ef",
+   "limit": 30,
+   "maxChars": 4,
+   "out": [
+    "abcd"
+   ]
+  },
+  {
+   "raw": "abcdef",
+   "limit": 30,
+   "maxChars": 0,
+   "out": [
+    ""
+   ]
+  },
+  {
+   "raw": "abcdef",
+   "limit": 30,
+   "maxChars": -2,
+   "out": [
+    "abcd"
+   ]
+  },
+  {
+   "raw": "\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\neeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+   "limit": 30,
+   "maxChars": null,
+   "out": [
+    "\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d\u4e2d",
+    "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+   ]
+  },
+  {
+   "raw": "",
+   "limit": 30,
+   "maxChars": null,
+   "out": []
+  },
+  {
+   "raw": "\r\n\r\n",
+   "limit": 30,
+   "maxChars": null,
+   "out": []
+  },
+  {
+   "raw": "> app@1.0.0 dev\r\n> vite\r\n\r\n\u001b[31mError: listen EADDRINUSE: address already in use :::5173\u001b[0m\r\nnpm ERR! code ELIFECYCLE\r\nnpm ERR! errno 1\r\n",
+   "limit": 30,
+   "maxChars": null,
+   "out": [
+    "> app@1.0.0 dev",
+    "> vite",
+    "Error: listen EADDRINUSE: address already in use :::5173",
+    "npm ERR! code ELIFECYCLE",
+    "npm ERR! errno 1"
+   ]
+  },
+  {
+   "raw": "[INFO] Building\n[ERROR] BUILD FAILURE\n[ERROR] Failed to execute goal\r\u001b[K",
+   "limit": 30,
+   "maxChars": null,
+   "out": [
+    "[INFO] Building",
+    "[ERROR] BUILD FAILURE",
+    "[ERROR] Failed to execute goal"
+   ]
+  }
+ ],
+ "pick": [
+  {
+   "lines": [
+    "starting",
+    "Error: Cannot find module x",
+    "npm ERR! code ELIFECYCLE",
+    "npm ERR! errno 1"
+   ],
+   "out": "Error: Cannot find module x"
+  },
+  {
+   "lines": [
+    "npm error code 1",
+    "npm error path x failed"
+   ],
+   "out": "npm error path x failed"
+  },
+  {
+   "lines": [],
+   "out": null
+  },
+  {
+   "lines": [
+    "ok",
+    "fine"
+   ],
+   "out": null
+  },
+  {
+   "lines": [
+    "\u00a0\u3000npm: failed",
+    "Exception here",
+    "\ufeffpnpm ERR! failed"
+   ],
+   "out": "Exception here"
+  },
+  {
+   "lines": [
+    "yarn error x failed",
+    "pnpm ERR! failed"
+   ],
+   "out": "pnpm ERR! failed"
+  },
+  {
+   "lines": [
+    "real error first",
+    "something ELIFECYCLE failed"
+   ],
+   "out": "real error first"
+  },
+  {
+   "lines": [
+    "NPM ERROR boom",
+    "npmx: error"
+   ],
+   "out": "npmx: error"
+  },
+  {
+   "lines": [
+    "\u0085npm error y"
+   ],
+   "out": "\u0085npm error y"
+  },
+  {
+   "lines": [
+    "\u7f16\u8bd1\u9519\u8bef",
+    "\u542f\u52a8\u5931\u8d25",
+    "npm error \u5931\u8d25"
+   ],
+   "out": "\u542f\u52a8\u5931\u8d25"
+  }
+ ],
+ "strip": [
+  {
+   "raw": "\u001b[1;31mred\u001b[0m",
+   "out": "red"
+  },
+  {
+   "raw": "\u001b]8;;http://x\u001b\\link\u001b]8;;\u001b\\",
+   "out": "link"
+  },
+  {
+   "raw": "\u001b[?1049h\u001b[H\u001b[2J",
+   "out": ""
+  },
+  {
+   "raw": "plain",
+   "out": "plain"
+  },
+  {
+   "raw": "\u001bXnot csi",
+   "out": "\u001bXnot csi"
+  },
+  {
+   "raw": "\u001b[12",
+   "out": "\u001b[12"
+  }
+ ]
+}
