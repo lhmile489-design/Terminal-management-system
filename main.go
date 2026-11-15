@@ -42,7 +42,7 @@ import (
 
 const (
 	appName    = "Mile Console"
-	appVersion = "0.1.0"
+	appVersion = "1.0.0"
 )
 
 // 事件名与负载类型一一对应（BINDINGS-CONTRACT §3 的事件表）。名字纯字母数字。
