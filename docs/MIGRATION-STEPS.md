@@ -635,7 +635,10 @@ EntryService（2161 行）按方法边界拆成四步，四步的产物都在 `i
 - **红线**：§5 的安全不变量逐条落到代码（`OpenLocalhost` 只收整数端口、`OpenProjectLink` 只收键名、`OpenPath` 白名单、Dialog 路径不接受页面传入、token 与 env 值不出 Go）；所有方法第一个参数是 `context.Context`
 - **范围**：托盘、通知、单实例、全局快捷键、退出清理不在这一步（S32）
 - **验收**（`verify-review-ipc`、`verify-review-links`、`verify-m6-settings`）：频道对照表 100% 打勾；每个 `sanitize*` 的白名单外键丢弃、非法值报错且不落盘；页面未就绪时推送的事件进队列，就绪后按序投递
-- **证据**：
+- **证据（进行中）**：
+  - 已完成：`internal/events/`（就绪握手、未就绪期间按事件名合并的队列、导航重置、关窗返回 `ErrClosed`、发送失败记住关闭），6 个单测 + 5 处变异全部变红。队列上限 64 与合并策略都在这一个包里，符合契约 §2「不散落在各服务」
+  - 待续：12 个绑定服务的薄封装（App / Window / Theme / Settings / Entry / Group / Planner / Session / Log / Scanner / Dialog+Shell+Clipboard+Config）、`sanitizeSettings` 与 `sanitizeLogQuery` 两个校形函数、`main.go` 的 `mygo.Bind` 装配、频道对照表逐条打勾
+  - 说明：本步的绑定层要参照 `BINDINGS-CONTRACT §3` 的 60 余个方法逐个落地，并按 §5 把安全不变量接到具体方法上；`contract` 里还缺 `SettingsPatch` / `AppInfo` 两个绑定专用类型，实现时要一并补
 
 #### S25 生成绑定与前端适配层
 
