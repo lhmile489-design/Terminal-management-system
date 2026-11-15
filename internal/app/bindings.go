@@ -292,6 +292,19 @@ func (s GroupService) Patch(_ context.Context, id string, patch contract.GroupPa
 	return updated, nil
 }
 
+// Remove 删除工作组（条目回到未分组）。
+func (s GroupService) Remove(_ context.Context, id string) error {
+	if s.deps.Cfg == nil {
+		return errors.New("配置未接入")
+	}
+	nextGroups, nextEntries := groups.RemoveGroup(s.deps.Cfg.Get().Groups, s.deps.Cfg.Get().Entries, id)
+	_, err := s.deps.Cfg.Patch(func(c *contract.AppConfig) {
+		c.Groups = nextGroups
+		c.Entries = nextEntries
+	})
+	return err
+}
+
 // Reorder 按 id 顺序重排。
 func (s GroupService) Reorder(_ context.Context, ids []string) error {
 	if s.deps.Cfg == nil {

@@ -76,7 +76,7 @@ ConPTY 不在依赖链最前，但它是迁移里风险最大的一项：做不�
 | S22 | H 条目 | 健康检查与输出告警 | `HealthService.ts`(225) `AlertService.ts`(123) | S21c | M3 | [x] |
 | S23 | H 条目 | 配置导入导出与旧版导入 | `ConfigTransferService.ts`(248) | S11 S15 S21a | M1 | [x] |
 | S24 | I 绑定 | Go 绑定服务与事件 | `main/index.ts`(1131) `shared/channels.ts`(179) | S11–S23 | M1–M4 | [ ] |
-| S25 | I 绑定 | 生成绑定与前端适配层 | `preload/index.ts`(264) | S24 | M5 | [ ] |
+| S25 | I 绑定 | 生成绑定与前端适配层 | `preload/index.ts`(264) | S24 | M5 | [x] |
 | S26 | J 渲染 | 样式原文复制 | `styles/tokens.css`(1055) `ui.css`(1438) | S01 | M5 | [ ] |
 | S27 | J 渲染 | 基础组件与浮层栈 | `components/ui/*`(1121) `lib/overlay.ts`(76) | S26 | M5 | [ ] |
 | S28 | J 渲染 | 前端工具与 store | 其余 `lib/*`(907) `store/*`(867) | S25 S27 | M5 | [ ] |
@@ -654,6 +654,14 @@ EntryService（2161 行）按方法边界拆成四步，四步的产物都在 `i
 - **规则**：组件和 store 不直接 import `src/mygo.ts`；`mile.ts` 每加一个方法先对照 preload 的签名，参数顺序、可选参数、返回类型都要一致
 - **验收**：`bun run typecheck` 零错误；原版的形状基准是 `preload/index.ts` 第 264 行导出的 `MileApi = typeof api`；它依赖 electron 类型，不能直接 import，所以把它手抄成 `src/lib/mile-api.ts` 里的 `MileApi` 接口，再写一条类型层断言 `const _check: MileApi = mile`，缺方法或签名不符就编译失败；契约自检清单（BINDINGS-CONTRACT §8）全部打勾
 - **证据**：
+  - 产物：`src/mygo.ts`（`bun run generate` 生成，12 个服务 + 10 类事件，不手改）、`src/lib/mile-api.ts`（手抄 `MileApi`，15 个分组的方法表）、`src/lib/mile.ts`（适配层，实现 `MileApi` 并对齐 `src/mygo.ts`）、`src/main.ts`（占位入口，只调 `app.info()` 与 `app.ready()`）
+  - 形状：`mile-api.ts` 按原版 `preload/index.ts` 的 15 个分组逐个手抄；`mile.ts` 用 `export const mile: MileApi = {...}` 做类型层断言 —— 少方法或签名不符直接编译失败
+  - 三处与原版的差异都写在 `mile.ts` 文件头：①终端输出改成按会话 attach（Go 侧是流式，契约 §4），保留 `onData` 回调形状并提供 `attachSessionOutput(id)`；②文件对话框在当前运行时不提供，`dialog.pickDirectory` 与 `config.export/import` 直接以错误拒绝；③`settingsChanged` / `themeChanged` / `windowMaximizeChanged` / `appFocusEntry` / `appOpenPalette` / `plannerFocus` 六个变化通知 Go 侧还没发，`on*` 先返回空退订，随 S32 补齐
+  - 生成层踩到并修掉的两个坑：①`mygo generate` 只扫顶层 `mygo.Bind`，窗口相关的四个服务原来放在 `WhenReady` 里，生成结果缺 Window/Theme/Shell/Clipboard 四个服务；②被 `themeBinding` 包了一层的 ThemeService 也生成不出来（未导出类型），改成直接绑定 + 注入 `apply` 回调
+  - 修掉的实伤：`app.ThemeService.Set` 里直接调 `mygo.Theme.SetSource` 会让 `go test` 卡满 10 分钟（无 App 环境），改成注入；`GroupService` 缺 `Remove`，按契约 §3.6 补上（走 `groups.RemoveGroup`，条目回落未分组）
+  - 验收：`bun run typecheck` **零错误**（`tsc --noEmit`）；`go build ./...`、`go vet ./...` 通过；`go test -count=1 ./...` 全绿
+  - 编码：改动的 6 个文件扫描无 BOM、无 U+FFFD、无 emoji
+
 
 ### J 渲染层
 

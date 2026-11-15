@@ -683,6 +683,10 @@ export const GroupService = {
   patch(id: string, patch: GroupPatch): Promise<ProjectGroup> {
     return call("GroupService.Patch", id, patch);
   },
+  /** Remove 删除工作组（条目回到未分组）。 */
+  remove(id: string): Promise<void> {
+    return call("GroupService.Remove", id);
+  },
   /** Reorder 按 id 顺序重排。 */
   reorder(ids: string[]): Promise<void> {
     return call("GroupService.Reorder", ids);
