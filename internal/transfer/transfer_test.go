@@ -213,7 +213,19 @@ func TestImportMergesGroupsEntriesAndStartAfter(t *testing.T) {
 				"framework": "next", "packageManager": "npm", "script": "dev",
 				"startAfter": []any{"old-e1"},
 			},
-			map[string]any{"id": "old-e3", "name": "没有目录"}, // 缺 path
+			// 与甲同目录同脚本：应被判为「已登记过同一目录与脚本」并跳过
+			map[string]any{
+				"id": "old-e3", "kind": "service", "name": "丙", "path": `C:\a`,
+				"framework": "next", "packageManager": "npm", "script": "dev",
+			},
+			map[string]any{"id": "old-e5", "name": "没有目录"}, // 缺 path
+			// 先等待指向「被跳过且没有重映射」的条目：映射为空，整项丢掉，不提交 startAfter
+			// （指向「因重复被跳过」的条目不算，那种会映射到已有条目）
+			map[string]any{
+				"id": "old-e4", "kind": "service", "name": "丁", "path": `C:\c`,
+				"framework": "next", "packageManager": "npm", "script": "dev",
+				"startAfter": []any{"old-e5"},
+			},
 		},
 		"ignoredListeners": []any{
 			map[string]any{"processName": "node.exe", "port": 3000}, // 已有
@@ -236,10 +248,10 @@ func TestImportMergesGroupsEntriesAndStartAfter(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.Added != 2 || res.GroupsAdded != 1 {
+	if res.Added != 3 || res.GroupsAdded != 1 {
 		t.Fatalf("added=%d groupsAdded=%d", res.Added, res.GroupsAdded)
 	}
-	if len(res.Skipped) != 1 || res.Skipped[0].Reason != "缺少项目目录" {
+	if len(res.Skipped) != 2 || res.Skipped[0].Reason != "已登记过同一目录与脚本" || res.Skipped[1].Reason != "缺少项目目录" {
 		t.Fatalf("跳过记录不对：%+v", res.Skipped)
 	}
 	if len(res.EnvToRefill) != 1 || len(res.EnvToRefill[0].Keys) != 1 || res.EnvToRefill[0].Keys[0] != "TOKEN" {
