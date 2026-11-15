@@ -4,11 +4,14 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
     "types": ["vite/client"],
     "strict": true,
-    "noUncheckedIndexedAccess": true,
     "skipLibCheck": true,
-    "noEmit": true
+    "noEmit": true,
+    "paths": {
+      "@shared/*": ["./src/shared/*"]
+    }
   },
   "include": ["src"]
 }

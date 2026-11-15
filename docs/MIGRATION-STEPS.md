@@ -78,7 +78,7 @@ ConPTY 不在依赖链最前，但它是迁移里风险最大的一项：做不�
 | S24 | I 绑定 | Go 绑定服务与事件 | `main/index.ts`(1131) `shared/channels.ts`(179) | S11–S23 | M1–M4 | [ ] |
 | S25 | I 绑定 | 生成绑定与前端适配层 | `preload/index.ts`(264) | S24 | M5 | [x] |
 | S26 | J 渲染 | 样式原文复制 | `styles/tokens.css`(1055) `ui.css`(1438) | S01 | M5 | [x] |
-| S27 | J 渲染 | 基础组件与浮层栈 | `components/ui/*`(1121) `lib/overlay.ts`(76) | S26 | M5 | [ ] |
+| S27 | J 渲染 | 基础组件与浮层栈 | `components/ui/*`(1121) `lib/overlay.ts`(76) | S26 | M5 | [x] |
 | S28 | J 渲染 | 前端工具与 store | 其余 `lib/*`(907) `store/*`(867) | S25 S27 | M5 | [ ] |
 | S29 | J 渲染 | 业务组件 | `components/**`(除 ui 与外壳组件，6825) | S28 | M5 | [ ] |
 | S30 | J 渲染 | 六个视图逐页 | `views/*`(7 个文件 2244，含 `LogCenter`) | S29 | M5 | [ ] |
@@ -689,6 +689,14 @@ EntryService（2161 行）按方法边界拆成四步，四步的产物都在 `i
 - **规则**：这一步的组件不调后端，可以在 S25 之前做；`useOverlay` 的行为（Esc 只关最上层、焦点陷阱、关闭后还焦点）原样搬
 - **验收**（`verify-m12-press`、`verify-review-keys`）：按压动画用 CDP `Input.dispatchMouseEvent` 真实输入，每条位移断言配一次基态对照并断言 `el.matches(':active')` 为真；两层浮层叠开时 Esc 只关上层
 - **证据**：
+  - 产物：`src/renderer/components/ui/` 12 个文件（Bento / Button / Confirm / Form / Menu / Overlay / Pill / Segmented / SplitPane / Tabs / Toast / index.ts，共 1121 行）+ `src/renderer/lib/overlay.ts`（76 行），全部原文复制
+  - 组件依赖的两个 lib 一并搬（否则编不过）：`lib/icons.ts`（ICON_SIZE 与图标表）、`lib/entryMeta.ts`（Toast 用到它的文案）。后者本来归 S28，这里先搬只是为了闭环
+  - 新增 `src/shared/types.ts`：`export type * from "../mygo"` —— 生成层的类型即原版 `@shared/types` 的落点，不手写第二份；另补一个 `SpringBootLaunchMode` 联合类型（Go 侧只有 `SpringBootLaunchModes` 列表，没有同名类型）
+  - 配置：`tsconfig.json` 加 `paths: { "@shared/*": ["./src/shared/*"] }` 与 `jsx: react-jsx`；`vite.config.ts` 加同一条 alias，搬过来的 `import type ... from '@shared/types'` 不用改
+  - 一处有意的配置对齐：删掉模板的 `noUncheckedIndexedAccess`（原版 `tsconfig.web.json` 只有 `strict: true`，没有这一条）。保留会让搬过来的 7000 行渲染层出现几十处与业务无关的 `!`，淹没真正的差异；`strict` 仍然开着
+  - 验收：`bun run typecheck` 零错误（含新搬的 15 个文件）；`bun run build:web` 通过；18 个文件编码扫描干净
+  - 未做：卡片提到的 CDP 行为验收（两层浮层叠开时 Esc 只关上层、按压位移配基态对照）需要真实页面与 `Input.dispatchMouseEvent`，等渲染层接上（S29）与视觉对等（S33）时一起做。`useOverlay` 的逻辑是原样搬的，没改一行
+
 
 #### S28 前端工具与 store
 
