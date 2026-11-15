@@ -15,6 +15,20 @@ export interface AutoRestartPending {
   max: number;
 }
 
+export interface ConfigExportResult {
+  path: string;
+  entries: number;
+  groups: number;
+}
+
+export interface ConfigImportResult {
+  backup: string;
+  added: number;
+  groupsAdded: number;
+  skipped: ImportSkipped[];
+  envToRefill: ImportEnvRefill[];
+}
+
 export interface CreateShellSessionInput {
   kind: SessionKind;
   title?: string;
@@ -121,6 +135,13 @@ export type EntryStatus = string;
 
 export type ExternalTerminal = string;
 
+export interface FocusEntryRequest {
+  id: string;
+  tab: FocusTab;
+}
+
+export type FocusTab = string;
+
 export type Framework = string;
 
 export type GroupEnvironment = string;
@@ -139,6 +160,23 @@ export interface HealthCheckConfig {
 }
 
 export type HealthState = string;
+
+export interface ImportEnvRefill {
+  id: string;
+  name: string;
+  keys: string[];
+}
+
+/** ImportRoot 即原版 dialog:pickImportRoot 的返回值 `{ root, items }`。 */
+export interface ImportRoot {
+  root: string;
+  items: DetectResult[];
+}
+
+export interface ImportSkipped {
+  name: string;
+  reason: string;
+}
 
 export interface LaunchEntry {
   id: string;
@@ -305,6 +343,12 @@ export interface PlannerBoard {
   schedules: PlannerSchedule[];
 }
 
+export interface PlannerFocusRequest {
+  boardId: string;
+  taskId?: string;
+  tab?: PlannerTab;
+}
+
 export interface PlannerSchedule {
   id: string;
   title: string;
@@ -325,6 +369,8 @@ export interface PlannerSnapshot {
   readOnly: boolean;
   missed: MissedReminder[];
 }
+
+export type PlannerTab = string;
 
 export interface PlannerTask {
   id: string;
@@ -909,6 +955,33 @@ export const ClipboardService = {
   },
 } as const;
 
+/** DialogService 对应 §3.11 的对话框部分。返回值是唯一可信的路径来源。 */
+export const DialogService = {
+  /** PickDirectory 即原版 dialog:pickDirectory：让用户选一个项目目录，取消返回 nil。 */
+  pickDirectory(): Promise<string | null> {
+    return call("DialogService.PickDirectory");
+  },
+  /**
+   * PickImportRoot 即原版 dialog:pickImportRoot：选目录与扫描一次完成，
+   * 扫描根只能是系统选择框刚返回的目录。取消返回 nil。
+   */
+  pickImportRoot(): Promise<ImportRoot | null> {
+    return call("DialogService.PickImportRoot");
+  },
+} as const;
+
+/** ConfigService 对应 §3.11 的导入导出部分：文件由系统对话框选。 */
+export const ConfigService = {
+  /** Export 即原版 config:export：文件只能是系统保存框刚返回的那一个，页面给不出路径。取消返回 nil。 */
+  export(): Promise<ConfigExportResult | null> {
+    return call("ConfigService.Export");
+  },
+  /** Import 即原版 config:import：文件只能是系统打开框刚返回的那一个。取消返回 nil。 */
+  import(): Promise<ConfigImportResult | null> {
+    return call("ConfigService.Import");
+  },
+} as const;
+
 // ---- Events ----
 
 /** Events sent by the Go side. Subscribe with `events.name.on(listener)`. */
@@ -926,4 +999,7 @@ export const events = {
   windowMaximizeChanged: event<boolean>("windowMaximizeChanged"),
   themeChanged: event<ThemeState>("themeChanged"),
   settingsChanged: event<Settings>("settingsChanged"),
+  appFocusEntry: event<FocusEntryRequest>("appFocusEntry"),
+  appOpenPalette: event<{}>("appOpenPalette"),
+  plannerFocus: event<PlannerFocusRequest>("plannerFocus"),
 } as const;

@@ -6,10 +6,8 @@
 // 根 ctx：mygo 目前没有 App.Context()，所以由 main 自己造一个，`App.Run()` 返回后取消。
 // 它在语义上就是「应用生命周期」，绑定方法里仍然不出现 context.Background()。
 //
-// 未接入的两处（都因为 mygo v0.8.3 的 Dialog 只有 Error、没有文件/目录选择框）：
-//   - DialogService.PickDirectory：新增条目选目录的主流程，需要运行时的目录选择器
-//   - ConfigService.Export / Import：路径只能来自系统对话框（红线），没有对话框就没有可信路径
-// 两者都不绑定；页面调用对应方法会失败。见 MIGRATION-PLAN §6「运行时缺少文件对话框」。
+// 托盘、系统通知、全局快捷键、单实例、退出清理等原生集成在 native.go（S32）。
+// 文件 / 目录选择走 mygo.Dialog（dialogAdapter），路径只来自系统对话框的返回值（红线）。
 
 package main
 
@@ -17,6 +15,7 @@ import (
 	"context"
 	"errors"
 	"log"
+	"os"
 	"os/exec"
 	"time"
 
@@ -61,40 +60,85 @@ var (
 	evWinMaximize    = mygo.NewEvent[bool]("windowMaximizeChanged")
 	evThemeChanged   = mygo.NewEvent[contract.ThemeState]("themeChanged")
 	evSettings       = mygo.NewEvent[contract.Settings]("settingsChanged")
+	evFocusEntry     = mygo.NewEvent[contract.FocusEntryRequest]("appFocusEntry")
+	evOpenPalette    = mygo.NewEvent[struct{}]("appOpenPalette")
+	evPlannerFocus   = mygo.NewEvent[contract.PlannerFocusRequest]("plannerFocus")
 )
 
-// mainWin 主窗口，WhenReady 里赋值。
+// 主窗口在 native.go 的 curWin（原子指针），建窗时赋值、关窗后清空。
 //
 // 为什么不让适配器直接持有窗口：`mygo generate` 只扫**顶层**的 mygo.Bind，
 // 把 Bind 放进 WhenReady 会生成不出 WindowService / ThemeService / ShellService /
-// ClipboardService 四个服务（实测过）。所以四个绑定放顶层，窗口在用时惰性取。
-var mainWin *mygo.Window
+// ClipboardService 四个服务（实测过）。所以绑定放顶层，窗口在用时惰性取。
 
 // windowAdapter 把 mygo 的窗口方法包成 app.WindowOS（那边要 error 与返回值）。
 type windowAdapter struct{}
 
 func (windowAdapter) Minimize() error {
-	if mainWin == nil {
+	w := currentWin()
+	if w == nil {
 		return errNoWindow
 	}
-	mainWin.Minimize()
+	w.Minimize()
 	return nil
 }
 func (windowAdapter) ToggleMaximize() (bool, error) {
-	if mainWin == nil {
+	w := currentWin()
+	if w == nil {
 		return false, errNoWindow
 	}
-	mainWin.ToggleMaximize()
-	return mainWin.IsMaximized(), nil
+	w.ToggleMaximize()
+	return w.IsMaximized(), nil
 }
 func (windowAdapter) Close() error {
-	if mainWin == nil {
+	w := currentWin()
+	if w == nil {
 		return errNoWindow
 	}
-	mainWin.Close()
+	w.Close()
 	return nil
 }
-func (windowAdapter) IsMaximized() bool { return mainWin != nil && mainWin.IsMaximized() }
+func (windowAdapter) IsMaximized() bool {
+	w := currentWin()
+	return w != nil && w.IsMaximized()
+}
+
+// dialogAdapter 把 mygo.Dialog 包成 app.DialogOS（原版 dialog.showOpenDialog / showSaveDialog）。
+// 没有主窗口时与原版一样当作取消。
+type dialogAdapter struct{}
+
+var jsonFilter = []mygo.FileFilter{{Name: "JSON", Extensions: []string{"json"}}}
+
+func (dialogAdapter) PickDirectory(_ context.Context, title string) (string, bool, error) {
+	return openOne(mygo.OpenDialogOptions{Title: title, Directory: true})
+}
+func (dialogAdapter) PickJSONToOpen(_ context.Context, title string) (string, bool, error) {
+	return openOne(mygo.OpenDialogOptions{Title: title, Filters: jsonFilter})
+}
+func (dialogAdapter) PickJSONToSave(_ context.Context, title, defaultName string) (string, bool, error) {
+	w := currentWin()
+	if w == nil {
+		return "", false, nil
+	}
+	file, err := mygo.Dialog.Save(mygo.SaveDialogOptions{Parent: w, Title: title, DefaultPath: defaultName, Filters: jsonFilter})
+	if err != nil || file == "" {
+		return "", false, err
+	}
+	return file, true, nil
+}
+
+func openOne(opts mygo.OpenDialogOptions) (string, bool, error) {
+	w := currentWin()
+	if w == nil {
+		return "", false, nil
+	}
+	opts.Parent = w
+	paths, err := mygo.Dialog.Open(opts)
+	if err != nil || len(paths) == 0 {
+		return "", false, err
+	}
+	return paths[0], true, nil
+}
 
 var errNoWindow = errors.New("窗口尚未创建")
 
@@ -169,6 +213,16 @@ func emitFor(win *mygo.Window) events.SendFunc {
 			if v, ok := payload.(bool); ok {
 				return evWinMaximize.Emit(win, v)
 			}
+		case "appFocusEntry":
+			if v, ok := payload.(contract.FocusEntryRequest); ok {
+				return evFocusEntry.Emit(win, v)
+			}
+		case "appOpenPalette":
+			return evOpenPalette.Emit(win, struct{}{})
+		case "plannerFocus":
+			if v, ok := payload.(contract.PlannerFocusRequest); ok {
+				return evPlannerFocus.Emit(win, v)
+			}
 		case "scannerDiff":
 			if v, ok := payload.(contract.ScanDiff); ok {
 				return evScannerDiff.Emit(win, v)
@@ -180,6 +234,16 @@ func emitFor(win *mygo.Window) events.SendFunc {
 }
 
 func main() {
+	// 单实例锁（原版第 832–844 行）：再双击快捷方式不起第二个实例（两个实例会抢同一份
+	// config.json 和同一批端口扫描），第二个实例自己退出，并让第一个实例把窗口带到前台。
+	// 第二个实例还没建任何服务，没有清理要做，直接 return。
+	// mygo 的锁按应用名 + 标识符区分，不会与本机别的应用互相挤掉，所以 `mygo dev`（也是打包形态）同样启用。
+	if mygo.App.IsPackaged() || os.Getenv("MILE_FORCE_SINGLE_INSTANCE") == "1" {
+		if !mygo.App.RequestSingleInstanceLock() {
+			return
+		}
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -209,15 +273,23 @@ func main() {
 		OnError: func(err error) { notify("entryWarning", err.Error()) },
 	})
 
+	// 原版第 863 行：scanner 晚于 sessions 构建，后注入供 kill 前重校验归属用（PRD §6.3 步骤 4）。
+	// 漏了这一步 doKill 拿不到新鲜进程表，会只撤登记、不杀进程树
+	sess.SetScanner(sc)
+
 	imageDir, err := images.DefaultDir()
 	if err != nil {
 		log.Fatal(err)
 	}
 	imageSvc := images.New(imageDir)
 
+	nat := &native{ctx: ctx, cfg: cfg, sess: sess, notify: notify, hotkey: plat.GlobalHotkey()}
+
 	var ent *entries.Service
 	ent = entries.New(ctx, cfg, plat, sess, entries.Options{
-		Emit:      notify,
+		Emit: nat.entriesEmit,
+		// 原版 entries.on('changed', list => send(entryChanged, redactList(list)))：环境变量的值不出 Go 进程
+		OnChanged: func(list []contract.LaunchEntry) { notify("entryChanged", app.RedactList(list)) },
 		Scanner:   sc,
 		Ownership: own,
 		Precheck: func(c context.Context, e contract.LaunchEntry, snap *contract.ScanSnapshot, all []contract.LaunchEntry) (contract.PrecheckResult, error) {
@@ -255,9 +327,13 @@ func main() {
 	healthSvc := health.New(ctx, ent, sc, health.Options{
 		Emit: func(h contract.EntryHealth) { notify("entryHealth", h) },
 	})
+	nat.ent = ent
 	alertSvc := alerts.New(ent, alerts.Options{
 		EmitAlert: func(a contract.OutputAlert) { notify("entryAlert", a) },
+		// 系统通知由告警服务延迟 3 秒发出，期间崩溃则撤掉
+		EmitNotify: nat.notifyAlert,
 	})
+	nat.alerts = alertSvc
 	// 告警的匹配对象是日志中心切好的可见行，不另写切行与去 ANSI
 	logsSvc.OnLine(alertSvc.Check)
 
@@ -269,8 +345,19 @@ func main() {
 	}
 	plannerSvc := planner.NewService(plannerStore, cfg, planner.Options{
 		OnChanged:  func(s contract.PlannerSnapshot) { notify("plannerChanged", s) },
-		OnReminder: func(f contract.ReminderFire) { notify("plannerReminder", f) },
+		OnReminder: nat.notifyPlannerReminder,
 	})
+
+	// 原版 groups.on('changed')：推给页面（原样的配置顺序），并重建托盘菜单
+	groupsChanged := func() {
+		notify("groupChanged", cfg.Get().Groups)
+		nat.scheduleTrayRebuild()
+	}
+	groupRemoved := func(id string) {
+		if _, err := plannerSvc.PauseSchedulesOfGroup(id); err != nil {
+			log.Printf("暂停工作组日程失败：%v", err)
+		}
+	}
 
 	// 对应原版 ThemeService：resolved 跟随运行时；set 时同步 themeSource 并广播 changed；
 	// 系统外观变化只在偏好为 system 时广播
@@ -302,7 +389,13 @@ func main() {
 		if patch.Theme != nil {
 			applyTheme(next.Theme)
 		}
-		// hideFromTaskbar / globalHotkey 的即时生效随 S32 托盘与全局快捷键接入
+		// 任务栏可见性即时生效：托盘常驻，隐藏后窗口仍能从托盘唤出
+		if patch.HideFromTaskbar != nil {
+			applyTaskbarVisibility(next.HideFromTaskbar)
+		}
+		if patch.GlobalHotkey != nil {
+			nat.applyGlobalHotkey()
+		}
 		notify("settingsChanged", next)
 	}
 
@@ -313,7 +406,7 @@ func main() {
 			Events: bus, Transfer: transferSvc,
 		}),
 		app.NewEntryService(ent, det, healthSvc),
-		app.NewGroupService(app.Deps{Cfg: cfg}, newID, func() int64 { return time.Now().UnixMilli() }),
+		app.NewGroupService(app.Deps{Cfg: cfg, OnGroupsChanged: groupsChanged, OnGroupRemoved: groupRemoved}, newID, func() int64 { return time.Now().UnixMilli() }),
 		app.NewPlannerService(plannerSvc),
 		app.NewSessionService(sess),
 		app.NewLogService(app.Deps{Logs: logsSvc}),
@@ -323,9 +416,12 @@ func main() {
 		app.NewThemeService(app.Deps{Cfg: cfg}, resolveTheme, applyTheme),
 		app.NewShellService(app.Deps{Shell: shellAdapter{}}),
 		app.NewClipboardService(app.Deps{Clipboard: clipboardAdapter{}}),
+		app.NewDialogService(app.Deps{Dialog: dialogAdapter{}, Detect: det}),
+		app.NewConfigService(app.Deps{Dialog: dialogAdapter{}, Transfer: transferSvc, OnGroupsChanged: groupsChanged}),
 	)
 
-	mygo.App.WhenReady(func() {
+	// 对应原版 createWindow。托盘「显示主窗口」、第二实例、快捷键在窗口已销毁时也走这里
+	nat.newWindow = func() *mygo.Window {
 		win := mygo.NewWindow(mygo.WindowOptions{
 			Title: appName,
 			// 对应原版 lib/windowState.ts：DEFAULT_STATE 1440×900，MIN_WIDTH 1180，MIN_HEIGHT 760
@@ -333,6 +429,8 @@ func main() {
 			Height:    900,
 			MinWidth:  1180,
 			MinHeight: 760,
+			// 从任务栏隐藏（仅托盘）：构造时读一次，托盘重建窗口也走这条路
+			SkipTaskbar: cfg.Get().Settings.HideFromTaskbar,
 			// 原版 Windows 是 titleBarStyle: hidden + 页面自绘三个窗口控件（CLAUDE.md §8）。
 			// HideWindowButtons 保留阴影、圆角与四边缩放，只把系统按钮让给页面的 TitleBar
 			TitleBarStyle:     mygo.TitleBarHidden,
@@ -342,12 +440,52 @@ func main() {
 			StateKey:          "main",
 			URL:               "/",
 		})
-		mainWin = win
+		curWin.Store(win)
+		bus.SetSend(emitFor(win))
+		// 新页面开始：未就绪期间的事件进队列，页面订阅完调 ready() 再补投（契约 §2）
+		win.Page().OnDidNavigate(func(string) { bus.Navigate() })
+		// 窗口销毁后放掉引用：采集、会话输出仍在推送，事件留在队列里等下一个窗口
+		win.OnClosed(func() {
+			curWin.CompareAndSwap(win, nil)
+			bus.Navigate()
+		})
 		// 原版 index.ts 的 notifyMaximize：最大化 / 还原都推一次当前状态，TitleBar 据此换图标
 		notifyMaximize := func() { notify("windowMaximizeChanged", win.IsMaximized()) }
 		win.OnMaximize(notifyMaximize)
 		win.OnUnmaximize(notifyMaximize)
-		bus.SetSend(emitFor(win))
+		nat.hookWindow(win, sc.SetVisible)
+		return win
+	}
+
+	mygo.App.OnSecondInstance(func([]string, string) {
+		if currentWin() == nil {
+			if mygo.App.IsReady() {
+				nat.newWindow()
+			}
+			return
+		}
+		nat.bringToFront()
+	})
+
+	// closeToTray 打开时窗口是被 Hide 而非销毁，走不到这里；关掉时按常规退出。
+	// 不能无条件退出，否则托盘驻留形同虚设（注册了监听，mygo 就不会自己退出）。
+	mygo.App.OnWindowAllClosed(func() {
+		if !cfg.Get().Settings.CloseToTray {
+			mygo.App.Quit()
+		}
+	})
+	mygo.App.OnBeforeQuit(func(e *mygo.QuitEvent) {
+		nat.beforeQuit(e, func() {
+			sc.Stop()
+			healthSvc.Stop()
+			alertSvc.Dispose()
+			plannerSvc.Dispose()
+		})
+	})
+	mygo.App.OnWillQuit(func(*mygo.QuitEvent) { mygo.GlobalShortcut.UnregisterAll() })
+
+	mygo.App.WhenReady(func() {
+		nat.newWindow()
 
 		// 主题偏好同步给运行时，页面再据 resolved 写 <html data-theme>
 		mygo.Theme.SetSource(mygo.ThemeSource(cfg.Get().Settings.Theme))
@@ -357,8 +495,14 @@ func main() {
 			}
 		})
 
+		nat.createTray()
+		nat.applyGlobalHotkey()
 		sc.Start()
 		healthSvc.Start()
+		// 日程提醒调度（P2 §5.3）：30s 轮询 + 休眠唤醒 / 解锁后立即补查
+		plannerSvc.StartScheduler(ctx)
+		mygo.Power.OnResume(func() { _ = plannerSvc.Tick() })
+		mygo.Power.OnUnlockScreen(func() { _ = plannerSvc.Tick() })
 	})
 
 	if err := mygo.App.Run(); err != nil {

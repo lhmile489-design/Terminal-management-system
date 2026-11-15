@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"mile-console/internal/contract"
 	"mile-console/internal/events"
@@ -40,8 +41,22 @@ type WindowOS interface {
 }
 
 // DialogOS 系统文件对话框。返回值是唯一可信的路径来源（红线）。
+// 三个方法都是「取消 → ok=false」，标题与默认文件名由调用方给（照搬原版文案）。
 type DialogOS interface {
-	PickDirectory(ctx context.Context) (string, bool, error)
+	PickDirectory(ctx context.Context, title string) (string, bool, error)
+	PickJSONToOpen(ctx context.Context, title string) (string, bool, error)
+	PickJSONToSave(ctx context.Context, title, defaultName string) (string, bool, error)
+}
+
+// ImportScanner 批量导入的子目录扫描（由 *detect.Service 满足）。
+type ImportScanner interface {
+	ScanChildren(root string, limit int) []contract.DetectResult
+}
+
+// ImportRoot 即原版 dialog:pickImportRoot 的返回值 `{ root, items }`。
+type ImportRoot struct {
+	Root  string                  `json:"root"`
+	Items []contract.DetectResult `json:"items"`
 }
 
 // ShellOS 外链与定位。只收整数端口、固定键名与白名单路径。
@@ -77,6 +92,15 @@ type Deps struct {
 	// AfterSettingsPatch 设置落盘后的副作用（原版 index.ts settingsPatch 处理器的后半段：
 	// 采集周期立即生效、主题同步运行时、广播 settingsChanged）。nil 表示没有副作用。
 	AfterSettingsPatch func(patch contract.SettingsPatch, next contract.Settings)
+	// Detect 批量导入扫描子目录用。
+	Detect ImportScanner
+	// OnGroupsChanged 工作组落盘之后（原版 GroupService 每次改动后 emit('changed')）。
+	// 导入配置可能新建工作组，ConfigService.Import 之后也调一次。nil 表示没人关心。
+	OnGroupsChanged func()
+	// OnGroupRemoved 工作组被删除之后（原版 groupRemove 处理器里的 pauseSchedulesOfGroup）。
+	OnGroupRemoved func(id string)
+	// Now 时钟，导出文件的默认文件名用；nil 用 time.Now。
+	Now func() time.Time
 }
 
 // AppService 对应 §3.1。
@@ -281,6 +305,7 @@ func (s GroupService) Add(_ context.Context, in contract.NewProjectGroup) (contr
 	if _, err := s.deps.Cfg.Patch(func(c *contract.AppConfig) { c.Groups = next }); err != nil {
 		return contract.ProjectGroup{}, err
 	}
+	s.changed()
 	return created, nil
 }
 
@@ -296,6 +321,7 @@ func (s GroupService) Patch(_ context.Context, id string, patch contract.GroupPa
 	if _, err := s.deps.Cfg.Patch(func(c *contract.AppConfig) { c.Groups = next }); err != nil {
 		return contract.ProjectGroup{}, err
 	}
+	s.changed()
 	return updated, nil
 }
 
@@ -309,7 +335,15 @@ func (s GroupService) Remove(_ context.Context, id string) error {
 		c.Groups = nextGroups
 		c.Entries = nextEntries
 	})
-	return err
+	if err != nil {
+		return err
+	}
+	s.changed()
+	// PRD-PLANNER §6.3：看板保留，但该组的日程全部停下，不再弹也不再记错过
+	if s.deps.OnGroupRemoved != nil {
+		s.deps.OnGroupRemoved(id)
+	}
+	return nil
 }
 
 // Reorder 按 id 顺序重排。
@@ -318,8 +352,17 @@ func (s GroupService) Reorder(_ context.Context, ids []string) error {
 		return errors.New("配置未接入")
 	}
 	next := groups.ReorderGroups(s.deps.Cfg.Get().Groups, ids)
-	_, err := s.deps.Cfg.Patch(func(c *contract.AppConfig) { c.Groups = next })
-	return err
+	if _, err := s.deps.Cfg.Patch(func(c *contract.AppConfig) { c.Groups = next }); err != nil {
+		return err
+	}
+	s.changed()
+	return nil
+}
+
+func (s GroupService) changed() {
+	if s.deps.OnGroupsChanged != nil {
+		s.deps.OnGroupsChanged()
+	}
 }
 
 // DialogService 对应 §3.11 的对话框部分。返回值是唯一可信的路径来源。
@@ -328,16 +371,29 @@ type DialogService struct{ deps Deps }
 // NewDialogService 构造。
 func NewDialogService(d Deps) DialogService { return DialogService{deps: d} }
 
-// PickDirectory 让用户选一个目录，取消返回 nil。
+// PickDirectory 即原版 dialog:pickDirectory：让用户选一个项目目录，取消返回 nil。
 func (s DialogService) PickDirectory(ctx context.Context) (*string, error) {
 	if s.deps.Dialog == nil {
 		return nil, errors.New("对话框未接入")
 	}
-	dir, ok, err := s.deps.Dialog.PickDirectory(ctx)
+	dir, ok, err := s.deps.Dialog.PickDirectory(ctx, "选择项目目录")
 	if err != nil || !ok {
 		return nil, err
 	}
 	return &dir, nil
+}
+
+// PickImportRoot 即原版 dialog:pickImportRoot：选目录与扫描一次完成，
+// 扫描根只能是系统选择框刚返回的目录。取消返回 nil。
+func (s DialogService) PickImportRoot(ctx context.Context) (*ImportRoot, error) {
+	if s.deps.Dialog == nil || s.deps.Detect == nil {
+		return nil, errors.New("对话框未接入")
+	}
+	root, ok, err := s.deps.Dialog.PickDirectory(ctx, "选择包含多个项目的父目录")
+	if err != nil || !ok {
+		return nil, err
+	}
+	return &ImportRoot{Root: root, Items: s.deps.Detect.ScanChildren(root, 60)}, nil
 }
 
 // ShellService 对应 §3.11 的外链部分。
@@ -406,10 +462,20 @@ type ConfigService struct{ deps Deps }
 // NewConfigService 构造。
 func NewConfigService(d Deps) ConfigService { return ConfigService{deps: d} }
 
-// Export 导出到用户选的路径。
-func (s ConfigService) Export(ctx context.Context, file string) (*contract.ConfigExportResult, error) {
-	if s.deps.Transfer == nil {
+// Export 即原版 config:export：文件只能是系统保存框刚返回的那一个，页面给不出路径。取消返回 nil。
+func (s ConfigService) Export(ctx context.Context) (*contract.ConfigExportResult, error) {
+	if s.deps.Transfer == nil || s.deps.Dialog == nil {
 		return nil, errors.New("导入导出未接入")
+	}
+	now := time.Now
+	if s.deps.Now != nil {
+		now = s.deps.Now
+	}
+	// 原版 `new Date().toISOString().slice(0, 10)`：UTC 日期
+	name := "mile-terminal-config-" + now().UTC().Format("2006-01-02") + ".json"
+	file, ok, err := s.deps.Dialog.PickJSONToSave(ctx, "导出配置", name)
+	if err != nil || !ok {
+		return nil, err
 	}
 	res, err := s.deps.Transfer.ExportTo(file)
 	if err != nil {
@@ -418,14 +484,22 @@ func (s ConfigService) Export(ctx context.Context, file string) (*contract.Confi
 	return &res, nil
 }
 
-// Import 从用户选的路径导入。
-func (s ConfigService) Import(ctx context.Context, file string) (*contract.ConfigImportResult, error) {
-	if s.deps.Transfer == nil {
+// Import 即原版 config:import：文件只能是系统打开框刚返回的那一个。取消返回 nil。
+func (s ConfigService) Import(ctx context.Context) (*contract.ConfigImportResult, error) {
+	if s.deps.Transfer == nil || s.deps.Dialog == nil {
 		return nil, errors.New("导入导出未接入")
+	}
+	file, ok, err := s.deps.Dialog.PickJSONToOpen(ctx, "导入配置")
+	if err != nil || !ok {
+		return nil, err
 	}
 	res, err := s.deps.Transfer.ImportFrom(file)
 	if err != nil {
 		return nil, err
+	}
+	// 原版导入走 groups.add，每建一个工作组就 emit('changed')；这里导入完成后补发一次
+	if s.deps.OnGroupsChanged != nil {
+		s.deps.OnGroupsChanged()
 	}
 	return &res, nil
 }

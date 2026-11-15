@@ -83,7 +83,7 @@ ConPTY 不在依赖链最前，但它是迁移里风险最大的一项：做不�
 | S29 | J 渲染 | 业务组件 | `components/**`(除 ui 与外壳组件，6825) | S28 | M5 | [x] |
 | S30 | J 渲染 | 六个视图逐页 | `views/*`(7 个文件 2244，含 `LogCenter`) | S29 | M5 | [x] |
 | S31 | J 渲染 | 应用外壳 | `App.tsx`(507) `main.tsx`(19) + 外壳组件(832) | S30 | M5 | [x] |
-| S32 | K 原生 | 托盘、通知、单实例、快捷键、退出清理 | `main/index.ts` 原生部分 | S31 | M6 | [ ] |
+| S32 | K 原生 | 托盘、通知、单实例、快捷键、退出清理 | `main/index.ts` 原生部分 | S31 | M6 | [x] |
 | S33 | L 收尾 | 视觉对等 | — | S32 | M7 | [ ] |
 | S34 | L 收尾 | 打包发布 | — | S33 | M7 | [ ] |
 
@@ -804,7 +804,42 @@ EntryService（2161 行）按方法边界拆成四步，四步的产物都在 `i
   - 退出：`killOwnedOnQuit` 开且有活会话时，先等 `disposeAll` 或 6 秒上限再退出
 - **偏差**：通知样式、托盘菜单外观按 MIGRATION-PLAN §6 已登记的处理
 - **验收**（`verify-review-tray`、`verify-review-single`、`verify-review-hotkey`、`verify-review-notify`、`verify-review-quit`、`verify-m10`）：托盘、单实例、快捷键、通知点击、深浅切换在真窗口人工过一遍；退出清理用日志证据确认子进程树全部退出
-- **证据**：
+- **证据**（2026-11-15）：
+  - 产物：新文件 `native.go`（托盘、系统通知、全局快捷键、窗口事件、退出清理，文件头逐段注明原版行号）；`main.go` 接线；`internal/app/redact.go`（原版 `redactEntry / redactList`）；`internal/app/bindings.go` 的 Group / Dialog / Config 三个服务；`resources/mile-icon.png`（原版 `resources/icon.png` 原样复制，托盘与通知用）；适配层 `src/lib/mile.ts` 不再有空退订与「不可用」
+  - 逐字搬的常量与文案：`QUIT_CLEANUP_TIMEOUT_MS = 6000`、托盘合并重建 50ms、`GLOBAL_HOTKEY`、`TASK_DONE_TITLE`、托盘菜单与提示（「N 个运行中」「显示主窗口」「工作组」「最近使用」「全部停止」「退出」、`Mile Terminal · N 个运行中`）、确认启动对话框、六种通知的标题与正文、四个对话框的标题与默认文件名 `mile-terminal-config-YYYY-MM-DD.json`（UTC 日期，同 `toISOString`）
+  - 原生行为：
+    - 托盘：左键显示主窗口，右键弹菜单（mygo Windows 后端与 Electron 同）；最近使用取前 5 个复选项；启停只调 `StartOrdered / Stop`；prod 与 sandbox+Spring Boot 先弹 `Dialog.Message` 确认。菜单点击在主线程回调，启停与确认框都另起 goroutine，否则等主线程的确认框会死锁
+    - 通知：开关每次现读配置；崩溃 / 拦下 / 端口未释放 / 自动重启放弃 / 输出告警受 `notifyOnCrash`、`notifyOnlyWhenBackground`（隐藏、最小化或失焦才算后台）、退出中不弹三道闸；崩溃先 `alerts.NoteCrash` 撤排队的告警通知；点击只回前台并发 `appFocusEntry` / `plannerFocus`
+    - 全局快捷键：注册失败推 `entryWarning`；`globalHotkey` 改动后重新注册；`will-quit` 里 `UnregisterAll`；窗口已销毁时等新页面 `did-finish-load` 再发 `appOpenPalette`
+    - 窗口：`closeToTray` 时关窗改为隐藏；`window-all-closed` 只在 `closeToTray` 关时退出；最小化 / 还原 / 隐藏 / 显示同步扫描器可见性；`hideFromTaskbar` 构造时读、改动后 `SetSkipTaskbar`；`OnWillNavigate` 离开当前 URL 一律拦下；`SetWindowOpenHandler` 只放行 localhost 交给系统浏览器
+    - 单实例：第二实例在建任何服务之前 `return`；第一个实例 `OnSecondInstance` 还原并聚焦（锁的作用域差异见 MIGRATION-PLAN §6）
+    - 退出：`OnBeforeQuit` 置 quitting → `BeginQuit` → 停扫描器 / 健康检查 / 告警 / 日程；`killOwnedOnQuit` 开且有活会话时 `PreventDefault`，`DisposeAll` 与 6 秒上限赛跑后再 `App.Quit()`
+    - 电源：`Power.OnResume / OnUnlockScreen` 补调 `planner.Tick()`
+    - 对话框：选目录、批量导入（选目录后 `ScanChildren(root, 60)`）、配置导出 / 导入全部由 Go 侧弹 `mygo.Dialog`，绑定方法不收路径参数
+  - **这一步抓到的缺陷**（都是迁移装配遗漏，原版没有这些问题）：
+    - `sess.SetScanner(sc)` 从没调过：`doKill` 拿不到进程表就只撤登记、**不杀进程树**。停止按钮、重启、退出清理全受影响。第一次跑退出清理时日志显示「完成，用时 0s」，起疑后查到。补上后同一条用时 2.318s，shell 进程确认已退出
+    - `plannerSvc.StartScheduler(ctx)` 从没调过：日程提醒永远不会到点
+    - `entries.Options.OnChanged` 没接：`entryChanged` 从不发出；条目包发的事件名是 `runtime`，而事件分发只认 `entryRuntimeChanged`，运行态推送也到不了页面
+    - 绑定返回值与事件没过 `redactEntry`：环境变量的值会出 Go 进程（违反 CLAUDE.md §4 配套规则）
+    - 工作组改动不发 `groupChanged`，删除工作组时不暂停该组日程（原版 `pauseSchedulesOfGroup`）
+    - `OnWillNavigate` 导航守卫与 `SetWindowOpenHandler` 都没装：mygo 默认会把任意 http(s) 的 `window.open` 交给系统浏览器
+    - S24 登记的「mygo 没有文件对话框」不成立：v0.8.3 有 `Dialog.Open / Save / Message`，当时只看了文档没读 `dialog.go`。已按原版实现，§6 那一行改为说明
+  - 验收脚本 `scripts/cdp-s32-native.mjs`（真实 `bun run dev` 窗口 + CDP；窗口可见性用 `scripts/winvis.ps1` 调 Win32 `IsWindowVisible`，因为 WebView2 宿主窗口隐藏后 `document.visibilityState` 仍是 visible）：**23/23 通过**（`build/s32-native.log`）
+    - 页面改 `location` 去外站被拦下；`window.open` 外站返回 null
+    - 新增带 `env` 的条目：返回值、`entryChanged` 负载、`entry.list` 里 env 只剩键名，所有负载里搜不到明文值
+    - 新建 / 删除工作组各收到一次 `groupChanged`
+    - `DialogService` / `ConfigService` 已绑定，`ConfigService.export` 无参数
+    - 快捷键：先验前提（原版 Mile Terminal 正在运行，已占住同一组合键），再断言推出「全局快捷键 Ctrl+Alt+M 已被其他程序占用，未能注册」且设置照常保存
+    - `closeToTray` 开时关窗：原生窗口不可见、页面仍在；再启动一次 exe，第二实例 20ms 内退出，第一个窗口回到可见
+    - 退出清理：起一个 shell 会话（确认其 PID 在进程表里）→ 关窗 → 应用退出，shell PID 消失；dev 日志两行「退出清理：1 个会话，等进程树终止（上限 6s）」「退出清理：完成，用时 2.318s」
+    - 控制台无错误；用完的探针条目与工作组都已删除，设置恢复原值
+  - `go vet ./...`、`go test ./...`（590 passed / 22 packages）、`bun run generate`、`bun run typecheck` 全部通过
+  - 未做（需要人工在真窗口过一遍，CLAUDE.md §9）：
+    - 托盘菜单逐项点击（组启停、最近使用复选、全部停止、退出）与 prod 确认框
+    - 系统通知的样式与点击定位（崩溃、任务完成、日程提醒）
+    - 真按下 Ctrl+Alt+M 唤回并打开命令面板：本机原版 Mile Terminal 占着这个组合键，要先退出原版再试
+    - 四个系统对话框的实际选择（目录、批量导入、导出、导入）：模态窗口，脚本点不动
+    - 启动时快捷键被占用的那条提示能否出现取决于它与首次导航的先后，未量（原版在页面加载前 send，同样可能丢）
 
 ### L 收尾
 

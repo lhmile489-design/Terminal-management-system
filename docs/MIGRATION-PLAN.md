@@ -230,7 +230,10 @@ M0 ──► M1 ──► M3 ──► M4
 | 多字段同时非法时取哪条错误（S21a） | 按页面传来的键顺序逐字段校验，先撞到哪条报哪条（`{kind:'task', expectedPort:3000}` 报「任务不设置端口」，反过来则先设端口再被清理） | 按 `contract.EntryEdit` 的固定字段顺序（`kind` 先于 `icon` / `expectedPort`），等价于「`kind` 先处理」 | Go 的结构体没有键顺序 | 只有一次提交里同时改多个非法字段时，弹出的错误文案可能不同；单字段非法时完全一致 |
 | `env: null` 的含义（S21a） | `env` 是 null 时报「环境变量必须是对象」 | JSON `null` 与「没带这个键」都解成 nil 映射，按「没提」处理（保留原 env） | Go 的 map 字段分不出 null 与缺省 | 只有绕开页面显式传 `env: null` 才会不同；页面发的是对象 |
 | `healthCheck` 缺 `enabled`（S21a） | `typeof enabled !== 'boolean'` 报「健康检查开关必须是布尔值」 | `contract.HealthCheckConfig.Enabled` 是 bool，缺省即 false，不报错 | 契约里的结构体没有三态布尔 | 只有绕开页面只传 `{path}` 时才不同；页面总是两个字段一起发 |
-| 运行时没有文件 / 目录选择对话框（S24） | `dialog.showOpenDialog` / `showSaveDialog` 可选目录或文件 | mygo v0.8.3 的 `Dialog` 只有 `Error(title, content)`，没有选择框。`DialogService.PickDirectory` 与 `ConfigService.Export / Import` 因此**未绑定**，页面调用会失败 | 运行时能力缺失；红线要求文件路径只能来自系统对话框刚返回的结果，不能改用页面 `<input type=file>` | 新增条目时无法选目录、配置导入导出不可用。需要 mygo 补上对话框 API，或自己调 win32 的 `IFileOpenDialog`（S32 的候选方案） |
+| 文件 / 目录选择对话框（S24 误判，S32 更正） | `dialog.showOpenDialog` / `showSaveDialog` | `mygo.Dialog.Open / Save`，标题、过滤器、默认文件名照搬；没有主窗口时当作取消（同原版 `if (!mainWindow) return null`） | S24 只看文档、没读 `dialog.go`，误以为 v0.8.3 没有选择框，曾登记为「未绑定」 | 无。`noLink` 是 macOS / Windows 命令链接样式选项，mygo 无对应项，确认框按钮外观以系统为准 |
+| 单实例锁的作用域（S32） | 只在打包后（或 `MILE_FORCE_SINGLE_INSTANCE=1`）启用：Electron 的锁按 userData，开发期与本机其他 Electron 项目共用会互相挤掉 | `IsPackaged()` 或同一环境变量时启用；`mygo dev` 产出的也是打包形态，所以开发期同样单实例 | mygo 的锁按应用名 + 标识符区分，不与别的应用冲突，没有原版要避开的问题 | 开发期再启动一次 dev exe 会直接退出并唤回已开的窗口（原版开发期会起第二个实例） |
+| 托盘双击（S32） | `tray.on('click')` 与 `on('double-click')` 都显示主窗口 | 只挂 `OnClick` | mygo 的 Windows 托盘没有双击事件；双击的第一下已经触发单击 | 无 |
+| 通知图标（S32） | `new Notification({ icon })` | `NotificationOptions.Image`（Windows 上是气泡的大图标） | mygo 通知没有单独的 icon 字段，小图标固定用应用图标 | 通知左侧小图标是 exe 图标；原版 icon 显示的位置改由 Image 显示 |
 
 > 新增偏差必须写进本表并说明用户可见差异；「看起来一样」不算理由。
 

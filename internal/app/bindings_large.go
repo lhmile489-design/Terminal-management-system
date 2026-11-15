@@ -46,7 +46,7 @@ func (s EntryService) List(context.Context) ([]contract.LaunchEntry, error) {
 	if err := s.need(); err != nil {
 		return nil, err
 	}
-	return s.entries.List(), nil
+	return RedactList(s.entries.List()), nil
 }
 
 // Add 新建条目，入参走 sanitizeEdit。
@@ -54,7 +54,7 @@ func (s EntryService) Add(_ context.Context, in contract.NewLaunchEntry) (contra
 	if err := s.need(); err != nil {
 		return contract.LaunchEntry{}, err
 	}
-	return s.entries.Add(in)
+	return redactOne(s.entries.Add(in))
 }
 
 // Edit 编辑条目，入参走 sanitizeEdit；运行中禁改身份字段。
@@ -62,7 +62,7 @@ func (s EntryService) Edit(_ context.Context, id string, patch contract.EntryEdi
 	if err := s.need(); err != nil {
 		return contract.LaunchEntry{}, err
 	}
-	return s.entries.Edit(id, patch)
+	return redactOne(s.entries.Edit(id, patch))
 }
 
 // Remove 删除条目。
@@ -78,7 +78,11 @@ func (s EntryService) Reorder(_ context.Context, ids []string) ([]contract.Launc
 	if err := s.need(); err != nil {
 		return nil, err
 	}
-	return s.entries.Reorder(ids)
+	list, err := s.entries.Reorder(ids)
+	if err != nil {
+		return nil, err
+	}
+	return RedactList(list), nil
 }
 
 // Detect 识别目录（只读文件，不执行项目代码）。
@@ -268,7 +272,7 @@ func (s EntryService) ClearImage(_ context.Context, id string) (contract.LaunchE
 	if err := s.need(); err != nil {
 		return contract.LaunchEntry{}, err
 	}
-	return s.entries.ClearImage(id)
+	return redactOne(s.entries.ClearImage(id))
 }
 
 // Image 读取自定义图片为 data URL。
@@ -627,4 +631,12 @@ func (s ScannerService) SetWatchedKeywords(_ context.Context, keywords []string)
 		return nil, err
 	}
 	return s.scanner.SetWatchedKeywords(body)
+}
+
+// redactOne 给返回单个条目的方法用：出错时原样透传，成功时抹掉 env 的值。
+func redactOne(e contract.LaunchEntry, err error) (contract.LaunchEntry, error) {
+	if err != nil {
+		return e, err
+	}
+	return RedactEntry(e), nil
 }

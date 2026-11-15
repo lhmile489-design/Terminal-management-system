@@ -11,17 +11,17 @@
 //   1. 终端输出：原版是全局 `session.onData` 广播；Go 侧是按会话 attach 的流（契约 §4）。
 //      这里保留 `onData` 的回调形状；首次 `history(id)` 时发起 attach（见下方 session.history），
 //      收到的帧再分发给 `onData` 的订阅者，TerminalView 不用改。
-//   2. 文件对话框：mygo v0.8.3 的 Dialog 只有 Error，没有选择框，`dialog.pickDirectory`
-//      与 `config.export/import` 直接以错误拒绝（MIGRATION-PLAN §6 已登记）。
-//   3. 若干「变化通知」事件 Go 侧还没发（appFocusEntry / appOpenPalette / plannerFocus，
-//      都由托盘、通知点击、全局快捷键触发），
-//      `on*` 先返回空退订函数，随 S32 原生集成补齐。
+//   2. 文件对话框：与原版一样由 Go 侧弹系统对话框（mygo.Dialog），页面给不出路径；
+//      `config.export/import` 因此不带参数。
+//   3. appFocusEntry / appOpenPalette / plannerFocus 由通知点击、全局快捷键触发（S32 接入）。
 
 import { Channel } from "mygo-runtime";
 
 import {
   AppService,
   ClipboardService,
+  ConfigService,
+  DialogService,
   EntryService,
   GroupService,
   LogService,
@@ -55,10 +55,6 @@ function listen<P, T>(
   return ev.on(cb as unknown as (payload: P) => void);
 }
 
-/** 未接入的能力统一用这个错误，页面能识别出「不是业务失败」。 */
-const unsupported = (what: string): Promise<never> =>
-  Promise.reject(new Error(`${what}在当前运行时不可用`));
-
 /** ArrayBuffer → base64：Go 侧 `[]byte` 按 base64 解码。 */
 function toBase64(bytes: ArrayBuffer): string {
   const arr = new Uint8Array(bytes);
@@ -84,9 +80,6 @@ function attachSession(id: string): void {
     }
   })();
 }
-
-/** 空退订：事件还没由 Go 侧发出的那些 on*。 */
-const noopOff = (_cb: unknown): (() => void) => () => {};
 
 export const mile: MileApi = {
   platform: "win32",
@@ -166,8 +159,8 @@ export const mile: MileApi = {
   },
 
   dialog: {
-    pickDirectory: () => unsupported("选择目录"),
-    pickImportRoot: () => unsupported("选择导入目录"),
+    pickDirectory: () => DialogService.pickDirectory(),
+    pickImportRoot: () => narrow(DialogService.pickImportRoot()),
   },
 
   shell: {
@@ -207,8 +200,8 @@ export const mile: MileApi = {
   },
 
   config: {
-    export: () => unsupported("导出配置"),
-    import: () => unsupported("导入配置"),
+    export: () => narrow(ConfigService.export()),
+    import: () => narrow(ConfigService.import()),
   },
 
   settings: {
@@ -240,8 +233,8 @@ export const mile: MileApi = {
   app: {
     info: () => AppService.info(),
     ready: () => AppService.ready(),
-    onFocusEntry: noopOff,
-    onOpenPalette: noopOff,
+    onFocusEntry: (cb) => listen(events.appFocusEntry, cb),
+    onOpenPalette: (cb) => events.appOpenPalette.on(() => cb()),
   },
 
   group: {
@@ -279,7 +272,7 @@ export const mile: MileApi = {
     clearMissed: () => PlannerService.clearMissed(),
     onChange: (cb) => listen(events.plannerChanged, cb),
     onReminder: (cb) => listen(events.plannerReminder, cb),
-    onFocus: noopOff,
+    onFocus: (cb) => listen(events.plannerFocus, cb),
   },
 };
 
