@@ -71,7 +71,7 @@ ConPTY 不在依赖链最前，但它是迁移里风险最大的一项：做不�
 | S20 | G 会话 | 自定义图片 | `ImageService.ts`(81) | S09（D2 定案） | M3 | [x] |
 | S21a | H 条目 | 常量、条目 CRUD 与校形 | `EntryService.ts` 1–756、808–848、2086–2161 | S09 S11 S16 | M3 | [x] |
 | S21b | H 条目 | 命令构造 | `EntryService.ts` 1415–1699 | S17 S21a | M3 | [x] |
-| S21c | H 条目 | 启停、运行态、分层启动、自动重启、诊断 | `EntryService.ts` 757–807、849–861、1030–1134、1700–2085 | S15 S18 S19 S21b | M3/M4 | [ ] |
+| S21c | H 条目 | 启停、运行态、分层启动、自动重启、诊断 | `EntryService.ts` 757–807、849–861、1030–1134、1700–2085 | S15 S18 S19 S21b | M3/M4 | [x] |
 | S21d | H 条目 | 路径与产物、图片、HBuilderX、安装、构建 | `EntryService.ts` 862–1029、1135–1414 | S20 S21c | M3 | [ ] |
 | S22 | H 条目 | 健康检查与输出告警 | `HealthService.ts`(225) `AlertService.ts`(123) | S21c | M3 | [ ] |
 | S23 | H 条目 | 配置导入导出与旧版导入 | `ConfigTransferService.ts`(248) | S11 S15 S21a | M1 | [ ] |
@@ -551,6 +551,16 @@ EntryService（2161 行）按方法边界拆成四步，四步的产物都在 `i
 - **红线**：`stop` 走 S14 的 `assertKillable(pid, table, sessionId)`；`findPortHolder` 用 `filter` 排掉自有 PID，不取第一行
 - **验收**（`verify-review-order`、`verify-autorestart`、`verify-readytime`、`verify-review-crashtail`、`verify-review-restartguard`、`verify-review-sessionguard`、`verify-m11-dual`）：分层启动的成环、跳过、超时三种场景；自动重启退避序列与 10 分钟内 3 次上限；`stopping` 态再启动被拒；同一条目第二个会话被 `assertNotLive` 拒；CDP 下整组启动按层出现
 - **证据**：
+  - 产物：`internal/entries/` 下 `runtime.go`（`Watch`、`Expectations`、`setRuntime`、`RunPrecheck`、`Start`、`RunScript`、`assertNotLive`、`Stop`、`Restart`、`waitSessionExit`、`OwnListenPids`、`waitPortReleased`、`absorb`、`onCaptureTimeout`、`onSessionExit`）、`ordered.go`（`StartOrdered`、`waitRunning`）、`restart.go`（`BeginQuit`、`CancelAutoRestart`、`maybeScheduleRestart`、`NoteHealthOk`、`recordReady`）、`diagnose.go`（`Diagnose`、`findPortHolder`、`entryIDForSession`）。`SpawnSession`（S21b）补上 watch 注册与 dev 会话的就绪历史保留
+  - 依赖注入：`Scanner`（`Snapshot` / `Table`）、`Ownership`（`AssertKillable` / `Verify`）、`Sessions` 扩到 `Stop` / `History` / `OnData` / `OnExit`，`Options` 增 `Emit`（事件出口）、`Precheck`、`ListJars`、`OutputDir`、`NodeVersion`、`After`。`New` 里订阅会话的 data / exit，与原版构造函数一致
+  - 逐条落地的行为：退出流程中拒绝启动；手动启动撤销排队中的重启并清零计数；`stopping` 拒绝、其他活跃态直接返回现有运行态；预检不过置 `blocked` 并发 blocked 事件；spawn 抛错也退回 `blocked`；`runScript` 拒绝 Spring Boot 与活跃条目；端口捕获只认会话开头且只在当前会话上生效，端口没变不写盘；60 秒未报端口转「端口未知」；退出按 `taskStatus` / 服务规则判定状态并留档最后 30 行、最后错误行、运行时长；自动重启按 2s / 8s / 30s 退避、10 分钟窗口内 3 次上限、超过发 `autoRestartGaveUp`；`beginQuit` 之后不再排重启；`noteHealthOk` 只认等健康检查的那一次
+  - 红线：`Stop` 先走 `AssertKillable(pid, table, sessionID)` 才动会话；`findPortHolder` 用「跳过自有 PID」再取第一条，不取第一行；诊断只给环境变量键名
+  - 单测（`runtime_test.go`，20 个）：启动的四条分支（退出中 / stopping / 活跃态短路 / 预检不过 + spawn 失败的 block 回落）；端口捕获与「端口没变不写盘」；旧会话迟到输出不算数；端口超时转 running + portUnknown 且非 starting 不受影响；退出状态矩阵 7 组（服务正常 / 崩溃 / 用户停止、任务成功 / 失败 / 130 / 用户停止）+ 留档与运行时长；任务完成与崩溃事件；自动重启的三档退避、窗口外历史不计、三种不该排的情况（生产环境 / 仅登记 / 没开）、退出流程中不排、超过上限放弃；`recordReady` 只在 running 时记且历史留 10 条；`OwnListenPids` 合并快照；`waitPortReleased` 只看自有 PID（别人还占着也算释放，自己占着才告警）；分层启动的前置失败跳过与「起不到 running」超时；`Stop` 的归属校验失败与通过两条路径；`Diagnose` 排除自有监听、进程名、环境变量键排序
+  - 反向对照（`mutate-run.cjs`）：28 处变异首轮 14 红、6 处写法编译失败、1 处匹配到两处、7 处漏网。修正编译写法后 7 处全红；给 6 处漏网补了针对性单测（端口未变不写盘、运行时长、退出中不排重启、非 running 不记耗时、窗口过滤、退避档位、就绪历史上限、快照监听合并等）后也全红。剩 1 处 `成环时不兜底` 故意不测：它会让 `StartOrdered` 死循环而不是失败，用例只会挂住；这段兜底是给旧配置里已有的环准备的，新增环已被 `AssertStartAfter` 挡住
+  - 未纳入本步（归 S21d）：`install` / `mavenRun` / `packageWithProfile` / `spawnPackageSession` / `buildPackageCommand` / `listJars` / `outputDir` / 图片 / HBuilderX。`onSessionExit` 里打包成功后的 jar 扫描已留好 `Options.ListJars` 接口，未注入时跳过
+  - 偏差：事件出口从 EventEmitter 换成 `Options.Emit(name, payload)`；`diagnose` 的环境变量键按字典序（Go 的 map 无序），原版按插入序
+  - `go build ./...`、`go vet ./...` 通过，`gofmt -l internal/` 为空；`go test -count=1 ./...` 全部通过，245 个顶层测试，2 个既有环境相关 SKIP
+  - 编码：`internal/entries` 十四个文件扫描无 BOM、无 U+FFFD、无 emoji、无字面不可见字符
 
 #### S21d 路径与产物、图片、HBuilderX、安装、构建
 

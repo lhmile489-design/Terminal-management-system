@@ -107,7 +107,7 @@ func TestCommandGolden(t *testing.T) {
 func runCommandCase(t *testing.T, name string, steps []json.RawMessage) {
 	rec := &recorder{}
 	store := &fakeStore{cfg: contract.AppConfig{}, rec: rec}
-	svc := New(context.Background(), store, fakePlatform{}, fakeSessions{rec: rec}, Options{
+	svc := New(context.Background(), store, fakePlatform{}, &fakeSessions{rec: rec}, Options{
 		Now:       func() time.Time { return time.UnixMilli(1_700_000_000_000) },
 		Which:     pathWhich,
 		OnChanged: func(list []contract.LaunchEntry) { rec.event(list) },

@@ -6,6 +6,8 @@
 package entries
 
 import (
+	"time"
+
 	"mile-console/internal/contract"
 	"mile-console/internal/precheck"
 )
@@ -68,6 +70,24 @@ func (s *Service) SpawnSession(
 	}
 	s.runtimes[entry.ID] = rt
 	delete(s.awaitingHealthReady, entry.ID)
+	// dev 会话要等端口捕获（60 秒超时转「端口未知」）；构建 / 安装会话跑完即止
+	if kind == contract.SessionKindDev && entry.Kind == contract.EntryKindService {
+		w := &Watch{EntryID: entry.ID, Dev: true}
+		w.Timer = s.opt.AfterFunc(PortCaptureTimeoutMS*time.Millisecond, func() {
+			s.onCaptureTimeout(entry.ID, session.ID)
+		})
+		s.watches[session.ID] = w
+	} else {
+		s.watches[session.ID] = &Watch{EntryID: entry.ID, Captured: true}
+	}
+	// 新一次 dev 启动：清掉上一次的耗时，历史保留；构建 / 安装会话不动它
+	if kind == contract.SessionKindDev {
+		rt.ReadyMs = nil
+		rt.ReadySource = ""
+		if h, ok := s.readyHistory[entry.ID]; ok {
+			rt.ReadyHistory = append([]int64{}, h...)
+		}
+	}
 	s.mu.Unlock()
 
 	return rt, nil

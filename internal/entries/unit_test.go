@@ -42,7 +42,7 @@ func newUnitRig(t *testing.T, entries []contract.LaunchEntry) *unitRig {
 	t.Helper()
 	rig := &unitRig{rec: &recorder{}}
 	rig.store = &fakeStore{cfg: contract.AppConfig{Entries: entries}, rec: rig.rec}
-	rig.svc = New(context.Background(), rig.store, fakePlatform{}, fakeSessions{rec: rig.rec}, Options{
+	rig.svc = New(context.Background(), rig.store, fakePlatform{}, &fakeSessions{rec: rig.rec}, Options{
 		Now:   func() time.Time { return time.UnixMilli(1_700_000_000_000) },
 		NewID: func() string { return "id-fixed" },
 		AfterFunc: func(d time.Duration, f func()) Timer {
@@ -88,7 +88,7 @@ func TestNewUUIDShape(t *testing.T) {
 
 func TestRemoveKillsSessionAndDropsRuntime(t *testing.T) {
 	rig := newUnitRig(t, []contract.LaunchEntry{mkEntry("e1", nil)})
-	rig.svc.setRuntime(contract.EntryRuntime{EntryID: "e1", Status: contract.EntryRunning, SessionID: "s1"})
+	rig.svc.putRuntime(contract.EntryRuntime{EntryID: "e1", Status: contract.EntryRunning, SessionID: "s1"})
 	if err := rig.svc.Remove("e1"); err != nil {
 		t.Fatal(err)
 	}
@@ -220,7 +220,7 @@ func TestIsRunnableNeedsExecBitOffWindows(t *testing.T) {
 func TestStoppingLocksIdentityFields(t *testing.T) {
 	for _, status := range []contract.EntryStatus{contract.EntryPrecheck, contract.EntryStarting, contract.EntryRunning, contract.EntryStopping} {
 		rig := newUnitRig(t, []contract.LaunchEntry{mkEntry("e1", nil)})
-		rig.svc.setRuntime(contract.EntryRuntime{EntryID: "e1", Status: status})
+		rig.svc.putRuntime(contract.EntryRuntime{EntryID: "e1", Status: status})
 		_, err := rig.svc.Edit("e1", contract.EntryEdit{Cwd: strPtr("sub")})
 		if err == nil || !strings.Contains(err.Error(), "需要先停止再改") {
 			t.Errorf("%s 状态下应挡住改身份字段，得到 %v", status, err)
@@ -228,7 +228,7 @@ func TestStoppingLocksIdentityFields(t *testing.T) {
 	}
 	// idle 状态下不锁
 	rig := newUnitRig(t, []contract.LaunchEntry{mkEntry("e1", nil)})
-	rig.svc.setRuntime(contract.EntryRuntime{EntryID: "e1", Status: contract.EntryIdle})
+	rig.svc.putRuntime(contract.EntryRuntime{EntryID: "e1", Status: contract.EntryIdle})
 	if _, err := rig.svc.Edit("e1", contract.EntryEdit{Cwd: strPtr("sub")}); err != nil {
 		t.Fatalf("idle 状态不该锁：%v", err)
 	}

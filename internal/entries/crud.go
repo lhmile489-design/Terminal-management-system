@@ -32,6 +32,8 @@ type Platform interface {
 	PathKey(p string) string
 	UnsupportedLaunchModes() map[contract.LaunchMode]bool
 	RequiresExecBit() bool
+	// ReadListenPorts 现查监听表（重启前等端口释放、诊断找持有者）。
+	ReadListenPorts(ctx context.Context) ([]platform.ListenRow, error)
 	// Binaries 各语言 / 包管理器的可执行文件候选名，命令构造按需 whichAny 定位。
 	Binaries() map[platform.BinaryName][]string
 	// WrapperFile 项目自带 wrapper 的文件名（mvnw.cmd / gradlew.bat）。
@@ -44,6 +46,22 @@ type Platform interface {
 type Sessions interface {
 	Kill(ctx context.Context, id string)
 	Create(in contract.CreateSessionInput) (contract.SessionMeta, error)
+	Stop(id string)
+	History(id string) string
+	OnData(fn func(contract.SessionDataEvent)) (unsubscribe func())
+	OnExit(fn func(contract.SessionExitEvent)) (unsubscribe func())
+}
+
+// Scanner 采集快照与进程表（由 *scanner.Service 满足）。
+type Scanner interface {
+	Snapshot() *contract.ScanSnapshot
+	Table(ctx context.Context, hint []int) (platform.ProcessTable, error)
+}
+
+// Ownership 归属判定（由 *ownership.Service 满足）。
+type Ownership interface {
+	AssertKillable(pid int, table platform.ProcessMeta, sessionID string) (contract.OwnershipVerdict, error)
+	Verify(pid int, table platform.ProcessMeta) contract.OwnershipVerdict
 }
 
 // Timer 与 sessions / logs 同形，便于测试注入手动定时器。
@@ -54,6 +72,23 @@ type Options struct {
 	Now       func() time.Time
 	NewID     func() string
 	OnChanged func(entries []contract.LaunchEntry)
+	// Emit 事件出口：runtime / blocked / warning / crashed / taskDone / autoRestartGaveUp / portUnreleased。
+	// 绑定层（S24）把它转成页面的 Alphanumeric 事件名。
+	Emit func(name string, payload any)
+	// Scanner 采集快照与进程表（S15）。S21c 的端口归属、诊断与停止前重验都要它。
+	Scanner Scanner
+	// Ownership 归属判定（S14）：停止前重验、诊断里的持有者判定。
+	Ownership Ownership
+	// Precheck 预检（S17）。未注入时按「通过」处理，单测不必拖上整条预检链。
+	Precheck func(ctx context.Context, entry contract.LaunchEntry, snapshot *contract.ScanSnapshot, all []contract.LaunchEntry) (contract.PrecheckResult, error)
+	// ListJars 打包成功后扫描产物目录里的 jar（S21d）。未注入时跳过。
+	ListJars func(entryID string) []string
+	// OutputDir 任务产物目录（S21d），诊断里给任务用。
+	OutputDir func(entryID string) *string
+	// NodeVersion 诊断面板展示的「当前 Node 版本」（S17 读的是 PATH 里 node.exe 的版本资源）。
+	NodeVersion func() string
+	// After 可注入的等待，默认 time.After。
+	After     func(d time.Duration) <-chan time.Time
 	AfterFunc func(d time.Duration, f func()) Timer
 	// Which 即原版 whichAny：按 PATH 目录顺序定位可执行文件，只 stat 不执行。
 	// 绑定层接 S17 的 precheck.Service.WhichAny；未注入时命令构造一律报「PATH 中找不到 X」。
@@ -77,8 +112,21 @@ type Service struct {
 	restartHistory map[string][]int64
 	// lastErrorLine 会话退出后留档的最后一个错误行，只在内存（S21c 写，SpawnSession 清）。
 	lastErrorLine map[string]string
-	// awaitingHealthReady 端口已捕获、正在等健康检查首次 ok 的条目（S21c 用）。
+	// awaitingHealthReady 端口已捕获、正在等健康检查首次 ok 的条目。
 	awaitingHealthReady map[string]bool
+	// watches 按会话 id 记的输出捕获与退出收尾状态。
+	watches map[string]*Watch
+	// lastTail / lastErrorTail 退出前最后 30 行可见输出与最后一个错误行，只在内存。
+	lastTail      map[string][]string
+	lastErrorTail map[string]string
+	// lastRunMs 上次运行时长（毫秒）。
+	lastRunMs map[string]int64
+	// readyHistory 最近 READY_HISTORY 次启动耗时（毫秒）。
+	readyHistory map[string][]int64
+	// quitting 退出流程已开始：不再排任何重启、不再起新会话。
+	quitting bool
+	// autoStarting 正在由自动重启发起的 Start，用来区分「手动启动」。
+	autoStarting map[string]bool
 }
 
 // New 构造条目服务。ctx 用于 Remove 时后台终止会话；绑定层不得传 context.Background()。
@@ -92,14 +140,37 @@ func New(ctx context.Context, cfg Store, plat Platform, sess Sessions, opt Optio
 	if opt.AfterFunc == nil {
 		opt.AfterFunc = func(d time.Duration, f func()) Timer { return time.AfterFunc(d, f) }
 	}
-	return &Service{
+	if opt.After == nil {
+		opt.After = time.After
+	}
+	if opt.Emit == nil {
+		opt.Emit = func(string, any) {}
+	}
+	s := &Service{
 		ctx: ctx, cfg: cfg, plat: plat, sess: sess, opt: opt,
 		runtimes:            map[string]contract.EntryRuntime{},
 		restartTimers:       map[string]Timer{},
 		restartHistory:      map[string][]int64{},
 		lastErrorLine:       map[string]string{},
 		awaitingHealthReady: map[string]bool{},
+		watches:             map[string]*Watch{},
+		lastTail:            map[string][]string{},
+		lastErrorTail:       map[string]string{},
+		lastRunMs:           map[string]int64{},
+		readyHistory:        map[string][]int64{},
+		autoStarting:        map[string]bool{},
 	}
+	s.subscribe()
+	return s
+}
+
+// subscribe 即原版构造函数里的 sessions.on('data' | 'exit')。
+func (s *Service) subscribe() {
+	if s.sess == nil {
+		return
+	}
+	s.sess.OnData(func(e contract.SessionDataEvent) { s.absorb(e.ID, e.Chunk) })
+	s.sess.OnExit(func(e contract.SessionExitEvent) { s.onSessionExit(e.ID, e.ExitCode) })
 }
 
 // List 即原版 list：置顶优先、其余按 order。
@@ -138,8 +209,8 @@ func (s *Service) RuntimeList() []contract.EntryRuntime {
 	return out
 }
 
-// setRuntime 供 S21c 与测试写入运行态。
-func (s *Service) setRuntime(rt contract.EntryRuntime) {
+// putRuntime 直接整条写入运行态，供测试与 S21c 的内部初始化用。
+func (s *Service) putRuntime(rt contract.EntryRuntime) {
 	s.mu.Lock()
 	s.runtimes[rt.EntryID] = rt
 	s.mu.Unlock()
@@ -363,14 +434,25 @@ func (s *Service) commit(entries []contract.LaunchEntry) error {
 	return nil
 }
 
-// clearRestartTimer 即原版 clearRestartTimer 的 S21a 部分：停掉并忘掉排队中的自动重启。
-func (s *Service) clearRestartTimer(id string) {
+// clearRestartTimer 即原版 `clearRestartTimer(id)`：撤销排队中的自动重启并广播。
+func (s *Service) clearRestartTimer(id string) { s.clearRestartTimerPublish(id, true) }
+
+// clearRestartTimerPublish 即原版 `clearRestartTimer(id, publish)`：
+// publish 为 false 时不改运行态 —— 启动与删除时条目马上要换状态，多余的广播会把旧值写回界面。
+func (s *Service) clearRestartTimerPublish(id string, publish bool) {
 	s.mu.Lock()
 	t, ok := s.restartTimers[id]
 	delete(s.restartTimers, id)
+	_, hasRT := s.runtimes[id]
 	s.mu.Unlock()
-	if ok && t != nil {
+	if !ok {
+		return
+	}
+	if t != nil {
 		t.Stop()
+	}
+	if publish && hasRT {
+		s.setRuntime(id, func(r *contract.EntryRuntime) { r.AutoRestart = nil })
 	}
 }
 

@@ -88,6 +88,8 @@ func (fakePlatform) UnsupportedLaunchModes() map[contract.LaunchMode]bool {
 
 func (fakePlatform) RequiresExecBit() bool { return false }
 
+func (fakePlatform) ReadListenPorts(context.Context) ([]platform.ListenRow, error) { return nil, nil }
+
 func (fakePlatform) Binaries() map[platform.BinaryName][]string {
 	return map[platform.BinaryName][]string{
 		platform.BinaryNpm:    {"npm.cmd", "npm.exe"},
@@ -111,16 +113,66 @@ func (fakePlatform) WrapBatch(file string, args []string) (string, []string) {
 	return "cmd.exe", append([]string{"/d", "/s", "/c", file}, args...)
 }
 
-type fakeSessions struct{ rec *recorder }
+type fakeSessions struct {
+	rec  *recorder
+	mu   sync.Mutex
+	data []func(contract.SessionDataEvent)
+	exit []func(contract.SessionExitEvent)
+	hist map[string]string
+}
 
-func (f fakeSessions) Create(in contract.CreateSessionInput) (contract.SessionMeta, error) {
+func (f *fakeSessions) OnData(fn func(contract.SessionDataEvent)) func() {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.data = append(f.data, fn)
+	return func() {}
+}
+
+func (f *fakeSessions) OnExit(fn func(contract.SessionExitEvent)) func() {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.exit = append(f.exit, fn)
+	return func() {}
+}
+
+func (f *fakeSessions) Stop(id string) {
+	if f.rec != nil {
+		f.rec.add([]any{"sessions.stop", id})
+	}
+}
+
+func (f *fakeSessions) History(id string) string {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.hist[id]
+}
+
+func (f *fakeSessions) emitData(id, chunk string) {
+	f.mu.Lock()
+	fns := append([]func(contract.SessionDataEvent){}, f.data...)
+	f.mu.Unlock()
+	for _, fn := range fns {
+		fn(contract.SessionDataEvent{ID: id, Chunk: chunk})
+	}
+}
+
+func (f *fakeSessions) emitExit(id string, code int) {
+	f.mu.Lock()
+	fns := append([]func(contract.SessionExitEvent){}, f.exit...)
+	f.mu.Unlock()
+	for _, fn := range fns {
+		fn(contract.SessionExitEvent{ID: id, ExitCode: code})
+	}
+}
+
+func (f *fakeSessions) Create(in contract.CreateSessionInput) (contract.SessionMeta, error) {
 	if f.rec != nil {
 		f.rec.add([]any{"sessions.create", in})
 	}
 	return contract.SessionMeta{ID: "sess-1", Pid: 4000, StartedAt: 1_700_000_000_000}, nil
 }
 
-func (f fakeSessions) Kill(_ context.Context, id string) {
+func (f *fakeSessions) Kill(_ context.Context, id string) {
 	if f.rec != nil {
 		f.rec.add([]any{"sessions.kill", id})
 	}
@@ -227,7 +279,7 @@ func runEntryCase(t *testing.T, name string, entries []contract.LaunchEntry, gro
 	rec := &recorder{}
 	store := &fakeStore{cfg: contract.AppConfig{Entries: entries, Groups: groups}, rec: rec}
 	var idSeq int
-	svc := New(context.Background(), store, fakePlatform{}, fakeSessions{rec: rec}, Options{
+	svc := New(context.Background(), store, fakePlatform{}, &fakeSessions{rec: rec}, Options{
 		Now:   func() time.Time { return time.UnixMilli(1_700_000_000_000) },
 		NewID: func() string { idSeq++; return "id-" + strconv.Itoa(idSeq) },
 		OnChanged: func(list []contract.LaunchEntry) {
@@ -279,7 +331,7 @@ func runEntryCase(t *testing.T, name string, entries []contract.LaunchEntry, gro
 			clean, stepErr = svc.SanitizeEdit(target, p)
 			result, hasResult = ApplyEdit(target, clean), true
 		case "runtime":
-			svc.setRuntime(contract.EntryRuntime{EntryID: st.ID, Status: contract.EntryStatus(st.Status)})
+			svc.putRuntime(contract.EntryRuntime{EntryID: st.ID, Status: contract.EntryStatus(st.Status)})
 		case "remove":
 			stepErr = svc.Remove(st.ID)
 		case "reorder":
