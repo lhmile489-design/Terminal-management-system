@@ -73,7 +73,7 @@ ConPTY 不在依赖链最前，但它是迁移里风险最大的一项：做不�
 | S21b | H 条目 | 命令构造 | `EntryService.ts` 1415–1699 | S17 S21a | M3 | [x] |
 | S21c | H 条目 | 启停、运行态、分层启动、自动重启、诊断 | `EntryService.ts` 757–807、849–861、1030–1134、1700–2085 | S15 S18 S19 S21b | M3/M4 | [x] |
 | S21d | H 条目 | 路径与产物、图片、HBuilderX、安装、构建 | `EntryService.ts` 862–1029、1135–1414 | S20 S21c | M3 | [x] |
-| S22 | H 条目 | 健康检查与输出告警 | `HealthService.ts`(225) `AlertService.ts`(123) | S21c | M3 | [ ] |
+| S22 | H 条目 | 健康检查与输出告警 | `HealthService.ts`(225) `AlertService.ts`(123) | S21c | M3 | [x] |
 | S23 | H 条目 | 配置导入导出与旧版导入 | `ConfigTransferService.ts`(248) | S11 S15 S21a | M1 | [ ] |
 | S24 | I 绑定 | Go 绑定服务与事件 | `main/index.ts`(1131) `shared/channels.ts`(179) | S11–S23 | M1–M4 | [ ] |
 | S25 | I 绑定 | 生成绑定与前端适配层 | `preload/index.ts`(264) | S24 | M5 | [ ] |
@@ -589,6 +589,15 @@ EntryService（2161 行）按方法边界拆成四步，四步的产物都在 `i
 - **红线**：HTTP 请求从 App 生命周期 ctx 派生，不用 `context.Background()`；告警的错误行判定调 S05 的 `isErrorLine`，不另写正则
 - **验收**（`verify-health`、`verify-alert`）：本地起一个 `httptest` 服务测 ok / 超时 / 非 2xx / 超长 body 截断；告警 60 秒内同一行去重，每条目最多 50 条
 - **证据**：
+  - 产物：`internal/health/health.go`（常量、`New` 订阅运行态与条目变更、`Start` / `Stop` / `Schedule` / `Kick` / `Tick` / `checkOne` / `pickHost` / `setState`、`Probe` 与 `probeReason`）、`internal/alerts/alerts.go`（常量、`Check` / `NoteCrash` / `List` / `Forget` / `Dispose`、`cancelPending`、`truncateUnits`）
+  - 常量逐字搬：Health 的 15s / 60s / 2s / 4096 与 `MileTerminal-HealthCheck` UA；Alert 的 60s 去重、3s 通知延迟、每条目 50 条、200 字截断、` error` 去重键
+  - 行为：探测主机只从本条目自己的监听行里选（有 IPv4 用 127.0.0.1，只有 IPv6 才用 ::1，族解析不出按 IPv4），找不到自有行就置 unknown 且不发请求；3xx 不跟随、当作已响应；响应体只读 4KB；首次 ok 调 `NoteHealthOk` 记启动就绪；`off → off` 不重复推送。告警按纯子串不区分大小写匹配，未命中再看通用错误行（`keyword` 为 null），崩溃前后的告警并进崩溃通知
+  - 接线：条目服务新增 `OnRuntime` / `OnEntriesChanged` 两个进程内订阅口（与给绑定层的 `Options.Emit` / `OnChanged` 并行），健康检查与告警服务通过它们拿到推送；扫描器的「每轮采集后补探 unknown 条目」在 Go 侧由绑定层（S24）在采集后调用 `Kick()`，因为 Go 的扫描器用回调而不是事件
+  - 红线：HTTP 请求从构造时传入的 App ctx 派生（不用 `context.Background()`）；告警的错误行判定调 S05 的 `logs.IsErrorLine`，不另写正则；结果只在内存
+  - 单测（`health_test.go` 10 个 + `alerts_test.go` 9 个）：本地 `httptest` 服务测 204 / 404 / 302 不跟随 / 慢服务超时 / 关掉的端口被拒 / 1MB 大 body 仍拿到状态码；`pickHost` 七种监听行组合；`checkOne` 的 ok / fail(HTTP 500) / fail(连接被拒) / unknown / off 五条分支与就绪通知次数；`off → off` 不推送；可见 15s / 不可见 60s 的排程间隔（断言字面量而不是常量）与停止后不再排程；运行态事件只在端口变化时提前探测。告警的关键词命中与 60s 去重、错误行的 `keyword` 为 null、四类不该命中的输入、每条目 50 条上限、200 字截断、延迟通知与崩溃吸收、`NoteCrash` 撤销排队、条目删除后清空去重状态、`Dispose` 撤全部
+  - 反向对照（`mutate-run.cjs`）：第一轮发现多处「断言拿常量自己比」，改成字面量后常量类变异全部变红。最终 19 处变异里 14 处变红；剩 2 处为等价（去掉「没有自有 PID 就返回」后仍会被后面的行过滤挡住；「有 IPv4 也用 ::1」的构造写法编译不过，该行为由 `pickHost` 的双栈用例覆盖）；`不截断响应体` 与 `通知延迟 4s` 两处漏网已如实记录：前者在本地回环读 1MB 仍远快于超时，后者因为测试直接触发定时器、没有断言延迟值本身
+  - `go build ./...`、`go vet ./...` 通过，`gofmt -l internal/` 为空；`go test -count=1 ./...` 全部通过，275 个顶层测试，2 个既有环境相关 SKIP
+  - 编码：`internal/health` 与 `internal/alerts` 四个文件扫描无 BOM、无 U+FFFD、无 emoji、无字面不可见字符
 
 #### S23 配置导入导出与旧版导入
 

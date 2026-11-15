@@ -142,6 +142,40 @@ type Service struct {
 	quitting bool
 	// autoStarting 正在由自动重启发起的 Start，用来区分「手动启动」。
 	autoStarting map[string]bool
+	// runtimeSubs / changedSubs 进程内订阅者（健康检查、告警服务用），
+	// 与 Options.Emit / OnChanged 是两条路：后者给绑定层，这两个给同进程的服务。
+	runtimeSubs []func(contract.EntryRuntime)
+	changedSubs []func([]contract.LaunchEntry)
+}
+
+// OnRuntime 订阅运行态推送，返回退订函数。
+func (s *Service) OnRuntime(fn func(contract.EntryRuntime)) func() {
+	s.mu.Lock()
+	idx := len(s.runtimeSubs)
+	s.runtimeSubs = append(s.runtimeSubs, fn)
+	s.mu.Unlock()
+	return func() {
+		s.mu.Lock()
+		defer s.mu.Unlock()
+		if idx < len(s.runtimeSubs) {
+			s.runtimeSubs[idx] = func(contract.EntryRuntime) {}
+		}
+	}
+}
+
+// OnEntriesChanged 订阅条目变更（commit 之后），返回退订函数。
+func (s *Service) OnEntriesChanged(fn func([]contract.LaunchEntry)) func() {
+	s.mu.Lock()
+	idx := len(s.changedSubs)
+	s.changedSubs = append(s.changedSubs, fn)
+	s.mu.Unlock()
+	return func() {
+		s.mu.Lock()
+		defer s.mu.Unlock()
+		if idx < len(s.changedSubs) {
+			s.changedSubs[idx] = func([]contract.LaunchEntry) {}
+		}
+	}
 }
 
 // New 构造条目服务。ctx 用于 Remove 时后台终止会话；绑定层不得传 context.Background()。
@@ -443,8 +477,15 @@ func (s *Service) commit(entries []contract.LaunchEntry) error {
 	if _, err := s.cfg.Patch(func(c *contract.AppConfig) { c.Entries = entries }); err != nil {
 		return err
 	}
+	list := s.List()
 	if s.opt.OnChanged != nil {
-		s.opt.OnChanged(s.List())
+		s.opt.OnChanged(list)
+	}
+	s.mu.Lock()
+	subs := append([]func([]contract.LaunchEntry){}, s.changedSubs...)
+	s.mu.Unlock()
+	for _, fn := range subs {
+		fn(list)
 	}
 	return nil
 }

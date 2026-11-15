@@ -76,9 +76,13 @@ func (s *Service) setRuntime(id string, apply func(rt *contract.EntryRuntime)) c
 	apply(&rt)
 	s.runtimes[id] = rt
 	emit := s.opt.Emit
+	subs := append([]func(contract.EntryRuntime){}, s.runtimeSubs...)
 	s.mu.Unlock()
 	if emit != nil {
 		emit("runtime", rt)
+	}
+	for _, fn := range subs {
+		fn(rt)
 	}
 	return rt
 }
