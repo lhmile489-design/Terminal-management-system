@@ -19,7 +19,13 @@ import type {
   SessionExitEvent,
   SessionMeta,
   Settings,
-  SettingsPatch,
+  ConfigExportResult,
+  ConfigImportResult,
+  FocusEntryRequest,
+  GroupPatch,
+  NewProjectGroup,
+  PlannerFocusRequest,
+  ThemePreference,
   ThemeState,
   EntryDiagnosis,
   EntryEdit,
@@ -32,6 +38,11 @@ import type {
 } from "../shared/types";
 import type {
   PlannerBoard,
+  PlannerBoardPatch,
+  PlannerScheduleInput,
+  PlannerSchedulePatch,
+  PlannerTaskInput,
+  PlannerTaskPatch,
   PlannerSchedule,
   PlannerSnapshot,
   PlannerTask,
@@ -127,19 +138,19 @@ export interface MileApi {
   };
 
   config: {
-    export(): Promise<unknown>;
-    import(): Promise<unknown>;
+    export(): Promise<ConfigExportResult | null>;
+    import(): Promise<ConfigImportResult | null>;
   };
 
   settings: {
     get(): Promise<Settings>;
-    patch(patch: SettingsPatch): Promise<Settings>;
+    patch(patch: Partial<Settings>): Promise<Settings>;
     onChange(cb: (settings: Settings) => void): () => void;
   };
 
   theme: {
     get(): Promise<ThemeState>;
-    set(preference: string): Promise<ThemeState>;
+    set(preference: ThemePreference): Promise<ThemeState>;
     onChange(cb: (state: ThemeState) => void): () => void;
   };
 
@@ -154,14 +165,14 @@ export interface MileApi {
   app: {
     info(): Promise<AppInfo>;
     ready(): Promise<void>;
-    onFocusEntry(cb: (req: { id: string; tab: string }) => void): () => void;
+    onFocusEntry(cb: (req: FocusEntryRequest) => void): () => void;
     onOpenPalette(cb: () => void): () => void;
   };
 
   group: {
     list(): Promise<ProjectGroup[]>;
-    add(input: unknown): Promise<ProjectGroup>;
-    patch(id: string, patch: unknown): Promise<ProjectGroup>;
+    add(input: NewProjectGroup): Promise<ProjectGroup>;
+    patch(id: string, patch: GroupPatch): Promise<ProjectGroup>;
     remove(id: string): Promise<void>;
     reorder(ids: string[]): Promise<void>;
     onChange(cb: (list: ProjectGroup[]) => void): () => void;
@@ -170,22 +181,22 @@ export interface MileApi {
   planner: {
     get(): Promise<PlannerSnapshot>;
     addBoard(groupId: string): Promise<PlannerBoard>;
-    editBoard(boardId: string, patch: unknown): Promise<PlannerBoard>;
+    editBoard(boardId: string, patch: PlannerBoardPatch): Promise<PlannerBoard>;
     reassignBoard(boardId: string, groupId: string): Promise<PlannerBoard>;
     removeBoard(boardId: string): Promise<void>;
     reorderBoards(ids: string[]): Promise<void>;
-    addTask(boardId: string, input: unknown): Promise<PlannerTask>;
-    editTask(boardId: string, taskId: string, patch: unknown): Promise<PlannerTask>;
+    addTask(boardId: string, input: PlannerTaskInput): Promise<PlannerTask>;
+    editTask(boardId: string, taskId: string, patch: PlannerTaskPatch): Promise<PlannerTask>;
     removeTask(boardId: string, taskId: string): Promise<void>;
     reorderTasks(boardId: string, ids: string[]): Promise<void>;
-    addSchedule(boardId: string, input: unknown): Promise<PlannerSchedule>;
-    editSchedule(boardId: string, scheduleId: string, patch: unknown): Promise<PlannerSchedule>;
+    addSchedule(boardId: string, input: PlannerScheduleInput): Promise<PlannerSchedule>;
+    editSchedule(boardId: string, scheduleId: string, patch: PlannerSchedulePatch): Promise<PlannerSchedule>;
     removeSchedule(boardId: string, scheduleId: string): Promise<void>;
     completeTask(boardId: string, scheduleId: string): Promise<void>;
     dismissMissed(boardId: string, scheduleId: string, at?: number): Promise<void>;
     clearMissed(): Promise<void>;
     onChange(cb: (snap: PlannerSnapshot) => void): () => void;
     onReminder(cb: (fire: ReminderFire) => void): () => void;
-    onFocus(cb: (req: unknown) => void): () => void;
+    onFocus(cb: (req: PlannerFocusRequest) => void): () => void;
   };
 }

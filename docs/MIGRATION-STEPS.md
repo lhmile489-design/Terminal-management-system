@@ -81,7 +81,7 @@ ConPTY 不在依赖链最前，但它是迁移里风险最大的一项：做不�
 | S27 | J 渲染 | 基础组件与浮层栈 | `components/ui/*`(1121) `lib/overlay.ts`(76) | S26 | M5 | [x] |
 | S28 | J 渲染 | 前端工具与 store | 其余 `lib/*`(907) `store/*`(867) | S25 S27 | M5 | [x] |
 | S29 | J 渲染 | 业务组件 | `components/**`(除 ui 与外壳组件，6825) | S28 | M5 | [x] |
-| S30 | J 渲染 | 六个视图逐页 | `views/*`(7 个文件 2244，含 `LogCenter`) | S29 | M5 | [ ] |
+| S30 | J 渲染 | 六个视图逐页 | `views/*`(7 个文件 2244，含 `LogCenter`) | S29 | M5 | [x] |
 | S31 | J 渲染 | 应用外壳 | `App.tsx`(507) `main.tsx`(19) + 外壳组件(832) | S30 | M5 | [ ] |
 | S32 | K 原生 | 托盘、通知、单实例、快捷键、退出清理 | `main/index.ts` 原生部分 | S31 | M6 | [ ] |
 | S33 | L 收尾 | 视觉对等 | — | S32 | M7 | [ ] |
@@ -742,7 +742,21 @@ EntryService（2161 行）按方法边界拆成四步，四步的产物都在 `i
 - **产物**：`src/renderer/views/*`
 - **顺序**：Dashboard → Services → TerminalWorkspace + LogCenter → Planner → Settings → About，一页做完一页验
 - **验收**（`verify-services`、`verify-shell`、`verify-m6-sort`、`verify-planner-board`、`verify-m6-settings`、`verify-review-links`）：每页一次 CDP 断言 + 一张 1440×900 截图与原版并排；整窗无滚动条，滚动只在视图自己的滚动区；Dashboard 端口表按采集周期刷新且行不闪（S15 移过来的一项，口径照 `verify-m8`）
-- **证据**：
+- **证据**（2026-11-15）：
+  - 产物：`src/renderer/views/` 七个文件原文复制（5 个文件的 `window.mile.*` 换成 `mile.`），`src/renderer/assets/logo.png` 随 About 一起搬
+  - 让页面能跑起来的配套：
+    - `vite.config.ts` 补上原版 renderer 段的 `base: "./"` 与 `plugins: [react(), tailwindcss()]`（之前缺这两个插件，Tailwind 工具类不会生成）
+    - `src/main.ts` 改为 `src/main.tsx`，内容按原版 `main.tsx` 搬（字体、样式、首帧前 `useTheme.init()`）；`index.html` 换成原版的 `#root` 结构、`lang="zh-CN"`；模板残留的 `src/style.css` 删除
+    - 临时台架 `src/renderer/ViewHarness.tsx`：只含原版 App 里的 store init、变化事件订阅、`<main>` 容器结构（App.tsx 418–457 行）与 ConfirmHost / ToastHost，视图由 `#hash` 选，跳转类回调给空函数。**S31 搬入 App.tsx 后删除**
+  - `MileApi` 收紧成原版 preload 的签名：`config.export/import` 返回 `ConfigExportResult | null` / `ConfigImportResult | null`，`group.add/patch`、planner 各入参、`onFocus`、`onFocusEntry`、`settings.patch`（`Partial<Settings>`）、`theme.set`（`ThemePreference`）全部换成原版类型，接口里不再有 `unknown`
+  - 验收脚本 `scripts/cdp-s30-views.mjs`（真实 `bun run dev` 窗口 + CDP 9223，布局视口用 `Emulation.setDeviceMetricsOverride` 固定为 1440×900：本机高 DPI 下 1440×900 DIP 的窗口实际只有约 947×604 CSS 像素）：**26/26 通过**
+    - 六页逐页：视图头标题与原版 `TITLES` 一致；`documentElement` 与 `body` 都没有滚动条（滚动只在 `main > div`）；视图有实际内容；切页期间控制台无错误；每页一张截图 `build/s30-<view>.jpg`
+    - Dashboard 端口表：给每行打 DOM 标记，等 6.5 秒（三个 2 秒采集周期）后，扫描快照时刻前进了（1794743907102 → 1794743915320），2 行全部保留标记，说明采集在跑、行节点没有被整表重建
+  - 截图核对（人工看过 Dashboard / Services / Terminal / Settings）：数据来自真实 Go 后端（本机 CPU、内存、外部监听 2 个），卡片、分段控件、开关、空态文案与原版一致
+  - 未做：
+    - 与原版的**并排截图比对**：原版要另起一个 Electron 实例（不能动正在跑的那个，也不写它的数据目录），统一放到 S33 视觉对等一起做
+    - 卡片列的 `verify-services` / `verify-shell` / `verify-m6-sort` / `verify-planner-board` / `verify-m6-settings` / `verify-review-links` 里的交互断言（排序、拖拽、添加流程、外链）大多依赖外壳（导航、命令面板）或文件对话框，留到 S31 外壳接上后按原脚本口径补
+    - 深色主题下逐页截图：留到 S33
 
 #### S31 应用外壳
 

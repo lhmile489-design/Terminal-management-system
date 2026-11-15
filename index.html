@@ -1,24 +1,13 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mile Console</title>
     <!-- 桌面窗口用 resources/icon.png 当应用图标；空 data URI 避免 WebView 请求 /favicon.ico 得到 404 -->
     <link rel="icon" href="data:," />
-    <link rel="stylesheet" href="./src/style.css" />
   </head>
   <body>
-    <main>
-      <h1>Mile Console</h1>
-      <p class="muted">Go ↔ TypeScript, fully typed.</p>
-      <form id="greet">
-        <input id="name" placeholder="Your name" autocomplete="off" autofocus />
-        <button type="submit">Greet</button>
-      </form>
-      <p id="greeting" class="card"></p>
-      <p class="muted"><span id="info"></span> · <span id="clock">--:--:--</span></p>
-    </main>
-    <script type="module" src="./src/main.ts"></script>
+    <div id="root"></div>
+    <script type="module" src="./src/main.tsx"></script>
   </body>
 </html>
