@@ -6,6 +6,9 @@
 
 import type {
   AppInfo,
+  PlannerBoard,
+  PlannerSchedule,
+  PlannerTask,
   CreateShellSessionInput,
   LaunchEntry,
   LogQuery,
@@ -32,7 +35,7 @@ import type {
   PlannerSnapshot,
 } from "../mygo";
 
-/** 与原版 `window.mile.*` 完全同形。 */
+/** 与原版 window 上的 mile 命名空间完全同形。 */
 export interface MileApi {
   /** 当前平台，渲染层据此切换修饰键与标题栏 */
   platform: string;
@@ -163,17 +166,17 @@ export interface MileApi {
 
   planner: {
     get(): Promise<PlannerSnapshot>;
-    addBoard(groupId: string): Promise<unknown>;
-    editBoard(boardId: string, patch: unknown): Promise<unknown>;
-    reassignBoard(boardId: string, groupId: string): Promise<unknown>;
+    addBoard(groupId: string): Promise<PlannerBoard>;
+    editBoard(boardId: string, patch: unknown): Promise<PlannerBoard>;
+    reassignBoard(boardId: string, groupId: string): Promise<PlannerBoard>;
     removeBoard(boardId: string): Promise<void>;
     reorderBoards(ids: string[]): Promise<void>;
-    addTask(boardId: string, input: unknown): Promise<unknown>;
-    editTask(boardId: string, taskId: string, patch: unknown): Promise<unknown>;
+    addTask(boardId: string, input: unknown): Promise<PlannerTask>;
+    editTask(boardId: string, taskId: string, patch: unknown): Promise<PlannerTask>;
     removeTask(boardId: string, taskId: string): Promise<void>;
     reorderTasks(boardId: string, ids: string[]): Promise<void>;
-    addSchedule(boardId: string, input: unknown): Promise<unknown>;
-    editSchedule(boardId: string, scheduleId: string, patch: unknown): Promise<unknown>;
+    addSchedule(boardId: string, input: unknown): Promise<PlannerSchedule>;
+    editSchedule(boardId: string, scheduleId: string, patch: unknown): Promise<PlannerSchedule>;
     removeSchedule(boardId: string, scheduleId: string): Promise<void>;
     completeTask(boardId: string, scheduleId: string): Promise<void>;
     dismissMissed(boardId: string, scheduleId: string, at?: number): Promise<void>;

@@ -79,7 +79,7 @@ ConPTY 不在依赖链最前，但它是迁移里风险最大的一项：做不�
 | S25 | I 绑定 | 生成绑定与前端适配层 | `preload/index.ts`(264) | S24 | M5 | [x] |
 | S26 | J 渲染 | 样式原文复制 | `styles/tokens.css`(1055) `ui.css`(1438) | S01 | M5 | [x] |
 | S27 | J 渲染 | 基础组件与浮层栈 | `components/ui/*`(1121) `lib/overlay.ts`(76) | S26 | M5 | [x] |
-| S28 | J 渲染 | 前端工具与 store | 其余 `lib/*`(907) `store/*`(867) | S25 S27 | M5 | [ ] |
+| S28 | J 渲染 | 前端工具与 store | 其余 `lib/*`(907) `store/*`(867) | S25 S27 | M5 | [x] |
 | S29 | J 渲染 | 业务组件 | `components/**`(除 ui 与外壳组件，6825) | S28 | M5 | [ ] |
 | S30 | J 渲染 | 六个视图逐页 | `views/*`(7 个文件 2244，含 `LogCenter`) | S29 | M5 | [ ] |
 | S31 | J 渲染 | 应用外壳 | `App.tsx`(507) `main.tsx`(19) + 外壳组件(832) | S30 | M5 | [ ] |
@@ -705,6 +705,16 @@ EntryService（2161 行）按方法边界拆成四步，四步的产物都在 `i
 - **规则**：所有 `window.mile.*` 调用改成 import `src/lib/mile.ts`，调用点形状不变；追加型乐观更新按 id 幂等（事件可能先于返回值到达）；`lib/services.ts` 的 `confirmEnv` 规则与 S32 托盘确认保持一致
 - **验收**：`bun run typecheck` 零错误；全仓 grep `window.mile` 结果为 0；CDP 下添加条目不出现重复卡片（`verify-m11-add`）
 - **证据**：
+  - 产物：`src/renderer/lib/`（clipboard / format / launchStats / platform / services / useEntryFix，加上 S27 已搬的 icons / entryMeta / overlay）、`src/renderer/store/` 八个 store（entries / favicons / groups / planner / scanner / sessions / settings / theme），全部原文复制
+  - 调用点改写：12 个文件的 `window.mile.*` 机械替换成 `mile.`，并在文件顶部 `import { mile } from "../../lib/mile"`；全仓 `grep window\.mile` 结果为 **0**（连注释里的提法也改了，保证这条验收可机械复核）
+  - 补的共享件（原版 `@shared/*` 的落点）：
+    - `src/shared/planner.ts`：转出生成层的进度类型，另补 Go 用 `json.RawMessage` 收、因此没有生成的 `PlannerTaskInput` / `PlannerTaskPatch` / `PlannerBoardPatch` / `PlannerScheduleInput` / `PlannerSchedulePatch`
+    - `src/shared/types.ts`：补 `WEB_FRAMEWORKS` / `isWebFramework` / `GROUP_ENV_LABEL` / `MavenGoal` / `SpringBootLaunchMode` / `Scripts` 与 `scriptsOf`（Go 把 `scripts` 生成成 `unknown`，按契约 §1.3 在边界断言一次）
+  - 顺带搬入的两个组件（`ScriptPickerDialog`、`PortDialog`）：`useEntryFix` 依赖它们，属 S29 范围但这里必须存在才能编译
+  - `MileApi` 的 planner 返回值改成具体类型（`PlannerBoard` / `PlannerTask` / `PlannerSchedule`），否则 store 里 `Promise<unknown>` 过不了
+  - 验收：`bun run typecheck` 零错误；`bun run build:web` 通过；23 个文件编码扫描干净
+  - 未做：CDP 的「添加条目不重复出卡片」（`verify-m11-add`）要等页面真正接上（S29 之后）；`confirmEnv` 与 S32 托盘确认的一致性也留到 S32 复核
+
 
 #### S29 业务组件
 

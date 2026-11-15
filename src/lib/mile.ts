@@ -1,7 +1,7 @@
 // 前端 ↔ Go 的唯一入口（BINDINGS-CONTRACT §1.1）。
 //
 // 组件与 store **不直接 import `src/mygo.ts`**，只用这里的 `mile`；它的形状与原版
-// `window.mile.*` 一致，所以搬过来的组件调用点不用改。
+// 原版的 window 上的 mile 命名空间一致，所以搬过来的组件调用点不用改。
 //
 // 三处与原版的差异都写在这里，便于回查：
 //   1. 终端输出：原版是全局 `session.onData` 广播；Go 侧是按会话 attach 的流（契约 §4）。
