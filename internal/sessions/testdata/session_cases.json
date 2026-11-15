@@ -1,0 +1,3883 @@
+{
+ "generatedFrom": "mile-terminal-management/src/main/services/SessionService.ts + node v22.23.4",
+ "envKeys": [
+  "MILE_TEST_BASE",
+  "MILE_RUN_TOKEN",
+  "MILE_SESSION_ID",
+  "LANG",
+  "LC_ALL",
+  "PYTHONIOENCODING",
+  "FORCE_COLOR",
+  "TERM",
+  "npm_config_progress"
+ ],
+ "cases": [
+  {
+   "name": "shell-basic",
+   "clock": 1700000000000,
+   "steps": [
+    {
+     "op": "createShell",
+     "input": {
+      "kind": "shell"
+     },
+     "result": {
+      "id": "s1-loyw3v28",
+      "projectId": null,
+      "kind": "shell",
+      "title": "PowerShell 7",
+      "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+      "cwd": "C:\\Users\\test",
+      "pid": 4000,
+      "status": "starting",
+      "startedAt": 1700000000000
+     },
+     "calls": [
+      [
+       "spawn",
+       {
+        "file": "C:\\pwsh\\pwsh.exe",
+        "args": [
+         "-NoLogo"
+        ],
+        "cwd": "C:\\Users\\test",
+        "cols": 120,
+        "rows": 30,
+        "env": {
+         "MILE_TEST_BASE": "base",
+         "MILE_RUN_TOKEN": "tok-1",
+         "MILE_SESSION_ID": "s1-loyw3v28",
+         "LANG": "zh_CN.UTF-8",
+         "LC_ALL": "zh_CN.UTF-8",
+         "PYTHONIOENCODING": "utf-8",
+         "FORCE_COLOR": "1",
+         "TERM": "xterm-256color",
+         "npm_config_progress": "false"
+        }
+       }
+      ],
+      [
+       "own.register",
+       "s1-loyw3v28",
+       4000,
+       "tok-1"
+      ],
+      [
+       "pty.write",
+       4000,
+       "INIT\r"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "list",
+     "result": [
+      {
+       "id": "s1-loyw3v28",
+       "projectId": null,
+       "kind": "shell",
+       "title": "PowerShell 7",
+       "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+       "cwd": "C:\\Users\\test",
+       "pid": 4000,
+       "status": "starting",
+       "startedAt": 1700000000000
+      }
+     ],
+     "calls": [],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "feed",
+     "n": 0,
+     "data": "PS> hello\r\n",
+     "calls": [],
+     "events": [],
+     "timers": [
+      16
+     ]
+    },
+    {
+     "op": "history",
+     "n": 0,
+     "result": {
+      "len": 11,
+      "head": "PS> hell",
+      "tail": " hello\r\n",
+      "full": "PS> hello\r\n"
+     },
+     "calls": [],
+     "events": [],
+     "timers": [
+      16
+     ]
+    },
+    {
+     "op": "list",
+     "result": [
+      {
+       "id": "s1-loyw3v28",
+       "projectId": null,
+       "kind": "shell",
+       "title": "PowerShell 7",
+       "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+       "cwd": "C:\\Users\\test",
+       "pid": 4000,
+       "status": "starting",
+       "startedAt": 1700000000000
+      }
+     ],
+     "calls": [],
+     "events": [],
+     "timers": [
+      16
+     ]
+    },
+    {
+     "op": "fire",
+     "ms": 16,
+     "calls": [],
+     "events": [
+      {
+       "type": "data",
+       "id": "s1-loyw3v28",
+       "len": 11,
+       "head": "PS> hell",
+       "tail": " hello\r\n",
+       "full": "PS> hello\r\n"
+      }
+     ],
+     "timers": []
+    },
+    {
+     "op": "history",
+     "n": 0,
+     "result": {
+      "len": 11,
+      "head": "PS> hell",
+      "tail": " hello\r\n",
+      "full": "PS> hello\r\n"
+     },
+     "calls": [],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "list",
+     "result": [
+      {
+       "id": "s1-loyw3v28",
+       "projectId": null,
+       "kind": "shell",
+       "title": "PowerShell 7",
+       "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+       "cwd": "C:\\Users\\test",
+       "pid": 4000,
+       "status": "running",
+       "startedAt": 1700000000000
+      }
+     ],
+     "calls": [],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "ownedPids",
+     "result": [
+      4000
+     ],
+     "calls": [],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "liveCount",
+     "result": 1,
+     "calls": [],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "sessionIdByPid",
+     "pid": 4000,
+     "result": "s1-loyw3v28",
+     "calls": [],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "sessionIdByPid",
+     "pid": 1,
+     "result": null,
+     "calls": [],
+     "events": [],
+     "timers": []
+    }
+   ]
+  },
+  {
+   "name": "shell-title-variants",
+   "clock": 1700000000000,
+   "steps": [
+    {
+     "op": "createShell",
+     "input": {
+      "kind": "shell",
+      "title": "  \u6211\u7684\u7ec8\u7aef  "
+     },
+     "result": {
+      "id": "s1-loyw3v28",
+      "projectId": null,
+      "kind": "shell",
+      "title": "\u6211\u7684\u7ec8\u7aef",
+      "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+      "cwd": "C:\\Users\\test",
+      "pid": 4000,
+      "status": "starting",
+      "startedAt": 1700000000000
+     },
+     "calls": [
+      [
+       "spawn",
+       {
+        "file": "C:\\pwsh\\pwsh.exe",
+        "args": [
+         "-NoLogo"
+        ],
+        "cwd": "C:\\Users\\test",
+        "cols": 120,
+        "rows": 30,
+        "env": {
+         "MILE_TEST_BASE": "base",
+         "MILE_RUN_TOKEN": "tok-1",
+         "MILE_SESSION_ID": "s1-loyw3v28",
+         "LANG": "zh_CN.UTF-8",
+         "LC_ALL": "zh_CN.UTF-8",
+         "PYTHONIOENCODING": "utf-8",
+         "FORCE_COLOR": "1",
+         "TERM": "xterm-256color",
+         "npm_config_progress": "false"
+        }
+       }
+      ],
+      [
+       "own.register",
+       "s1-loyw3v28",
+       4000,
+       "tok-1"
+      ],
+      [
+       "pty.write",
+       4000,
+       "INIT\r"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "createShell",
+     "input": {
+      "kind": "shell",
+      "title": "   "
+     },
+     "result": {
+      "id": "s2-loyw3v28",
+      "projectId": null,
+      "kind": "shell",
+      "title": "PowerShell 7",
+      "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+      "cwd": "C:\\Users\\test",
+      "pid": 4100,
+      "status": "starting",
+      "startedAt": 1700000000000
+     },
+     "calls": [
+      [
+       "spawn",
+       {
+        "file": "C:\\pwsh\\pwsh.exe",
+        "args": [
+         "-NoLogo"
+        ],
+        "cwd": "C:\\Users\\test",
+        "cols": 120,
+        "rows": 30,
+        "env": {
+         "MILE_TEST_BASE": "base",
+         "MILE_RUN_TOKEN": "tok-2",
+         "MILE_SESSION_ID": "s2-loyw3v28",
+         "LANG": "zh_CN.UTF-8",
+         "LC_ALL": "zh_CN.UTF-8",
+         "PYTHONIOENCODING": "utf-8",
+         "FORCE_COLOR": "1",
+         "TERM": "xterm-256color",
+         "npm_config_progress": "false"
+        }
+       }
+      ],
+      [
+       "own.register",
+       "s2-loyw3v28",
+       4100,
+       "tok-2"
+      ],
+      [
+       "pty.write",
+       4100,
+       "INIT\r"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "createShell",
+     "input": {
+      "kind": "shell",
+      "title": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     "result": {
+      "id": "s3-loyw3v28",
+      "projectId": null,
+      "kind": "shell",
+      "title": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+      "cwd": "C:\\Users\\test",
+      "pid": 4200,
+      "status": "starting",
+      "startedAt": 1700000000000
+     },
+     "calls": [
+      [
+       "spawn",
+       {
+        "file": "C:\\pwsh\\pwsh.exe",
+        "args": [
+         "-NoLogo"
+        ],
+        "cwd": "C:\\Users\\test",
+        "cols": 120,
+        "rows": 30,
+        "env": {
+         "MILE_TEST_BASE": "base",
+         "MILE_RUN_TOKEN": "tok-3",
+         "MILE_SESSION_ID": "s3-loyw3v28",
+         "LANG": "zh_CN.UTF-8",
+         "LC_ALL": "zh_CN.UTF-8",
+         "PYTHONIOENCODING": "utf-8",
+         "FORCE_COLOR": "1",
+         "TERM": "xterm-256color",
+         "npm_config_progress": "false"
+        }
+       }
+      ],
+      [
+       "own.register",
+       "s3-loyw3v28",
+       4200,
+       "tok-3"
+      ],
+      [
+       "pty.write",
+       4200,
+       "INIT\r"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "createShell",
+     "input": {
+      "kind": "shell",
+      "title": "\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49"
+     },
+     "result": {
+      "id": "s4-loyw3v28",
+      "projectId": null,
+      "kind": "shell",
+      "title": "\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49",
+      "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+      "cwd": "C:\\Users\\test",
+      "pid": 4300,
+      "status": "starting",
+      "startedAt": 1700000000000
+     },
+     "calls": [
+      [
+       "spawn",
+       {
+        "file": "C:\\pwsh\\pwsh.exe",
+        "args": [
+         "-NoLogo"
+        ],
+        "cwd": "C:\\Users\\test",
+        "cols": 120,
+        "rows": 30,
+        "env": {
+         "MILE_TEST_BASE": "base",
+         "MILE_RUN_TOKEN": "tok-4",
+         "MILE_SESSION_ID": "s4-loyw3v28",
+         "LANG": "zh_CN.UTF-8",
+         "LC_ALL": "zh_CN.UTF-8",
+         "PYTHONIOENCODING": "utf-8",
+         "FORCE_COLOR": "1",
+         "TERM": "xterm-256color",
+         "npm_config_progress": "false"
+        }
+       }
+      ],
+      [
+       "own.register",
+       "s4-loyw3v28",
+       4300,
+       "tok-4"
+      ],
+      [
+       "pty.write",
+       4300,
+       "INIT\r"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "createShell",
+     "input": {
+      "kind": "shell",
+      "title": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\ud83d\ude00\ud83d\ude00"
+     },
+     "result": {
+      "id": "s5-loyw3v28",
+      "projectId": null,
+      "kind": "shell",
+      "title": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\ud83d\ude00",
+      "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+      "cwd": "C:\\Users\\test",
+      "pid": 4400,
+      "status": "starting",
+      "startedAt": 1700000000000
+     },
+     "calls": [
+      [
+       "spawn",
+       {
+        "file": "C:\\pwsh\\pwsh.exe",
+        "args": [
+         "-NoLogo"
+        ],
+        "cwd": "C:\\Users\\test",
+        "cols": 120,
+        "rows": 30,
+        "env": {
+         "MILE_TEST_BASE": "base",
+         "MILE_RUN_TOKEN": "tok-5",
+         "MILE_SESSION_ID": "s5-loyw3v28",
+         "LANG": "zh_CN.UTF-8",
+         "LC_ALL": "zh_CN.UTF-8",
+         "PYTHONIOENCODING": "utf-8",
+         "FORCE_COLOR": "1",
+         "TERM": "xterm-256color",
+         "npm_config_progress": "false"
+        }
+       }
+      ],
+      [
+       "own.register",
+       "s5-loyw3v28",
+       4400,
+       "tok-5"
+      ],
+      [
+       "pty.write",
+       4400,
+       "INIT\r"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "createShell",
+     "input": {
+      "kind": "shell",
+      "title": "\t\n x \u00a0"
+     },
+     "result": {
+      "id": "s6-loyw3v28",
+      "projectId": null,
+      "kind": "shell",
+      "title": "x",
+      "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+      "cwd": "C:\\Users\\test",
+      "pid": 4500,
+      "status": "starting",
+      "startedAt": 1700000000000
+     },
+     "calls": [
+      [
+       "spawn",
+       {
+        "file": "C:\\pwsh\\pwsh.exe",
+        "args": [
+         "-NoLogo"
+        ],
+        "cwd": "C:\\Users\\test",
+        "cols": 120,
+        "rows": 30,
+        "env": {
+         "MILE_TEST_BASE": "base",
+         "MILE_RUN_TOKEN": "tok-6",
+         "MILE_SESSION_ID": "s6-loyw3v28",
+         "LANG": "zh_CN.UTF-8",
+         "LC_ALL": "zh_CN.UTF-8",
+         "PYTHONIOENCODING": "utf-8",
+         "FORCE_COLOR": "1",
+         "TERM": "xterm-256color",
+         "npm_config_progress": "false"
+        }
+       }
+      ],
+      [
+       "own.register",
+       "s6-loyw3v28",
+       4500,
+       "tok-6"
+      ],
+      [
+       "pty.write",
+       4500,
+       "INIT\r"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "list",
+     "result": [
+      {
+       "id": "s1-loyw3v28",
+       "projectId": null,
+       "kind": "shell",
+       "title": "\u6211\u7684\u7ec8\u7aef",
+       "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+       "cwd": "C:\\Users\\test",
+       "pid": 4000,
+       "status": "starting",
+       "startedAt": 1700000000000
+      },
+      {
+       "id": "s2-loyw3v28",
+       "projectId": null,
+       "kind": "shell",
+       "title": "PowerShell 7",
+       "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+       "cwd": "C:\\Users\\test",
+       "pid": 4100,
+       "status": "starting",
+       "startedAt": 1700000000000
+      },
+      {
+       "id": "s3-loyw3v28",
+       "projectId": null,
+       "kind": "shell",
+       "title": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+       "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+       "cwd": "C:\\Users\\test",
+       "pid": 4200,
+       "status": "starting",
+       "startedAt": 1700000000000
+      },
+      {
+       "id": "s4-loyw3v28",
+       "projectId": null,
+       "kind": "shell",
+       "title": "\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49\u6c49",
+       "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+       "cwd": "C:\\Users\\test",
+       "pid": 4300,
+       "status": "starting",
+       "startedAt": 1700000000000
+      },
+      {
+       "id": "s5-loyw3v28",
+       "projectId": null,
+       "kind": "shell",
+       "title": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\ud83d\ude00",
+       "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+       "cwd": "C:\\Users\\test",
+       "pid": 4400,
+       "status": "starting",
+       "startedAt": 1700000000000
+      },
+      {
+       "id": "s6-loyw3v28",
+       "projectId": null,
+       "kind": "shell",
+       "title": "x",
+       "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+       "cwd": "C:\\Users\\test",
+       "pid": 4500,
+       "status": "starting",
+       "startedAt": 1700000000000
+      }
+     ],
+     "calls": [],
+     "events": [],
+     "timers": []
+    }
+   ]
+  },
+  {
+   "name": "shell-rejects-and-ignores",
+   "clock": 1700000000000,
+   "steps": [
+    {
+     "op": "createShell",
+     "input": {
+      "kind": "dev"
+     },
+     "error": "\u81ea\u7531\u7ec8\u7aef\u53ea\u5141\u8bb8 shell",
+     "calls": [],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "createShell",
+     "input": {},
+     "error": "\u81ea\u7531\u7ec8\u7aef\u53ea\u5141\u8bb8 shell",
+     "calls": [],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "createShell",
+     "input": null,
+     "error": "\u81ea\u7531\u7ec8\u7aef\u53ea\u5141\u8bb8 shell",
+     "calls": [],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "createShell",
+     "input": {
+      "kind": "script",
+      "title": "x"
+     },
+     "error": "\u81ea\u7531\u7ec8\u7aef\u53ea\u5141\u8bb8 shell",
+     "calls": [],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "createShell",
+     "input": {
+      "kind": "shell",
+      "file": "C:\\evil\\evil.exe",
+      "args": [
+       "-c",
+       "x"
+      ],
+      "cwd": "C:\\evil",
+      "env": {
+       "MILE_RUN_TOKEN": "evil",
+       "A": "b"
+      }
+     },
+     "result": {
+      "id": "s1-loyw3v28",
+      "projectId": null,
+      "kind": "shell",
+      "title": "PowerShell 7",
+      "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+      "cwd": "C:\\Users\\test",
+      "pid": 4000,
+      "status": "starting",
+      "startedAt": 1700000000000
+     },
+     "calls": [
+      [
+       "spawn",
+       {
+        "file": "C:\\pwsh\\pwsh.exe",
+        "args": [
+         "-NoLogo"
+        ],
+        "cwd": "C:\\Users\\test",
+        "cols": 120,
+        "rows": 30,
+        "env": {
+         "MILE_TEST_BASE": "base",
+         "MILE_RUN_TOKEN": "tok-1",
+         "MILE_SESSION_ID": "s1-loyw3v28",
+         "LANG": "zh_CN.UTF-8",
+         "LC_ALL": "zh_CN.UTF-8",
+         "PYTHONIOENCODING": "utf-8",
+         "FORCE_COLOR": "1",
+         "TERM": "xterm-256color",
+         "npm_config_progress": "false"
+        }
+       }
+      ],
+      [
+       "own.register",
+       "s1-loyw3v28",
+       4000,
+       "tok-1"
+      ],
+      [
+       "pty.write",
+       4000,
+       "INIT\r"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "createShell",
+     "input": {
+      "kind": "shell"
+     },
+     "at": {
+      "cwd": "E:\\proj\\web",
+      "title": "web \u7ec8\u7aef"
+     },
+     "result": {
+      "id": "s2-loyw3v28",
+      "projectId": null,
+      "kind": "shell",
+      "title": "web \u7ec8\u7aef",
+      "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+      "cwd": "E:\\proj\\web",
+      "pid": 4100,
+      "status": "starting",
+      "startedAt": 1700000000000
+     },
+     "calls": [
+      [
+       "spawn",
+       {
+        "file": "C:\\pwsh\\pwsh.exe",
+        "args": [
+         "-NoLogo"
+        ],
+        "cwd": "E:\\proj\\web",
+        "cols": 120,
+        "rows": 30,
+        "env": {
+         "MILE_TEST_BASE": "base",
+         "MILE_RUN_TOKEN": "tok-2",
+         "MILE_SESSION_ID": "s2-loyw3v28",
+         "LANG": "zh_CN.UTF-8",
+         "LC_ALL": "zh_CN.UTF-8",
+         "PYTHONIOENCODING": "utf-8",
+         "FORCE_COLOR": "1",
+         "TERM": "xterm-256color",
+         "npm_config_progress": "false"
+        }
+       }
+      ],
+      [
+       "own.register",
+       "s2-loyw3v28",
+       4100,
+       "tok-2"
+      ],
+      [
+       "pty.write",
+       4100,
+       "INIT\r"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "createShell",
+     "input": {
+      "kind": "shell",
+      "title": "\u88ab at \u8986\u76d6"
+     },
+     "at": {
+      "cwd": "E:\\proj\\api",
+      "title": "api \u7ec8\u7aef"
+     },
+     "result": {
+      "id": "s3-loyw3v28",
+      "projectId": null,
+      "kind": "shell",
+      "title": "api \u7ec8\u7aef",
+      "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+      "cwd": "E:\\proj\\api",
+      "pid": 4200,
+      "status": "starting",
+      "startedAt": 1700000000000
+     },
+     "calls": [
+      [
+       "spawn",
+       {
+        "file": "C:\\pwsh\\pwsh.exe",
+        "args": [
+         "-NoLogo"
+        ],
+        "cwd": "E:\\proj\\api",
+        "cols": 120,
+        "rows": 30,
+        "env": {
+         "MILE_TEST_BASE": "base",
+         "MILE_RUN_TOKEN": "tok-3",
+         "MILE_SESSION_ID": "s3-loyw3v28",
+         "LANG": "zh_CN.UTF-8",
+         "LC_ALL": "zh_CN.UTF-8",
+         "PYTHONIOENCODING": "utf-8",
+         "FORCE_COLOR": "1",
+         "TERM": "xterm-256color",
+         "npm_config_progress": "false"
+        }
+       }
+      ],
+      [
+       "own.register",
+       "s3-loyw3v28",
+       4200,
+       "tok-3"
+      ],
+      [
+       "pty.write",
+       4200,
+       "INIT\r"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "createShell",
+     "input": {
+      "kind": "shell",
+      "title": "\u4fdd\u7559"
+     },
+     "at": {
+      "cwd": "E:\\proj\\only-cwd"
+     },
+     "result": {
+      "id": "s4-loyw3v28",
+      "projectId": null,
+      "kind": "shell",
+      "title": "\u4fdd\u7559",
+      "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+      "cwd": "E:\\proj\\only-cwd",
+      "pid": 4300,
+      "status": "starting",
+      "startedAt": 1700000000000
+     },
+     "calls": [
+      [
+       "spawn",
+       {
+        "file": "C:\\pwsh\\pwsh.exe",
+        "args": [
+         "-NoLogo"
+        ],
+        "cwd": "E:\\proj\\only-cwd",
+        "cols": 120,
+        "rows": 30,
+        "env": {
+         "MILE_TEST_BASE": "base",
+         "MILE_RUN_TOKEN": "tok-4",
+         "MILE_SESSION_ID": "s4-loyw3v28",
+         "LANG": "zh_CN.UTF-8",
+         "LC_ALL": "zh_CN.UTF-8",
+         "PYTHONIOENCODING": "utf-8",
+         "FORCE_COLOR": "1",
+         "TERM": "xterm-256color",
+         "npm_config_progress": "false"
+        }
+       }
+      ],
+      [
+       "own.register",
+       "s4-loyw3v28",
+       4300,
+       "tok-4"
+      ],
+      [
+       "pty.write",
+       4300,
+       "INIT\r"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "list",
+     "result": [
+      {
+       "id": "s1-loyw3v28",
+       "projectId": null,
+       "kind": "shell",
+       "title": "PowerShell 7",
+       "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+       "cwd": "C:\\Users\\test",
+       "pid": 4000,
+       "status": "starting",
+       "startedAt": 1700000000000
+      },
+      {
+       "id": "s2-loyw3v28",
+       "projectId": null,
+       "kind": "shell",
+       "title": "web \u7ec8\u7aef",
+       "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+       "cwd": "E:\\proj\\web",
+       "pid": 4100,
+       "status": "starting",
+       "startedAt": 1700000000000
+      },
+      {
+       "id": "s3-loyw3v28",
+       "projectId": null,
+       "kind": "shell",
+       "title": "api \u7ec8\u7aef",
+       "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+       "cwd": "E:\\proj\\api",
+       "pid": 4200,
+       "status": "starting",
+       "startedAt": 1700000000000
+      },
+      {
+       "id": "s4-loyw3v28",
+       "projectId": null,
+       "kind": "shell",
+       "title": "\u4fdd\u7559",
+       "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+       "cwd": "E:\\proj\\only-cwd",
+       "pid": 4300,
+       "status": "starting",
+       "startedAt": 1700000000000
+      }
+     ],
+     "calls": [],
+     "events": [],
+     "timers": []
+    }
+   ]
+  },
+  {
+   "name": "create-internal",
+   "clock": 1700000500000,
+   "steps": [
+    {
+     "op": "create",
+     "input": {
+      "kind": "dev",
+      "cwd": "E:\\proj\\web",
+      "file": "C:\\node\\npm.cmd",
+      "args": [
+       "run",
+       "dev"
+      ],
+      "title": "web dev",
+      "projectId": "p1"
+     },
+     "result": {
+      "id": "s1-loywekv4",
+      "projectId": "p1",
+      "kind": "dev",
+      "title": "web dev",
+      "command": "C:\\node\\npm.cmd run dev",
+      "cwd": "E:\\proj\\web",
+      "pid": 4000,
+      "status": "starting",
+      "startedAt": 1700000500000
+     },
+     "calls": [
+      [
+       "spawn",
+       {
+        "file": "C:\\node\\npm.cmd",
+        "args": [
+         "run",
+         "dev"
+        ],
+        "cwd": "E:\\proj\\web",
+        "cols": 120,
+        "rows": 30,
+        "env": {
+         "MILE_TEST_BASE": "base",
+         "MILE_RUN_TOKEN": "tok-1",
+         "MILE_SESSION_ID": "s1-loywekv4",
+         "LANG": "zh_CN.UTF-8",
+         "LC_ALL": "zh_CN.UTF-8",
+         "PYTHONIOENCODING": "utf-8",
+         "FORCE_COLOR": "1",
+         "TERM": "xterm-256color",
+         "npm_config_progress": "false"
+        }
+       }
+      ],
+      [
+       "own.register",
+       "s1-loywekv4",
+       4000,
+       "tok-1"
+      ],
+      [
+       "pty.write",
+       4000,
+       "INIT\r"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "create",
+     "input": {
+      "kind": "build"
+     },
+     "result": {
+      "id": "s2-loywekv4",
+      "projectId": null,
+      "kind": "build",
+      "title": "build",
+      "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+      "cwd": "C:\\Users\\test",
+      "pid": 4100,
+      "status": "starting",
+      "startedAt": 1700000500000
+     },
+     "calls": [
+      [
+       "spawn",
+       {
+        "file": "C:\\pwsh\\pwsh.exe",
+        "args": [
+         "-NoLogo"
+        ],
+        "cwd": "C:\\Users\\test",
+        "cols": 120,
+        "rows": 30,
+        "env": {
+         "MILE_TEST_BASE": "base",
+         "MILE_RUN_TOKEN": "tok-2",
+         "MILE_SESSION_ID": "s2-loywekv4",
+         "LANG": "zh_CN.UTF-8",
+         "LC_ALL": "zh_CN.UTF-8",
+         "PYTHONIOENCODING": "utf-8",
+         "FORCE_COLOR": "1",
+         "TERM": "xterm-256color",
+         "npm_config_progress": "false"
+        }
+       }
+      ],
+      [
+       "own.register",
+       "s2-loywekv4",
+       4100,
+       "tok-2"
+      ],
+      [
+       "pty.write",
+       4100,
+       "INIT\r"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "create",
+     "input": {
+      "kind": "install",
+      "args": [],
+      "title": "\u88c5\u4f9d\u8d56"
+     },
+     "result": {
+      "id": "s3-loywekv4",
+      "projectId": null,
+      "kind": "install",
+      "title": "\u88c5\u4f9d\u8d56",
+      "command": "C:\\pwsh\\pwsh.exe",
+      "cwd": "C:\\Users\\test",
+      "pid": 4200,
+      "status": "starting",
+      "startedAt": 1700000500000
+     },
+     "calls": [
+      [
+       "spawn",
+       {
+        "file": "C:\\pwsh\\pwsh.exe",
+        "args": [],
+        "cwd": "C:\\Users\\test",
+        "cols": 120,
+        "rows": 30,
+        "env": {
+         "MILE_TEST_BASE": "base",
+         "MILE_RUN_TOKEN": "tok-3",
+         "MILE_SESSION_ID": "s3-loywekv4",
+         "LANG": "zh_CN.UTF-8",
+         "LC_ALL": "zh_CN.UTF-8",
+         "PYTHONIOENCODING": "utf-8",
+         "FORCE_COLOR": "1",
+         "TERM": "xterm-256color",
+         "npm_config_progress": "false"
+        }
+       }
+      ],
+      [
+       "own.register",
+       "s3-loywekv4",
+       4200,
+       "tok-3"
+      ],
+      [
+       "pty.write",
+       4200,
+       "INIT\r"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "create",
+     "input": {
+      "kind": "script",
+      "file": "C:\\pwsh\\pwsh.exe",
+      "args": [
+       "-File",
+       "a b.ps1"
+      ],
+      "cwd": "D:\\x",
+      "env": {
+       "FOO": "bar",
+       "FORCE_COLOR": "0",
+       "MILE_RUN_TOKEN": "evil",
+       "npm_config_progress": "true",
+       "LANG": "C"
+      }
+     },
+     "result": {
+      "id": "s4-loywekv4",
+      "projectId": null,
+      "kind": "script",
+      "title": "script",
+      "command": "C:\\pwsh\\pwsh.exe -File a b.ps1",
+      "cwd": "D:\\x",
+      "pid": 4300,
+      "status": "starting",
+      "startedAt": 1700000500000
+     },
+     "calls": [
+      [
+       "spawn",
+       {
+        "file": "C:\\pwsh\\pwsh.exe",
+        "args": [
+         "-File",
+         "a b.ps1"
+        ],
+        "cwd": "D:\\x",
+        "cols": 120,
+        "rows": 30,
+        "env": {
+         "MILE_TEST_BASE": "base",
+         "MILE_RUN_TOKEN": "tok-4",
+         "MILE_SESSION_ID": "s4-loywekv4",
+         "LANG": "zh_CN.UTF-8",
+         "LC_ALL": "zh_CN.UTF-8",
+         "PYTHONIOENCODING": "utf-8",
+         "FORCE_COLOR": "1",
+         "TERM": "xterm-256color",
+         "npm_config_progress": "false",
+         "FOO": "bar"
+        }
+       }
+      ],
+      [
+       "own.register",
+       "s4-loywekv4",
+       4300,
+       "tok-4"
+      ],
+      [
+       "pty.write",
+       4300,
+       "INIT\r"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "list",
+     "result": [
+      {
+       "id": "s1-loywekv4",
+       "projectId": "p1",
+       "kind": "dev",
+       "title": "web dev",
+       "command": "C:\\node\\npm.cmd run dev",
+       "cwd": "E:\\proj\\web",
+       "pid": 4000,
+       "status": "starting",
+       "startedAt": 1700000500000
+      },
+      {
+       "id": "s2-loywekv4",
+       "projectId": null,
+       "kind": "build",
+       "title": "build",
+       "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+       "cwd": "C:\\Users\\test",
+       "pid": 4100,
+       "status": "starting",
+       "startedAt": 1700000500000
+      },
+      {
+       "id": "s3-loywekv4",
+       "projectId": null,
+       "kind": "install",
+       "title": "\u88c5\u4f9d\u8d56",
+       "command": "C:\\pwsh\\pwsh.exe",
+       "cwd": "C:\\Users\\test",
+       "pid": 4200,
+       "status": "starting",
+       "startedAt": 1700000500000
+      },
+      {
+       "id": "s4-loywekv4",
+       "projectId": null,
+       "kind": "script",
+       "title": "script",
+       "command": "C:\\pwsh\\pwsh.exe -File a b.ps1",
+       "cwd": "D:\\x",
+       "pid": 4300,
+       "status": "starting",
+       "startedAt": 1700000500000
+      }
+     ],
+     "calls": [],
+     "events": [],
+     "timers": []
+    }
+   ]
+  },
+  {
+   "name": "data-flush-coalesce",
+   "clock": 1700000000000,
+   "steps": [
+    {
+     "op": "createShell",
+     "input": {
+      "kind": "shell"
+     },
+     "result": {
+      "id": "s1-loyw3v28",
+      "projectId": null,
+      "kind": "shell",
+      "title": "PowerShell 7",
+      "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+      "cwd": "C:\\Users\\test",
+      "pid": 4000,
+      "status": "starting",
+      "startedAt": 1700000000000
+     },
+     "calls": [
+      [
+       "spawn",
+       {
+        "file": "C:\\pwsh\\pwsh.exe",
+        "args": [
+         "-NoLogo"
+        ],
+        "cwd": "C:\\Users\\test",
+        "cols": 120,
+        "rows": 30,
+        "env": {
+         "MILE_TEST_BASE": "base",
+         "MILE_RUN_TOKEN": "tok-1",
+         "MILE_SESSION_ID": "s1-loyw3v28",
+         "LANG": "zh_CN.UTF-8",
+         "LC_ALL": "zh_CN.UTF-8",
+         "PYTHONIOENCODING": "utf-8",
+         "FORCE_COLOR": "1",
+         "TERM": "xterm-256color",
+         "npm_config_progress": "false"
+        }
+       }
+      ],
+      [
+       "own.register",
+       "s1-loyw3v28",
+       4000,
+       "tok-1"
+      ],
+      [
+       "pty.write",
+       4000,
+       "INIT\r"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "feed",
+     "n": 0,
+     "data": "one ",
+     "calls": [],
+     "events": [],
+     "timers": [
+      16
+     ]
+    },
+    {
+     "op": "feed",
+     "n": 0,
+     "data": "\u4e8c ",
+     "calls": [],
+     "events": [],
+     "timers": [
+      16
+     ]
+    },
+    {
+     "op": "feed",
+     "n": 0,
+     "data": "\u4e09\ud83d\ude00\r\n",
+     "calls": [],
+     "events": [],
+     "timers": [
+      16
+     ]
+    },
+    {
+     "op": "history",
+     "n": 0,
+     "result": {
+      "len": 11,
+      "head": "one \u4e8c \u4e09\ud83d\ude00",
+      "tail": "e \u4e8c \u4e09\ud83d\ude00\r\n",
+      "full": "one \u4e8c \u4e09\ud83d\ude00\r\n"
+     },
+     "calls": [],
+     "events": [],
+     "timers": [
+      16
+     ]
+    },
+    {
+     "op": "fire",
+     "ms": 16,
+     "calls": [],
+     "events": [
+      {
+       "type": "data",
+       "id": "s1-loyw3v28",
+       "len": 11,
+       "head": "one \u4e8c \u4e09\ud83d\ude00",
+       "tail": "e \u4e8c \u4e09\ud83d\ude00\r\n",
+       "full": "one \u4e8c \u4e09\ud83d\ude00\r\n"
+      }
+     ],
+     "timers": []
+    },
+    {
+     "op": "fire",
+     "ms": 16,
+     "calls": [],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "feed",
+     "n": 0,
+     "data": "second",
+     "calls": [],
+     "events": [],
+     "timers": [
+      16
+     ]
+    },
+    {
+     "op": "fire",
+     "ms": 16,
+     "calls": [],
+     "events": [
+      {
+       "type": "data",
+       "id": "s1-loyw3v28",
+       "len": 6,
+       "head": "second",
+       "tail": "second",
+       "full": "second"
+      }
+     ],
+     "timers": []
+    },
+    {
+     "op": "history",
+     "n": 0,
+     "result": {
+      "len": 17,
+      "head": "one \u4e8c \u4e09\ud83d\ude00",
+      "tail": "\r\nsecond",
+      "full": "one \u4e8c \u4e09\ud83d\ude00\r\nsecond"
+     },
+     "calls": [],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "list",
+     "result": [
+      {
+       "id": "s1-loyw3v28",
+       "projectId": null,
+       "kind": "shell",
+       "title": "PowerShell 7",
+       "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+       "cwd": "C:\\Users\\test",
+       "pid": 4000,
+       "status": "running",
+       "startedAt": 1700000000000
+      }
+     ],
+     "calls": [],
+     "events": [],
+     "timers": []
+    }
+   ]
+  },
+  {
+   "name": "buffer-truncate",
+   "clock": 1700000000000,
+   "steps": [
+    {
+     "op": "createShell",
+     "input": {
+      "kind": "shell"
+     },
+     "result": {
+      "id": "s1-loyw3v28",
+      "projectId": null,
+      "kind": "shell",
+      "title": "PowerShell 7",
+      "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+      "cwd": "C:\\Users\\test",
+      "pid": 4000,
+      "status": "starting",
+      "startedAt": 1700000000000
+     },
+     "calls": [
+      [
+       "spawn",
+       {
+        "file": "C:\\pwsh\\pwsh.exe",
+        "args": [
+         "-NoLogo"
+        ],
+        "cwd": "C:\\Users\\test",
+        "cols": 120,
+        "rows": 30,
+        "env": {
+         "MILE_TEST_BASE": "base",
+         "MILE_RUN_TOKEN": "tok-1",
+         "MILE_SESSION_ID": "s1-loyw3v28",
+         "LANG": "zh_CN.UTF-8",
+         "LC_ALL": "zh_CN.UTF-8",
+         "PYTHONIOENCODING": "utf-8",
+         "FORCE_COLOR": "1",
+         "TERM": "xterm-256color",
+         "npm_config_progress": "false"
+        }
+       }
+      ],
+      [
+       "own.register",
+       "s1-loyw3v28",
+       4000,
+       "tok-1"
+      ],
+      [
+       "pty.write",
+       4000,
+       "INIT\r"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "feedRepeat",
+     "n": 0,
+     "unit": "a",
+     "count": 399990,
+     "calls": [],
+     "events": [],
+     "timers": [
+      16
+     ]
+    },
+    {
+     "op": "history",
+     "n": 0,
+     "result": {
+      "len": 399990,
+      "head": "aaaaaaaa",
+      "tail": "aaaaaaaa"
+     },
+     "calls": [],
+     "events": [],
+     "timers": [
+      16
+     ]
+    },
+    {
+     "op": "fire",
+     "ms": 16,
+     "calls": [],
+     "events": [
+      {
+       "type": "data",
+       "id": "s1-loyw3v28",
+       "len": 399990,
+       "head": "aaaaaaaa",
+       "tail": "aaaaaaaa"
+      }
+     ],
+     "timers": []
+    },
+    {
+     "op": "history",
+     "n": 0,
+     "result": {
+      "len": 399990,
+      "head": "aaaaaaaa",
+      "tail": "aaaaaaaa"
+     },
+     "calls": [],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "feed",
+     "n": 0,
+     "data": "\u4f60\u597d\u4e16\u754c\ud83d\ude00\r\n",
+     "calls": [],
+     "events": [],
+     "timers": [
+      16
+     ]
+    },
+    {
+     "op": "history",
+     "n": 0,
+     "result": {
+      "len": 399998,
+      "head": "aaaaaaaa",
+      "tail": "a\u4f60\u597d\u4e16\u754c\ud83d\ude00\r\n"
+     },
+     "calls": [],
+     "events": [],
+     "timers": [
+      16
+     ]
+    },
+    {
+     "op": "fire",
+     "ms": 16,
+     "calls": [],
+     "events": [
+      {
+       "type": "data",
+       "id": "s1-loyw3v28",
+       "len": 8,
+       "head": "\u4f60\u597d\u4e16\u754c\ud83d\ude00\r\n",
+       "tail": "\u4f60\u597d\u4e16\u754c\ud83d\ude00\r\n",
+       "full": "\u4f60\u597d\u4e16\u754c\ud83d\ude00\r\n"
+      }
+     ],
+     "timers": []
+    },
+    {
+     "op": "history",
+     "n": 0,
+     "result": {
+      "len": 399998,
+      "head": "aaaaaaaa",
+      "tail": "a\u4f60\u597d\u4e16\u754c\ud83d\ude00\r\n"
+     },
+     "calls": [],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "feedRepeat",
+     "n": 0,
+     "unit": "b",
+     "count": 500000,
+     "calls": [],
+     "events": [],
+     "timers": [
+      16
+     ]
+    },
+    {
+     "op": "history",
+     "n": 0,
+     "result": {
+      "len": 899998,
+      "head": "aaaaaaaa",
+      "tail": "bbbbbbbb"
+     },
+     "calls": [],
+     "events": [],
+     "timers": [
+      16
+     ]
+    },
+    {
+     "op": "fire",
+     "ms": 16,
+     "calls": [],
+     "events": [
+      {
+       "type": "data",
+       "id": "s1-loyw3v28",
+       "len": 500000,
+       "head": "bbbbbbbb",
+       "tail": "bbbbbbbb"
+      }
+     ],
+     "timers": []
+    },
+    {
+     "op": "history",
+     "n": 0,
+     "result": {
+      "len": 400000,
+      "head": "bbbbbbbb",
+      "tail": "bbbbbbbb"
+     },
+     "calls": [],
+     "events": [],
+     "timers": []
+    }
+   ]
+  },
+  {
+   "name": "exit-clean-and-crash",
+   "clock": 1700000000000,
+   "steps": [
+    {
+     "op": "createShell",
+     "input": {
+      "kind": "shell"
+     },
+     "result": {
+      "id": "s1-loyw3v28",
+      "projectId": null,
+      "kind": "shell",
+      "title": "PowerShell 7",
+      "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+      "cwd": "C:\\Users\\test",
+      "pid": 4000,
+      "status": "starting",
+      "startedAt": 1700000000000
+     },
+     "calls": [
+      [
+       "spawn",
+       {
+        "file": "C:\\pwsh\\pwsh.exe",
+        "args": [
+         "-NoLogo"
+        ],
+        "cwd": "C:\\Users\\test",
+        "cols": 120,
+        "rows": 30,
+        "env": {
+         "MILE_TEST_BASE": "base",
+         "MILE_RUN_TOKEN": "tok-1",
+         "MILE_SESSION_ID": "s1-loyw3v28",
+         "LANG": "zh_CN.UTF-8",
+         "LC_ALL": "zh_CN.UTF-8",
+         "PYTHONIOENCODING": "utf-8",
+         "FORCE_COLOR": "1",
+         "TERM": "xterm-256color",
+         "npm_config_progress": "false"
+        }
+       }
+      ],
+      [
+       "own.register",
+       "s1-loyw3v28",
+       4000,
+       "tok-1"
+      ],
+      [
+       "pty.write",
+       4000,
+       "INIT\r"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "createShell",
+     "input": {
+      "kind": "shell"
+     },
+     "result": {
+      "id": "s2-loyw3v28",
+      "projectId": null,
+      "kind": "shell",
+      "title": "PowerShell 7",
+      "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+      "cwd": "C:\\Users\\test",
+      "pid": 4100,
+      "status": "starting",
+      "startedAt": 1700000000000
+     },
+     "calls": [
+      [
+       "spawn",
+       {
+        "file": "C:\\pwsh\\pwsh.exe",
+        "args": [
+         "-NoLogo"
+        ],
+        "cwd": "C:\\Users\\test",
+        "cols": 120,
+        "rows": 30,
+        "env": {
+         "MILE_TEST_BASE": "base",
+         "MILE_RUN_TOKEN": "tok-2",
+         "MILE_SESSION_ID": "s2-loyw3v28",
+         "LANG": "zh_CN.UTF-8",
+         "LC_ALL": "zh_CN.UTF-8",
+         "PYTHONIOENCODING": "utf-8",
+         "FORCE_COLOR": "1",
+         "TERM": "xterm-256color",
+         "npm_config_progress": "false"
+        }
+       }
+      ],
+      [
+       "own.register",
+       "s2-loyw3v28",
+       4100,
+       "tok-2"
+      ],
+      [
+       "pty.write",
+       4100,
+       "INIT\r"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "createShell",
+     "input": {
+      "kind": "shell"
+     },
+     "result": {
+      "id": "s3-loyw3v28",
+      "projectId": null,
+      "kind": "shell",
+      "title": "PowerShell 7",
+      "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+      "cwd": "C:\\Users\\test",
+      "pid": 4200,
+      "status": "starting",
+      "startedAt": 1700000000000
+     },
+     "calls": [
+      [
+       "spawn",
+       {
+        "file": "C:\\pwsh\\pwsh.exe",
+        "args": [
+         "-NoLogo"
+        ],
+        "cwd": "C:\\Users\\test",
+        "cols": 120,
+        "rows": 30,
+        "env": {
+         "MILE_TEST_BASE": "base",
+         "MILE_RUN_TOKEN": "tok-3",
+         "MILE_SESSION_ID": "s3-loyw3v28",
+         "LANG": "zh_CN.UTF-8",
+         "LC_ALL": "zh_CN.UTF-8",
+         "PYTHONIOENCODING": "utf-8",
+         "FORCE_COLOR": "1",
+         "TERM": "xterm-256color",
+         "npm_config_progress": "false"
+        }
+       }
+      ],
+      [
+       "own.register",
+       "s3-loyw3v28",
+       4200,
+       "tok-3"
+      ],
+      [
+       "pty.write",
+       4200,
+       "INIT\r"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "feed",
+     "n": 0,
+     "data": "bye\r\n",
+     "calls": [],
+     "events": [],
+     "timers": [
+      16
+     ]
+    },
+    {
+     "op": "exit",
+     "n": 0,
+     "code": 0,
+     "calls": [
+      [
+       "own.unregister",
+       "s1-loyw3v28"
+      ]
+     ],
+     "events": [
+      {
+       "type": "data",
+       "id": "s1-loyw3v28",
+       "len": 5,
+       "head": "bye\r\n",
+       "tail": "bye\r\n",
+       "full": "bye\r\n"
+      },
+      {
+       "type": "exit",
+       "id": "s1-loyw3v28",
+       "exitCode": 0
+      }
+     ],
+     "timers": []
+    },
+    {
+     "op": "list",
+     "result": [
+      {
+       "id": "s1-loyw3v28",
+       "projectId": null,
+       "kind": "shell",
+       "title": "PowerShell 7",
+       "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+       "cwd": "C:\\Users\\test",
+       "pid": 4000,
+       "status": "stopped",
+       "startedAt": 1700000000000,
+       "exitCode": 0
+      },
+      {
+       "id": "s2-loyw3v28",
+       "projectId": null,
+       "kind": "shell",
+       "title": "PowerShell 7",
+       "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+       "cwd": "C:\\Users\\test",
+       "pid": 4100,
+       "status": "starting",
+       "startedAt": 1700000000000
+      },
+      {
+       "id": "s3-loyw3v28",
+       "projectId": null,
+       "kind": "shell",
+       "title": "PowerShell 7",
+       "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+       "cwd": "C:\\Users\\test",
+       "pid": 4200,
+       "status": "starting",
+       "startedAt": 1700000000000
+      }
+     ],
+     "calls": [],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "history",
+     "n": 0,
+     "result": {
+      "len": 5,
+      "head": "bye\r\n",
+      "tail": "bye\r\n",
+      "full": "bye\r\n"
+     },
+     "calls": [],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "exit",
+     "n": 1,
+     "code": 3,
+     "calls": [
+      [
+       "own.unregister",
+       "s2-loyw3v28"
+      ]
+     ],
+     "events": [
+      {
+       "type": "exit",
+       "id": "s2-loyw3v28",
+       "exitCode": 3
+      }
+     ],
+     "timers": []
+    },
+    {
+     "op": "list",
+     "result": [
+      {
+       "id": "s1-loyw3v28",
+       "projectId": null,
+       "kind": "shell",
+       "title": "PowerShell 7",
+       "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+       "cwd": "C:\\Users\\test",
+       "pid": 4000,
+       "status": "stopped",
+       "startedAt": 1700000000000,
+       "exitCode": 0
+      },
+      {
+       "id": "s2-loyw3v28",
+       "projectId": null,
+       "kind": "shell",
+       "title": "PowerShell 7",
+       "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+       "cwd": "C:\\Users\\test",
+       "pid": 4100,
+       "status": "crashed",
+       "startedAt": 1700000000000,
+       "exitCode": 3
+      },
+      {
+       "id": "s3-loyw3v28",
+       "projectId": null,
+       "kind": "shell",
+       "title": "PowerShell 7",
+       "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+       "cwd": "C:\\Users\\test",
+       "pid": 4200,
+       "status": "starting",
+       "startedAt": 1700000000000
+      }
+     ],
+     "calls": [],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "ownedPids",
+     "result": [
+      4200
+     ],
+     "calls": [],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "liveCount",
+     "result": 1,
+     "calls": [],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "sessionIdByPid",
+     "pid": 4000,
+     "result": "s1-loyw3v28",
+     "calls": [],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "sessionIdByPid",
+     "pid": 4200,
+     "result": "s3-loyw3v28",
+     "calls": [],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "fire",
+     "ms": 16,
+     "calls": [],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "write",
+     "n": 0,
+     "data": "x",
+     "calls": [
+      [
+       "pty.write",
+       4000,
+       "x"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "resize",
+     "n": 0,
+     "cols": 80,
+     "rows": 24,
+     "calls": [
+      [
+       "pty.resize",
+       4000,
+       80,
+       24
+      ]
+     ],
+     "events": [],
+     "timers": []
+    }
+   ]
+  },
+  {
+   "name": "kill-flows",
+   "clock": 1700000000000,
+   "steps": [
+    {
+     "op": "createShell",
+     "input": {
+      "kind": "shell"
+     },
+     "result": {
+      "id": "s1-loyw3v28",
+      "projectId": null,
+      "kind": "shell",
+      "title": "PowerShell 7",
+      "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+      "cwd": "C:\\Users\\test",
+      "pid": 4000,
+      "status": "starting",
+      "startedAt": 1700000000000
+     },
+     "calls": [
+      [
+       "spawn",
+       {
+        "file": "C:\\pwsh\\pwsh.exe",
+        "args": [
+         "-NoLogo"
+        ],
+        "cwd": "C:\\Users\\test",
+        "cols": 120,
+        "rows": 30,
+        "env": {
+         "MILE_TEST_BASE": "base",
+         "MILE_RUN_TOKEN": "tok-1",
+         "MILE_SESSION_ID": "s1-loyw3v28",
+         "LANG": "zh_CN.UTF-8",
+         "LC_ALL": "zh_CN.UTF-8",
+         "PYTHONIOENCODING": "utf-8",
+         "FORCE_COLOR": "1",
+         "TERM": "xterm-256color",
+         "npm_config_progress": "false"
+        }
+       }
+      ],
+      [
+       "own.register",
+       "s1-loyw3v28",
+       4000,
+       "tok-1"
+      ],
+      [
+       "pty.write",
+       4000,
+       "INIT\r"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "createShell",
+     "input": {
+      "kind": "shell"
+     },
+     "result": {
+      "id": "s2-loyw3v28",
+      "projectId": null,
+      "kind": "shell",
+      "title": "PowerShell 7",
+      "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+      "cwd": "C:\\Users\\test",
+      "pid": 4100,
+      "status": "starting",
+      "startedAt": 1700000000000
+     },
+     "calls": [
+      [
+       "spawn",
+       {
+        "file": "C:\\pwsh\\pwsh.exe",
+        "args": [
+         "-NoLogo"
+        ],
+        "cwd": "C:\\Users\\test",
+        "cols": 120,
+        "rows": 30,
+        "env": {
+         "MILE_TEST_BASE": "base",
+         "MILE_RUN_TOKEN": "tok-2",
+         "MILE_SESSION_ID": "s2-loyw3v28",
+         "LANG": "zh_CN.UTF-8",
+         "LC_ALL": "zh_CN.UTF-8",
+         "PYTHONIOENCODING": "utf-8",
+         "FORCE_COLOR": "1",
+         "TERM": "xterm-256color",
+         "npm_config_progress": "false"
+        }
+       }
+      ],
+      [
+       "own.register",
+       "s2-loyw3v28",
+       4100,
+       "tok-2"
+      ],
+      [
+       "pty.write",
+       4100,
+       "INIT\r"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "createShell",
+     "input": {
+      "kind": "shell"
+     },
+     "result": {
+      "id": "s3-loyw3v28",
+      "projectId": null,
+      "kind": "shell",
+      "title": "PowerShell 7",
+      "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+      "cwd": "C:\\Users\\test",
+      "pid": 4200,
+      "status": "starting",
+      "startedAt": 1700000000000
+     },
+     "calls": [
+      [
+       "spawn",
+       {
+        "file": "C:\\pwsh\\pwsh.exe",
+        "args": [
+         "-NoLogo"
+        ],
+        "cwd": "C:\\Users\\test",
+        "cols": 120,
+        "rows": 30,
+        "env": {
+         "MILE_TEST_BASE": "base",
+         "MILE_RUN_TOKEN": "tok-3",
+         "MILE_SESSION_ID": "s3-loyw3v28",
+         "LANG": "zh_CN.UTF-8",
+         "LC_ALL": "zh_CN.UTF-8",
+         "PYTHONIOENCODING": "utf-8",
+         "FORCE_COLOR": "1",
+         "TERM": "xterm-256color",
+         "npm_config_progress": "false"
+        }
+       }
+      ],
+      [
+       "own.register",
+       "s3-loyw3v28",
+       4200,
+       "tok-3"
+      ],
+      [
+       "pty.write",
+       4200,
+       "INIT\r"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "createShell",
+     "input": {
+      "kind": "shell"
+     },
+     "result": {
+      "id": "s4-loyw3v28",
+      "projectId": null,
+      "kind": "shell",
+      "title": "PowerShell 7",
+      "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+      "cwd": "C:\\Users\\test",
+      "pid": 4300,
+      "status": "starting",
+      "startedAt": 1700000000000
+     },
+     "calls": [
+      [
+       "spawn",
+       {
+        "file": "C:\\pwsh\\pwsh.exe",
+        "args": [
+         "-NoLogo"
+        ],
+        "cwd": "C:\\Users\\test",
+        "cols": 120,
+        "rows": 30,
+        "env": {
+         "MILE_TEST_BASE": "base",
+         "MILE_RUN_TOKEN": "tok-4",
+         "MILE_SESSION_ID": "s4-loyw3v28",
+         "LANG": "zh_CN.UTF-8",
+         "LC_ALL": "zh_CN.UTF-8",
+         "PYTHONIOENCODING": "utf-8",
+         "FORCE_COLOR": "1",
+         "TERM": "xterm-256color",
+         "npm_config_progress": "false"
+        }
+       }
+      ],
+      [
+       "own.register",
+       "s4-loyw3v28",
+       4300,
+       "tok-4"
+      ],
+      [
+       "pty.write",
+       4300,
+       "INIT\r"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "createShell",
+     "input": {
+      "kind": "shell"
+     },
+     "result": {
+      "id": "s5-loyw3v28",
+      "projectId": null,
+      "kind": "shell",
+      "title": "PowerShell 7",
+      "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+      "cwd": "C:\\Users\\test",
+      "pid": 4400,
+      "status": "starting",
+      "startedAt": 1700000000000
+     },
+     "calls": [
+      [
+       "spawn",
+       {
+        "file": "C:\\pwsh\\pwsh.exe",
+        "args": [
+         "-NoLogo"
+        ],
+        "cwd": "C:\\Users\\test",
+        "cols": 120,
+        "rows": 30,
+        "env": {
+         "MILE_TEST_BASE": "base",
+         "MILE_RUN_TOKEN": "tok-5",
+         "MILE_SESSION_ID": "s5-loyw3v28",
+         "LANG": "zh_CN.UTF-8",
+         "LC_ALL": "zh_CN.UTF-8",
+         "PYTHONIOENCODING": "utf-8",
+         "FORCE_COLOR": "1",
+         "TERM": "xterm-256color",
+         "npm_config_progress": "false"
+        }
+       }
+      ],
+      [
+       "own.register",
+       "s5-loyw3v28",
+       4400,
+       "tok-5"
+      ],
+      [
+       "pty.write",
+       4400,
+       "INIT\r"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "kill",
+     "n": 0,
+     "calls": [
+      [
+       "own.unregister",
+       "s1-loyw3v28"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "scanner",
+     "on": true,
+     "calls": [],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "kill",
+     "n": 1,
+     "calls": [
+      [
+       "scanner.table",
+       [
+        4100
+       ]
+      ],
+      [
+       "own.assertKillable",
+       4100,
+       "s2-loyw3v28"
+      ],
+      [
+       "killTree",
+       4100
+      ],
+      [
+       "pty.kill",
+       4100
+      ],
+      [
+       "own.unregister",
+       "s2-loyw3v28"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "scanner",
+     "on": true,
+     "tableFails": true,
+     "calls": [],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "kill",
+     "n": 2,
+     "calls": [
+      [
+       "scanner.table",
+       [
+        4200
+       ]
+      ],
+      [
+       "own.unregister",
+       "s3-loyw3v28"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "scanner",
+     "on": true,
+     "assertFails": true,
+     "calls": [],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "kill",
+     "n": 3,
+     "calls": [
+      [
+       "scanner.table",
+       [
+        4300
+       ]
+      ],
+      [
+       "own.assertKillable",
+       4300,
+       "s4-loyw3v28"
+      ],
+      [
+       "own.unregister",
+       "s4-loyw3v28"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "scanner",
+     "on": true,
+     "calls": [],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "flag",
+     "n": 4,
+     "name": "killThrows",
+     "value": true,
+     "calls": [],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "kill",
+     "n": 4,
+     "calls": [
+      [
+       "scanner.table",
+       [
+        4400
+       ]
+      ],
+      [
+       "own.assertKillable",
+       4400,
+       "s5-loyw3v28"
+      ],
+      [
+       "killTree",
+       4400
+      ],
+      [
+       "pty.kill",
+       4400
+      ],
+      [
+       "own.unregister",
+       "s5-loyw3v28"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "kill",
+     "id": "nope",
+     "calls": [],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "exit",
+     "n": 0,
+     "code": 0,
+     "calls": [
+      [
+       "own.unregister",
+       "s1-loyw3v28"
+      ]
+     ],
+     "events": [
+      {
+       "type": "exit",
+       "id": "s1-loyw3v28",
+       "exitCode": 0
+      }
+     ],
+     "timers": []
+    },
+    {
+     "op": "kill",
+     "n": 0,
+     "calls": [
+      [
+       "own.unregister",
+       "s1-loyw3v28"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "list",
+     "result": [
+      {
+       "id": "s1-loyw3v28",
+       "projectId": null,
+       "kind": "shell",
+       "title": "PowerShell 7",
+       "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+       "cwd": "C:\\Users\\test",
+       "pid": 4000,
+       "status": "stopped",
+       "startedAt": 1700000000000,
+       "exitCode": 0
+      },
+      {
+       "id": "s2-loyw3v28",
+       "projectId": null,
+       "kind": "shell",
+       "title": "PowerShell 7",
+       "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+       "cwd": "C:\\Users\\test",
+       "pid": 4100,
+       "status": "starting",
+       "startedAt": 1700000000000
+      },
+      {
+       "id": "s3-loyw3v28",
+       "projectId": null,
+       "kind": "shell",
+       "title": "PowerShell 7",
+       "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+       "cwd": "C:\\Users\\test",
+       "pid": 4200,
+       "status": "starting",
+       "startedAt": 1700000000000
+      },
+      {
+       "id": "s4-loyw3v28",
+       "projectId": null,
+       "kind": "shell",
+       "title": "PowerShell 7",
+       "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+       "cwd": "C:\\Users\\test",
+       "pid": 4300,
+       "status": "starting",
+       "startedAt": 1700000000000
+      },
+      {
+       "id": "s5-loyw3v28",
+       "projectId": null,
+       "kind": "shell",
+       "title": "PowerShell 7",
+       "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+       "cwd": "C:\\Users\\test",
+       "pid": 4400,
+       "status": "starting",
+       "startedAt": 1700000000000
+      }
+     ],
+     "calls": [],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "ownedPids",
+     "result": [
+      4100,
+      4200,
+      4300,
+      4400
+     ],
+     "calls": [],
+     "events": [],
+     "timers": []
+    }
+   ]
+  },
+  {
+   "name": "stop-flows",
+   "clock": 1700000000000,
+   "steps": [
+    {
+     "op": "createShell",
+     "input": {
+      "kind": "shell"
+     },
+     "result": {
+      "id": "s1-loyw3v28",
+      "projectId": null,
+      "kind": "shell",
+      "title": "PowerShell 7",
+      "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+      "cwd": "C:\\Users\\test",
+      "pid": 4000,
+      "status": "starting",
+      "startedAt": 1700000000000
+     },
+     "calls": [
+      [
+       "spawn",
+       {
+        "file": "C:\\pwsh\\pwsh.exe",
+        "args": [
+         "-NoLogo"
+        ],
+        "cwd": "C:\\Users\\test",
+        "cols": 120,
+        "rows": 30,
+        "env": {
+         "MILE_TEST_BASE": "base",
+         "MILE_RUN_TOKEN": "tok-1",
+         "MILE_SESSION_ID": "s1-loyw3v28",
+         "LANG": "zh_CN.UTF-8",
+         "LC_ALL": "zh_CN.UTF-8",
+         "PYTHONIOENCODING": "utf-8",
+         "FORCE_COLOR": "1",
+         "TERM": "xterm-256color",
+         "npm_config_progress": "false"
+        }
+       }
+      ],
+      [
+       "own.register",
+       "s1-loyw3v28",
+       4000,
+       "tok-1"
+      ],
+      [
+       "pty.write",
+       4000,
+       "INIT\r"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "createShell",
+     "input": {
+      "kind": "shell"
+     },
+     "result": {
+      "id": "s2-loyw3v28",
+      "projectId": null,
+      "kind": "shell",
+      "title": "PowerShell 7",
+      "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+      "cwd": "C:\\Users\\test",
+      "pid": 4100,
+      "status": "starting",
+      "startedAt": 1700000000000
+     },
+     "calls": [
+      [
+       "spawn",
+       {
+        "file": "C:\\pwsh\\pwsh.exe",
+        "args": [
+         "-NoLogo"
+        ],
+        "cwd": "C:\\Users\\test",
+        "cols": 120,
+        "rows": 30,
+        "env": {
+         "MILE_TEST_BASE": "base",
+         "MILE_RUN_TOKEN": "tok-2",
+         "MILE_SESSION_ID": "s2-loyw3v28",
+         "LANG": "zh_CN.UTF-8",
+         "LC_ALL": "zh_CN.UTF-8",
+         "PYTHONIOENCODING": "utf-8",
+         "FORCE_COLOR": "1",
+         "TERM": "xterm-256color",
+         "npm_config_progress": "false"
+        }
+       }
+      ],
+      [
+       "own.register",
+       "s2-loyw3v28",
+       4100,
+       "tok-2"
+      ],
+      [
+       "pty.write",
+       4100,
+       "INIT\r"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "createShell",
+     "input": {
+      "kind": "shell"
+     },
+     "result": {
+      "id": "s3-loyw3v28",
+      "projectId": null,
+      "kind": "shell",
+      "title": "PowerShell 7",
+      "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+      "cwd": "C:\\Users\\test",
+      "pid": 4200,
+      "status": "starting",
+      "startedAt": 1700000000000
+     },
+     "calls": [
+      [
+       "spawn",
+       {
+        "file": "C:\\pwsh\\pwsh.exe",
+        "args": [
+         "-NoLogo"
+        ],
+        "cwd": "C:\\Users\\test",
+        "cols": 120,
+        "rows": 30,
+        "env": {
+         "MILE_TEST_BASE": "base",
+         "MILE_RUN_TOKEN": "tok-3",
+         "MILE_SESSION_ID": "s3-loyw3v28",
+         "LANG": "zh_CN.UTF-8",
+         "LC_ALL": "zh_CN.UTF-8",
+         "PYTHONIOENCODING": "utf-8",
+         "FORCE_COLOR": "1",
+         "TERM": "xterm-256color",
+         "npm_config_progress": "false"
+        }
+       }
+      ],
+      [
+       "own.register",
+       "s3-loyw3v28",
+       4200,
+       "tok-3"
+      ],
+      [
+       "pty.write",
+       4200,
+       "INIT\r"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "scanner",
+     "on": true,
+     "calls": [],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "stop",
+     "n": 0,
+     "calls": [
+      [
+       "pty.write",
+       4000,
+       "\u0003"
+      ]
+     ],
+     "events": [],
+     "timers": [
+      3000
+     ]
+    },
+    {
+     "op": "fire",
+     "ms": 3000,
+     "calls": [
+      [
+       "scanner.table",
+       [
+        4000
+       ]
+      ],
+      [
+       "own.assertKillable",
+       4000,
+       "s1-loyw3v28"
+      ],
+      [
+       "killTree",
+       4000
+      ],
+      [
+       "pty.kill",
+       4000
+      ],
+      [
+       "own.unregister",
+       "s1-loyw3v28"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "flag",
+     "n": 1,
+     "name": "writeThrows",
+     "value": true,
+     "calls": [],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "stop",
+     "n": 1,
+     "calls": [
+      [
+       "pty.write",
+       4100,
+       "\u0003"
+      ]
+     ],
+     "events": [],
+     "timers": [
+      3000
+     ]
+    },
+    {
+     "op": "fire",
+     "ms": 3000,
+     "calls": [
+      [
+       "scanner.table",
+       [
+        4100
+       ]
+      ],
+      [
+       "own.assertKillable",
+       4100,
+       "s2-loyw3v28"
+      ],
+      [
+       "killTree",
+       4100
+      ],
+      [
+       "pty.kill",
+       4100
+      ],
+      [
+       "own.unregister",
+       "s2-loyw3v28"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "stop",
+     "id": "nope",
+     "calls": [],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "stop",
+     "n": 2,
+     "calls": [
+      [
+       "pty.write",
+       4200,
+       "\u0003"
+      ]
+     ],
+     "events": [],
+     "timers": [
+      3000
+     ]
+    },
+    {
+     "op": "exit",
+     "n": 2,
+     "code": 0,
+     "calls": [
+      [
+       "own.unregister",
+       "s3-loyw3v28"
+      ]
+     ],
+     "events": [
+      {
+       "type": "exit",
+       "id": "s3-loyw3v28",
+       "exitCode": 0
+      }
+     ],
+     "timers": [
+      3000
+     ]
+    },
+    {
+     "op": "fire",
+     "ms": 3000,
+     "calls": [
+      [
+       "own.unregister",
+       "s3-loyw3v28"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "list",
+     "result": [
+      {
+       "id": "s1-loyw3v28",
+       "projectId": null,
+       "kind": "shell",
+       "title": "PowerShell 7",
+       "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+       "cwd": "C:\\Users\\test",
+       "pid": 4000,
+       "status": "starting",
+       "startedAt": 1700000000000
+      },
+      {
+       "id": "s2-loyw3v28",
+       "projectId": null,
+       "kind": "shell",
+       "title": "PowerShell 7",
+       "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+       "cwd": "C:\\Users\\test",
+       "pid": 4100,
+       "status": "starting",
+       "startedAt": 1700000000000
+      },
+      {
+       "id": "s3-loyw3v28",
+       "projectId": null,
+       "kind": "shell",
+       "title": "PowerShell 7",
+       "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+       "cwd": "C:\\Users\\test",
+       "pid": 4200,
+       "status": "stopped",
+       "startedAt": 1700000000000,
+       "exitCode": 0
+      }
+     ],
+     "calls": [],
+     "events": [],
+     "timers": []
+    }
+   ]
+  },
+  {
+   "name": "dispose-all",
+   "clock": 1700000000000,
+   "steps": [
+    {
+     "op": "createShell",
+     "input": {
+      "kind": "shell"
+     },
+     "result": {
+      "id": "s1-loyw3v28",
+      "projectId": null,
+      "kind": "shell",
+      "title": "PowerShell 7",
+      "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+      "cwd": "C:\\Users\\test",
+      "pid": 4000,
+      "status": "starting",
+      "startedAt": 1700000000000
+     },
+     "calls": [
+      [
+       "spawn",
+       {
+        "file": "C:\\pwsh\\pwsh.exe",
+        "args": [
+         "-NoLogo"
+        ],
+        "cwd": "C:\\Users\\test",
+        "cols": 120,
+        "rows": 30,
+        "env": {
+         "MILE_TEST_BASE": "base",
+         "MILE_RUN_TOKEN": "tok-1",
+         "MILE_SESSION_ID": "s1-loyw3v28",
+         "LANG": "zh_CN.UTF-8",
+         "LC_ALL": "zh_CN.UTF-8",
+         "PYTHONIOENCODING": "utf-8",
+         "FORCE_COLOR": "1",
+         "TERM": "xterm-256color",
+         "npm_config_progress": "false"
+        }
+       }
+      ],
+      [
+       "own.register",
+       "s1-loyw3v28",
+       4000,
+       "tok-1"
+      ],
+      [
+       "pty.write",
+       4000,
+       "INIT\r"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "createShell",
+     "input": {
+      "kind": "shell"
+     },
+     "result": {
+      "id": "s2-loyw3v28",
+      "projectId": null,
+      "kind": "shell",
+      "title": "PowerShell 7",
+      "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+      "cwd": "C:\\Users\\test",
+      "pid": 4100,
+      "status": "starting",
+      "startedAt": 1700000000000
+     },
+     "calls": [
+      [
+       "spawn",
+       {
+        "file": "C:\\pwsh\\pwsh.exe",
+        "args": [
+         "-NoLogo"
+        ],
+        "cwd": "C:\\Users\\test",
+        "cols": 120,
+        "rows": 30,
+        "env": {
+         "MILE_TEST_BASE": "base",
+         "MILE_RUN_TOKEN": "tok-2",
+         "MILE_SESSION_ID": "s2-loyw3v28",
+         "LANG": "zh_CN.UTF-8",
+         "LC_ALL": "zh_CN.UTF-8",
+         "PYTHONIOENCODING": "utf-8",
+         "FORCE_COLOR": "1",
+         "TERM": "xterm-256color",
+         "npm_config_progress": "false"
+        }
+       }
+      ],
+      [
+       "own.register",
+       "s2-loyw3v28",
+       4100,
+       "tok-2"
+      ],
+      [
+       "pty.write",
+       4100,
+       "INIT\r"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "createShell",
+     "input": {
+      "kind": "shell"
+     },
+     "result": {
+      "id": "s3-loyw3v28",
+      "projectId": null,
+      "kind": "shell",
+      "title": "PowerShell 7",
+      "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+      "cwd": "C:\\Users\\test",
+      "pid": 4200,
+      "status": "starting",
+      "startedAt": 1700000000000
+     },
+     "calls": [
+      [
+       "spawn",
+       {
+        "file": "C:\\pwsh\\pwsh.exe",
+        "args": [
+         "-NoLogo"
+        ],
+        "cwd": "C:\\Users\\test",
+        "cols": 120,
+        "rows": 30,
+        "env": {
+         "MILE_TEST_BASE": "base",
+         "MILE_RUN_TOKEN": "tok-3",
+         "MILE_SESSION_ID": "s3-loyw3v28",
+         "LANG": "zh_CN.UTF-8",
+         "LC_ALL": "zh_CN.UTF-8",
+         "PYTHONIOENCODING": "utf-8",
+         "FORCE_COLOR": "1",
+         "TERM": "xterm-256color",
+         "npm_config_progress": "false"
+        }
+       }
+      ],
+      [
+       "own.register",
+       "s3-loyw3v28",
+       4200,
+       "tok-3"
+      ],
+      [
+       "pty.write",
+       4200,
+       "INIT\r"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "exit",
+     "n": 1,
+     "code": 0,
+     "calls": [
+      [
+       "own.unregister",
+       "s2-loyw3v28"
+      ]
+     ],
+     "events": [
+      {
+       "type": "exit",
+       "id": "s2-loyw3v28",
+       "exitCode": 0
+      }
+     ],
+     "timers": []
+    },
+    {
+     "op": "disposeAll",
+     "calls": [
+      [
+       "own.unregister",
+       "s1-loyw3v28"
+      ],
+      [
+       "own.unregister",
+       "s2-loyw3v28"
+      ],
+      [
+       "own.unregister",
+       "s3-loyw3v28"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "list",
+     "result": [],
+     "calls": [],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "ownedPids",
+     "result": [],
+     "calls": [],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "liveCount",
+     "result": 0,
+     "calls": [],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "scanner",
+     "on": true,
+     "calls": [],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "createShell",
+     "input": {
+      "kind": "shell"
+     },
+     "result": {
+      "id": "s4-loyw3v28",
+      "projectId": null,
+      "kind": "shell",
+      "title": "PowerShell 7",
+      "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+      "cwd": "C:\\Users\\test",
+      "pid": 4300,
+      "status": "starting",
+      "startedAt": 1700000000000
+     },
+     "calls": [
+      [
+       "spawn",
+       {
+        "file": "C:\\pwsh\\pwsh.exe",
+        "args": [
+         "-NoLogo"
+        ],
+        "cwd": "C:\\Users\\test",
+        "cols": 120,
+        "rows": 30,
+        "env": {
+         "MILE_TEST_BASE": "base",
+         "MILE_RUN_TOKEN": "tok-4",
+         "MILE_SESSION_ID": "s4-loyw3v28",
+         "LANG": "zh_CN.UTF-8",
+         "LC_ALL": "zh_CN.UTF-8",
+         "PYTHONIOENCODING": "utf-8",
+         "FORCE_COLOR": "1",
+         "TERM": "xterm-256color",
+         "npm_config_progress": "false"
+        }
+       }
+      ],
+      [
+       "own.register",
+       "s4-loyw3v28",
+       4300,
+       "tok-4"
+      ],
+      [
+       "pty.write",
+       4300,
+       "INIT\r"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "createShell",
+     "input": {
+      "kind": "shell"
+     },
+     "result": {
+      "id": "s5-loyw3v28",
+      "projectId": null,
+      "kind": "shell",
+      "title": "PowerShell 7",
+      "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+      "cwd": "C:\\Users\\test",
+      "pid": 4400,
+      "status": "starting",
+      "startedAt": 1700000000000
+     },
+     "calls": [
+      [
+       "spawn",
+       {
+        "file": "C:\\pwsh\\pwsh.exe",
+        "args": [
+         "-NoLogo"
+        ],
+        "cwd": "C:\\Users\\test",
+        "cols": 120,
+        "rows": 30,
+        "env": {
+         "MILE_TEST_BASE": "base",
+         "MILE_RUN_TOKEN": "tok-5",
+         "MILE_SESSION_ID": "s5-loyw3v28",
+         "LANG": "zh_CN.UTF-8",
+         "LC_ALL": "zh_CN.UTF-8",
+         "PYTHONIOENCODING": "utf-8",
+         "FORCE_COLOR": "1",
+         "TERM": "xterm-256color",
+         "npm_config_progress": "false"
+        }
+       }
+      ],
+      [
+       "own.register",
+       "s5-loyw3v28",
+       4400,
+       "tok-5"
+      ],
+      [
+       "pty.write",
+       4400,
+       "INIT\r"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "disposeAll",
+     "calls": [
+      [
+       "scanner.table",
+       [
+        4300
+       ]
+      ],
+      [
+       "scanner.table",
+       [
+        4400
+       ]
+      ],
+      [
+       "own.assertKillable",
+       4300,
+       "s4-loyw3v28"
+      ],
+      [
+       "own.assertKillable",
+       4400,
+       "s5-loyw3v28"
+      ],
+      [
+       "killTree",
+       4300
+      ],
+      [
+       "killTree",
+       4400
+      ],
+      [
+       "pty.kill",
+       4300
+      ],
+      [
+       "own.unregister",
+       "s4-loyw3v28"
+      ],
+      [
+       "pty.kill",
+       4400
+      ],
+      [
+       "own.unregister",
+       "s5-loyw3v28"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "list",
+     "result": [],
+     "calls": [],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "write",
+     "n": 3,
+     "data": "gone",
+     "calls": [],
+     "events": [],
+     "timers": []
+    }
+   ]
+  },
+  {
+   "name": "write-resize-bounds",
+   "clock": 1700000000000,
+   "steps": [
+    {
+     "op": "createShell",
+     "input": {
+      "kind": "shell"
+     },
+     "result": {
+      "id": "s1-loyw3v28",
+      "projectId": null,
+      "kind": "shell",
+      "title": "PowerShell 7",
+      "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+      "cwd": "C:\\Users\\test",
+      "pid": 4000,
+      "status": "starting",
+      "startedAt": 1700000000000
+     },
+     "calls": [
+      [
+       "spawn",
+       {
+        "file": "C:\\pwsh\\pwsh.exe",
+        "args": [
+         "-NoLogo"
+        ],
+        "cwd": "C:\\Users\\test",
+        "cols": 120,
+        "rows": 30,
+        "env": {
+         "MILE_TEST_BASE": "base",
+         "MILE_RUN_TOKEN": "tok-1",
+         "MILE_SESSION_ID": "s1-loyw3v28",
+         "LANG": "zh_CN.UTF-8",
+         "LC_ALL": "zh_CN.UTF-8",
+         "PYTHONIOENCODING": "utf-8",
+         "FORCE_COLOR": "1",
+         "TERM": "xterm-256color",
+         "npm_config_progress": "false"
+        }
+       }
+      ],
+      [
+       "own.register",
+       "s1-loyw3v28",
+       4000,
+       "tok-1"
+      ],
+      [
+       "pty.write",
+       4000,
+       "INIT\r"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "write",
+     "n": 0,
+     "data": "echo \u4f60\u597d\r",
+     "calls": [
+      [
+       "pty.write",
+       4000,
+       "echo \u4f60\u597d\r"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "write",
+     "id": "nope",
+     "data": "x",
+     "calls": [],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "resize",
+     "n": 0,
+     "cols": 100,
+     "rows": 40,
+     "calls": [
+      [
+       "pty.resize",
+       4000,
+       100,
+       40
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "resize",
+     "n": 0,
+     "cols": 1,
+     "rows": 1,
+     "calls": [
+      [
+       "pty.resize",
+       4000,
+       1,
+       1
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "resize",
+     "n": 0,
+     "cols": 1000,
+     "rows": 1000,
+     "calls": [
+      [
+       "pty.resize",
+       4000,
+       1000,
+       1000
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "resize",
+     "n": 0,
+     "cols": 0,
+     "rows": 10,
+     "calls": [],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "resize",
+     "n": 0,
+     "cols": 10,
+     "rows": 0,
+     "calls": [],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "resize",
+     "n": 0,
+     "cols": 1001,
+     "rows": 10,
+     "calls": [],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "resize",
+     "n": 0,
+     "cols": 10,
+     "rows": 1001,
+     "calls": [],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "resize",
+     "n": 0,
+     "cols": -5,
+     "rows": 10,
+     "calls": [],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "resize",
+     "id": "nope",
+     "cols": 80,
+     "rows": 24,
+     "calls": [],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "flag",
+     "n": 0,
+     "name": "resizeThrows",
+     "value": true,
+     "calls": [],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "resize",
+     "n": 0,
+     "cols": 90,
+     "rows": 30,
+     "calls": [
+      [
+       "pty.resize",
+       4000,
+       90,
+       30
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "flag",
+     "n": 0,
+     "name": "writeThrows",
+     "value": true,
+     "calls": [],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "write",
+     "n": 0,
+     "data": "boom",
+     "error": "pty write failed",
+     "calls": [
+      [
+       "pty.write",
+       4000,
+       "boom"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "history",
+     "id": "nope",
+     "result": {
+      "len": 0,
+      "head": "",
+      "tail": "",
+      "full": ""
+     },
+     "calls": [],
+     "events": [],
+     "timers": []
+    }
+   ]
+  },
+  {
+   "name": "ids-follow-clock",
+   "clock": 1700000000000,
+   "steps": [
+    {
+     "op": "createShell",
+     "input": {
+      "kind": "shell"
+     },
+     "result": {
+      "id": "s1-loyw3v28",
+      "projectId": null,
+      "kind": "shell",
+      "title": "PowerShell 7",
+      "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+      "cwd": "C:\\Users\\test",
+      "pid": 4000,
+      "status": "starting",
+      "startedAt": 1700000000000
+     },
+     "calls": [
+      [
+       "spawn",
+       {
+        "file": "C:\\pwsh\\pwsh.exe",
+        "args": [
+         "-NoLogo"
+        ],
+        "cwd": "C:\\Users\\test",
+        "cols": 120,
+        "rows": 30,
+        "env": {
+         "MILE_TEST_BASE": "base",
+         "MILE_RUN_TOKEN": "tok-1",
+         "MILE_SESSION_ID": "s1-loyw3v28",
+         "LANG": "zh_CN.UTF-8",
+         "LC_ALL": "zh_CN.UTF-8",
+         "PYTHONIOENCODING": "utf-8",
+         "FORCE_COLOR": "1",
+         "TERM": "xterm-256color",
+         "npm_config_progress": "false"
+        }
+       }
+      ],
+      [
+       "own.register",
+       "s1-loyw3v28",
+       4000,
+       "tok-1"
+      ],
+      [
+       "pty.write",
+       4000,
+       "INIT\r"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "clock",
+     "ms": 1700000123456,
+     "calls": [],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "createShell",
+     "input": {
+      "kind": "shell"
+     },
+     "result": {
+      "id": "s2-loyw6ibk",
+      "projectId": null,
+      "kind": "shell",
+      "title": "PowerShell 7",
+      "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+      "cwd": "C:\\Users\\test",
+      "pid": 4100,
+      "status": "starting",
+      "startedAt": 1700000123456
+     },
+     "calls": [
+      [
+       "spawn",
+       {
+        "file": "C:\\pwsh\\pwsh.exe",
+        "args": [
+         "-NoLogo"
+        ],
+        "cwd": "C:\\Users\\test",
+        "cols": 120,
+        "rows": 30,
+        "env": {
+         "MILE_TEST_BASE": "base",
+         "MILE_RUN_TOKEN": "tok-2",
+         "MILE_SESSION_ID": "s2-loyw6ibk",
+         "LANG": "zh_CN.UTF-8",
+         "LC_ALL": "zh_CN.UTF-8",
+         "PYTHONIOENCODING": "utf-8",
+         "FORCE_COLOR": "1",
+         "TERM": "xterm-256color",
+         "npm_config_progress": "false"
+        }
+       }
+      ],
+      [
+       "own.register",
+       "s2-loyw6ibk",
+       4100,
+       "tok-2"
+      ],
+      [
+       "pty.write",
+       4100,
+       "INIT\r"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "create",
+     "input": {
+      "kind": "dev",
+      "projectId": "p9"
+     },
+     "result": {
+      "id": "s3-loyw6ibk",
+      "projectId": "p9",
+      "kind": "dev",
+      "title": "dev",
+      "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+      "cwd": "C:\\Users\\test",
+      "pid": 4200,
+      "status": "starting",
+      "startedAt": 1700000123456
+     },
+     "calls": [
+      [
+       "spawn",
+       {
+        "file": "C:\\pwsh\\pwsh.exe",
+        "args": [
+         "-NoLogo"
+        ],
+        "cwd": "C:\\Users\\test",
+        "cols": 120,
+        "rows": 30,
+        "env": {
+         "MILE_TEST_BASE": "base",
+         "MILE_RUN_TOKEN": "tok-3",
+         "MILE_SESSION_ID": "s3-loyw6ibk",
+         "LANG": "zh_CN.UTF-8",
+         "LC_ALL": "zh_CN.UTF-8",
+         "PYTHONIOENCODING": "utf-8",
+         "FORCE_COLOR": "1",
+         "TERM": "xterm-256color",
+         "npm_config_progress": "false"
+        }
+       }
+      ],
+      [
+       "own.register",
+       "s3-loyw6ibk",
+       4200,
+       "tok-3"
+      ],
+      [
+       "pty.write",
+       4200,
+       "INIT\r"
+      ]
+     ],
+     "events": [],
+     "timers": []
+    },
+    {
+     "op": "list",
+     "result": [
+      {
+       "id": "s1-loyw3v28",
+       "projectId": null,
+       "kind": "shell",
+       "title": "PowerShell 7",
+       "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+       "cwd": "C:\\Users\\test",
+       "pid": 4000,
+       "status": "starting",
+       "startedAt": 1700000000000
+      },
+      {
+       "id": "s2-loyw6ibk",
+       "projectId": null,
+       "kind": "shell",
+       "title": "PowerShell 7",
+       "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+       "cwd": "C:\\Users\\test",
+       "pid": 4100,
+       "status": "starting",
+       "startedAt": 1700000123456
+      },
+      {
+       "id": "s3-loyw6ibk",
+       "projectId": "p9",
+       "kind": "dev",
+       "title": "dev",
+       "command": "C:\\pwsh\\pwsh.exe -NoLogo",
+       "cwd": "C:\\Users\\test",
+       "pid": 4200,
+       "status": "starting",
+       "startedAt": 1700000123456
+      }
+     ],
+     "calls": [],
+     "events": [],
+     "timers": []
+    }
+   ]
+  }
+ ]
+}
