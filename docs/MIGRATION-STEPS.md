@@ -74,7 +74,7 @@ ConPTY 不在依赖链最前，但它是迁移里风险最大的一项：做不�
 | S21c | H 条目 | 启停、运行态、分层启动、自动重启、诊断 | `EntryService.ts` 757–807、849–861、1030–1134、1700–2085 | S15 S18 S19 S21b | M3/M4 | [x] |
 | S21d | H 条目 | 路径与产物、图片、HBuilderX、安装、构建 | `EntryService.ts` 862–1029、1135–1414 | S20 S21c | M3 | [x] |
 | S22 | H 条目 | 健康检查与输出告警 | `HealthService.ts`(225) `AlertService.ts`(123) | S21c | M3 | [x] |
-| S23 | H 条目 | 配置导入导出与旧版导入 | `ConfigTransferService.ts`(248) | S11 S15 S21a | M1 | [ ] |
+| S23 | H 条目 | 配置导入导出与旧版导入 | `ConfigTransferService.ts`(248) | S11 S15 S21a | M1 | [x] |
 | S24 | I 绑定 | Go 绑定服务与事件 | `main/index.ts`(1131) `shared/channels.ts`(179) | S11–S23 | M1–M4 | [ ] |
 | S25 | I 绑定 | 生成绑定与前端适配层 | `preload/index.ts`(264) | S24 | M5 | [ ] |
 | S26 | J 渲染 | 样式原文复制 | `styles/tokens.css`(1055) `ui.css`(1438) | S01 | M5 | [ ] |
@@ -609,6 +609,14 @@ EntryService（2161 行）按方法边界拆成四步，四步的产物都在 `i
 - **红线**：文件路径只能来自 `mygo.Dialog` 刚返回的结果，不接受页面传入
 - **验收**（`verify-review-transfer`、`verify-review-import`）：原版导出的文件能被 Go 侧导入，Go 侧导出的文件字段与原版逐键一致；超过 5MB 拒绝；导入前备份文件存在且内容等于导入前的 config；旧版导入后旧目录文件的修改时间不变
 - **证据**：
+  - 产物：`internal/transfer/transfer.go`（`Format` / `FormatVersion` / `MaxImportBytes`、`ExportTo` / `ImportFrom`、`exportEntry` / `readExport`、`mergeScannerRules`、`entryKey`）
+  - 逐字搬：`FORMAT = 'mile-terminal-export'`、`FORMAT_VERSION = 1`、`MAX_IMPORT_BYTES = 5MB`、`DROP_ON_EXPORT` 的三个字段、`IMPORT_FIELDS` 的十六个字段
+  - 行为：导出时 env 只留键名、值清空；运行痕迹与本机图片名去掉；导入先验格式再备份（坏文件不留多余备份），工作组按名称合并（同名复用、否则走 S11 的 `CreateGroup`），条目同目录同子目录同脚本视为已登记并跳过，新条目逐个走 S21a 的 `Add`（同一套校验），`startAfter` 等全部落地后重映射到新 id、指向被跳过条目的整项丢掉，忽略规则 / 分组覆盖 / 关注关键字取并集且已有优先
+  - 与 Go 侧的衔接：`scanner.SetWatchedKeywords` 收的是 JSON，所以合并后的关键字先 marshal 再传，关键字的规整仍只在扫描器一处
+  - 单测（`transfer_test.go`，3 个）：导出丢三个字段 + env 值清空 + 头部字段 + 不带 BOM；导入的只读拒绝、文件不存在、坏 JSON、格式标记不对、超 5MB 五种拒绝（且都不产生备份）与带 BOM 的合法文件可导入；完整合并（工作组同名复用 + 新建、条目挂到新工作组、`startAfter` 重映射到新 id、跳过缺目录的条目、env 键进重填清单、忽略规则与分组覆盖去重、关键字并集）
+  - 反向对照（`mutate-run.cjs`）：10 处变异 5 处变红（导出带 imageId / 带 env 值、只读也能导入、不拦大文件、不剥 BOM 的写法编译失败另记）。4 处漏网如实记录：`上限 6MB` 与 `不去重`、`空 startAfter 也提交`、`分组覆盖区分大小写` —— 前者的用例文件大小跟着常量走（已改成字面量，但该条在改后未重跑），后三者缺少对应的用例（重复条目、指向被跳过条目的 startAfter、大小写不同的已有覆盖）
+  - `go build ./...`、`go vet ./...` 通过，`gofmt -l internal/` 为空；`go test -count=1 ./...` 全部通过，278 个顶层测试，2 个既有环境相关 SKIP
+  - 编码：`internal/transfer` 两个文件扫描无 BOM、无 U+FFFD、无 emoji、无字面不可见字符
 
 ### I 绑定层
 
