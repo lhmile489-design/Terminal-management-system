@@ -242,7 +242,7 @@ M0 ──► M1 ──► M3 ──► M4
 | --- | --- | --- | --- | --- |
 | D1 | ConPTY 实现 | ① 直接调 `kernel32` 的 `CreatePseudoConsole` ② 第三方 conpty 包装库 ③ 子进程 + 管道（无真终端语义） | **已定 ①（2026-11-14，S02）**：标准库 `syscall` 直调，无第三方依赖，代码在 `internal/sessions/conpty_windows.go`。`go test` 实测通过：PowerShell 5.1 提示符、`chcp 65001` 中文往返、resize 120×40、`Close` 后进程树退出。`Kill` 仅结束根进程，整树终止留给 S18 | M4 |
 | D2 | 图片缩放 | ① 纯 Go `image/png` + `image/jpeg` + 双线性 ② 调用系统 WIC ③ 页面 Canvas 预缩放后上传 | **已定 ①（2026-11-15，S20）**：标准库 `image/png` / `image/jpeg` 解码，自写双线性缩放（采样走非预乘 NRGBA，半透明边缘不发黑），`png.Encode` 编码，无 cgo、无第三方依赖，代码在 `internal/images/images.go`。同一张原图得到的 PNG 字节与原版 Skia 不同，imageId 因此不同（见 §6） | M3 |
-| D3 | 产品名与标识 | `Mile Console` / `Mile Terminal`；`identifier` 用 `com.example.mileconsole` 还是正式域名 | **已定（2026-11-14，S03，用户确认沿用当前值）**：产品名 `Mile Console`，`identifier` 为 `com.example.mileconsole`。`mygo.config.ts`、`main.go` 窗口标题、`index.html`、`package.json` 已是这些值。正式域名等发布前（S34）再换，换时同步 `mygo.config.ts` | M0 收尾 |
+| D3 | 产品名与标识 | `Mile Console` / `Mile Terminal`；`identifier` 用 `com.example.mileconsole` 还是正式域名 | **已定（2026-11-14，S03，用户确认沿用当前值）**：产品名 `Mile Console`，`identifier` 为 `com.example.mileconsole`。`mygo.config.ts`、`main.go` 窗口标题、`index.html`、`package.json` 已是这些值。正式域名等发布前（S34）再换，换时同步 `mygo.config.ts`。**界面品牌文案（2026-11-15，S31 后用户确认）**：标题栏、关于页等界面上的品牌名保留原版「Mile Terminal」，不随产品名改；产品名 `Mile Console` 只用于窗口标题、安装包与数据目录 | M0 收尾 |
 | D4 | 数据目录 | `%APPDATA%\mile-console\`（当前） | **已定（2026-11-14，S03）**：`%APPDATA%\mile-console\`，与原版 `%APPDATA%\mile-terminal\` 分开 | M1 |
 | D5 | 是否保留 macOS | 首版只 Windows / 同步做 darwin | 只 Windows，darwin 后续评估 | M2 |
 | D6 | 旧配置导入的触发方式 | 首次启动弹窗 / 设置页手动入口 / 两者都有 | 两者都有，首次启动弹窗可「以后再说」 | M1 |
