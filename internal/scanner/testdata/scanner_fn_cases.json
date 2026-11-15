@@ -1,0 +1,4540 @@
+{
+ "generatedFrom": "mile-terminal-management/src/main/services/ScannerService.ts + node v22.23.4",
+ "guessCwd": [
+  {
+   "input": "node C:\\a.js",
+   "result": null
+  },
+  {
+   "input": "node C:\\ab\\c.js",
+   "result": "C:\\ab"
+  },
+  {
+   "input": "node C:\\abc\\d.js",
+   "result": "C:\\abc"
+  },
+  {
+   "input": "node C:/x/y/z.mjs",
+   "result": "C:/x/y"
+  },
+  {
+   "input": "node c:\\r\\s\\main.ts.js",
+   "result": "c:\\r\\s"
+  },
+  {
+   "input": "node \"C:\\p q\\node_modules\\.bin\\vite.cjs\"",
+   "result": "C:\\p q"
+  },
+  {
+   "input": "node C:\\node_modules\\x.js",
+   "result": "C:"
+  },
+  {
+   "input": "node C:\\r\\NODE_MODULES\\x.ts",
+   "result": "C:\\r"
+  },
+  {
+   "input": "node C:\\r\\Node_Modules/x.ts",
+   "result": "C:\\r"
+  },
+  {
+   "input": "node C:\\r\\node_modulesx\\a.js",
+   "result": "C:\\r\\node_modulesx"
+  },
+  {
+   "input": "node C:\\r\\x.json",
+   "result": null
+  },
+  {
+   "input": "node C:\\r\\x.jsx",
+   "result": null
+  },
+  {
+   "input": "node C:\\r\\x.js.map",
+   "result": "C:\\r"
+  },
+  {
+   "input": "node C:\\r\\x.ts2",
+   "result": null
+  },
+  {
+   "input": "node C:\\r\\x.js_",
+   "result": null
+  },
+  {
+   "input": "node C:\\r\\x.js-1",
+   "result": "C:\\r"
+  },
+  {
+   "input": "node C:\\r\\x.js\u00e9",
+   "result": "C:\\r"
+  },
+  {
+   "input": "node C:\\r\\x.js\u4e2d",
+   "result": "C:\\r"
+  },
+  {
+   "input": "node ./rel/a.js",
+   "result": null
+  },
+  {
+   "input": "",
+   "result": null
+  },
+  {
+   "input": "node /usr/x/a.js",
+   "result": null
+  },
+  {
+   "input": "node C:\\a|b\\c.js D:\\ok\\d.js",
+   "result": "D:\\ok"
+  },
+  {
+   "input": "node C:\\a\"b\\c.js",
+   "result": null
+  },
+  {
+   "input": "node C:\\a'b\\c.js",
+   "result": null
+  },
+  {
+   "input": "node C:\\a*b\\c.js",
+   "result": null
+  },
+  {
+   "input": "node C:\\a?b\\c.js",
+   "result": null
+  },
+  {
+   "input": "node C:\\a<b\\c.js",
+   "result": null
+  },
+  {
+   "input": "node C:\\a\nb\\c.js",
+   "result": null
+  },
+  {
+   "input": "node C:\\a\rb\\c.js",
+   "result": null
+  },
+  {
+   "input": "node C:\\a b\\c d\\e.js",
+   "result": "C:\\a b\\c d"
+  },
+  {
+   "input": "node 1:\\a\\b.js",
+   "result": null
+  },
+  {
+   "input": "node CC:\\a\\b.js",
+   "result": "C:\\a"
+  },
+  {
+   "input": "x C:\\\u4e2d\u6587\\\ud83d\ude00\\a.js",
+   "result": "C:\\\u4e2d\u6587\\\ud83d\ude00"
+  },
+  {
+   "input": "x C:\\\ud83d\ude00\\a.js",
+   "result": "C:\\\ud83d\ude00"
+  },
+  {
+   "input": "x C:\\\ud83d\ude00a.js",
+   "result": null
+  },
+  {
+   "input": "x C:\\a\\node_modules\\b\\node_modules\\c.js",
+   "result": "C:\\a"
+  },
+  {
+   "input": "x C:\\.js",
+   "result": null
+  },
+  {
+   "input": "x C:\\\\.js",
+   "result": "C:\\"
+  },
+  {
+   "input": "x C:/.ts",
+   "result": null
+  },
+  {
+   "input": "x C:\\a\\.mjs",
+   "result": "C:\\a"
+  },
+  {
+   "input": "x C:\u212a\\a.js",
+   "result": null
+  },
+  {
+   "input": "x C:\\r\\NODE_MODULE\u017f\\a.js",
+   "result": "C:\\r\\NODE_MODULE\u017f"
+  },
+  {
+   "input": "x C:\\r\\node_\u212aodules\\a.js",
+   "result": "C:\\r\\node_\u212aodules"
+  },
+  {
+   "input": "x D:\\a.js C:\\b\\c.js",
+   "result": null
+  },
+  {
+   "input": "x C:\\a\\b.TS",
+   "result": null
+  },
+  {
+   "input": "x C:\\a\\b.Js",
+   "result": null
+  },
+  {
+   "input": "x C:\\w\\a.js\u2028",
+   "result": "C:\\w"
+  },
+  {
+   "input": "node C:xC:bbbbbbbbC:",
+   "result": null
+  },
+  {
+   "input": "node bbC:C:xxC:C:x",
+   "result": null
+  },
+  {
+   "input": "node xbbxx",
+   "result": null
+  },
+  {
+   "input": "node C:C:C:x",
+   "result": null
+  },
+  {
+   "input": "node xxbbC:bbx",
+   "result": null
+  },
+  {
+   "input": "node bbbbxx",
+   "result": null
+  },
+  {
+   "input": "node C:C:xC:bbC:bbbbC:C:",
+   "result": null
+  },
+  {
+   "input": "node xxC:C:C:xxbbC:x",
+   "result": null
+  },
+  {
+   "input": "node bbx",
+   "result": null
+  },
+  {
+   "input": "node xbbbbx",
+   "result": null
+  },
+  {
+   "input": "node C:bbC:bbC:xbbx",
+   "result": null
+  },
+  {
+   "input": "node C:C:|C:",
+   "result": null
+  },
+  {
+   "input": "node C:C:C:xxbb",
+   "result": null
+  },
+  {
+   "input": "node bbC:xbbC:bbC:xC:C:",
+   "result": null
+  },
+  {
+   "input": "node C:C:|C:xx",
+   "result": null
+  },
+  {
+   "input": "node xx",
+   "result": null
+  },
+  {
+   "input": "node bbC:xbb",
+   "result": null
+  },
+  {
+   "input": "node C:xbbbb",
+   "result": null
+  },
+  {
+   "input": "node xbb",
+   "result": null
+  },
+  {
+   "input": "node bbC:bbxC:bbbbC:",
+   "result": null
+  },
+  {
+   "input": "node xbbbbxbbxxxxx",
+   "result": null
+  },
+  {
+   "input": "node bbC:",
+   "result": null
+  },
+  {
+   "input": "node bbC:C:xxxC:bbbbC:",
+   "result": null
+  },
+  {
+   "input": "node C:xbbbb",
+   "result": null
+  },
+  {
+   "input": "node bbxC:xxxxbb",
+   "result": null
+  },
+  {
+   "input": "node bbxxxC:C:C:C:xbb",
+   "result": null
+  },
+  {
+   "input": "node C:bbC:bbC:bb",
+   "result": null
+  },
+  {
+   "input": "node C:bb",
+   "result": null
+  },
+  {
+   "input": "node C:xC:bbbbC:C:bb",
+   "result": null
+  },
+  {
+   "input": "node bbbbxxbbx",
+   "result": null
+  },
+  {
+   "input": "node bbC:bbxx",
+   "result": null
+  },
+  {
+   "input": "node xbbbbxbbC:",
+   "result": null
+  },
+  {
+   "input": "node xbbxbbbbx",
+   "result": null
+  },
+  {
+   "input": "node xbbxxbbbbxC:bbC:",
+   "result": null
+  },
+  {
+   "input": "node bbxC:bbxbbbbC:C:bb",
+   "result": null
+  },
+  {
+   "input": "node bbxC:C:xC:",
+   "result": null
+  },
+  {
+   "input": "node xbbbbC:xbbxxbbC:",
+   "result": null
+  },
+  {
+   "input": "node C:bbbbxxC:C:C:xx",
+   "result": null
+  },
+  {
+   "input": "node bbbbC:xxC:bbx",
+   "result": null
+  },
+  {
+   "input": "node bbxbbbb",
+   "result": null
+  },
+  {
+   "input": "node xxbbx",
+   "result": null
+  },
+  {
+   "input": "node xC:C:xC:xC:xbbx",
+   "result": null
+  },
+  {
+   "input": "node C:xxbbbbC:xx",
+   "result": null
+  },
+  {
+   "input": "node xC:",
+   "result": null
+  },
+  {
+   "input": "node xxbbC:C:xbbbb",
+   "result": null
+  },
+  {
+   "input": "node C:xC:bbbbbb",
+   "result": null
+  },
+  {
+   "input": "node bbC:",
+   "result": null
+  },
+  {
+   "input": "node C:C:",
+   "result": null
+  },
+  {
+   "input": "node bbC:xxxbbxC:",
+   "result": null
+  },
+  {
+   "input": "node xxbbxbbbbxbb",
+   "result": null
+  },
+  {
+   "input": "node C:xC:bb",
+   "result": null
+  },
+  {
+   "input": "node xC:xC:",
+   "result": null
+  },
+  {
+   "input": "node bbC:bbxC:xbbbbxx",
+   "result": null
+  },
+  {
+   "input": "node C:C:C:C:xxxbb",
+   "result": null
+  },
+  {
+   "input": "node xC:C:bbC:C:xbb",
+   "result": null
+  },
+  {
+   "input": "node xbb",
+   "result": null
+  },
+  {
+   "input": "node C:xbbC:",
+   "result": null
+  },
+  {
+   "input": "node bbxxC:",
+   "result": null
+  },
+  {
+   "input": "node C:bbxxx",
+   "result": null
+  },
+  {
+   "input": "node C:bbbbC:C:bbC:C:",
+   "result": null
+  },
+  {
+   "input": "node bbC:bbbbbbx",
+   "result": null
+  },
+  {
+   "input": "node bbx",
+   "result": null
+  },
+  {
+   "input": "node xbbC:C:C:xbbxxx",
+   "result": null
+  },
+  {
+   "input": "node bbbb",
+   "result": null
+  },
+  {
+   "input": "node C:C:",
+   "result": null
+  },
+  {
+   "input": "node bbxbbbbC:bbbbbbxbb",
+   "result": null
+  },
+  {
+   "input": "node xC:",
+   "result": null
+  },
+  {
+   "input": "node xc:bbC:",
+   "result": null
+  },
+  {
+   "input": "node C:xxbbC:C:xxxC:",
+   "result": null
+  },
+  {
+   "input": "node C:C:bbxC:bbxC:bbC:",
+   "result": null
+  },
+  {
+   "input": "node bbxC:xC:x",
+   "result": null
+  },
+  {
+   "input": "node bbbb",
+   "result": null
+  },
+  {
+   "input": "node bbx",
+   "result": null
+  },
+  {
+   "input": "node bbC:xxC:C:C:bbC:C:",
+   "result": null
+  },
+  {
+   "input": "node xC:bbbbbbxxx",
+   "result": null
+  },
+  {
+   "input": "node xC:C:C:",
+   "result": null
+  },
+  {
+   "input": "node bbC:bbC:C:bb",
+   "result": null
+  },
+  {
+   "input": "node C:xC:C:C:x",
+   "result": null
+  },
+  {
+   "input": "node xbbbbbbxC:C:C:",
+   "result": null
+  },
+  {
+   "input": "node C:xxxC:bbC:C:xbb",
+   "result": null
+  },
+  {
+   "input": "node C:xbbC:",
+   "result": null
+  },
+  {
+   "input": "node xbbxxbbxxxC:C:",
+   "result": null
+  },
+  {
+   "input": "node bbC:",
+   "result": null
+  },
+  {
+   "input": "node bbxbbbbxbbbbC:xbb",
+   "result": null
+  },
+  {
+   "input": "node xC:bbbb C:",
+   "result": null
+  },
+  {
+   "input": "node bbC:",
+   "result": null
+  },
+  {
+   "input": "node xxC:C:bbxxxbbbb",
+   "result": null
+  },
+  {
+   "input": "node bbbbC:xC:C:",
+   "result": null
+  },
+  {
+   "input": "node C:C:bbC:bbC:C:x",
+   "result": null
+  },
+  {
+   "input": "node C:bb",
+   "result": null
+  },
+  {
+   "input": "node bbbbbbxxxC:C:",
+   "result": null
+  },
+  {
+   "input": "node bbxC:C:",
+   "result": null
+  },
+  {
+   "input": "node xbbC:xC:xC:C:C:C:",
+   "result": null
+  },
+  {
+   "input": "node bbbbbbC:bbxbbbbbbbb",
+   "result": null
+  },
+  {
+   "input": "node C:C:xC:C:C:xxbbbb",
+   "result": null
+  },
+  {
+   "input": "node bbxxxC:bbxbb",
+   "result": null
+  },
+  {
+   "input": "node C:xC:C:bbc:C:xC:C:",
+   "result": null
+  },
+  {
+   "input": "node C:xxbbbbbbC:C:C:bb",
+   "result": null
+  },
+  {
+   "input": "node bbC:bbxC:bb",
+   "result": null
+  },
+  {
+   "input": "node xC:bbC:C:C:",
+   "result": null
+  },
+  {
+   "input": "node C:bb",
+   "result": null
+  },
+  {
+   "input": "node C:C:C:xbbbb",
+   "result": null
+  },
+  {
+   "input": "node bbbbxxbbbbxx",
+   "result": null
+  },
+  {
+   "input": "node bbxbbxC:bb",
+   "result": null
+  },
+  {
+   "input": "node xxC:xxx",
+   "result": null
+  },
+  {
+   "input": "node C:xbbC:",
+   "result": null
+  },
+  {
+   "input": "node xxbbxxx",
+   "result": null
+  },
+  {
+   "input": "node bbbbxC:xx",
+   "result": null
+  },
+  {
+   "input": "node bbbbC:xxxbbbbbbx",
+   "result": null
+  },
+  {
+   "input": "node bbbbxC:xx",
+   "result": null
+  },
+  {
+   "input": "node xxxC:|xbbx",
+   "result": null
+  },
+  {
+   "input": "node C:x",
+   "result": null
+  },
+  {
+   "input": "node C:C:xC:C:xxx",
+   "result": null
+  },
+  {
+   "input": "node bbC:C:xC:C:",
+   "result": null
+  },
+  {
+   "input": "node xbbC:xbbC:",
+   "result": null
+  },
+  {
+   "input": "node xbbxxC:xbbx",
+   "result": null
+  },
+  {
+   "input": "node bbbbC:bbbbC:",
+   "result": null
+  },
+  {
+   "input": "node C:bbC:xC:bb",
+   "result": null
+  },
+  {
+   "input": "node C:xC:bb",
+   "result": null
+  },
+  {
+   "input": "node bbxC:C:xxC:C:",
+   "result": null
+  },
+  {
+   "input": "node C:C:C:C:C:x",
+   "result": null
+  },
+  {
+   "input": "node bbbbbbbbxbb",
+   "result": null
+  },
+  {
+   "input": "node xxxbb",
+   "result": null
+  },
+  {
+   "input": "node xxC:bbC:C:xC:",
+   "result": null
+  },
+  {
+   "input": "node xx",
+   "result": null
+  },
+  {
+   "input": "node C:C:",
+   "result": null
+  },
+  {
+   "input": "node C:C:xC:xbbbbx",
+   "result": null
+  },
+  {
+   "input": "node bbC:C:C:",
+   "result": null
+  },
+  {
+   "input": "node bbC:C:bbC:C:",
+   "result": null
+  },
+  {
+   "input": "node C:bbbbC:",
+   "result": null
+  },
+  {
+   "input": "node xxbbxC:bbC:bbxbb",
+   "result": null
+  },
+  {
+   "input": "node C:C:C:bb",
+   "result": null
+  },
+  {
+   "input": "node xC:C:bbxC:",
+   "result": null
+  },
+  {
+   "input": "node xbb",
+   "result": null
+  },
+  {
+   "input": "node C:xbbC:bbbb",
+   "result": null
+  },
+  {
+   "input": "node C:bbbbbb",
+   "result": null
+  },
+  {
+   "input": "node bbbbbbbbC:xC:xxx",
+   "result": null
+  },
+  {
+   "input": "node xbbC:xxC:C:x",
+   "result": null
+  },
+  {
+   "input": "node C:C:xbb",
+   "result": null
+  },
+  {
+   "input": "node xxC:C:",
+   "result": null
+  },
+  {
+   "input": "node xx",
+   "result": null
+  },
+  {
+   "input": "node xC:bbxC:C:",
+   "result": null
+  },
+  {
+   "input": "node bbbbbbC:xbbC:bbC:bb",
+   "result": null
+  },
+  {
+   "input": "node xxC:bbxC:xx",
+   "result": null
+  },
+  {
+   "input": "node bbbb|xC:xbbx",
+   "result": null
+  },
+  {
+   "input": "node xC:",
+   "result": null
+  },
+  {
+   "input": "node xbbbbbbxbbxC:",
+   "result": null
+  },
+  {
+   "input": "node bbx",
+   "result": null
+  },
+  {
+   "input": "node C:bb",
+   "result": null
+  },
+  {
+   "input": "node C:xxxxbb",
+   "result": null
+  },
+  {
+   "input": "node C:xbbbbC:bbbbxbbbb",
+   "result": null
+  },
+  {
+   "input": "node C:C:C:C:bbC:C:bb",
+   "result": null
+  },
+  {
+   "input": "node C:C:",
+   "result": null
+  },
+  {
+   "input": "node xC:C:xC:x",
+   "result": null
+  },
+  {
+   "input": "node C:C:xC:C:bb",
+   "result": null
+  },
+  {
+   "input": "node C:xxC:",
+   "result": null
+  },
+  {
+   "input": "node bbxxC:xC:",
+   "result": null
+  },
+  {
+   "input": "node xC:C:bbC:C:C:C:xbb",
+   "result": null
+  },
+  {
+   "input": "node xbbxC: bbC:C:",
+   "result": null
+  },
+  {
+   "input": "node bbxxbbxbb",
+   "result": null
+  },
+  {
+   "input": "node xC:",
+   "result": null
+  },
+  {
+   "input": "node C:bbbbC:bbxx ",
+   "result": null
+  },
+  {
+   "input": "node xxbbC:C:xC:x",
+   "result": null
+  },
+  {
+   "input": "node xbbbbC:bbxC:C:xC:",
+   "result": null
+  },
+  {
+   "input": "node bbbbxbb",
+   "result": null
+  },
+  {
+   "input": "node xC:C:bb",
+   "result": null
+  },
+  {
+   "input": "node bbxC:xC:xbbx",
+   "result": null
+  },
+  {
+   "input": "node C:bbxx",
+   "result": null
+  },
+  {
+   "input": "node bbbbbbbbC:x",
+   "result": null
+  },
+  {
+   "input": "node C:C:xxxbb",
+   "result": null
+  },
+  {
+   "input": "node xxC:C:xx|x",
+   "result": null
+  },
+  {
+   "input": "node xxxbbxbb",
+   "result": null
+  },
+  {
+   "input": "node bbxbbC:bbxbbbb",
+   "result": null
+  },
+  {
+   "input": "node bbc:bbx",
+   "result": null
+  },
+  {
+   "input": "node bbxC:x",
+   "result": null
+  },
+  {
+   "input": "node xxxbbxC:bbx",
+   "result": null
+  },
+  {
+   "input": "node xC:xxC:x",
+   "result": null
+  },
+  {
+   "input": "node bbC:bbxbbbb",
+   "result": null
+  },
+  {
+   "input": "node bbx",
+   "result": null
+  },
+  {
+   "input": "node C:x",
+   "result": null
+  },
+  {
+   "input": "node xx",
+   "result": null
+  },
+  {
+   "input": "node bbbbbbC:",
+   "result": null
+  },
+  {
+   "input": "node bbx",
+   "result": null
+  },
+  {
+   "input": "node bbxC:xbbx",
+   "result": null
+  },
+  {
+   "input": "node bbbb",
+   "result": null
+  },
+  {
+   "input": "node xbbbbC:bbxbbx",
+   "result": null
+  },
+  {
+   "input": "node xC:bbbb",
+   "result": null
+  },
+  {
+   "input": "node C:C:C:bbbbx",
+   "result": null
+  },
+  {
+   "input": "node C:C:",
+   "result": null
+  },
+  {
+   "input": "node xbbxxC:C:C:C:xbb",
+   "result": null
+  },
+  {
+   "input": "node xxxxbbxC:xbbC:",
+   "result": null
+  },
+  {
+   "input": "node bbC:C:bb",
+   "result": null
+  },
+  {
+   "input": "node xx",
+   "result": null
+  },
+  {
+   "input": "node xxbbxC:x",
+   "result": null
+  },
+  {
+   "input": "node xxbbxbbC:bbbb",
+   "result": null
+  },
+  {
+   "input": "node xxxC:xbbxbbxC:",
+   "result": null
+  },
+  {
+   "input": "node C:xC:x",
+   "result": null
+  },
+  {
+   "input": "node xC:C:C:xxxbbxbb",
+   "result": null
+  },
+  {
+   "input": "node bbbbC:bbbbC:xxC:x",
+   "result": null
+  },
+  {
+   "input": "node C:xbbxbbbbxxbbbb",
+   "result": null
+  },
+  {
+   "input": "node C:C:xxbbC:bbC:",
+   "result": null
+  },
+  {
+   "input": "node xxC:C:bbbbC:bbC:x",
+   "result": null
+  },
+  {
+   "input": "node xbb",
+   "result": null
+  },
+  {
+   "input": "node bbbbxC:xC:",
+   "result": null
+  },
+  {
+   "input": "node xC:xbbxC:C:x",
+   "result": null
+  },
+  {
+   "input": "node C:bbC:bb",
+   "result": null
+  },
+  {
+   "input": "node C:C:xC:C:bb",
+   "result": null
+  },
+  {
+   "input": "node bbC:",
+   "result": null
+  },
+  {
+   "input": "node C:bbxxC:bb",
+   "result": null
+  },
+  {
+   "input": "node bbxbbx",
+   "result": null
+  },
+  {
+   "input": "node bbxbbC:xbb",
+   "result": null
+  },
+  {
+   "input": "node C:xbbx",
+   "result": null
+  },
+  {
+   "input": "node bbxxx",
+   "result": null
+  },
+  {
+   "input": "node C:xxC:xC:C:c:",
+   "result": null
+  },
+  {
+   "input": "node bbbb",
+   "result": null
+  },
+  {
+   "input": "node xbbxC:bbxxC:bbx",
+   "result": null
+  },
+  {
+   "input": "node C:C:",
+   "result": null
+  },
+  {
+   "input": "node xbbxx",
+   "result": null
+  },
+  {
+   "input": "node C:xbbC:bbxxC:",
+   "result": null
+  },
+  {
+   "input": "node bbbbxbbC:C:C:bb",
+   "result": null
+  },
+  {
+   "input": "node bbx",
+   "result": null
+  },
+  {
+   "input": "node xbb",
+   "result": null
+  },
+  {
+   "input": "node bbxC:C:C:bbbbbb",
+   "result": null
+  },
+  {
+   "input": "node xxxbbxbbC:bb",
+   "result": null
+  },
+  {
+   "input": "node xC:C:bb",
+   "result": null
+  },
+  {
+   "input": "node C:xxx",
+   "result": null
+  },
+  {
+   "input": "node C:bbxxbbbbxxxx",
+   "result": null
+  },
+  {
+   "input": "node bbxC:x",
+   "result": null
+  },
+  {
+   "input": "node bbxbbbbbbxxbb",
+   "result": null
+  },
+  {
+   "input": "node C:xxC:",
+   "result": null
+  },
+  {
+   "input": "node xbbbbC:",
+   "result": null
+  },
+  {
+   "input": "node bbbbC:C:xC:C:xC:bb",
+   "result": null
+  },
+  {
+   "input": "node C:x",
+   "result": null
+  },
+  {
+   "input": "node C:bbbbbbC:bbbbbbbbbb",
+   "result": null
+  },
+  {
+   "input": "node bbC:bbC:bbxbbbb",
+   "result": null
+  },
+  {
+   "input": "node xC:",
+   "result": null
+  },
+  {
+   "input": "node xbbC:xC:C:",
+   "result": null
+  },
+  {
+   "input": "node xbb",
+   "result": null
+  },
+  {
+   "input": "node xx",
+   "result": null
+  },
+  {
+   "input": "node bbC:",
+   "result": null
+  },
+  {
+   "input": "node xbbxC:C:bb",
+   "result": null
+  },
+  {
+   "input": "node xxC:xbbC:",
+   "result": null
+  },
+  {
+   "input": "node C:C:xx",
+   "result": null
+  },
+  {
+   "input": "node C:bbC:bb",
+   "result": null
+  },
+  {
+   "input": "node xbbxbb",
+   "result": null
+  },
+  {
+   "input": "node C:bbbbbbbbxbbC:",
+   "result": null
+  },
+  {
+   "input": "node bbbbC:xxxbbbb",
+   "result": null
+  },
+  {
+   "input": "node bbbbbbbb",
+   "result": null
+  },
+  {
+   "input": "node bbbbxxbbxxC:C:C:",
+   "result": null
+  },
+  {
+   "input": "node bbC:bbbb",
+   "result": null
+  },
+  {
+   "input": "node xxxxxxC:C:xC:",
+   "result": null
+  },
+  {
+   "input": "node bbxC:x",
+   "result": null
+  },
+  {
+   "input": "node xbbxxbbxbbx",
+   "result": null
+  },
+  {
+   "input": "node C:xxxxx",
+   "result": null
+  },
+  {
+   "input": "node C:xbbxbbC:xC:",
+   "result": null
+  },
+  {
+   "input": "node xC:bbxC:bbC:C:",
+   "result": null
+  },
+  {
+   "input": "node xC:bbbbxx",
+   "result": null
+  },
+  {
+   "input": "node xbb",
+   "result": null
+  },
+  {
+   "input": "node bbbbxxbbxbbbbbbC:",
+   "result": null
+  },
+  {
+   "input": "node bbC:C:xC:xbbC:xbb",
+   "result": null
+  },
+  {
+   "input": "node C:bbxC:C:xxC:",
+   "result": null
+  },
+  {
+   "input": "node bbC:",
+   "result": null
+  },
+  {
+   "input": "node C:C:xC:",
+   "result": null
+  },
+  {
+   "input": "node bbxbbC:",
+   "result": null
+  },
+  {
+   "input": "node x ",
+   "result": null
+  },
+  {
+   "input": "node bbbbbbxxx",
+   "result": null
+  },
+  {
+   "input": "node xx",
+   "result": null
+  },
+  {
+   "input": "node xC:bbC:bbbbC:xbbx",
+   "result": null
+  },
+  {
+   "input": "node xbbbbC:bbC:C:x",
+   "result": null
+  },
+  {
+   "input": "node C:x",
+   "result": null
+  },
+  {
+   "input": "node C:C:bbbbbbxxbb",
+   "result": null
+  },
+  {
+   "input": "node C:C:C:bb",
+   "result": null
+  },
+  {
+   "input": "node C:xbbxbbbbC:bb",
+   "result": null
+  },
+  {
+   "input": "node C:C:",
+   "result": null
+  },
+  {
+   "input": "node C:C:xbbxbbC:C:C:bb",
+   "result": null
+  },
+  {
+   "input": "node C:C:bbC:bbx",
+   "result": null
+  },
+  {
+   "input": "node xxC:bbbbbbC:bb",
+   "result": null
+  },
+  {
+   "input": "node bbC:C:C:",
+   "result": null
+  },
+  {
+   "input": "node C:bbC:C:",
+   "result": null
+  },
+  {
+   "input": "node C:bbxC:",
+   "result": null
+  },
+  {
+   "input": "node xC:",
+   "result": null
+  },
+  {
+   "input": "node C:bbxbbC:bbC:bbC:C:",
+   "result": null
+  },
+  {
+   "input": "node xx",
+   "result": null
+  },
+  {
+   "input": "node bbxbbxxx",
+   "result": null
+  },
+  {
+   "input": "node xx",
+   "result": null
+  },
+  {
+   "input": "node xC:C:C:xxxC:C:C:",
+   "result": null
+  },
+  {
+   "input": "node bbC:bbC:xxC:x",
+   "result": null
+  },
+  {
+   "input": "node bbxxbb",
+   "result": null
+  },
+  {
+   "input": "node xbbbbbbC:C:",
+   "result": null
+  },
+  {
+   "input": "node C:bbC:xbbC:",
+   "result": null
+  },
+  {
+   "input": "node xbbxC:C:bb",
+   "result": null
+  },
+  {
+   "input": "node bbxC:C:bbxC:x",
+   "result": null
+  },
+  {
+   "input": "node C:xC:xC:C:xbbbbC:",
+   "result": null
+  },
+  {
+   "input": "node bbx",
+   "result": null
+  },
+  {
+   "input": "node xbbC:C:",
+   "result": null
+  },
+  {
+   "input": "node bbbbbbbbbbxbbxxC:",
+   "result": null
+  },
+  {
+   "input": "node xxxxxC:bbbbbbbb",
+   "result": null
+  },
+  {
+   "input": "node bbxbbbbC:bbbbbb",
+   "result": null
+  },
+  {
+   "input": "node bbC:bbxC:bb",
+   "result": null
+  },
+  {
+   "input": "node C:bbxbb",
+   "result": null
+  },
+  {
+   "input": "node xxxx",
+   "result": null
+  },
+  {
+   "input": "node C:C:bbbbC:bbC:bb",
+   "result": null
+  },
+  {
+   "input": "node bbC:C:C:C:bbxbb",
+   "result": null
+  },
+  {
+   "input": "node xxbb",
+   "result": null
+  },
+  {
+   "input": "node xxbbbbC:bbxx",
+   "result": null
+  },
+  {
+   "input": "node bbC:",
+   "result": null
+  },
+  {
+   "input": "node bbxxxC:x",
+   "result": null
+  },
+  {
+   "input": "node C:C:bbbbxxC:bbC:bb",
+   "result": null
+  },
+  {
+   "input": "node bbbbC:xxC:bbx",
+   "result": null
+  },
+  {
+   "input": "node xC:xC:",
+   "result": null
+  },
+  {
+   "input": "node C:bbC:bbbbx",
+   "result": null
+  },
+  {
+   "input": "node bbC:bbbbxbbC:bb",
+   "result": null
+  },
+  {
+   "input": "node C:bbxbbxx",
+   "result": null
+  },
+  {
+   "input": "node C:bbxbb",
+   "result": null
+  },
+  {
+   "input": "node bbxC:bb",
+   "result": null
+  },
+  {
+   "input": "node bbC:bbbbC:bb",
+   "result": null
+  },
+  {
+   "input": "node bbx",
+   "result": null
+  },
+  {
+   "input": "node C:bbbbxC:bb",
+   "result": null
+  },
+  {
+   "input": "node xC:C:xC:bbxC:",
+   "result": null
+  },
+  {
+   "input": "node bbbbxxxC:",
+   "result": null
+  },
+  {
+   "input": "node xxC:bbbbC:bbC:",
+   "result": null
+  },
+  {
+   "input": "node xx",
+   "result": null
+  },
+  {
+   "input": "node xC:C:bbC:bb",
+   "result": null
+  },
+  {
+   "input": "node xxxC:C:bbxC:bbbb",
+   "result": null
+  },
+  {
+   "input": "node xbbxbbC:C:xbb",
+   "result": null
+  },
+  {
+   "input": "node xbbbbC:xC:",
+   "result": null
+  },
+  {
+   "input": "node bbx",
+   "result": null
+  },
+  {
+   "input": "node bbx",
+   "result": null
+  },
+  {
+   "input": "node C:bbC:xxC:",
+   "result": null
+  },
+  {
+   "input": "node C:C:bbxC:C:",
+   "result": null
+  },
+  {
+   "input": "node xxxC:C:x",
+   "result": null
+  },
+  {
+   "input": "node xxxC:",
+   "result": null
+  },
+  {
+   "input": "node xbbbbC:C:C:bbC:xx",
+   "result": null
+  },
+  {
+   "input": "node xxxC:xbb",
+   "result": null
+  },
+  {
+   "input": "node bbbbbbbb",
+   "result": null
+  },
+  {
+   "input": "node xC:bbbbxC:",
+   "result": null
+  },
+  {
+   "input": "node C:|bbbb",
+   "result": null
+  },
+  {
+   "input": "node bbC:C:bbC:bb",
+   "result": null
+  },
+  {
+   "input": "node xC:xC:bbC:xbb",
+   "result": null
+  },
+  {
+   "input": "node C:bbC:bb",
+   "result": null
+  },
+  {
+   "input": "node C:xC:xC:bb",
+   "result": null
+  },
+  {
+   "input": "node bbx",
+   "result": null
+  },
+  {
+   "input": "node bbC:",
+   "result": null
+  },
+  {
+   "input": "node bbC:xxbbC:xxC:C:",
+   "result": null
+  },
+  {
+   "input": "node C:xC:C:",
+   "result": null
+  },
+  {
+   "input": "node bbbbbbC:xC:xx",
+   "result": null
+  },
+  {
+   "input": "node xbbbbxbbxC:bbbbC:",
+   "result": null
+  },
+  {
+   "input": "node C:bb",
+   "result": null
+  },
+  {
+   "input": "node C:bb",
+   "result": null
+  },
+  {
+   "input": "node xbbxbbbbxC:bbxC:",
+   "result": null
+  },
+  {
+   "input": "node C:bbC:C:",
+   "result": null
+  },
+  {
+   "input": "node xbbC:xxxbbC:",
+   "result": null
+  },
+  {
+   "input": "node bbC:",
+   "result": null
+  },
+  {
+   "input": "node C:bbC:C:bbbbC:bb",
+   "result": null
+  },
+  {
+   "input": "node bbC:xbbbbC:C:bbC:C:",
+   "result": null
+  },
+  {
+   "input": "node C:xxxxbb",
+   "result": null
+  },
+  {
+   "input": "node bbbbxC:xbbbbC:C:bb",
+   "result": null
+  },
+  {
+   "input": "node C:bbC:bbxbbxbb",
+   "result": null
+  },
+  {
+   "input": "node bbx",
+   "result": null
+  },
+  {
+   "input": "node bbx",
+   "result": null
+  },
+  {
+   "input": "node xbbxxbbC:bbC:C:bb",
+   "result": null
+  },
+  {
+   "input": "node xbb",
+   "result": null
+  },
+  {
+   "input": "node xC:xxC:C:xxC:C:",
+   "result": null
+  },
+  {
+   "input": "node bbx",
+   "result": null
+  },
+  {
+   "input": "node C:C:bbbbxx",
+   "result": null
+  },
+  {
+   "input": "node bbxC:C:bbxxC:C:x",
+   "result": null
+  },
+  {
+   "input": "node bbC:xC:C:C:bbbb",
+   "result": null
+  },
+  {
+   "input": "node xC:C:x",
+   "result": null
+  },
+  {
+   "input": "node xC:bbC:xbbC:xxx",
+   "result": null
+  },
+  {
+   "input": "node C:x",
+   "result": null
+  },
+  {
+   "input": "node C:C:bbbb",
+   "result": null
+  },
+  {
+   "input": "node C:bbbbC:bbC:C:bbxx",
+   "result": null
+  },
+  {
+   "input": "node xC:xC:bbbbbbC:",
+   "result": null
+  },
+  {
+   "input": "node bbbbC:xbbbbC:C:C:C:",
+   "result": null
+  },
+  {
+   "input": "node bbbbbbxC:C:xx",
+   "result": null
+  },
+  {
+   "input": "node C:C:bbxbbC:",
+   "result": null
+  },
+  {
+   "input": "node bbC:bbC:C:bbbbbb",
+   "result": null
+  },
+  {
+   "input": "node C:C:xC:bbxbbxxx",
+   "result": null
+  },
+  {
+   "input": "node bbx",
+   "result": null
+  },
+  {
+   "input": "node bbC:",
+   "result": null
+  },
+  {
+   "input": "node C:bbxbbC:C:",
+   "result": null
+  },
+  {
+   "input": "node C:C:C:xxC:xC:",
+   "result": null
+  },
+  {
+   "input": "node bbxxx",
+   "result": null
+  },
+  {
+   "input": "node bbC:C:C:xbbC:bbbbC:",
+   "result": null
+  },
+  {
+   "input": "node xC:xC:xx",
+   "result": null
+  },
+  {
+   "input": "node bbbbxbbC:x",
+   "result": null
+  },
+  {
+   "input": "node bbC:",
+   "result": null
+  },
+  {
+   "input": "node xC:xC:",
+   "result": null
+  },
+  {
+   "input": "node C:bbbbbb",
+   "result": null
+  },
+  {
+   "input": "node bbC:xxbbx",
+   "result": null
+  },
+  {
+   "input": "node C:bbxbbbbC:",
+   "result": null
+  },
+  {
+   "input": "node xbbxbb",
+   "result": null
+  },
+  {
+   "input": "node bbbb",
+   "result": null
+  },
+  {
+   "input": "node xxbbC:xbb",
+   "result": null
+  },
+  {
+   "input": "node bbxxbb",
+   "result": null
+  },
+  {
+   "input": "node bbC:C:C:",
+   "result": null
+  },
+  {
+   "input": "node C:C:bbC:",
+   "result": null
+  },
+  {
+   "input": "node bbc:bbxbbC:bbx",
+   "result": null
+  },
+  {
+   "input": "node bbbbC:x",
+   "result": null
+  },
+  {
+   "input": "node xC:bbbbbbx",
+   "result": null
+  },
+  {
+   "input": "tsx d:\\index.js C:\\other\\b.js",
+   "result": null
+  },
+  {
+   "input": "node C:\\.bin\\\ud83d\ude00\\index.js",
+   "result": "C:\\.bin\\\ud83d\ude00"
+  },
+  {
+   "input": "tsx d:\\.bin\\.bin\\..\\.bin\\index.js --port 3000",
+   "result": "d:\\.bin\\.bin\\..\\.bin"
+  },
+  {
+   "input": "\"node\" \"d:\\Src\\.bin\\..\\index.js",
+   "result": "d:\\Src\\.bin\\.."
+  },
+  {
+   "input": "\"node\" \"d:\\\u4e2d\\a\\main.js",
+   "result": "d:\\\u4e2d\\a"
+  },
+  {
+   "input": "\"node\" \"d:\\\ud83d\ude00\\a\\\ud83d\ude00\\p-q\\vite.js|x",
+   "result": "d:\\\ud83d\ude00\\a\\\ud83d\ude00\\p-q"
+  },
+  {
+   "input": "\"node\" \"d:\\node_modules\\x y\\\ud83d\ude00\\Src\\main.js",
+   "result": "d:"
+  },
+  {
+   "input": "\"node\" \"C:\\node_modules\\a\\v1.2\\.bin\\vite.js",
+   "result": "C:"
+  },
+  {
+   "input": "node d:\\\ud83d\ude00\\a\\Src\\index.js --port 3000",
+   "result": "d:\\\ud83d\ude00\\a\\Src"
+  },
+  {
+   "input": "node Z:\\vite.js",
+   "result": null
+  },
+  {
+   "input": "tsx C:\\NODE_MODULES\\.bin\\v1.2\\Src\\index.js\n",
+   "result": "C:"
+  },
+  {
+   "input": "tsx Z:\\\ud83d\ude00\\NODE_MODULES/\ud83d\ude00\\vite.js",
+   "result": "Z:\\\ud83d\ude00"
+  },
+  {
+   "input": "tsx d:\\x y\\node_modules\\NODE_MODULES\\NODE_MODULES\\index.js",
+   "result": "d:\\x y"
+  },
+  {
+   "input": "node d:\\p-q\\NODE_MODULES\\node_modules\\vite.js",
+   "result": "d:\\p-q"
+  },
+  {
+   "input": "node d:\\NODE_MODULES\\vite.js\"",
+   "result": "d:"
+  },
+  {
+   "input": "node d:\\..\\Src\\index.js",
+   "result": "d:\\..\\Src"
+  },
+  {
+   "input": "node d:\\.bin\\a\\\u4e2d\\main.js|x",
+   "result": "d:\\.bin\\a\\\u4e2d"
+  },
+  {
+   "input": "\"node\" \"Z:\\node_modules/\ud83d\ude00\\NODE_MODULES\\index.js C:\\other\\b.js",
+   "result": "Z:"
+  },
+  {
+   "input": "\"node\" \"Z:\\a\\\u4e2d\\NODE_MODULES\\\u4e2d\\main.js --port 3000",
+   "result": "Z:\\a\\\u4e2d"
+  },
+  {
+   "input": "\"node\" \"C:\\\ud83d\ude00\\NODE_MODULES\\\u4e2d\\vite.js",
+   "result": "C:\\\ud83d\ude00"
+  },
+  {
+   "input": "\"node\" \"Z:\\index.js",
+   "result": null
+  },
+  {
+   "input": "node C:\\.bin\\Src\\a\\.bin\\main.js\n",
+   "result": "C:\\.bin\\Src\\a\\.bin"
+  },
+  {
+   "input": "node Z:\\\ud83d\ude00\\..\\.bin\\main.js C:\\other\\b.js",
+   "result": "Z:\\\ud83d\ude00\\..\\.bin"
+  },
+  {
+   "input": "node d:\\vite.js",
+   "result": null
+  },
+  {
+   "input": "tsx Z:\\\ud83d\ude00\\Src\\\ud83d\ude00\\vite.js\n",
+   "result": "Z:\\\ud83d\ude00\\Src\\\ud83d\ude00"
+  },
+  {
+   "input": "tsx C:\\a\\NODE_MODULES\\NODE_MODULES\\main.js C:\\other\\b.js",
+   "result": "C:\\a"
+  },
+  {
+   "input": "\"node\" \"d:\\node_modules\\main.js C:\\other\\b.js",
+   "result": "d:"
+  },
+  {
+   "input": "node Z:\\Src\\Src\\Src\\index.js C:\\other\\b.js",
+   "result": "Z:\\Src\\Src\\Src"
+  },
+  {
+   "input": "\"node\" \"C:\\x y\\index.js",
+   "result": "C:\\x y"
+  },
+  {
+   "input": "\"node\" \"C:\\p-q\\v1.2\\p-q\\\u4e2d\\vite.js",
+   "result": "C:\\p-q\\v1.2\\p-q\\\u4e2d"
+  },
+  {
+   "input": "\"node\" \"Z:\\vite.js\"",
+   "result": null
+  },
+  {
+   "input": "node Z:\\p-q/index.js\n",
+   "result": "Z:\\p-q"
+  },
+  {
+   "input": "tsx d:\\\ud83d\ude00\\Src\\\ud83d\ude00\\main.js\n",
+   "result": "d:\\\ud83d\ude00\\Src\\\ud83d\ude00"
+  },
+  {
+   "input": "tsx Z:\\p-q\\index.js|x",
+   "result": "Z:\\p-q"
+  },
+  {
+   "input": "node Z:\\a\\main.js\"",
+   "result": "Z:\\a"
+  },
+  {
+   "input": "node d:\\node_modules\\..\\..\\\ud83d\ude00\\main.js --port 3000",
+   "result": "d:"
+  },
+  {
+   "input": "tsx d:\\p-q\\NODE_MODULES\\main.js",
+   "result": "d:\\p-q"
+  },
+  {
+   "input": "node C:\\main.js",
+   "result": null
+  },
+  {
+   "input": "node C:\\node_modules\\NODE_MODULES\\.bin\\main.js",
+   "result": "C:"
+  },
+  {
+   "input": "tsx C:\\p-q\\vite.js",
+   "result": "C:\\p-q"
+  },
+  {
+   "input": "\"node\" \"Z:\\NODE_MODULES\\\ud83d\ude00\\index.js",
+   "result": "Z:"
+  },
+  {
+   "input": "node d:\\..\\.bin\\index.js",
+   "result": "d:\\..\\.bin"
+  },
+  {
+   "input": "\"node\" \"d:/node_modules\\\ud83d\ude00\\NODE_MODULES\\index.js",
+   "result": "d:"
+  },
+  {
+   "input": "node C:\\..\\\u4e2d\\main.js",
+   "result": "C:\\..\\\u4e2d"
+  },
+  {
+   "input": "node C:\\.bin\\p-q\\NODE_MODULES\\..\\main.js",
+   "result": "C:\\.bin\\p-q"
+  },
+  {
+   "input": "node C:\\Src\\node_modules\\\u4e2d\\main.js",
+   "result": "C:\\Src"
+  },
+  {
+   "input": "tsx d:\\\ud83d\ude00\\main.js\n",
+   "result": "d:\\\ud83d\ude00"
+  },
+  {
+   "input": "node Z:\\Src\\node_modules\\index.js",
+   "result": "Z:\\Src"
+  },
+  {
+   "input": "\"node\" \"Z:\\NODE_MODULES\\index.js",
+   "result": "Z:"
+  },
+  {
+   "input": "\"node\" \"Z:\\main.js",
+   "result": null
+  },
+  {
+   "input": "tsx C:\\main.js --port 3000",
+   "result": null
+  },
+  {
+   "input": "tsx d:\\v1.2\\../NODE_MODULES\\\u4e2d\\index.js\"",
+   "result": "d:\\v1.2\\.."
+  },
+  {
+   "input": "tsx C:\\vite.js",
+   "result": null
+  },
+  {
+   "input": "\"node\" \"d:\\NODE_MODULES\\..\\\ud83d\ude00\\vite.js\"",
+   "result": "d:"
+  },
+  {
+   "input": "\"node\" \"Z:\\v1.2\\node_modules\\..\\main.js",
+   "result": "Z:\\v1.2"
+  },
+  {
+   "input": "\"node\" \"d:\\main.js --port 3000",
+   "result": null
+  },
+  {
+   "input": "node Z:\\..\\p-q\\main.js C:\\other\\b.js",
+   "result": "Z:\\..\\p-q"
+  },
+  {
+   "input": "\"node\" \"C:\\p-q\\main.js\n",
+   "result": "C:\\p-q"
+  },
+  {
+   "input": "node d:\\Src\\NODE_MODULES\\.bin\\index.js",
+   "result": "d:\\Src"
+  },
+  {
+   "input": "node C:\\vite.js",
+   "result": null
+  },
+  {
+   "input": "\"node\" \"d:\\\u4e2d\\..\\\ud83d\ude00\\v1.2\\vite.js\"",
+   "result": "d:\\\u4e2d\\..\\\ud83d\ude00\\v1.2"
+  },
+  {
+   "input": "node C:\\x y\\\u4e2d\\vite.js\n",
+   "result": "C:\\x y\\\u4e2d"
+  },
+  {
+   "input": "node Z:\\main.js",
+   "result": null
+  },
+  {
+   "input": "node d:\\\u4e2d\\vite.js",
+   "result": "d:\\\u4e2d"
+  },
+  {
+   "input": "node d:\\.bin\\.bin\\.bin\\vite.js",
+   "result": "d:\\.bin\\.bin\\.bin"
+  },
+  {
+   "input": "\"node\" \"d:\\\ud83d\ude00\\NODE_MODULES\\\u4e2d\\p-q\\main.js",
+   "result": "d:\\\ud83d\ude00"
+  },
+  {
+   "input": "node C:\\p-q\\.bin\\index.js",
+   "result": "C:\\p-q\\.bin"
+  },
+  {
+   "input": "\"node\" \"Z:\\\ud83d\ude00\\a\\main.js",
+   "result": "Z:\\\ud83d\ude00\\a"
+  },
+  {
+   "input": "tsx d:\\\u4e2d\\\u4e2d\\v1.2\\node_modules\\main.js",
+   "result": "d:\\\u4e2d\\\u4e2d\\v1.2"
+  },
+  {
+   "input": "node C:\\\ud83d\ude00\\.bin\\index.js",
+   "result": "C:\\\ud83d\ude00\\.bin"
+  },
+  {
+   "input": "node Z:\\NODE_MODULES\\vite.js",
+   "result": "Z:"
+  },
+  {
+   "input": "\"node\" \"Z:\\\ud83d\ude00\\node_modules\\\u4e2d\\NODE_MODULES\\index.js C:\\other\\b.js",
+   "result": "Z:\\\ud83d\ude00"
+  },
+  {
+   "input": "\"node\" \"Z:\\a\\a\\a\\v1.2\\main.js",
+   "result": "Z:\\a\\a\\a\\v1.2"
+  },
+  {
+   "input": "\"node\" \"d:\\node_modules\\index.js",
+   "result": "d:"
+  },
+  {
+   "input": "node C:\\x y\\p-q\\\ud83d\ude00\\main.js",
+   "result": "C:\\x y\\p-q\\\ud83d\ude00"
+  },
+  {
+   "input": "tsx C:\\v1.2\\vite.js",
+   "result": "C:\\v1.2"
+  },
+  {
+   "input": "tsx C:\\main.js",
+   "result": null
+  },
+  {
+   "input": "tsx Z:\\vite.js",
+   "result": null
+  },
+  {
+   "input": "tsx C:\\p-q\\.bin\\main.js",
+   "result": "C:\\p-q\\.bin"
+  },
+  {
+   "input": "\"node\" \"d:\\x y\\v1.2\\x y\\NODE_MODULES\\vite.js",
+   "result": "d:\\x y\\v1.2\\x y"
+  },
+  {
+   "input": "node Z:\\p-q\\main.js",
+   "result": "Z:\\p-q"
+  },
+  {
+   "input": "tsx Z:\\vite.js",
+   "result": null
+  },
+  {
+   "input": "node C:\\Src\\vite.js|x",
+   "result": "C:\\Src"
+  },
+  {
+   "input": "tsx C:\\NODE_MODULES\\Src\\a\\vite.js",
+   "result": "C:"
+  },
+  {
+   "input": "tsx C:\\.bin\\p-q\\index.js",
+   "result": "C:\\.bin\\p-q"
+  },
+  {
+   "input": "tsx C:\\index.js",
+   "result": null
+  },
+  {
+   "input": "tsx C:\\v1.2\\x y\\index.js C:\\other\\b.js",
+   "result": "C:\\v1.2\\x y"
+  },
+  {
+   "input": "node Z:\\vite.js",
+   "result": null
+  },
+  {
+   "input": "\"node\" \"Z:\\node_modules\\x y\\vite.js",
+   "result": "Z:"
+  },
+  {
+   "input": "node Z:\\index.js",
+   "result": null
+  },
+  {
+   "input": "node C:\\..\\vite.js",
+   "result": "C:\\.."
+  },
+  {
+   "input": "\"node\" \"Z:\\a\\node_modules\\\ud83d\ude00\\..\\index.js",
+   "result": "Z:\\a"
+  },
+  {
+   "input": "node Z:\\v1.2\\p-q\\Src\\p-q\\main.js C:\\other\\b.js",
+   "result": "Z:\\v1.2\\p-q\\Src\\p-q"
+  },
+  {
+   "input": "\"node\" \"C:\\v1.2\\..\\main.js --port 3000",
+   "result": "C:\\v1.2\\.."
+  },
+  {
+   "input": "tsx d:\\vite.js",
+   "result": null
+  },
+  {
+   "input": "tsx d:\\Src\\.bin\\..\\vite.js\"",
+   "result": "d:\\Src\\.bin\\.."
+  },
+  {
+   "input": "\"node\" \"d:\\node_modules\\Src\\..\\.bin\\vite.js",
+   "result": "d:"
+  },
+  {
+   "input": "\"node\" \"Z:\\node_modules\\p-q\\p-q\\x y\\index.js",
+   "result": "Z:"
+  },
+  {
+   "input": "tsx Z:\\Src\\main.js",
+   "result": "Z:\\Src"
+  },
+  {
+   "input": "\"node\" \"d:\\NODE_MODULES\\index.js C:\\other\\b.js",
+   "result": "d:"
+  },
+  {
+   "input": "\"node\" \"d:\\.bin\\a\\\u4e2d\\main.js",
+   "result": "d:\\.bin\\a\\\u4e2d"
+  },
+  {
+   "input": "node Z:\\Src\\index.js|x",
+   "result": "Z:\\Src"
+  },
+  {
+   "input": "node d:\\v1.2\\\ud83d\ude00\\.bin\\index.js",
+   "result": "d:\\v1.2\\\ud83d\ude00\\.bin"
+  },
+  {
+   "input": "node Z:\\x y\\\u4e2d\\main.js",
+   "result": "Z:\\x y\\\u4e2d"
+  },
+  {
+   "input": "\"node\" \"C:\\Src\\node_modules\\\u4e2d\\NODE_MODULES\\index.js C:\\other\\b.js",
+   "result": "C:\\Src"
+  },
+  {
+   "input": "\"node\" \"Z:\\main.js",
+   "result": null
+  },
+  {
+   "input": "node C:\\p-q\\a\\x y\\index.js",
+   "result": "C:\\p-q\\a\\x y"
+  },
+  {
+   "input": "tsx Z:\\a\\x y\\vite.js\"",
+   "result": "Z:\\a\\x y"
+  },
+  {
+   "input": "node Z:\\\ud83d\ude00\\v1.2\\vite.js",
+   "result": "Z:\\\ud83d\ude00\\v1.2"
+  },
+  {
+   "input": "\"node\" \"d:\\node_modules\\index.js",
+   "result": "d:"
+  },
+  {
+   "input": "node d:\\.bin\\\u4e2d\\.bin\\vite.js --port 3000",
+   "result": "d:\\.bin\\\u4e2d\\.bin"
+  },
+  {
+   "input": "node d:\\index.js",
+   "result": null
+  },
+  {
+   "input": "tsx C:\\main.js\"",
+   "result": null
+  },
+  {
+   "input": "tsx C:\\NODE_MODULES\\.bin\\vite.js",
+   "result": "C:"
+  },
+  {
+   "input": "\"node\" \"C:\\index.js\n",
+   "result": null
+  },
+  {
+   "input": "\"node\" \"C:\\x y\\\u4e2d\\main.js",
+   "result": "C:\\x y\\\u4e2d"
+  },
+  {
+   "input": "\"node\" \"Z:\\p-q\\a\\vite.js",
+   "result": "Z:\\p-q\\a"
+  },
+  {
+   "input": "node Z:\\NODE_MODULES\\node_modules\\..\\\ud83d\ude00\\vite.js",
+   "result": "Z:"
+  },
+  {
+   "input": "node d:\\NODE_MODULES\\node_modules\\x y\\p-q\\vite.js\"",
+   "result": "d:"
+  },
+  {
+   "input": "node Z:\\Src\\\ud83d\ude00\\main.js",
+   "result": "Z:\\Src\\\ud83d\ude00"
+  },
+  {
+   "input": "node d:\\\u4e2d\\Src\\.bin\\v1.2\\index.js",
+   "result": "d:\\\u4e2d\\Src\\.bin\\v1.2"
+  },
+  {
+   "input": "tsx C:\\NODE_MODULES\\node_modules\\NODE_MODULES\\vite.js",
+   "result": "C:"
+  },
+  {
+   "input": "tsx C:\\vite.js",
+   "result": null
+  },
+  {
+   "input": "\"node\" \"d:\\main.js",
+   "result": null
+  },
+  {
+   "input": "tsx d:\\v1.2\\v1.2\\\ud83d\ude00\\index.js\n",
+   "result": "d:\\v1.2\\v1.2\\\ud83d\ude00"
+  },
+  {
+   "input": "tsx d:\\p-q\\..\\index.js",
+   "result": "d:\\p-q\\.."
+  },
+  {
+   "input": "tsx Z:\\node_modules\\node_modules\\a\\main.js",
+   "result": "Z:"
+  },
+  {
+   "input": "node d:\\main.js\"",
+   "result": null
+  },
+  {
+   "input": "tsx C:\\\u4e2d\\.bin\\main.js",
+   "result": "C:\\\u4e2d\\.bin"
+  },
+  {
+   "input": "\"node\" \"Z:\\Src\\a\\main.js",
+   "result": "Z:\\Src\\a"
+  },
+  {
+   "input": "tsx Z:\\index.js --port 3000",
+   "result": null
+  },
+  {
+   "input": "tsx C:\\\ud83d\ude00\\x y\\index.js\"",
+   "result": "C:\\\ud83d\ude00\\x y"
+  },
+  {
+   "input": "tsx C:\\\u4e2d\\\ud83d\ude00\\index.js --port 3000",
+   "result": "C:\\\u4e2d\\\ud83d\ude00"
+  },
+  {
+   "input": "tsx Z:\\..\\\ud83d\ude00\\p-q\\\ud83d\ude00\\index.js",
+   "result": "Z:\\..\\\ud83d\ude00\\p-q\\\ud83d\ude00"
+  },
+  {
+   "input": "node Z:\\index.js",
+   "result": null
+  },
+  {
+   "input": "\"node\" \"Z:\\main.js",
+   "result": null
+  },
+  {
+   "input": "node Z:\\NODE_MODULES\\NODE_MODULES\\.bin\\index.js",
+   "result": "Z:"
+  },
+  {
+   "input": "\"node\" \"C:\\a\\\u4e2d\\node_modules\\a\\vite.js|x",
+   "result": "C:\\a\\\u4e2d"
+  },
+  {
+   "input": "node Z:\\\ud83d\ude00\\main.js C:\\other\\b.js",
+   "result": "Z:\\\ud83d\ude00"
+  },
+  {
+   "input": "node Z:\\\u4e2d\\\ud83d\ude00\\vite.js",
+   "result": "Z:\\\u4e2d\\\ud83d\ude00"
+  },
+  {
+   "input": "tsx d:\\vite.js\"",
+   "result": null
+  },
+  {
+   "input": "node C:\\vite.js",
+   "result": null
+  },
+  {
+   "input": "tsx Z:\\v1.2\\node_modules\\x y\\node_modules\\main.js",
+   "result": "Z:\\v1.2"
+  },
+  {
+   "input": "tsx C:\\node_modules\\node_modules\\Src\\x y\\main.js",
+   "result": "C:"
+  },
+  {
+   "input": "\"node\" \"Z:\\a\\NODE_MODULES\\v1.2\\p-q\\vite.js",
+   "result": "Z:\\a"
+  },
+  {
+   "input": "tsx Z:\\\u4e2d\\NODE_MODULES\\a\\x y\\vite.js",
+   "result": "Z:\\\u4e2d"
+  },
+  {
+   "input": "node d:\\..\\NODE_MODULES\\Src\\index.js",
+   "result": "d:\\.."
+  },
+  {
+   "input": "node Z:\\..\\index.js",
+   "result": "Z:\\.."
+  },
+  {
+   "input": "tsx C:\\..\\a\\node_modules\\a\\index.js",
+   "result": "C:\\..\\a"
+  },
+  {
+   "input": "tsx Z:\\\ud83d\ude00\\.bin\\\u4e2d\\NODE_MODULES\\main.js --port 3000",
+   "result": "Z:\\\ud83d\ude00\\.bin\\\u4e2d"
+  },
+  {
+   "input": "node C:\\p-q\\v1.2\\index.js",
+   "result": "C:\\p-q\\v1.2"
+  },
+  {
+   "input": "\"node\" \"d:\\main.js C:\\other\\b.js",
+   "result": null
+  },
+  {
+   "input": "\"node\" \"C:\\\ud83d\ude00\\.bin\\x y\\index.js",
+   "result": "C:\\\ud83d\ude00\\.bin\\x y"
+  },
+  {
+   "input": "tsx d:\\\ud83d\ude00\\Src\\node_modules\\vite.js\"",
+   "result": "d:\\\ud83d\ude00\\Src"
+  },
+  {
+   "input": "\"node\" \"C:\\\u4e2d\\\u4e2d\\..\\index.js",
+   "result": "C:\\\u4e2d\\\u4e2d\\.."
+  },
+  {
+   "input": "\"node\" \"Z:\\vite.js",
+   "result": null
+  },
+  {
+   "input": "tsx d:\\v1.2\\index.js",
+   "result": "d:\\v1.2"
+  },
+  {
+   "input": "node d:\\NODE_MODULES\\index.js C:\\other\\b.js",
+   "result": "d:"
+  },
+  {
+   "input": "\"node\" \"C:\\\u4e2d\\x y\\\ud83d\ude00\\p-q\\vite.js\n",
+   "result": "C:\\\u4e2d\\x y\\\ud83d\ude00\\p-q"
+  },
+  {
+   "input": "node C:\\Src\\vite.js --port 3000",
+   "result": "C:\\Src"
+  },
+  {
+   "input": "tsx d:\\..\\\ud83d\ude00\\a\\index.js",
+   "result": "d:\\..\\\ud83d\ude00\\a"
+  },
+  {
+   "input": "\"node\" \"d:\\Src\\node_modules\\node_modules\\main.js\"",
+   "result": "d:\\Src"
+  },
+  {
+   "input": "node d:\\x y\\vite.js",
+   "result": "d:\\x y"
+  },
+  {
+   "input": "\"node\" \"Z:\\NODE_MODULES\\\u4e2d\\Src\\vite.js",
+   "result": "Z:"
+  },
+  {
+   "input": "node C:\\NODE_MODULES\\.bin\\main.js --port 3000",
+   "result": "C:"
+  },
+  {
+   "input": "\"node\" \"C:\\NODE_MODULES\\x y\\\ud83d\ude00\\main.js",
+   "result": "C:"
+  },
+  {
+   "input": "\"node\" \"Z:\\.bin\\v1.2\\v1.2\\main.js",
+   "result": "Z:\\.bin\\v1.2\\v1.2"
+  },
+  {
+   "input": "node d:\\a\\p-q\\main.js",
+   "result": "d:\\a\\p-q"
+  },
+  {
+   "input": "node C:\\vite.js",
+   "result": null
+  },
+  {
+   "input": "node C:\\p-q\\..\\\ud83d\ude00\\index.js",
+   "result": "C:\\p-q\\..\\\ud83d\ude00"
+  },
+  {
+   "input": "\"node\" \"Z:\\index.js",
+   "result": null
+  },
+  {
+   "input": "tsx d:\\node_modules\\a\\\ud83d\ude00\\node_modules\\main.js\"",
+   "result": "d:"
+  },
+  {
+   "input": "tsx C:\\vite.js",
+   "result": null
+  },
+  {
+   "input": "\"node\" \"C:\\index.ts C:\\other\\b.js",
+   "result": null
+  },
+  {
+   "input": "node d:\\a\\\u4e2d\\p-q\\vite.js",
+   "result": "d:\\a\\\u4e2d\\p-q"
+  },
+  {
+   "input": "node Z:\\.bin\\vite.js|x",
+   "result": "Z:\\.bin"
+  },
+  {
+   "input": "tsx C:\\\ud83d\ude00\\main.js",
+   "result": "C:\\\ud83d\ude00"
+  },
+  {
+   "input": "node C:\\main.js",
+   "result": null
+  },
+  {
+   "input": "\"node\" \"Z:\\a\\NODE_MODULES\\NODE_MODULES\\index.js --port 3000",
+   "result": "Z:\\a"
+  },
+  {
+   "input": "tsx Z:\\vite.js",
+   "result": null
+  },
+  {
+   "input": "node d:\\a\\main.js\n",
+   "result": "d:\\a"
+  },
+  {
+   "input": "\"node\" \"Z:\\..\\v1.2\\.bin\\Src\\vite.js\"",
+   "result": "Z:\\..\\v1.2\\.bin\\Src"
+  },
+  {
+   "input": "tsx d:\\p-q\\main.js\n",
+   "result": "d:\\p-q"
+  },
+  {
+   "input": "tsx Z:\\\u4e2d\\v1.2\\.bin\\\ud83d\ude00\\main.js|x",
+   "result": "Z:\\\u4e2d\\v1.2\\.bin\\\ud83d\ude00"
+  },
+  {
+   "input": "node C:\\NODE_MODULES\\index.js",
+   "result": "C:"
+  },
+  {
+   "input": "tsx d:\\main.js\n",
+   "result": null
+  },
+  {
+   "input": "\"node\" \"Z:\\\ud83d\ude00\\vite.js",
+   "result": "Z:\\\ud83d\ude00"
+  },
+  {
+   "input": "node Z:\\..\\vite.js",
+   "result": "Z:\\.."
+  },
+  {
+   "input": "\"node\" \"d:\\Src\\\u4e2d\\..\\p-q\\index.js",
+   "result": "d:\\Src\\\u4e2d\\..\\p-q"
+  },
+  {
+   "input": "\"node\" \"d:\\p-q\\.bin\\node_modules\\vite.js",
+   "result": "d:\\p-q\\.bin"
+  },
+  {
+   "input": "node d:\\main.js|x",
+   "result": null
+  },
+  {
+   "input": "\"node\" \"C:\\node_modules\\vite.js\"",
+   "result": "C:"
+  },
+  {
+   "input": "tsx C:\\v1.2\\.bin\\vite.js\n",
+   "result": "C:\\v1.2\\.bin"
+  },
+  {
+   "input": "node d:\\p-q\\index.js --port 3000",
+   "result": "d:\\p-q"
+  },
+  {
+   "input": "tsx Z:\\vite.js\"",
+   "result": null
+  },
+  {
+   "input": "node d:\\main.js|x",
+   "result": null
+  },
+  {
+   "input": "node d:\\v1.2\\\ud83d\ude00\\\ud83d\ude00\\\ud83d\ude00\\vite.js",
+   "result": "d:\\v1.2\\\ud83d\ude00\\\ud83d\ude00\\\ud83d\ude00"
+  },
+  {
+   "input": "tsx Z:\\\ud83d\ude00\\\u4e2d\\..\\a\\index.js --port 3000",
+   "result": "Z:\\\ud83d\ude00\\\u4e2d\\..\\a"
+  },
+  {
+   "input": "tsx d:\\v1.2\\x y\\a\\a\\main.js --port 3000",
+   "result": "d:\\v1.2\\x y\\a\\a"
+  },
+  {
+   "input": "tsx C:\\v1.2\\main.js",
+   "result": "C:\\v1.2"
+  },
+  {
+   "input": "node d:\\NODE_MODULES\\a\\..\\\ud83d\ude00\\vite.js",
+   "result": "d:"
+  },
+  {
+   "input": "node Z:\\x y\\..\\Src\\x y\\vite.js C:\\other\\b.js",
+   "result": "Z:\\x y\\..\\Src\\x y"
+  },
+  {
+   "input": "\"node\" \"Z:\\a\\main.js",
+   "result": "Z:\\a"
+  },
+  {
+   "input": "tsx C:\\Src\\main.js",
+   "result": "C:\\Src"
+  },
+  {
+   "input": "\"node\" \"Z:\\main.js",
+   "result": null
+  },
+  {
+   "input": "node d:\\Src\\a\\p-q\\main.js --port 3000",
+   "result": "d:\\Src\\a\\p-q"
+  },
+  {
+   "input": "node d:\\main.js\"",
+   "result": null
+  },
+  {
+   "input": "\"node\" \"C:\\Src\\Src\\..\\vite.js\n",
+   "result": "C:\\Src\\Src\\.."
+  },
+  {
+   "input": "node C:\\node_modules\\node_modules\\index.js",
+   "result": "C:"
+  },
+  {
+   "input": "\"node\" \"d:\\vite.js",
+   "result": null
+  },
+  {
+   "input": "tsx C:\\\ud83d\ude00\\v1.2\\x y\\index.js",
+   "result": "C:\\\ud83d\ude00\\v1.2\\x y"
+  },
+  {
+   "input": "tsx C:\\vite.js",
+   "result": null
+  },
+  {
+   "input": "tsx d:\\.bin\\main.js --port 3000",
+   "result": "d:\\.bin"
+  },
+  {
+   "input": "\"node\" \"C:\\..\\NODE_MODULES\\main.js",
+   "result": "C:\\.."
+  },
+  {
+   "input": "tsx Z:\\\ud83d\ude00\\NODE_MODULES\\v1.2\\p-q\\vite.js",
+   "result": "Z:\\\ud83d\ude00"
+  },
+  {
+   "input": "node Z:\\vite.js",
+   "result": null
+  },
+  {
+   "input": "node Z:\\.bin\\\u4e2d\\.bin\\vite.js",
+   "result": "Z:\\.bin\\\u4e2d\\.bin"
+  },
+  {
+   "input": "tsx Z:\\node_modules\\..\\.bin\\..\\main.js",
+   "result": "Z:"
+  },
+  {
+   "input": "tsx d:\\\ud83d\ude00\\main.js",
+   "result": "d:\\\ud83d\ude00"
+  },
+  {
+   "input": "node C:\\node_modules\\Src\\NODE_MODULES\\index.js",
+   "result": "C:"
+  },
+  {
+   "input": "\"node\" \"Z:\\node_modules\\vite.js",
+   "result": "Z:"
+  },
+  {
+   "input": "\"node\" \"Z:\\..\\p-q\\\ud83d\ude00\\Src\\vite.js",
+   "result": "Z:\\..\\p-q\\\ud83d\ude00\\Src"
+  },
+  {
+   "input": "\"node\" \"C:\\p-q\\node_modules\\v1.2\\\ud83d\ude00\\index.js",
+   "result": "C:\\p-q"
+  },
+  {
+   "input": "\"node\" \"C:\\..\\..\\vite.js --port 3000",
+   "result": "C:\\..\\.."
+  },
+  {
+   "input": "\"node\" \"Z:\\Src\\main.js",
+   "result": "Z:\\Src"
+  },
+  {
+   "input": "tsx C:\\v1.2\\main.js",
+   "result": "C:\\v1.2"
+  },
+  {
+   "input": "node Z:\\v1.2\\a\\\ud83d\ude00\\node_modules\\vite.js\"",
+   "result": "Z:\\v1.2\\a\\\ud83d\ude00"
+  },
+  {
+   "input": "node Z:\\..\\vite.js|x",
+   "result": "Z:\\.."
+  },
+  {
+   "input": "tsx Z:\\x y\\x y\\x y\\..\\vite.js",
+   "result": "Z:\\x y\\x y\\x y\\.."
+  },
+  {
+   "input": "\"node\" \"Z:\\..\\NODE_MODULES\\a\\vite.js",
+   "result": "Z:\\.."
+  },
+  {
+   "input": "tsx d:\\a\\.bin\\index.js\"",
+   "result": "d:\\a\\.bin"
+  },
+  {
+   "input": "node d:\\a\\vite.js\n",
+   "result": "d:\\a"
+  },
+  {
+   "input": "node C:\\p-q\\..\\vite.js",
+   "result": "C:\\p-q\\.."
+  },
+  {
+   "input": "node Z:\\v1.2\\index.js",
+   "result": "Z:\\v1.2"
+  },
+  {
+   "input": "tsx d:\\a\\x y\\v1.2\\index.js",
+   "result": "d:\\a\\x y\\v1.2"
+  },
+  {
+   "input": "tsx C:\\Src\\node_modules\\x y\\node_modules\\index.js --port 3000",
+   "result": "C:\\Src"
+  },
+  {
+   "input": "tsx d:\\..\\Src\\main.js",
+   "result": "d:\\..\\Src"
+  },
+  {
+   "input": "tsx Z:\\main.js\n",
+   "result": null
+  },
+  {
+   "input": "node d:\\p-q\\\ud83d\ude00\\NODE_MODULES\\vite.js --port 3000",
+   "result": "d:\\p-q\\\ud83d\ude00"
+  },
+  {
+   "input": "node Z:\\x y\\vite.js|x",
+   "result": "Z:\\x y"
+  },
+  {
+   "input": "\"node\" \"Z:\\p-q\\v1.2\\\u4e2d\\index.js\"",
+   "result": "Z:\\p-q\\v1.2\\\u4e2d"
+  },
+  {
+   "input": "\"node\" \"Z:\\.bin\\x y\\vite.js",
+   "result": "Z:\\.bin\\x y"
+  },
+  {
+   "input": "\"node\" \"Z:\\..\\\ud83d\ude00\\..\\vite.js --port 3000",
+   "result": "Z:\\..\\\ud83d\ude00\\.."
+  },
+  {
+   "input": "\"node\" \"d:\\a\\p-q\\\u4e2d\\\u4e2d\\index.js",
+   "result": "d:\\a\\p-q\\\u4e2d\\\u4e2d"
+  },
+  {
+   "input": "tsx d:\\\ud83d\ude00\\a\\x y\\main.js\n",
+   "result": "d:\\\ud83d\ude00\\a\\x y"
+  },
+  {
+   "input": "tsx d:\\..\\v1.2\\NODE_MODULES\\x y\\main.js\"",
+   "result": "d:\\..\\v1.2"
+  },
+  {
+   "input": "\"node\" \"d:\\index.js\"",
+   "result": null
+  },
+  {
+   "input": "node d:\\v1.2\\v1.2\\index.js",
+   "result": "d:\\v1.2\\v1.2"
+  },
+  {
+   "input": "\"node\" \"d:\\\ud83d\ude00\\vite.js",
+   "result": "d:\\\ud83d\ude00"
+  },
+  {
+   "input": "tsx C:\\x y\\\ud83d\ude00\\node_modules\\..\\main.js",
+   "result": "C:\\x y\\\ud83d\ude00"
+  },
+  {
+   "input": "tsx Z:\\node_modules\\node_modules\\main.js",
+   "result": "Z:"
+  },
+  {
+   "input": "node C:\\vite.js",
+   "result": null
+  },
+  {
+   "input": "tsx C:\\index.js C:\\other\\b.js",
+   "result": null
+  },
+  {
+   "input": "tsx Z:\\main.ts\n",
+   "result": null
+  },
+  {
+   "input": "\"node\" \"C:\\index.js",
+   "result": null
+  },
+  {
+   "input": "\"node\" \"C:\\..\\.bin\\\ud83d\ude00\\..\\vite.js",
+   "result": "C:\\..\\.bin\\\ud83d\ude00\\.."
+  },
+  {
+   "input": "tsx Z:\\.bin\\v1.2\\vite.js",
+   "result": "Z:\\.bin\\v1.2"
+  },
+  {
+   "input": "\"node\" \"Z:\\vite.js",
+   "result": null
+  },
+  {
+   "input": "node C:\\v1.2\\\u4e2d\\v1.2\\index.js",
+   "result": "C:\\v1.2\\\u4e2d\\v1.2"
+  },
+  {
+   "input": "tsx C:\\\ud83d\ude00\\v1.2\\NODE_MODULES\\main.js",
+   "result": "C:\\\ud83d\ude00\\v1.2"
+  },
+  {
+   "input": "node C:\\v1.2\\x y\\index.js|x",
+   "result": "C:\\v1.2\\x y"
+  },
+  {
+   "input": "\"node\" \"Z:\\NODE_MODULES\\.bin\\vite.js",
+   "result": "Z:"
+  },
+  {
+   "input": "tsx d:\\a\\vite.js",
+   "result": "d:\\a"
+  },
+  {
+   "input": "node Z:\\x y\\x y\\p-q\\main.js",
+   "result": "Z:\\x y\\x y\\p-q"
+  },
+  {
+   "input": "node Z:\\p-q\\node_modules\\a\\main.js\"",
+   "result": "Z:\\p-q"
+  },
+  {
+   "input": "tsx d:\\x y\\..\\..\\.bin\\index.js\n",
+   "result": "d:\\x y\\..\\..\\.bin"
+  },
+  {
+   "input": "node d:\\v1.2\\a\\Src\\node_modules\\index.js",
+   "result": "d:\\v1.2\\a\\Src"
+  },
+  {
+   "input": "tsx Z:\\\ud83d\ude00\\index.js",
+   "result": "Z:\\\ud83d\ude00"
+  },
+  {
+   "input": "\"node\" \"d:\\a\\..\\\ud83d\ude00\\\u4e2d\\vite.js",
+   "result": "d:\\a\\..\\\ud83d\ude00\\\u4e2d"
+  },
+  {
+   "input": "node d:\\vite.js",
+   "result": null
+  },
+  {
+   "input": "node Z:\\node_modules\\NODE_MODULES\\\u4e2d\\index.js\n",
+   "result": "Z:"
+  },
+  {
+   "input": "node d:\\NODE_MODULES\\vite.js C:\\other\\b.js",
+   "result": "d:"
+  },
+  {
+   "input": "\"node\" \"Z:\\\u4e2d\\node_modules\\\ud83d\ude00\\main.js C:\\other\\b.js",
+   "result": "Z:\\\u4e2d"
+  },
+  {
+   "input": "node C:\\a\\\ud83d\ude00\\a\\node_modules\\vite.js",
+   "result": "C:\\a\\\ud83d\ude00\\a"
+  },
+  {
+   "input": "node d:\\Src\\Src\\vite.js C:\\other\\b.js",
+   "result": "d:\\Src\\Src"
+  },
+  {
+   "input": "node d:\\x y\\main.js",
+   "result": "d:\\x y"
+  },
+  {
+   "input": "node Z:\\.bin\\node_modules\\vite.js",
+   "result": "Z:\\.bin"
+  },
+  {
+   "input": "tsx d:\\v1.2\\NODE_MODULES\\p-q\\node_modules\\vite.js",
+   "result": "d:\\v1.2"
+  },
+  {
+   "input": "tsx d:\\\ud83d\ude00\\NODE_MODULES\\index.js C:\\other\\b.js",
+   "result": "d:\\\ud83d\ude00"
+  },
+  {
+   "input": "node d:\\NODE_MODULES\\index.js",
+   "result": "d:"
+  },
+  {
+   "input": "\"node\" \"C:\\node_modules\\p-q\\p-q\\v1.2\\index.js",
+   "result": "C:"
+  },
+  {
+   "input": "\"node\" \"d:\\Src\\p-q\\..\\vite.js",
+   "result": "d:\\Src\\p-q\\.."
+  },
+  {
+   "input": "node Z:\\NODE_MODULES\\\u4e2d\\main.js",
+   "result": "Z:"
+  },
+  {
+   "input": "\"node\" \"Z:\\\ud83d\ude00\\p-q\\Src\\\ud83d\ude00\\main.js",
+   "result": "Z:\\\ud83d\ude00\\p-q\\Src\\\ud83d\ude00"
+  },
+  {
+   "input": "\"node\" \"Z:\\index.js",
+   "result": null
+  },
+  {
+   "input": "\"node\" \"d:\\NODE_MODULES\\\ud83d\ude00\\p-q\\main.js",
+   "result": "d:"
+  },
+  {
+   "input": "node d:\\a\\node_modules\\x y\\v1.2\\index.js\"",
+   "result": "d:\\a"
+  },
+  {
+   "input": "node C:\\main.js\n",
+   "result": null
+  },
+  {
+   "input": "node d:\\node_modules\\a\\vite.js",
+   "result": "d:"
+  },
+  {
+   "input": "tsx C:\\NODE_MODULES\\.bin\\\ud83d\ude00\\vite.js",
+   "result": "C:"
+  },
+  {
+   "input": "\"node\" \"C:\\\ud83d\ude00\\v1.2\\x y\\\ud83d\ude00\\main.js",
+   "result": "C:\\\ud83d\ude00\\v1.2\\x y\\\ud83d\ude00"
+  },
+  {
+   "input": "node d:\\node_modules\\..\\\ud83d\ude00\\index.js",
+   "result": "d:"
+  },
+  {
+   "input": "\"node\" \"d:\\v1.2\\index.js",
+   "result": "d:\\v1.2"
+  },
+  {
+   "input": "node Z:\\x y\\..\\vite.js",
+   "result": "Z:\\x y\\.."
+  },
+  {
+   "input": "node Z:\\v1.2\\NODE_MODULES\\vite.js",
+   "result": "Z:\\v1.2"
+  },
+  {
+   "input": "tsx C:\\NODE_MODULES\\vite.js",
+   "result": "C:"
+  },
+  {
+   "input": "node Z:\\Src\\..\\vite.js",
+   "result": "Z:\\Src\\.."
+  },
+  {
+   "input": "\"node\" \"Z:\\a\\\ud83d\ude00\\Src\\\u4e2d\\main.js --port 3000",
+   "result": "Z:\\a\\\ud83d\ude00\\Src\\\u4e2d"
+  },
+  {
+   "input": "tsx Z:\\vite.js",
+   "result": null
+  },
+  {
+   "input": "\"node\" \"Z:\\Src\\..\\\u4e2d\\index.js",
+   "result": "Z:\\Src\\..\\\u4e2d"
+  },
+  {
+   "input": "node Z:\\main.js",
+   "result": null
+  },
+  {
+   "input": "tsx C:\\Src\\index.js C:\\other\\b.js",
+   "result": "C:\\Src"
+  },
+  {
+   "input": "node d:\\vite.js --port 3000",
+   "result": null
+  },
+  {
+   "input": "tsx d:\\main.js",
+   "result": null
+  },
+  {
+   "input": "node d:\\..\\main.js",
+   "result": "d:\\.."
+  },
+  {
+   "input": "tsx C:\\..\\main.js",
+   "result": "C:\\.."
+  },
+  {
+   "input": "\"node\" \"d:\\node_modules\\v1.2\\main.js",
+   "result": "d:"
+  },
+  {
+   "input": "tsx Z:\\x y\\\u4e2d\\p-q\\NODE_MODULES\\index.js",
+   "result": "Z:\\x y\\\u4e2d\\p-q"
+  },
+  {
+   "input": "\"node\" \"Z:\\..\\x y\\\u4e2d\\Src\\vite.js",
+   "result": "Z:\\..\\x y\\\u4e2d\\Src"
+  },
+  {
+   "input": "node Z:\\\ud83d\ude00\\Src\\\u4e2d\\main.js",
+   "result": "Z:\\\ud83d\ude00\\Src\\\u4e2d"
+  },
+  {
+   "input": "tsx Z:\\..\\node_modules\\..\\p-q\\index.js\n",
+   "result": "Z:\\.."
+  },
+  {
+   "input": "node C:\\..\\p-q\\index.js --port 3000",
+   "result": "C:\\..\\p-q"
+  },
+  {
+   "input": "\"node\" \"C:\\a\\..\\NODE_MODULES\\.bin\\vite.js",
+   "result": "C:\\a\\.."
+  },
+  {
+   "input": "\"node\" \"Z:\\v1.2\\main.js --port 3000",
+   "result": "Z:\\v1.2"
+  },
+  {
+   "input": "node C:\\node_modules\\Src\\vite.js",
+   "result": "C:"
+  },
+  {
+   "input": "tsx d:\\main.js",
+   "result": null
+  },
+  {
+   "input": "tsx Z:\\index.js",
+   "result": null
+  },
+  {
+   "input": "tsx Z:\\Src\\main.js",
+   "result": "Z:\\Src"
+  },
+  {
+   "input": "\"node\" \"Z:\\p-q\\x y\\vite.js",
+   "result": "Z:\\p-q\\x y"
+  },
+  {
+   "input": "\"node\" \"Z:\\vite.js",
+   "result": null
+  },
+  {
+   "input": "node Z:\\a\\index.js",
+   "result": "Z:\\a"
+  },
+  {
+   "input": "node Z:\\main.js",
+   "result": null
+  },
+  {
+   "input": "tsx d:\\Src\\NODE_MODULES\\p-q/main.js\"",
+   "result": "d:\\Src"
+  },
+  {
+   "input": "tsx d:\\..\\main.js",
+   "result": "d:\\.."
+  },
+  {
+   "input": "\"node\" \"Z:\\v1.2\\\u4e2d\\\u4e2d\\v1.2\\main.js",
+   "result": "Z:\\v1.2\\\u4e2d\\\u4e2d\\v1.2"
+  },
+  {
+   "input": "tsx Z:\\\ud83d\ude00\\Src\\NODE_MODULES\\vite.js",
+   "result": "Z:\\\ud83d\ude00\\Src"
+  },
+  {
+   "input": "node C:\\p-q\\vite.js",
+   "result": "C:\\p-q"
+  },
+  {
+   "input": "node d:\\vite.js",
+   "result": null
+  },
+  {
+   "input": "\"node\" \"d:\\NODE_MODULES\\\u4e2d\\..\\main.js\"",
+   "result": "d:"
+  },
+  {
+   "input": "tsx d:\\.bin\\NODE_MODULES\\index.js\n",
+   "result": "d:\\.bin"
+  },
+  {
+   "input": "\"node\" \"d:\\v1.2\\.bin\\NODE_MODULES\\main.js",
+   "result": "d:\\v1.2\\.bin"
+  },
+  {
+   "input": "node C:\\..\\v1.2\\main.js",
+   "result": "C:\\..\\v1.2"
+  },
+  {
+   "input": "\"node\" \"d:\\v1.2\\\u4e2d\\index.js",
+   "result": "d:\\v1.2\\\u4e2d"
+  },
+  {
+   "input": "\"node\" \"d:\\v1.2\\NODE_MODULES\\\ud83d\ude00\\index.js",
+   "result": "d:\\v1.2"
+  },
+  {
+   "input": "node d:\\\u4e2d\\main.js --port 3000",
+   "result": "d:\\\u4e2d"
+  },
+  {
+   "input": "\"node\" \"Z:\\\ud83d\ude00\\\u4e2d\\a\\\u4e2d\\vite.js\"",
+   "result": "Z:\\\ud83d\ude00\\\u4e2d\\a\\\u4e2d"
+  },
+  {
+   "input": "\"node\" \"d:\\NODE_MODULES\\node_modules\\index.js",
+   "result": "d:"
+  },
+  {
+   "input": "node Z:\\.bin\\a\\..\\\u4e2d\\index.js",
+   "result": "Z:\\.bin\\a\\..\\\u4e2d"
+  },
+  {
+   "input": "\"node\" \"d:\\a\\x y\\a\\main.js",
+   "result": "d:\\a\\x y\\a"
+  },
+  {
+   "input": "tsx d:\\a\\a\\main.js",
+   "result": "d:\\a\\a"
+  },
+  {
+   "input": "\"node\" \"Z:\\\u4e2d\\vite.js",
+   "result": "Z:\\\u4e2d"
+  },
+  {
+   "input": "tsx Z:\\main.js",
+   "result": null
+  },
+  {
+   "input": "tsx Z:\\..\\Src\\NODE_MODULES\\main.js --port 3000",
+   "result": "Z:\\..\\Src"
+  },
+  {
+   "input": "tsx Z:\\NODE_MODULES\\.bin\\a\\p-q\\index.js",
+   "result": "Z:"
+  },
+  {
+   "input": "\"node\" \"C:\\vite.js",
+   "result": null
+  },
+  {
+   "input": "\"node\" \"d:\\main.js C:\\other\\b.js",
+   "result": null
+  },
+  {
+   "input": "node C:\\Src\\.bin\\x y\\vite.js C:\\other\\b.js",
+   "result": "C:\\Src\\.bin\\x y"
+  },
+  {
+   "input": "\"node\" \"d:\\index.js",
+   "result": null
+  },
+  {
+   "input": "tsx Z:\\\u4e2d\\node_modules\\index.js",
+   "result": "Z:\\\u4e2d"
+  },
+  {
+   "input": "node d:\\\ud83d\ude00\\p-q\\vite.js",
+   "result": "d:\\\ud83d\ude00\\p-q"
+  },
+  {
+   "input": "tsx d:\\..\\index.js",
+   "result": "d:\\.."
+  },
+  {
+   "input": "tsx d:\\.bin\\main.js",
+   "result": "d:\\.bin"
+  },
+  {
+   "input": "node d:\\.bin\\index.js --port 3000",
+   "result": "d:\\.bin"
+  },
+  {
+   "input": "node Z:\\a\\x y\\.bin\\index.js",
+   "result": "Z:\\a\\x y\\.bin"
+  },
+  {
+   "input": "node Z:\\vite.js",
+   "result": null
+  },
+  {
+   "input": "node Z:\\index.js",
+   "result": null
+  },
+  {
+   "input": "node Z:\\\ud83d\ude00\\main.js",
+   "result": "Z:\\\ud83d\ude00"
+  },
+  {
+   "input": "\"node\" \"C:\\a\\Src\\a\\node_modules\\vite.js",
+   "result": "C:\\a\\Src\\a"
+  },
+  {
+   "input": "tsx d:\\p-q\\a\\a\\x y\\vite.js\n",
+   "result": "d:\\p-q\\a\\a\\x y"
+  },
+  {
+   "input": "tsx d:\\vite.js",
+   "result": null
+  },
+  {
+   "input": "\"node\" \"d:\\v1.2\\\ud83d\ude00\\\ud83d\ude00\\index.js|x",
+   "result": "d:\\v1.2\\\ud83d\ude00\\\ud83d\ude00"
+  },
+  {
+   "input": "tsx d:\\.bin\\index.js --port 3000",
+   "result": "d:\\.bin"
+  },
+  {
+   "input": "node Z:\\Src\\vite.js",
+   "result": "Z:\\Src"
+  },
+  {
+   "input": "tsx C:\\\u4e2d\\Src\\index.js --port 3000",
+   "result": "C:\\\u4e2d\\Src"
+  },
+  {
+   "input": "node Z:\\node_modules\\node_modules\\\u4e2d\\\ud83d\ude00\\index.js --port 3000",
+   "result": "Z:"
+  },
+  {
+   "input": "\"node\" \"Z:\\NODE_MODULES\\node_modules\\NODE_MODULES\\index.js",
+   "result": "Z:"
+  },
+  {
+   "input": "\"node\" \"Z:\\p-q\\Src\\x y\\node_modules\\index.js",
+   "result": "Z:\\p-q\\Src\\x y"
+  },
+  {
+   "input": "node C:\\\u4e2d\\x y\\\u4e2d\\p-q\\vite.js\n",
+   "result": "C:\\\u4e2d\\x y\\\u4e2d\\p-q"
+  },
+  {
+   "input": "\"node\" \"Z:\\..\\NODE_MODULES\\\u4e2d\\vite.js",
+   "result": "Z:\\.."
+  },
+  {
+   "input": "\"node\" \"Z:\\main.js",
+   "result": null
+  },
+  {
+   "input": "node Z:\\..\\node_modules\\Src\\Src\\index.js",
+   "result": "Z:\\.."
+  },
+  {
+   "input": "\"node\" \"Z:\\\u4e2d\\NODE_MODULES\\v1.2\\main.js",
+   "result": "Z:\\\u4e2d"
+  },
+  {
+   "input": "\"node\" \"d:\\index.js",
+   "result": null
+  },
+  {
+   "input": "\"node\" \"C:\\index.js",
+   "result": null
+  },
+  {
+   "input": "tsx d:\\..\\Src\\vite.js",
+   "result": "d:\\..\\Src"
+  },
+  {
+   "input": "tsx C:\\vite.js --port 3000",
+   "result": null
+  },
+  {
+   "input": "node d:\\Src\\\ud83d\ude00\\main.js",
+   "result": "d:\\Src\\\ud83d\ude00"
+  },
+  {
+   "input": "tsx d:\\node_modules\\Src\\\u4e2d\\\u4e2d\\main.js|x",
+   "result": "d:"
+  },
+  {
+   "input": "node Z:\\.bin\\p-q\\node_modules\\node_modules\\vite.js",
+   "result": "Z:\\.bin\\p-q"
+  },
+  {
+   "input": "\"node\" \"d:\\\u4e2d\\NODE_MODULES\\node_modules\\main.js",
+   "result": "d:\\\u4e2d"
+  },
+  {
+   "input": "tsx Z:\\node_modules\\a\\.bin\\\ud83d\ude00\\main.js C:\\other\\b.js",
+   "result": "Z:"
+  },
+  {
+   "input": "tsx C:\\main.js\n",
+   "result": null
+  },
+  {
+   "input": "\"node\" \"d:\\.bin\\\ud83d\ude00\\v1.2\\vite.js",
+   "result": "d:\\.bin\\\ud83d\ude00\\v1.2"
+  },
+  {
+   "input": "node Z:\\node_modules\\index.js",
+   "result": "Z:"
+  },
+  {
+   "input": "\"node\" \"Z:\\\ud83d\ude00\\p-q\\main.js",
+   "result": "Z:\\\ud83d\ude00\\p-q"
+  },
+  {
+   "input": "tsx Z:\\node_modules\\.bin\\p-q\\NODE_MODULES\\vite.js\n",
+   "result": "Z:"
+  },
+  {
+   "input": "\"node\" \"d:\\main.js",
+   "result": null
+  },
+  {
+   "input": "node Z:\\v1.2\\\u4e2d\\index.js",
+   "result": "Z:\\v1.2\\\u4e2d"
+  },
+  {
+   "input": "tsx Z:\\a\\main.js",
+   "result": "Z:\\a"
+  },
+  {
+   "input": "tsx Z:\\vite.js\n",
+   "result": null
+  },
+  {
+   "input": "tsx Z:\\..\\main.js",
+   "result": "Z:\\.."
+  },
+  {
+   "input": "tsx C:\\main.js --port 3000",
+   "result": null
+  },
+  {
+   "input": "tsx Z:\\vite.js",
+   "result": null
+  },
+  {
+   "input": "\"node\" \"d:\\NODE_MODULES\\Src\\\u4e2d\\main.js\n",
+   "result": "d:"
+  },
+  {
+   "input": "tsx Z:\\\ud83d\ude00\\NODE_MODULES\\.bin\\vite.js --port 3000",
+   "result": "Z:\\\ud83d\ude00"
+  },
+  {
+   "input": "node Z:\\vite.js\n",
+   "result": null
+  },
+  {
+   "input": "\"node\" \"d:\\Src\\Src\\\ud83d\ude00\\p-q\\index.js|x",
+   "result": "d:\\Src\\Src\\\ud83d\ude00\\p-q"
+  },
+  {
+   "input": "tsx C:\\\u4e2d\\NODE_MODULES\\\ud83d\ude00\\main.js",
+   "result": "C:\\\u4e2d"
+  },
+  {
+   "input": "node C:\\x y\\node_modules\\v1.2\\p-q\\main.js",
+   "result": "C:\\x y"
+  },
+  {
+   "input": "tsx d:\\p-q\\NODE_MODULES\\main.js",
+   "result": "d:\\p-q"
+  }
+ ],
+ "normalize": [
+  {
+   "input": [],
+   "result": []
+  },
+  {
+   "input": [
+    ""
+   ],
+   "result": []
+  },
+  {
+   "input": [
+    "  "
+   ],
+   "result": []
+  },
+  {
+   "input": [
+    "A",
+    "a",
+    " A "
+   ],
+   "result": [
+    "a"
+   ]
+  },
+  {
+   "input": [
+    "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+   ],
+   "result": [
+    "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+   ]
+  },
+  {
+   "input": [
+    "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"
+   ],
+   "result": [
+    "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"
+   ]
+  },
+  {
+   "input": [
+    "\u0130"
+   ],
+   "result": [
+    "i\u0307"
+   ]
+  },
+  {
+   "input": [
+    "I\u0130"
+   ],
+   "result": [
+    "ii\u0307"
+   ]
+  },
+  {
+   "input": [
+    "\u03a3A\u03a3"
+   ],
+   "result": [
+    "\u03c3a\u03c2"
+   ]
+  },
+  {
+   "input": [
+    "A\u03a3"
+   ],
+   "result": [
+    "a\u03c2"
+   ]
+  },
+  {
+   "input": [
+    "\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00"
+   ],
+   "result": [
+    "\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00"
+   ]
+  },
+  {
+   "input": [
+    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\ud83d\ude00"
+   ],
+   "result": [
+    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\ud83d"
+   ]
+  },
+  {
+   "input": [
+    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\u0130"
+   ],
+   "result": [
+    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaai"
+   ]
+  },
+  {
+   "input": [
+    "k0",
+    "k1",
+    "k2",
+    "k3",
+    "k4",
+    "k5",
+    "k6",
+    "k7",
+    "k8",
+    "k9",
+    "k10",
+    "k11",
+    "k12",
+    "k13",
+    "k14",
+    "k15",
+    "k16",
+    "k17",
+    "k18",
+    "k19",
+    "k20",
+    "k21",
+    "k22",
+    "k23",
+    "k24"
+   ],
+   "result": [
+    "k0",
+    "k1",
+    "k2",
+    "k3",
+    "k4",
+    "k5",
+    "k6",
+    "k7",
+    "k8",
+    "k9",
+    "k10",
+    "k11",
+    "k12",
+    "k13",
+    "k14",
+    "k15",
+    "k16",
+    "k17",
+    "k18",
+    "k19"
+   ]
+  },
+  {
+   "input": [
+    "k0",
+    "k1",
+    "k2",
+    "k0",
+    "k1",
+    "k2",
+    "k0",
+    "k1",
+    "k2",
+    "k0",
+    "k1",
+    "k2",
+    "k0",
+    "k1",
+    "k2",
+    "k0",
+    "k1",
+    "k2",
+    "k0",
+    "k1",
+    "k2",
+    "k0",
+    "k1",
+    "k2",
+    "k0"
+   ],
+   "result": [
+    "k0",
+    "k1",
+    "k2"
+   ]
+  },
+  {
+   "input": [
+    "",
+    "a",
+    "",
+    "b"
+   ],
+   "result": [
+    "a",
+    "b"
+   ]
+  },
+  {
+   "input": [
+    "\tq\t"
+   ],
+   "result": [
+    "q"
+   ]
+  },
+  {
+   "input": [
+    "\nq\n"
+   ],
+   "result": [
+    "q"
+   ]
+  },
+  {
+   "input": [
+    "\u000bq\u000b"
+   ],
+   "result": [
+    "q"
+   ]
+  },
+  {
+   "input": [
+    "\fq\f"
+   ],
+   "result": [
+    "q"
+   ]
+  },
+  {
+   "input": [
+    "\rq\r"
+   ],
+   "result": [
+    "q"
+   ]
+  },
+  {
+   "input": [
+    " q "
+   ],
+   "result": [
+    "q"
+   ]
+  },
+  {
+   "input": [
+    "\u00a0q\u00a0"
+   ],
+   "result": [
+    "q"
+   ]
+  },
+  {
+   "input": [
+    "\u1680q\u1680"
+   ],
+   "result": [
+    "q"
+   ]
+  },
+  {
+   "input": [
+    "\u2000q\u2000"
+   ],
+   "result": [
+    "q"
+   ]
+  },
+  {
+   "input": [
+    "\u2005q\u2005"
+   ],
+   "result": [
+    "q"
+   ]
+  },
+  {
+   "input": [
+    "\u200aq\u200a"
+   ],
+   "result": [
+    "q"
+   ]
+  },
+  {
+   "input": [
+    "\u2028q\u2028"
+   ],
+   "result": [
+    "q"
+   ]
+  },
+  {
+   "input": [
+    "\u2029q\u2029"
+   ],
+   "result": [
+    "q"
+   ]
+  },
+  {
+   "input": [
+    "\u202fq\u202f"
+   ],
+   "result": [
+    "q"
+   ]
+  },
+  {
+   "input": [
+    "\u205fq\u205f"
+   ],
+   "result": [
+    "q"
+   ]
+  },
+  {
+   "input": [
+    "\u3000q\u3000"
+   ],
+   "result": [
+    "q"
+   ]
+  },
+  {
+   "input": [
+    "\ufeffq\ufeff"
+   ],
+   "result": [
+    "q"
+   ]
+  },
+  {
+   "input": [
+    "\u0085q\u0085"
+   ],
+   "result": [
+    "\u0085q\u0085"
+   ]
+  },
+  {
+   "input": [
+    "\u180eq\u180e"
+   ],
+   "result": [
+    "\u180eq\u180e"
+   ]
+  },
+  {
+   "input": [
+    "\u200bq\u200b"
+   ],
+   "result": [
+    "\u200bq\u200b"
+   ]
+  },
+  {
+   "input": [
+    "\u00df"
+   ],
+   "result": [
+    "\u00df"
+   ]
+  },
+  {
+   "input": [
+    "STRASSE"
+   ],
+   "result": [
+    "strasse"
+   ]
+  },
+  {
+   "input": [
+    "\u1e9e"
+   ],
+   "result": [
+    "\u00df"
+   ]
+  },
+  {
+   "input": [
+    "\ufb00"
+   ],
+   "result": [
+    "\ufb00"
+   ]
+  },
+  {
+   "input": [
+    "I\u0307"
+   ],
+   "result": [
+    "i\u0307"
+   ]
+  }
+ ],
+ "truncate": [
+  {
+   "input": null,
+   "max": 5,
+   "result": null
+  },
+  {
+   "input": "",
+   "max": 5,
+   "result": null
+  },
+  {
+   "input": "abc",
+   "max": 3,
+   "result": "abc"
+  },
+  {
+   "input": "abcd",
+   "max": 3,
+   "result": "abc\u2026"
+  },
+  {
+   "input": "ab\ud83d\ude00",
+   "max": 3,
+   "result": "ab\ud83d\u2026"
+  },
+  {
+   "input": "ab\ud83d\ude00",
+   "max": 4,
+   "result": "ab\ud83d\ude00"
+  },
+  {
+   "input": "a\ud83d\ude00b",
+   "max": 2,
+   "result": "a\ud83d\u2026"
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "max": 160,
+   "result": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "max": 160,
+   "result": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\u2026"
+  },
+  {
+   "input": "\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00",
+   "max": 160,
+   "result": "\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\u2026"
+  },
+  {
+   "input": "x\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00",
+   "max": 160,
+   "result": "x\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\u2026"
+  }
+ ],
+ "conflicts": [
+  {
+   "exps": [],
+   "listeners": [
+    {
+     "pid": 1,
+     "ports": [
+      3000
+     ]
+    }
+   ],
+   "result": 0
+  },
+  {
+   "exps": [
+    {
+     "id": "a",
+     "port": 3000,
+     "cwd": "x"
+    }
+   ],
+   "listeners": [],
+   "result": 0
+  },
+  {
+   "exps": [
+    {
+     "id": "a",
+     "port": 3000,
+     "cwd": "x"
+    }
+   ],
+   "listeners": [
+    {
+     "pid": 1,
+     "ports": [
+      3000
+     ],
+     "entryId": "a"
+    }
+   ],
+   "result": 0
+  },
+  {
+   "exps": [
+    {
+     "id": "a",
+     "port": 3000,
+     "cwd": "x"
+    }
+   ],
+   "listeners": [
+    {
+     "pid": 1,
+     "ports": [
+      3000
+     ],
+     "entryId": "a"
+    },
+    {
+     "pid": 2,
+     "ports": [
+      3000
+     ]
+    }
+   ],
+   "result": 1
+  },
+  {
+   "exps": [
+    {
+     "id": "a",
+     "port": 3000,
+     "cwd": "x"
+    }
+   ],
+   "listeners": [
+    {
+     "pid": 1,
+     "ports": [
+      3000
+     ]
+    },
+    {
+     "pid": 2,
+     "ports": [
+      3000
+     ]
+    },
+    {
+     "pid": 3,
+     "ports": [
+      3000
+     ],
+     "entryId": "b"
+    }
+   ],
+   "result": 1
+  },
+  {
+   "exps": [
+    {
+     "id": "a",
+     "port": 3000,
+     "cwd": "x"
+    },
+    {
+     "id": "b",
+     "port": 3000,
+     "cwd": "y"
+    }
+   ],
+   "listeners": [
+    {
+     "pid": 1,
+     "ports": [
+      3000
+     ],
+     "entryId": "a"
+    },
+    {
+     "pid": 2,
+     "ports": [
+      3000
+     ],
+     "entryId": "b"
+    }
+   ],
+   "result": 2
+  },
+  {
+   "exps": [
+    {
+     "id": "a",
+     "port": 0,
+     "cwd": "x"
+    },
+    {
+     "id": "b",
+     "cwd": "y"
+    }
+   ],
+   "listeners": [
+    {
+     "pid": 1,
+     "ports": [
+      0
+     ]
+    },
+    {
+     "pid": 2,
+     "ports": [
+      3000
+     ]
+    }
+   ],
+   "result": 0
+  },
+  {
+   "exps": [
+    {
+     "id": "a",
+     "port": 4000,
+     "cwd": "x"
+    },
+    {
+     "id": "a",
+     "port": 4000,
+     "cwd": "x"
+    }
+   ],
+   "listeners": [
+    {
+     "pid": 1,
+     "ports": [
+      3000,
+      4000
+     ]
+    }
+   ],
+   "result": 2
+  }
+ ],
+ "matchExps": [
+  {
+   "id": "p",
+   "cwd": "D:\\p",
+   "pid": 10
+  },
+  {
+   "id": "s",
+   "cwd": "D:\\s",
+   "sessionId": "S"
+  },
+  {
+   "id": "e",
+   "cwd": "D:\\Work\\Shop"
+  },
+  {
+   "id": "f",
+   "cwd": "D:\\work\\shop\\"
+  },
+  {
+   "id": "g",
+   "cwd": "D:\\work"
+  },
+  {
+   "id": "r",
+   "cwd": "rel\\dir"
+  }
+ ],
+ "match": [
+  {
+   "pid": 10,
+   "sessionId": null,
+   "cwd": null,
+   "result": "p"
+  },
+  {
+   "pid": 10,
+   "sessionId": null,
+   "cwd": "",
+   "result": "p"
+  },
+  {
+   "pid": 10,
+   "sessionId": null,
+   "cwd": "d:\\work\\shop",
+   "result": "p"
+  },
+  {
+   "pid": 10,
+   "sessionId": null,
+   "cwd": "D:\\work\\shop\\..\\shop",
+   "result": "p"
+  },
+  {
+   "pid": 10,
+   "sessionId": null,
+   "cwd": "D:\\work\\shopping",
+   "result": "p"
+  },
+  {
+   "pid": 10,
+   "sessionId": null,
+   "cwd": "D:\\work\\shop\\sub",
+   "result": "p"
+  },
+  {
+   "pid": 10,
+   "sessionId": null,
+   "cwd": "D:\\WORK\\x",
+   "result": "p"
+  },
+  {
+   "pid": 10,
+   "sessionId": null,
+   "cwd": "D:/work/y",
+   "result": "p"
+  },
+  {
+   "pid": 10,
+   "sessionId": null,
+   "cwd": "D:\\other",
+   "result": "p"
+  },
+  {
+   "pid": 10,
+   "sessionId": null,
+   "cwd": "rel\\dir\\a",
+   "result": "p"
+  },
+  {
+   "pid": 10,
+   "sessionId": "",
+   "cwd": null,
+   "result": "p"
+  },
+  {
+   "pid": 10,
+   "sessionId": "",
+   "cwd": "",
+   "result": "p"
+  },
+  {
+   "pid": 10,
+   "sessionId": "",
+   "cwd": "d:\\work\\shop",
+   "result": "p"
+  },
+  {
+   "pid": 10,
+   "sessionId": "",
+   "cwd": "D:\\work\\shop\\..\\shop",
+   "result": "p"
+  },
+  {
+   "pid": 10,
+   "sessionId": "",
+   "cwd": "D:\\work\\shopping",
+   "result": "p"
+  },
+  {
+   "pid": 10,
+   "sessionId": "",
+   "cwd": "D:\\work\\shop\\sub",
+   "result": "p"
+  },
+  {
+   "pid": 10,
+   "sessionId": "",
+   "cwd": "D:\\WORK\\x",
+   "result": "p"
+  },
+  {
+   "pid": 10,
+   "sessionId": "",
+   "cwd": "D:/work/y",
+   "result": "p"
+  },
+  {
+   "pid": 10,
+   "sessionId": "",
+   "cwd": "D:\\other",
+   "result": "p"
+  },
+  {
+   "pid": 10,
+   "sessionId": "",
+   "cwd": "rel\\dir\\a",
+   "result": "p"
+  },
+  {
+   "pid": 10,
+   "sessionId": "S",
+   "cwd": null,
+   "result": "p"
+  },
+  {
+   "pid": 10,
+   "sessionId": "S",
+   "cwd": "",
+   "result": "p"
+  },
+  {
+   "pid": 10,
+   "sessionId": "S",
+   "cwd": "d:\\work\\shop",
+   "result": "p"
+  },
+  {
+   "pid": 10,
+   "sessionId": "S",
+   "cwd": "D:\\work\\shop\\..\\shop",
+   "result": "p"
+  },
+  {
+   "pid": 10,
+   "sessionId": "S",
+   "cwd": "D:\\work\\shopping",
+   "result": "p"
+  },
+  {
+   "pid": 10,
+   "sessionId": "S",
+   "cwd": "D:\\work\\shop\\sub",
+   "result": "p"
+  },
+  {
+   "pid": 10,
+   "sessionId": "S",
+   "cwd": "D:\\WORK\\x",
+   "result": "p"
+  },
+  {
+   "pid": 10,
+   "sessionId": "S",
+   "cwd": "D:/work/y",
+   "result": "p"
+  },
+  {
+   "pid": 10,
+   "sessionId": "S",
+   "cwd": "D:\\other",
+   "result": "p"
+  },
+  {
+   "pid": 10,
+   "sessionId": "S",
+   "cwd": "rel\\dir\\a",
+   "result": "p"
+  },
+  {
+   "pid": 10,
+   "sessionId": "T",
+   "cwd": null,
+   "result": "p"
+  },
+  {
+   "pid": 10,
+   "sessionId": "T",
+   "cwd": "",
+   "result": "p"
+  },
+  {
+   "pid": 10,
+   "sessionId": "T",
+   "cwd": "d:\\work\\shop",
+   "result": "p"
+  },
+  {
+   "pid": 10,
+   "sessionId": "T",
+   "cwd": "D:\\work\\shop\\..\\shop",
+   "result": "p"
+  },
+  {
+   "pid": 10,
+   "sessionId": "T",
+   "cwd": "D:\\work\\shopping",
+   "result": "p"
+  },
+  {
+   "pid": 10,
+   "sessionId": "T",
+   "cwd": "D:\\work\\shop\\sub",
+   "result": "p"
+  },
+  {
+   "pid": 10,
+   "sessionId": "T",
+   "cwd": "D:\\WORK\\x",
+   "result": "p"
+  },
+  {
+   "pid": 10,
+   "sessionId": "T",
+   "cwd": "D:/work/y",
+   "result": "p"
+  },
+  {
+   "pid": 10,
+   "sessionId": "T",
+   "cwd": "D:\\other",
+   "result": "p"
+  },
+  {
+   "pid": 10,
+   "sessionId": "T",
+   "cwd": "rel\\dir\\a",
+   "result": "p"
+  },
+  {
+   "pid": 11,
+   "sessionId": null,
+   "cwd": null,
+   "result": null
+  },
+  {
+   "pid": 11,
+   "sessionId": null,
+   "cwd": "",
+   "result": null
+  },
+  {
+   "pid": 11,
+   "sessionId": null,
+   "cwd": "d:\\work\\shop",
+   "result": "e"
+  },
+  {
+   "pid": 11,
+   "sessionId": null,
+   "cwd": "D:\\work\\shop\\..\\shop",
+   "result": "e"
+  },
+  {
+   "pid": 11,
+   "sessionId": null,
+   "cwd": "D:\\work\\shopping",
+   "result": "g"
+  },
+  {
+   "pid": 11,
+   "sessionId": null,
+   "cwd": "D:\\work\\shop\\sub",
+   "result": "e"
+  },
+  {
+   "pid": 11,
+   "sessionId": null,
+   "cwd": "D:\\WORK\\x",
+   "result": "g"
+  },
+  {
+   "pid": 11,
+   "sessionId": null,
+   "cwd": "D:/work/y",
+   "result": "g"
+  },
+  {
+   "pid": 11,
+   "sessionId": null,
+   "cwd": "D:\\other",
+   "result": null
+  },
+  {
+   "pid": 11,
+   "sessionId": null,
+   "cwd": "rel\\dir\\a",
+   "result": "r"
+  },
+  {
+   "pid": 11,
+   "sessionId": "",
+   "cwd": null,
+   "result": null
+  },
+  {
+   "pid": 11,
+   "sessionId": "",
+   "cwd": "",
+   "result": null
+  },
+  {
+   "pid": 11,
+   "sessionId": "",
+   "cwd": "d:\\work\\shop",
+   "result": "e"
+  },
+  {
+   "pid": 11,
+   "sessionId": "",
+   "cwd": "D:\\work\\shop\\..\\shop",
+   "result": "e"
+  },
+  {
+   "pid": 11,
+   "sessionId": "",
+   "cwd": "D:\\work\\shopping",
+   "result": "g"
+  },
+  {
+   "pid": 11,
+   "sessionId": "",
+   "cwd": "D:\\work\\shop\\sub",
+   "result": "e"
+  },
+  {
+   "pid": 11,
+   "sessionId": "",
+   "cwd": "D:\\WORK\\x",
+   "result": "g"
+  },
+  {
+   "pid": 11,
+   "sessionId": "",
+   "cwd": "D:/work/y",
+   "result": "g"
+  },
+  {
+   "pid": 11,
+   "sessionId": "",
+   "cwd": "D:\\other",
+   "result": null
+  },
+  {
+   "pid": 11,
+   "sessionId": "",
+   "cwd": "rel\\dir\\a",
+   "result": "r"
+  },
+  {
+   "pid": 11,
+   "sessionId": "S",
+   "cwd": null,
+   "result": "s"
+  },
+  {
+   "pid": 11,
+   "sessionId": "S",
+   "cwd": "",
+   "result": "s"
+  },
+  {
+   "pid": 11,
+   "sessionId": "S",
+   "cwd": "d:\\work\\shop",
+   "result": "s"
+  },
+  {
+   "pid": 11,
+   "sessionId": "S",
+   "cwd": "D:\\work\\shop\\..\\shop",
+   "result": "s"
+  },
+  {
+   "pid": 11,
+   "sessionId": "S",
+   "cwd": "D:\\work\\shopping",
+   "result": "s"
+  },
+  {
+   "pid": 11,
+   "sessionId": "S",
+   "cwd": "D:\\work\\shop\\sub",
+   "result": "s"
+  },
+  {
+   "pid": 11,
+   "sessionId": "S",
+   "cwd": "D:\\WORK\\x",
+   "result": "s"
+  },
+  {
+   "pid": 11,
+   "sessionId": "S",
+   "cwd": "D:/work/y",
+   "result": "s"
+  },
+  {
+   "pid": 11,
+   "sessionId": "S",
+   "cwd": "D:\\other",
+   "result": "s"
+  },
+  {
+   "pid": 11,
+   "sessionId": "S",
+   "cwd": "rel\\dir\\a",
+   "result": "s"
+  },
+  {
+   "pid": 11,
+   "sessionId": "T",
+   "cwd": null,
+   "result": null
+  },
+  {
+   "pid": 11,
+   "sessionId": "T",
+   "cwd": "",
+   "result": null
+  },
+  {
+   "pid": 11,
+   "sessionId": "T",
+   "cwd": "d:\\work\\shop",
+   "result": "e"
+  },
+  {
+   "pid": 11,
+   "sessionId": "T",
+   "cwd": "D:\\work\\shop\\..\\shop",
+   "result": "e"
+  },
+  {
+   "pid": 11,
+   "sessionId": "T",
+   "cwd": "D:\\work\\shopping",
+   "result": "g"
+  },
+  {
+   "pid": 11,
+   "sessionId": "T",
+   "cwd": "D:\\work\\shop\\sub",
+   "result": "e"
+  },
+  {
+   "pid": 11,
+   "sessionId": "T",
+   "cwd": "D:\\WORK\\x",
+   "result": "g"
+  },
+  {
+   "pid": 11,
+   "sessionId": "T",
+   "cwd": "D:/work/y",
+   "result": "g"
+  },
+  {
+   "pid": 11,
+   "sessionId": "T",
+   "cwd": "D:\\other",
+   "result": null
+  },
+  {
+   "pid": 11,
+   "sessionId": "T",
+   "cwd": "rel\\dir\\a",
+   "result": "r"
+  }
+ ]
+}

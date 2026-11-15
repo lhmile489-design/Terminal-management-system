@@ -1,0 +1,826 @@
+{
+ "node": "v22.23.4",
+ "v8": "12.4.254.21-node.57",
+ "cases": [
+  {
+   "input": "",
+   "error": "Unexpected end of JSON input"
+  },
+  {
+   "input": " ",
+   "error": "Unexpected end of JSON input"
+  },
+  {
+   "input": "\n",
+   "error": "Unexpected end of JSON input"
+  },
+  {
+   "input": "{",
+   "error": "Expected property name or '}' in JSON at position 1 (line 1 column 2)"
+  },
+  {
+   "input": "}",
+   "error": "Unexpected token '}', \"}\" is not valid JSON"
+  },
+  {
+   "input": "[",
+   "error": "Unexpected end of JSON input"
+  },
+  {
+   "input": "]",
+   "error": "Unexpected token ']', \"]\" is not valid JSON"
+  },
+  {
+   "input": ":",
+   "error": "Unexpected token ':', \":\" is not valid JSON"
+  },
+  {
+   "input": ",",
+   "error": "Unexpected token ',', \",\" is not valid JSON"
+  },
+  {
+   "input": "x",
+   "error": "Unexpected token 'x', \"x\" is not valid JSON"
+  },
+  {
+   "input": "{}",
+   "value": {
+    "t": "object",
+    "keys": [],
+    "props": []
+   }
+  },
+  {
+   "input": "[]",
+   "value": {
+    "t": "array",
+    "elems": []
+   }
+  },
+  {
+   "input": "{ }",
+   "value": {
+    "t": "object",
+    "keys": [],
+    "props": []
+   }
+  },
+  {
+   "input": "[ ]",
+   "value": {
+    "t": "array",
+    "elems": []
+   }
+  },
+  {
+   "input": "{\"a\":1",
+   "error": "Expected ',' or '}' after property value in JSON at position 6 (line 1 column 7)"
+  },
+  {
+   "input": "{\"a\":1,}",
+   "error": "Expected double-quoted property name in JSON at position 7 (line 1 column 8)"
+  },
+  {
+   "input": "[1,]",
+   "error": "Unexpected token ']', \"[1,]\" is not valid JSON"
+  },
+  {
+   "input": "[1",
+   "error": "Expected ',' or ']' after array element in JSON at position 2 (line 1 column 3)"
+  },
+  {
+   "input": "[1,",
+   "error": "Unexpected end of JSON input"
+  },
+  {
+   "input": "[1 2]",
+   "error": "Expected ',' or ']' after array element in JSON at position 3 (line 1 column 4)"
+  },
+  {
+   "input": "{\"a\"",
+   "error": "Expected ':' after property name in JSON at position 4 (line 1 column 5)"
+  },
+  {
+   "input": "{\"a\":",
+   "error": "Unexpected end of JSON input"
+  },
+  {
+   "input": "{\"a\" 1}",
+   "error": "Expected ':' after property name in JSON at position 5 (line 1 column 6)"
+  },
+  {
+   "input": "{\"a\":1 \"b\":2}",
+   "error": "Expected ',' or '}' after property value in JSON at position 7 (line 1 column 8)"
+  },
+  {
+   "input": "{a:1}",
+   "error": "Expected property name or '}' in JSON at position 1 (line 1 column 2)"
+  },
+  {
+   "input": "{'a':1}",
+   "error": "Expected property name or '}' in JSON at position 1 (line 1 column 2)"
+  },
+  {
+   "input": "{\"a\":1,\"b\"}",
+   "error": "Expected ':' after property name in JSON at position 10 (line 1 column 11)"
+  },
+  {
+   "input": "{,}",
+   "error": "Expected property name or '}' in JSON at position 1 (line 1 column 2)"
+  },
+  {
+   "input": "[,]",
+   "error": "Unexpected token ',', \"[,]\" is not valid JSON"
+  },
+  {
+   "input": "{\"a\":1}}",
+   "error": "Unexpected non-whitespace character after JSON at position 7 (line 1 column 8)"
+  },
+  {
+   "input": "{} x",
+   "error": "Unexpected non-whitespace character after JSON at position 3 (line 1 column 4)"
+  },
+  {
+   "input": "[] []",
+   "error": "Unexpected non-whitespace character after JSON at position 3 (line 1 column 4)"
+  },
+  {
+   "input": "1 2",
+   "error": "Unexpected non-whitespace character after JSON at position 2 (line 1 column 3)"
+  },
+  {
+   "input": "\"abc",
+   "error": "Unterminated string in JSON at position 4 (line 1 column 5)"
+  },
+  {
+   "input": "\"a\\x\"",
+   "error": "Bad escaped character in JSON at position 3 (line 1 column 4)"
+  },
+  {
+   "input": "\"\\",
+   "error": "Unexpected end of JSON input"
+  },
+  {
+   "input": "\"\\u12\"",
+   "error": "Bad Unicode escape in JSON at position 5 (line 1 column 6)"
+  },
+  {
+   "input": "\"\\u12G4\"",
+   "error": "Bad Unicode escape in JSON at position 5 (line 1 column 6)"
+  },
+  {
+   "input": "\"\\u00e9\"",
+   "value": {
+    "t": "string",
+    "s": "\u00e9"
+   }
+  },
+  {
+   "input": "\"\\uD83D\\uDE00\"",
+   "value": {
+    "t": "string",
+    "s": "\ud83d\ude00"
+   }
+  },
+  {
+   "input": "\"\\n\\t\\r\\b\\f\\/\\\\\\\"\"",
+   "value": {
+    "t": "string",
+    "s": "\n\t\r\b\f/\\\""
+   }
+  },
+  {
+   "input": "\"a\u0001\"",
+   "error": "Bad control character in string literal in JSON at position 2 (line 1 column 3)"
+  },
+  {
+   "input": "\"a\u001fb\"",
+   "error": "Bad control character in string literal in JSON at position 2 (line 1 column 3)"
+  },
+  {
+   "input": "\"tab\t\"",
+   "error": "Bad control character in string literal in JSON at position 4 (line 1 column 5)"
+  },
+  {
+   "input": "\"\\\u4e2d\"",
+   "error": "Unexpected token '\u4e2d', \"\"\\\u4e2d\"\" is not valid JSON"
+  },
+  {
+   "input": "-",
+   "error": "No number after minus sign in JSON at position 1 (line 1 column 2)"
+  },
+  {
+   "input": "-x",
+   "error": "No number after minus sign in JSON at position 1 (line 1 column 2)"
+  },
+  {
+   "input": "--1",
+   "error": "No number after minus sign in JSON at position 1 (line 1 column 2)"
+  },
+  {
+   "input": "01",
+   "error": "Unexpected number in JSON at position 1 (line 1 column 2)"
+  },
+  {
+   "input": "-01",
+   "error": "Unexpected number in JSON at position 2 (line 1 column 3)"
+  },
+  {
+   "input": "00",
+   "error": "Unexpected number in JSON at position 1 (line 1 column 2)"
+  },
+  {
+   "input": "0",
+   "value": {
+    "t": "number",
+    "n": "0"
+   }
+  },
+  {
+   "input": "-0",
+   "value": {
+    "t": "number",
+    "n": "-0"
+   }
+  },
+  {
+   "input": "0.",
+   "error": "Unterminated fractional number in JSON at position 2 (line 1 column 3)"
+  },
+  {
+   "input": "1.",
+   "error": "Unterminated fractional number in JSON at position 2 (line 1 column 3)"
+  },
+  {
+   "input": "1.x",
+   "error": "Unterminated fractional number in JSON at position 2 (line 1 column 3)"
+  },
+  {
+   "input": ".5",
+   "error": "Unexpected token '.', \".5\" is not valid JSON"
+  },
+  {
+   "input": "1e",
+   "error": "Exponent part is missing a number in JSON at position 2 (line 1 column 3)"
+  },
+  {
+   "input": "1e+",
+   "error": "Exponent part is missing a number in JSON at position 3 (line 1 column 4)"
+  },
+  {
+   "input": "1E-",
+   "error": "Exponent part is missing a number in JSON at position 3 (line 1 column 4)"
+  },
+  {
+   "input": "1e5",
+   "value": {
+    "t": "number",
+    "n": "100000"
+   }
+  },
+  {
+   "input": "1.5e-3",
+   "value": {
+    "t": "number",
+    "n": "0.0015"
+   }
+  },
+  {
+   "input": "-0.0",
+   "value": {
+    "t": "number",
+    "n": "-0"
+   }
+  },
+  {
+   "input": "123456789",
+   "value": {
+    "t": "number",
+    "n": "123456789"
+   }
+  },
+  {
+   "input": "1234567890",
+   "value": {
+    "t": "number",
+    "n": "1234567890"
+   }
+  },
+  {
+   "input": "12345678901234567890",
+   "value": {
+    "t": "number",
+    "n": "12345678901234567000"
+   }
+  },
+  {
+   "input": "1e400",
+   "value": {
+    "t": "number",
+    "n": "Infinity"
+   }
+  },
+  {
+   "input": "-1e400",
+   "value": {
+    "t": "number",
+    "n": "-Infinity"
+   }
+  },
+  {
+   "input": "1e-400",
+   "value": {
+    "t": "number",
+    "n": "0"
+   }
+  },
+  {
+   "input": "0x10",
+   "error": "Unexpected non-whitespace character after JSON at position 1 (line 1 column 2)"
+  },
+  {
+   "input": "+1",
+   "error": "Unexpected token '+', \"+1\" is not valid JSON"
+  },
+  {
+   "input": "Infinity",
+   "error": "\"Infinity\" is not valid JSON"
+  },
+  {
+   "input": "NaN",
+   "error": "\"NaN\" is not valid JSON"
+  },
+  {
+   "input": "tru",
+   "error": "Unexpected end of JSON input"
+  },
+  {
+   "input": "true",
+   "value": {
+    "t": "bool",
+    "b": true
+   }
+  },
+  {
+   "input": "truex",
+   "error": "Unexpected non-whitespace character after JSON at position 4 (line 1 column 5)"
+  },
+  {
+   "input": "trux",
+   "error": "Unexpected token 'x', \"trux\" is not valid JSON"
+  },
+  {
+   "input": "nul",
+   "error": "Unexpected end of JSON input"
+  },
+  {
+   "input": "null",
+   "value": {
+    "t": "null"
+   }
+  },
+  {
+   "input": "nulL",
+   "error": "Unexpected token 'L', \"nulL\" is not valid JSON"
+  },
+  {
+   "input": "f",
+   "error": "Unexpected end of JSON input"
+  },
+  {
+   "input": "fals",
+   "error": "Unexpected end of JSON input"
+  },
+  {
+   "input": "false",
+   "value": {
+    "t": "bool",
+    "b": false
+   }
+  },
+  {
+   "input": "falsy",
+   "error": "Unexpected token 'y', \"falsy\" is not valid JSON"
+  },
+  {
+   "input": "t",
+   "error": "Unexpected end of JSON input"
+  },
+  {
+   "input": "undefined",
+   "error": "\"undefined\" is not valid JSON"
+  },
+  {
+   "input": "[object Object]",
+   "error": "\"[object Object]\" is not valid JSON"
+  },
+  {
+   "input": "NaN ",
+   "error": "Unexpected token 'N', \"NaN \" is not valid JSON"
+  },
+  {
+   "input": "\ufeff{}",
+   "error": "Unexpected token '\ufeff', \"\ufeff{}\" is not valid JSON"
+  },
+  {
+   "input": "\u00a0{}",
+   "error": "Unexpected token '\u00a0', \"\u00a0{}\" is not valid JSON"
+  },
+  {
+   "input": "\u30001",
+   "error": "Unexpected token '\u3000', \"\u30001\" is not valid JSON"
+  },
+  {
+   "input": "{\n  \"a\": 1,\n  \"b\": 2\n  \"c\": 3\n}",
+   "error": "Expected ',' or '}' after property value in JSON at position 23 (line 4 column 3)"
+  },
+  {
+   "input": "{\r\n\"a\":1\r\n,}",
+   "error": "Expected double-quoted property name in JSON at position 11 (line 3 column 2)"
+  },
+  {
+   "input": "{\r\"a\"\r\r:1,\n\n}",
+   "error": "Expected double-quoted property name in JSON at position 12 (line 6 column 1)"
+  },
+  {
+   "input": "\r\n\r\n x",
+   "error": "Unexpected token 'x', \"\r\n\r\n x\" is not valid JSON"
+  },
+  {
+   "input": "{\"name\":\"a\",\"scripts\":{\"dev\":\"vite\"}",
+   "error": "Expected ',' or '}' after property value in JSON at position 36 (line 1 column 37)"
+  },
+  {
+   "input": "{\"name\": \"my-app\", \"version\": \"1.0.0\", }",
+   "error": "Expected double-quoted property name in JSON at position 39 (line 1 column 40)"
+  },
+  {
+   "input": "{\"dependencies\":{\"vue\":\"^3\"},\"devDependencies\":{\"vite\":\"^5\"},}",
+   "error": "Expected double-quoted property name in JSON at position 61 (line 1 column 62)"
+  },
+  {
+   "input": "{\"name\":\"\u4e2d\u6587\u9879\u76ee\",\"x\":}",
+   "error": "Unexpected token '}', \"{\"name\":\"\u4e2d\u6587\u9879\u76ee\",\"x\":}\" is not valid JSON"
+  },
+  {
+   "input": "{\"emoji\":\"\ud83d\ude00\", oops}",
+   "error": "Expected double-quoted property name in JSON at position 15 (line 1 column 16)"
+  },
+  {
+   "input": "{\"lone\":\"\\uD83D\"} z",
+   "error": "Unexpected non-whitespace character after JSON at position 18 (line 1 column 19)"
+  },
+  {
+   "input": "\"\\uDE00x\"",
+   "value": {
+    "t": "string",
+    "s": "\ude00x"
+   }
+  },
+  {
+   "input": "{\"b\":\"1\",\"2\":\"x\",\"a\":\"y\",\"1\":\"z\",\"b\":\"last\",\"__proto__\":\"p\",\"10\":\"t\",\"-1\":\"m\",\"01\":\"lead\",\"4294967295\":\"big\",\"4294967294\":\"max\",\"n\":3,\"o\":{},\"arr\":[1]}",
+   "value": {
+    "t": "object",
+    "keys": [
+     "1",
+     "2",
+     "10",
+     "4294967294",
+     "b",
+     "a",
+     "__proto__",
+     "-1",
+     "01",
+     "4294967295",
+     "n",
+     "o",
+     "arr"
+    ],
+    "props": [
+     {
+      "t": "string",
+      "s": "z"
+     },
+     {
+      "t": "string",
+      "s": "x"
+     },
+     {
+      "t": "string",
+      "s": "t"
+     },
+     {
+      "t": "string",
+      "s": "max"
+     },
+     {
+      "t": "string",
+      "s": "last"
+     },
+     {
+      "t": "string",
+      "s": "y"
+     },
+     {
+      "t": "string",
+      "s": "p"
+     },
+     {
+      "t": "string",
+      "s": "m"
+     },
+     {
+      "t": "string",
+      "s": "lead"
+     },
+     {
+      "t": "string",
+      "s": "big"
+     },
+     {
+      "t": "number",
+      "n": "3"
+     },
+     {
+      "t": "object",
+      "keys": [],
+      "props": []
+     },
+     {
+      "t": "array",
+      "elems": [
+       {
+        "t": "number",
+        "n": "1"
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": "{\"\\u0031\":\"esc-index\",\"\\u0061\":\"esc-a\",\"1\":\"plain\"}",
+   "value": {
+    "t": "object",
+    "keys": [
+     "1",
+     "a"
+    ],
+    "props": [
+     {
+      "t": "string",
+      "s": "plain"
+     },
+     {
+      "t": "string",
+      "s": "esc-a"
+     }
+    ]
+   }
+  },
+  {
+   "input": "{\"a\":[1,2,{\"b\":[true,false,null]}],\"c\":{\"d\":{\"e\":\"f\"}}}",
+   "value": {
+    "t": "object",
+    "keys": [
+     "a",
+     "c"
+    ],
+    "props": [
+     {
+      "t": "array",
+      "elems": [
+       {
+        "t": "number",
+        "n": "1"
+       },
+       {
+        "t": "number",
+        "n": "2"
+       },
+       {
+        "t": "object",
+        "keys": [
+         "b"
+        ],
+        "props": [
+         {
+          "t": "array",
+          "elems": [
+           {
+            "t": "bool",
+            "b": true
+           },
+           {
+            "t": "bool",
+            "b": false
+           },
+           {
+            "t": "null"
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "object",
+      "keys": [
+       "d"
+      ],
+      "props": [
+       {
+        "t": "object",
+        "keys": [
+         "e"
+        ],
+        "props": [
+         {
+          "t": "string",
+          "s": "f"
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": "[[[[[]]]]]",
+   "value": {
+    "t": "array",
+    "elems": [
+     {
+      "t": "array",
+      "elems": [
+       {
+        "t": "array",
+        "elems": [
+         {
+          "t": "array",
+          "elems": [
+           {
+            "t": "array",
+            "elems": []
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": "{\"\":\"\"}",
+   "value": {
+    "t": "object",
+    "keys": [
+     ""
+    ],
+    "props": [
+     {
+      "t": "string",
+      "s": ""
+     }
+    ]
+   }
+  },
+  {
+   "input": "[1,2,3,\"x\",null]",
+   "value": {
+    "t": "array",
+    "elems": [
+     {
+      "t": "number",
+      "n": "1"
+     },
+     {
+      "t": "number",
+      "n": "2"
+     },
+     {
+      "t": "number",
+      "n": "3"
+     },
+     {
+      "t": "string",
+      "s": "x"
+     },
+     {
+      "t": "null"
+     }
+    ]
+   }
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "error": "Unexpected token 'x', \"xxxxxxxxxx\"... is not valid JSON"
+  },
+  {
+   "input": "{\"long\":xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx}",
+   "error": "Unexpected token 'x', \"{\"long\":xxxxxxxxxx\"... is not valid JSON"
+  },
+  {
+   "input": "{\"aaaaaaaaaaaaaaaaaaaa\":1,}",
+   "error": "Expected double-quoted property name in JSON at position 26 (line 1 column 27)"
+  },
+  {
+   "input": "{\"key\":\"value\",\"k2\":\"v2\"}}",
+   "error": "Unexpected non-whitespace character after JSON at position 25 (line 1 column 26)"
+  },
+  {
+   "input": "x                   ",
+   "error": "Unexpected token 'x', \"x                   \" is not valid JSON"
+  },
+  {
+   "input": "x                    ",
+   "error": "Unexpected token 'x', \"x         \"... is not valid JSON"
+  },
+  {
+   "input": "          x          ",
+   "error": "Unexpected token 'x', ...\"          x         \"... is not valid JSON"
+  },
+  {
+   "input": "           x         ",
+   "error": "Unexpected token 'x', ...\"          x         \" is not valid JSON"
+  },
+  {
+   "input": "         x           ",
+   "error": "Unexpected token 'x', \"         x         \"... is not valid JSON"
+  },
+  {
+   "input": "[1,1,1,1,1,1,1,1,1,1,}",
+   "error": "Unexpected token '}', ...\"1,1,1,1,1,}\" is not valid JSON"
+  },
+  {
+   "input": "{\"a\":11111111111111x}",
+   "error": "Expected ',' or '}' after property value in JSON at position 19 (line 1 column 20)"
+  },
+  {
+   "input": "\"\u0122\u015c\u0101\u2222\"",
+   "value": {
+    "t": "string",
+    "s": "\u0122\u015c\u0101\u2222"
+   }
+  },
+  {
+   "input": "{\"\u0122\":\"\u5c22\"}",
+   "value": {
+    "t": "object",
+    "keys": [
+     "\u0122"
+    ],
+    "props": [
+     {
+      "t": "string",
+      "s": "\u5c22"
+     }
+    ]
+   }
+  },
+  {
+   "input": "{\"3\":\"a\",\"1\":\"b\",\"2\":\"c\",\"1\":\"d\",\"0\":\"e\",\"x\":\"f\",\"5\":\"g\"}",
+   "value": {
+    "t": "object",
+    "keys": [
+     "0",
+     "1",
+     "2",
+     "3",
+     "5",
+     "x"
+    ],
+    "props": [
+     {
+      "t": "string",
+      "s": "e"
+     },
+     {
+      "t": "string",
+      "s": "d"
+     },
+     {
+      "t": "string",
+      "s": "c"
+     },
+     {
+      "t": "string",
+      "s": "a"
+     },
+     {
+      "t": "string",
+      "s": "g"
+     },
+     {
+      "t": "string",
+      "s": "f"
+     }
+    ]
+   }
+  }
+ ]
+}

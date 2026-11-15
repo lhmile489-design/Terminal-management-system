@@ -1,0 +1,2962 @@
+{
+ "generatedFrom": "mile-terminal-management/src/shared/planner.ts + node v22.23.4",
+ "timezone": "Asia/Shanghai",
+ "now": 1794628800000,
+ "today": "2026-11-14",
+ "isValidDate": [
+  {
+   "input": "2026-11-14",
+   "output": true
+  },
+  {
+   "input": "2026-02-28",
+   "output": true
+  },
+  {
+   "input": "2024-02-29",
+   "output": true
+  },
+  {
+   "input": "2023-02-29",
+   "output": false
+  },
+  {
+   "input": "2026-02-30",
+   "output": false
+  },
+  {
+   "input": "2026-13-01",
+   "output": false
+  },
+  {
+   "input": "2026-00-10",
+   "output": false
+  },
+  {
+   "input": "2026-01-00",
+   "output": false
+  },
+  {
+   "input": "2026-01-32",
+   "output": false
+  },
+  {
+   "input": "1970-01-01",
+   "output": true
+  },
+  {
+   "input": "1969-12-31",
+   "output": false
+  },
+  {
+   "input": "2999-12-31",
+   "output": true
+  },
+  {
+   "input": "3000-01-01",
+   "output": false
+  },
+  {
+   "input": "2026-1-5",
+   "output": false
+  },
+  {
+   "input": "26-11-14",
+   "output": false
+  },
+  {
+   "input": "2026/11/14",
+   "output": false
+  },
+  {
+   "input": "",
+   "output": false
+  },
+  {
+   "input": "abc",
+   "output": false
+  },
+  {
+   "input": " 2026-11-14",
+   "output": false
+  },
+  {
+   "input": "2026-11-14 ",
+   "output": false
+  },
+  {
+   "input": "2026-11-14\n",
+   "output": false
+  },
+  {
+   "input": null,
+   "output": false
+  },
+  {
+   "input": "__undefined__",
+   "output": false
+  },
+  {
+   "input": 5,
+   "output": false
+  },
+  {
+   "input": {},
+   "output": false
+  },
+  {
+   "input": [],
+   "output": false
+  },
+  {
+   "input": "2026-11-14T00:00:00Z",
+   "output": false
+  }
+ ],
+ "isValidTime": [
+  {
+   "input": "00:00",
+   "output": true
+  },
+  {
+   "input": "23:59",
+   "output": true
+  },
+  {
+   "input": "15:30",
+   "output": true
+  },
+  {
+   "input": "24:00",
+   "output": false
+  },
+  {
+   "input": "23:60",
+   "output": false
+  },
+  {
+   "input": "1:30",
+   "output": false
+  },
+  {
+   "input": "15:3",
+   "output": false
+  },
+  {
+   "input": "15:30x",
+   "output": false
+  },
+  {
+   "input": "",
+   "output": false
+  },
+  {
+   "input": "abc",
+   "output": false
+  },
+  {
+   "input": " 15:30",
+   "output": false
+  },
+  {
+   "input": "15:30 ",
+   "output": false
+  },
+  {
+   "input": "15:30:00",
+   "output": false
+  },
+  {
+   "input": "25:00",
+   "output": false
+  },
+  {
+   "input": "-1:00",
+   "output": false
+  },
+  {
+   "input": "15:-30",
+   "output": false
+  },
+  {
+   "input": null,
+   "output": false
+  },
+  {
+   "input": 5,
+   "output": false
+  }
+ ],
+ "localDate": [
+  {
+   "input": 1794614400000,
+   "output": "2026-11-14"
+  },
+  {
+   "input": 1794671940000,
+   "output": "2026-11-14"
+  },
+  {
+   "input": 1794672000000,
+   "output": "2026-11-15"
+  },
+  {
+   "input": 1794672060000,
+   "output": "2026-11-15"
+  },
+  {
+   "input": 1767225600000,
+   "output": "2026-01-01"
+  },
+  {
+   "input": 1798761540000,
+   "output": "2027-01-01"
+  },
+  {
+   "input": 1709208000000,
+   "output": "2024-02-29"
+  },
+  {
+   "input": 0,
+   "output": "1970-01-01"
+  },
+  {
+   "input": 86400000,
+   "output": "1970-01-02"
+  },
+  {
+   "input": -86400000,
+   "output": "1969-12-31"
+  },
+  {
+   "input": 1794643140000,
+   "output": "2026-11-14"
+  },
+  {
+   "input": 1794643200000,
+   "output": "2026-11-14"
+  }
+ ],
+ "timeOfDay": [
+  {
+   "input": 1794614400000,
+   "output": "08:00"
+  },
+  {
+   "input": 1794671940000,
+   "output": "23:59"
+  },
+  {
+   "input": 1794672000000,
+   "output": "00:00"
+  },
+  {
+   "input": 1794672060000,
+   "output": "00:01"
+  },
+  {
+   "input": 1767225600000,
+   "output": "08:00"
+  },
+  {
+   "input": 1798761540000,
+   "output": "07:59"
+  },
+  {
+   "input": 1709208000000,
+   "output": "20:00"
+  },
+  {
+   "input": 0,
+   "output": "08:00"
+  },
+  {
+   "input": 86400000,
+   "output": "08:00"
+  },
+  {
+   "input": -86400000,
+   "output": "08:00"
+  },
+  {
+   "input": 1794643140000,
+   "output": "15:59"
+  },
+  {
+   "input": 1794643200000,
+   "output": "16:00"
+  }
+ ],
+ "daysBetween": [
+  {
+   "a": "2026-11-14",
+   "b": "2026-11-14",
+   "output": 0
+  },
+  {
+   "a": "2026-11-14",
+   "b": "2026-11-15",
+   "output": 1
+  },
+  {
+   "a": "2026-11-15",
+   "b": "2026-11-14",
+   "output": -1
+  },
+  {
+   "a": "2026-01-01",
+   "b": "2026-12-31",
+   "output": 364
+  },
+  {
+   "a": "2024-02-28",
+   "b": "2024-03-01",
+   "output": 2
+  },
+  {
+   "a": "2023-02-28",
+   "b": "2023-03-01",
+   "output": 1
+  },
+  {
+   "a": "2026-11-14",
+   "b": "2027-11-14",
+   "output": 365
+  },
+  {
+   "a": "2026-12-31",
+   "b": "2027-01-01",
+   "output": 1
+  }
+ ],
+ "boardProgress": [
+  {
+   "input": {
+    "tasks": []
+   },
+   "output": {
+    "done": 0,
+    "total": 0,
+    "percent": null
+   }
+  },
+  {
+   "input": {
+    "tasks": [
+     {
+      "id": "tx731l1",
+      "title": "t",
+      "status": "todo",
+      "order": 0
+     }
+    ]
+   },
+   "output": {
+    "done": 0,
+    "total": 1,
+    "percent": 0
+   }
+  },
+  {
+   "input": {
+    "tasks": [
+     {
+      "id": "t34y37x",
+      "title": "t",
+      "status": "done",
+      "order": 0
+     }
+    ]
+   },
+   "output": {
+    "done": 1,
+    "total": 1,
+    "percent": 100
+   }
+  },
+  {
+   "input": {
+    "tasks": [
+     {
+      "id": "t845r0e",
+      "title": "t",
+      "status": "todo",
+      "order": 0
+     },
+     {
+      "id": "tg20oza",
+      "title": "t",
+      "status": "done",
+      "order": 1
+     },
+     {
+      "id": "tfo764u",
+      "title": "t",
+      "status": "doing",
+      "order": 2
+     }
+    ]
+   },
+   "output": {
+    "done": 1,
+    "total": 3,
+    "percent": 33
+   }
+  },
+  {
+   "input": {
+    "tasks": [
+     {
+      "id": "toy7y37",
+      "title": "t",
+      "status": "canceled",
+      "order": 0
+     },
+     {
+      "id": "tdyqim1",
+      "title": "t",
+      "status": "done",
+      "order": 1
+     }
+    ]
+   },
+   "output": {
+    "done": 1,
+    "total": 1,
+    "percent": 100
+   }
+  },
+  {
+   "input": {
+    "tasks": [
+     {
+      "id": "ta6bwlh",
+      "title": "t",
+      "status": "canceled",
+      "order": 0
+     }
+    ]
+   },
+   "output": {
+    "done": 0,
+    "total": 0,
+    "percent": null
+   }
+  },
+  {
+   "input": {
+    "tasks": [
+     {
+      "id": "tzn52rr",
+      "title": "t",
+      "status": "todo",
+      "order": 0
+     },
+     {
+      "id": "t4go8zs",
+      "title": "t",
+      "status": "done",
+      "order": 1
+     }
+    ]
+   },
+   "output": {
+    "done": 1,
+    "total": 2,
+    "percent": 50
+   }
+  },
+  {
+   "input": {
+    "tasks": [
+     {
+      "id": "t5dlexq",
+      "title": "t",
+      "status": "todo",
+      "order": 0
+     },
+     {
+      "id": "tsvpxkv",
+      "title": "t",
+      "status": "done",
+      "order": 1
+     }
+    ]
+   },
+   "output": {
+    "done": 1,
+    "total": 2,
+    "percent": 50
+   }
+  },
+  {
+   "input": {
+    "tasks": [
+     {
+      "id": "ts98axx",
+      "title": "t",
+      "status": "todo",
+      "order": 0
+     },
+     {
+      "id": "teq4bkr",
+      "title": "t",
+      "status": "done",
+      "order": 1
+     }
+    ]
+   },
+   "output": {
+    "done": 1,
+    "total": 2,
+    "percent": 50
+   }
+  },
+  {
+   "input": {
+    "tasks": [
+     {
+      "id": "te6jam9",
+      "title": "t",
+      "status": "todo",
+      "order": 0
+     },
+     {
+      "id": "twnvf6n",
+      "title": "t",
+      "status": "done",
+      "order": 1
+     }
+    ]
+   },
+   "output": {
+    "done": 1,
+    "total": 2,
+    "percent": 50
+   }
+  },
+  {
+   "input": {
+    "tasks": [
+     {
+      "id": "tbdvgan",
+      "title": "t",
+      "status": "todo",
+      "order": 0
+     },
+     {
+      "id": "tmtiugr",
+      "title": "t",
+      "status": "done",
+      "order": 1
+     }
+    ]
+   },
+   "output": {
+    "done": 1,
+    "total": 2,
+    "percent": 50
+   }
+  },
+  {
+   "input": {
+    "tasks": [
+     {
+      "id": "tg82x9p",
+      "title": "t",
+      "status": "done",
+      "order": 0
+     },
+     {
+      "id": "t0kqb2h",
+      "title": "t",
+      "status": "done",
+      "order": 1
+     }
+    ]
+   },
+   "output": {
+    "done": 2,
+    "total": 2,
+    "percent": 100
+   }
+  },
+  {
+   "input": {
+    "tasks": [
+     {
+      "id": "tkgkpni",
+      "title": "t",
+      "status": "done",
+      "order": 0
+     },
+     {
+      "id": "tmj2xme",
+      "title": "t",
+      "status": "done",
+      "order": 1
+     }
+    ]
+   },
+   "output": {
+    "done": 2,
+    "total": 2,
+    "percent": 100
+   }
+  },
+  {
+   "input": {
+    "tasks": [
+     {
+      "id": "tssj9j4",
+      "title": "t",
+      "status": "done",
+      "order": 0
+     }
+    ]
+   },
+   "output": {
+    "done": 1,
+    "total": 1,
+    "percent": 100
+   }
+  },
+  {
+   "input": {
+    "tasks": [
+     {
+      "id": "t39f7jb",
+      "title": "t",
+      "status": "todo",
+      "order": 0
+     }
+    ]
+   },
+   "output": {
+    "done": 0,
+    "total": 1,
+    "percent": 0
+   }
+  }
+ ],
+ "boardStatus": [
+  {
+   "input": {
+    "tasks": []
+   },
+   "today": "2026-11-14",
+   "output": {
+    "tone": "normal",
+    "label": "",
+    "daysLeft": null
+   }
+  },
+  {
+   "input": {
+    "tasks": [
+     {
+      "id": "tx731l1",
+      "title": "t",
+      "status": "todo",
+      "order": 0
+     }
+    ]
+   },
+   "today": "2026-11-14",
+   "output": {
+    "tone": "normal",
+    "label": "",
+    "daysLeft": null
+   }
+  },
+  {
+   "input": {
+    "tasks": [
+     {
+      "id": "t34y37x",
+      "title": "t",
+      "status": "done",
+      "order": 0
+     }
+    ]
+   },
+   "today": "2026-11-14",
+   "output": {
+    "tone": "complete",
+    "label": "\u5df2\u5b8c\u6210",
+    "daysLeft": null
+   }
+  },
+  {
+   "input": {
+    "tasks": [
+     {
+      "id": "t845r0e",
+      "title": "t",
+      "status": "todo",
+      "order": 0
+     },
+     {
+      "id": "tg20oza",
+      "title": "t",
+      "status": "done",
+      "order": 1
+     },
+     {
+      "id": "tfo764u",
+      "title": "t",
+      "status": "doing",
+      "order": 2
+     }
+    ]
+   },
+   "today": "2026-11-14",
+   "output": {
+    "tone": "normal",
+    "label": "",
+    "daysLeft": null
+   }
+  },
+  {
+   "input": {
+    "tasks": [
+     {
+      "id": "toy7y37",
+      "title": "t",
+      "status": "canceled",
+      "order": 0
+     },
+     {
+      "id": "tdyqim1",
+      "title": "t",
+      "status": "done",
+      "order": 1
+     }
+    ]
+   },
+   "today": "2026-11-14",
+   "output": {
+    "tone": "complete",
+    "label": "\u5df2\u5b8c\u6210",
+    "daysLeft": null
+   }
+  },
+  {
+   "input": {
+    "tasks": [
+     {
+      "id": "ta6bwlh",
+      "title": "t",
+      "status": "canceled",
+      "order": 0
+     }
+    ]
+   },
+   "today": "2026-11-14",
+   "output": {
+    "tone": "normal",
+    "label": "",
+    "daysLeft": null
+   }
+  },
+  {
+   "input": {
+    "tasks": [
+     {
+      "id": "tzn52rr",
+      "title": "t",
+      "status": "todo",
+      "order": 0
+     },
+     {
+      "id": "t4go8zs",
+      "title": "t",
+      "status": "done",
+      "order": 1
+     }
+    ],
+    "endDate": "2026-11-20"
+   },
+   "today": "2026-11-14",
+   "output": {
+    "tone": "normal",
+    "label": "\u5269 6 \u5929",
+    "daysLeft": 6
+   }
+  },
+  {
+   "input": {
+    "tasks": [
+     {
+      "id": "t5dlexq",
+      "title": "t",
+      "status": "todo",
+      "order": 0
+     },
+     {
+      "id": "tsvpxkv",
+      "title": "t",
+      "status": "done",
+      "order": 1
+     }
+    ],
+    "endDate": "2026-11-14"
+   },
+   "today": "2026-11-14",
+   "output": {
+    "tone": "soon",
+    "label": "\u4eca\u5929\u7ed3\u675f",
+    "daysLeft": 0
+   }
+  },
+  {
+   "input": {
+    "tasks": [
+     {
+      "id": "ts98axx",
+      "title": "t",
+      "status": "todo",
+      "order": 0
+     },
+     {
+      "id": "teq4bkr",
+      "title": "t",
+      "status": "done",
+      "order": 1
+     }
+    ],
+    "endDate": "2026-11-17"
+   },
+   "today": "2026-11-14",
+   "output": {
+    "tone": "soon",
+    "label": "\u8fd8\u5269 3 \u5929",
+    "daysLeft": 3
+   }
+  },
+  {
+   "input": {
+    "tasks": [
+     {
+      "id": "te6jam9",
+      "title": "t",
+      "status": "todo",
+      "order": 0
+     },
+     {
+      "id": "twnvf6n",
+      "title": "t",
+      "status": "done",
+      "order": 1
+     }
+    ],
+    "endDate": "2026-11-18"
+   },
+   "today": "2026-11-14",
+   "output": {
+    "tone": "normal",
+    "label": "\u5269 4 \u5929",
+    "daysLeft": 4
+   }
+  },
+  {
+   "input": {
+    "tasks": [
+     {
+      "id": "tbdvgan",
+      "title": "t",
+      "status": "todo",
+      "order": 0
+     },
+     {
+      "id": "tmtiugr",
+      "title": "t",
+      "status": "done",
+      "order": 1
+     }
+    ],
+    "endDate": "2026-11-10"
+   },
+   "today": "2026-11-14",
+   "output": {
+    "tone": "overdue",
+    "label": "\u5df2\u8d85\u671f 4 \u5929",
+    "daysLeft": -4
+   }
+  },
+  {
+   "input": {
+    "tasks": [
+     {
+      "id": "tg82x9p",
+      "title": "t",
+      "status": "done",
+      "order": 0
+     },
+     {
+      "id": "t0kqb2h",
+      "title": "t",
+      "status": "done",
+      "order": 1
+     }
+    ],
+    "endDate": "2026-11-10"
+   },
+   "today": "2026-11-14",
+   "output": {
+    "tone": "complete",
+    "label": "\u5df2\u5b8c\u6210",
+    "daysLeft": -4
+   }
+  },
+  {
+   "input": {
+    "tasks": [
+     {
+      "id": "tkgkpni",
+      "title": "t",
+      "status": "done",
+      "order": 0
+     },
+     {
+      "id": "tmj2xme",
+      "title": "t",
+      "status": "done",
+      "order": 1
+     }
+    ],
+    "endDate": "2026-11-14"
+   },
+   "today": "2026-11-14",
+   "output": {
+    "tone": "complete",
+    "label": "\u5df2\u5b8c\u6210",
+    "daysLeft": 0
+   }
+  },
+  {
+   "input": {
+    "tasks": [
+     {
+      "id": "tssj9j4",
+      "title": "t",
+      "status": "done",
+      "order": 0
+     }
+    ],
+    "endDate": "not-a-date"
+   },
+   "today": "2026-11-14",
+   "output": {
+    "tone": "complete",
+    "label": "\u5df2\u5b8c\u6210",
+    "daysLeft": null
+   }
+  },
+  {
+   "input": {
+    "tasks": [
+     {
+      "id": "t39f7jb",
+      "title": "t",
+      "status": "todo",
+      "order": 0
+     }
+    ],
+    "endDate": "2026-02-30"
+   },
+   "today": "2026-11-14",
+   "output": {
+    "tone": "normal",
+    "label": "",
+    "daysLeft": null
+   }
+  }
+ ],
+ "taskDueTone": [
+  {
+   "input": {
+    "dueDate": "2026-11-14",
+    "status": "todo",
+    "id": "x0",
+    "title": "x",
+    "order": 0
+   },
+   "today": "2026-11-14",
+   "output": "today"
+  },
+  {
+   "input": {
+    "dueDate": "2026-11-14",
+    "status": "done",
+    "id": "x1",
+    "title": "x",
+    "order": 0
+   },
+   "today": "2026-11-14",
+   "output": "normal"
+  },
+  {
+   "input": {
+    "dueDate": "2026-11-14",
+    "status": "canceled",
+    "id": "x2",
+    "title": "x",
+    "order": 0
+   },
+   "today": "2026-11-14",
+   "output": "normal"
+  },
+  {
+   "input": {
+    "dueDate": "2026-11-13",
+    "status": "todo",
+    "id": "x3",
+    "title": "x",
+    "order": 0
+   },
+   "today": "2026-11-14",
+   "output": "overdue"
+  },
+  {
+   "input": {
+    "dueDate": "2026-11-13",
+    "status": "doing",
+    "id": "x4",
+    "title": "x",
+    "order": 0
+   },
+   "today": "2026-11-14",
+   "output": "overdue"
+  },
+  {
+   "input": {
+    "dueDate": "2026-11-15",
+    "status": "todo",
+    "id": "x5",
+    "title": "x",
+    "order": 0
+   },
+   "today": "2026-11-14",
+   "output": "normal"
+  },
+  {
+   "input": {
+    "dueDate": "2026-11-30",
+    "status": "todo",
+    "id": "x6",
+    "title": "x",
+    "order": 0
+   },
+   "today": "2026-11-14",
+   "output": "normal"
+  },
+  {
+   "input": {
+    "status": "todo",
+    "id": "x7",
+    "title": "x",
+    "order": 0
+   },
+   "today": "2026-11-14",
+   "output": null
+  },
+  {
+   "input": {
+    "dueDate": "bad",
+    "status": "todo",
+    "id": "x8",
+    "title": "x",
+    "order": 0
+   },
+   "today": "2026-11-14",
+   "output": null
+  },
+  {
+   "input": {
+    "dueDate": "2026-02-30",
+    "status": "todo",
+    "id": "x9",
+    "title": "x",
+    "order": 0
+   },
+   "today": "2026-11-14",
+   "output": null
+  }
+ ],
+ "scheduleMoment": [
+  {
+   "date": "2026-11-14",
+   "time": "15:00",
+   "output": 1794639600000
+  },
+  {
+   "date": "2026-11-14",
+   "time": "00:00",
+   "output": 1794585600000
+  },
+  {
+   "date": "2026-11-14",
+   "time": "23:59",
+   "output": 1794671940000
+  },
+  {
+   "date": "2026-02-30",
+   "time": "10:00",
+   "output": null
+  },
+  {
+   "date": "2024-02-29",
+   "time": "12:00",
+   "output": 1709179200000
+  },
+  {
+   "date": "bad",
+   "time": "10:00",
+   "output": null
+  },
+  {
+   "date": "2026-11-14",
+   "time": "bad",
+   "output": null
+  }
+ ],
+ "repeatMatches": [
+  {
+   "repeat": {
+    "kind": "none"
+   },
+   "date": "2026-11-09",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "none"
+   },
+   "date": "2026-11-10",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "none"
+   },
+   "date": "2026-11-11",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "none"
+   },
+   "date": "2026-11-12",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "none"
+   },
+   "date": "2026-11-13",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "none"
+   },
+   "date": "2026-11-14",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "none"
+   },
+   "date": "2026-11-15",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "none"
+   },
+   "date": "2026-11-30",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "none"
+   },
+   "date": "2026-11-29",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "none"
+   },
+   "date": "2026-02-28",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "none"
+   },
+   "date": "2024-02-29",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "none"
+   },
+   "date": "2026-01-31",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "none"
+   },
+   "date": "2026-04-30",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "daily"
+   },
+   "date": "2026-11-09",
+   "output": true
+  },
+  {
+   "repeat": {
+    "kind": "daily"
+   },
+   "date": "2026-11-10",
+   "output": true
+  },
+  {
+   "repeat": {
+    "kind": "daily"
+   },
+   "date": "2026-11-11",
+   "output": true
+  },
+  {
+   "repeat": {
+    "kind": "daily"
+   },
+   "date": "2026-11-12",
+   "output": true
+  },
+  {
+   "repeat": {
+    "kind": "daily"
+   },
+   "date": "2026-11-13",
+   "output": true
+  },
+  {
+   "repeat": {
+    "kind": "daily"
+   },
+   "date": "2026-11-14",
+   "output": true
+  },
+  {
+   "repeat": {
+    "kind": "daily"
+   },
+   "date": "2026-11-15",
+   "output": true
+  },
+  {
+   "repeat": {
+    "kind": "daily"
+   },
+   "date": "2026-11-30",
+   "output": true
+  },
+  {
+   "repeat": {
+    "kind": "daily"
+   },
+   "date": "2026-11-29",
+   "output": true
+  },
+  {
+   "repeat": {
+    "kind": "daily"
+   },
+   "date": "2026-02-28",
+   "output": true
+  },
+  {
+   "repeat": {
+    "kind": "daily"
+   },
+   "date": "2024-02-29",
+   "output": true
+  },
+  {
+   "repeat": {
+    "kind": "daily"
+   },
+   "date": "2026-01-31",
+   "output": true
+  },
+  {
+   "repeat": {
+    "kind": "daily"
+   },
+   "date": "2026-04-30",
+   "output": true
+  },
+  {
+   "repeat": {
+    "kind": "workdays"
+   },
+   "date": "2026-11-09",
+   "output": true
+  },
+  {
+   "repeat": {
+    "kind": "workdays"
+   },
+   "date": "2026-11-10",
+   "output": true
+  },
+  {
+   "repeat": {
+    "kind": "workdays"
+   },
+   "date": "2026-11-11",
+   "output": true
+  },
+  {
+   "repeat": {
+    "kind": "workdays"
+   },
+   "date": "2026-11-12",
+   "output": true
+  },
+  {
+   "repeat": {
+    "kind": "workdays"
+   },
+   "date": "2026-11-13",
+   "output": true
+  },
+  {
+   "repeat": {
+    "kind": "workdays"
+   },
+   "date": "2026-11-14",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "workdays"
+   },
+   "date": "2026-11-15",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "workdays"
+   },
+   "date": "2026-11-30",
+   "output": true
+  },
+  {
+   "repeat": {
+    "kind": "workdays"
+   },
+   "date": "2026-11-29",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "workdays"
+   },
+   "date": "2026-02-28",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "workdays"
+   },
+   "date": "2024-02-29",
+   "output": true
+  },
+  {
+   "repeat": {
+    "kind": "workdays"
+   },
+   "date": "2026-01-31",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "workdays"
+   },
+   "date": "2026-04-30",
+   "output": true
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     0
+    ]
+   },
+   "date": "2026-11-09",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     0
+    ]
+   },
+   "date": "2026-11-10",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     0
+    ]
+   },
+   "date": "2026-11-11",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     0
+    ]
+   },
+   "date": "2026-11-12",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     0
+    ]
+   },
+   "date": "2026-11-13",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     0
+    ]
+   },
+   "date": "2026-11-14",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     0
+    ]
+   },
+   "date": "2026-11-15",
+   "output": true
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     0
+    ]
+   },
+   "date": "2026-11-30",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     0
+    ]
+   },
+   "date": "2026-11-29",
+   "output": true
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     0
+    ]
+   },
+   "date": "2026-02-28",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     0
+    ]
+   },
+   "date": "2024-02-29",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     0
+    ]
+   },
+   "date": "2026-01-31",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     0
+    ]
+   },
+   "date": "2026-04-30",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     6
+    ]
+   },
+   "date": "2026-11-09",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     6
+    ]
+   },
+   "date": "2026-11-10",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     6
+    ]
+   },
+   "date": "2026-11-11",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     6
+    ]
+   },
+   "date": "2026-11-12",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     6
+    ]
+   },
+   "date": "2026-11-13",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     6
+    ]
+   },
+   "date": "2026-11-14",
+   "output": true
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     6
+    ]
+   },
+   "date": "2026-11-15",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     6
+    ]
+   },
+   "date": "2026-11-30",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     6
+    ]
+   },
+   "date": "2026-11-29",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     6
+    ]
+   },
+   "date": "2026-02-28",
+   "output": true
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     6
+    ]
+   },
+   "date": "2024-02-29",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     6
+    ]
+   },
+   "date": "2026-01-31",
+   "output": true
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     6
+    ]
+   },
+   "date": "2026-04-30",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     1,
+     3,
+     5
+    ]
+   },
+   "date": "2026-11-09",
+   "output": true
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     1,
+     3,
+     5
+    ]
+   },
+   "date": "2026-11-10",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     1,
+     3,
+     5
+    ]
+   },
+   "date": "2026-11-11",
+   "output": true
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     1,
+     3,
+     5
+    ]
+   },
+   "date": "2026-11-12",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     1,
+     3,
+     5
+    ]
+   },
+   "date": "2026-11-13",
+   "output": true
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     1,
+     3,
+     5
+    ]
+   },
+   "date": "2026-11-14",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     1,
+     3,
+     5
+    ]
+   },
+   "date": "2026-11-15",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     1,
+     3,
+     5
+    ]
+   },
+   "date": "2026-11-30",
+   "output": true
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     1,
+     3,
+     5
+    ]
+   },
+   "date": "2026-11-29",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     1,
+     3,
+     5
+    ]
+   },
+   "date": "2026-02-28",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     1,
+     3,
+     5
+    ]
+   },
+   "date": "2024-02-29",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     1,
+     3,
+     5
+    ]
+   },
+   "date": "2026-01-31",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     1,
+     3,
+     5
+    ]
+   },
+   "date": "2026-04-30",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     0,
+     6
+    ]
+   },
+   "date": "2026-11-09",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     0,
+     6
+    ]
+   },
+   "date": "2026-11-10",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     0,
+     6
+    ]
+   },
+   "date": "2026-11-11",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     0,
+     6
+    ]
+   },
+   "date": "2026-11-12",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     0,
+     6
+    ]
+   },
+   "date": "2026-11-13",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     0,
+     6
+    ]
+   },
+   "date": "2026-11-14",
+   "output": true
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     0,
+     6
+    ]
+   },
+   "date": "2026-11-15",
+   "output": true
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     0,
+     6
+    ]
+   },
+   "date": "2026-11-30",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     0,
+     6
+    ]
+   },
+   "date": "2026-11-29",
+   "output": true
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     0,
+     6
+    ]
+   },
+   "date": "2026-02-28",
+   "output": true
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     0,
+     6
+    ]
+   },
+   "date": "2024-02-29",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     0,
+     6
+    ]
+   },
+   "date": "2026-01-31",
+   "output": true
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": [
+     0,
+     6
+    ]
+   },
+   "date": "2026-04-30",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": []
+   },
+   "date": "2026-11-09",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": []
+   },
+   "date": "2026-11-10",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": []
+   },
+   "date": "2026-11-11",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": []
+   },
+   "date": "2026-11-12",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": []
+   },
+   "date": "2026-11-13",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": []
+   },
+   "date": "2026-11-14",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": []
+   },
+   "date": "2026-11-15",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": []
+   },
+   "date": "2026-11-30",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": []
+   },
+   "date": "2026-11-29",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": []
+   },
+   "date": "2026-02-28",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": []
+   },
+   "date": "2024-02-29",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": []
+   },
+   "date": "2026-01-31",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "weekly",
+    "days": []
+   },
+   "date": "2026-04-30",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "monthly",
+    "day": 14
+   },
+   "date": "2026-11-09",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "monthly",
+    "day": 14
+   },
+   "date": "2026-11-10",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "monthly",
+    "day": 14
+   },
+   "date": "2026-11-11",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "monthly",
+    "day": 14
+   },
+   "date": "2026-11-12",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "monthly",
+    "day": 14
+   },
+   "date": "2026-11-13",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "monthly",
+    "day": 14
+   },
+   "date": "2026-11-14",
+   "output": true
+  },
+  {
+   "repeat": {
+    "kind": "monthly",
+    "day": 14
+   },
+   "date": "2026-11-15",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "monthly",
+    "day": 14
+   },
+   "date": "2026-11-30",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "monthly",
+    "day": 14
+   },
+   "date": "2026-11-29",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "monthly",
+    "day": 14
+   },
+   "date": "2026-02-28",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "monthly",
+    "day": 14
+   },
+   "date": "2024-02-29",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "monthly",
+    "day": 14
+   },
+   "date": "2026-01-31",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "monthly",
+    "day": 14
+   },
+   "date": "2026-04-30",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "monthly",
+    "day": 31
+   },
+   "date": "2026-11-09",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "monthly",
+    "day": 31
+   },
+   "date": "2026-11-10",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "monthly",
+    "day": 31
+   },
+   "date": "2026-11-11",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "monthly",
+    "day": 31
+   },
+   "date": "2026-11-12",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "monthly",
+    "day": 31
+   },
+   "date": "2026-11-13",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "monthly",
+    "day": 31
+   },
+   "date": "2026-11-14",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "monthly",
+    "day": 31
+   },
+   "date": "2026-11-15",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "monthly",
+    "day": 31
+   },
+   "date": "2026-11-30",
+   "output": true
+  },
+  {
+   "repeat": {
+    "kind": "monthly",
+    "day": 31
+   },
+   "date": "2026-11-29",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "monthly",
+    "day": 31
+   },
+   "date": "2026-02-28",
+   "output": true
+  },
+  {
+   "repeat": {
+    "kind": "monthly",
+    "day": 31
+   },
+   "date": "2024-02-29",
+   "output": true
+  },
+  {
+   "repeat": {
+    "kind": "monthly",
+    "day": 31
+   },
+   "date": "2026-01-31",
+   "output": true
+  },
+  {
+   "repeat": {
+    "kind": "monthly",
+    "day": 31
+   },
+   "date": "2026-04-30",
+   "output": true
+  },
+  {
+   "repeat": {
+    "kind": "monthly",
+    "day": 29
+   },
+   "date": "2026-11-09",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "monthly",
+    "day": 29
+   },
+   "date": "2026-11-10",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "monthly",
+    "day": 29
+   },
+   "date": "2026-11-11",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "monthly",
+    "day": 29
+   },
+   "date": "2026-11-12",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "monthly",
+    "day": 29
+   },
+   "date": "2026-11-13",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "monthly",
+    "day": 29
+   },
+   "date": "2026-11-14",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "monthly",
+    "day": 29
+   },
+   "date": "2026-11-15",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "monthly",
+    "day": 29
+   },
+   "date": "2026-11-30",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "monthly",
+    "day": 29
+   },
+   "date": "2026-11-29",
+   "output": true
+  },
+  {
+   "repeat": {
+    "kind": "monthly",
+    "day": 29
+   },
+   "date": "2026-02-28",
+   "output": true
+  },
+  {
+   "repeat": {
+    "kind": "monthly",
+    "day": 29
+   },
+   "date": "2024-02-29",
+   "output": true
+  },
+  {
+   "repeat": {
+    "kind": "monthly",
+    "day": 29
+   },
+   "date": "2026-01-31",
+   "output": false
+  },
+  {
+   "repeat": {
+    "kind": "monthly",
+    "day": 29
+   },
+   "date": "2026-04-30",
+   "output": false
+  }
+ ],
+ "pendingFires": [
+  {
+   "label": "once-3h",
+   "schedule": {
+    "id": "s1",
+    "title": "once",
+    "date": "2026-11-14",
+    "time": "15:00",
+    "repeat": {
+     "kind": "none"
+    },
+    "leadMinutes": 0,
+    "stopWhenTaskDone": false,
+    "paused": false
+   },
+   "fromMs": 1794628740000,
+   "toMs": 1794632400000,
+   "output": []
+  },
+  {
+   "label": "once-30m-lead",
+   "schedule": {
+    "id": "s6",
+    "title": "once",
+    "date": "2026-11-14",
+    "time": "12:30",
+    "repeat": {
+     "kind": "none"
+    },
+    "leadMinutes": 30,
+    "stopWhenTaskDone": false,
+    "paused": false
+   },
+   "fromMs": 1794628740000,
+   "toMs": 1794632400000,
+   "output": [
+    {
+     "at": 1794630600000,
+     "date": "2026-11-14"
+    }
+   ]
+  },
+  {
+   "label": "once-paused",
+   "schedule": {
+    "id": "s4",
+    "title": "once",
+    "date": "2026-11-14",
+    "time": "15:00",
+    "repeat": {
+     "kind": "none"
+    },
+    "leadMinutes": 0,
+    "stopWhenTaskDone": false,
+    "paused": true
+   },
+   "fromMs": 1794628740000,
+   "toMs": 1794632400000,
+   "output": []
+  },
+  {
+   "label": "once-lead-15",
+   "schedule": {
+    "id": "s2",
+    "title": "once",
+    "date": "2026-11-14",
+    "time": "15:00",
+    "repeat": {
+     "kind": "none"
+    },
+    "leadMinutes": 15,
+    "stopWhenTaskDone": false,
+    "paused": false
+   },
+   "fromMs": 1794628740000,
+   "toMs": 1794632400000,
+   "output": []
+  },
+  {
+   "label": "once-lead-1440-cross",
+   "schedule": {
+    "id": "s3",
+    "title": "once",
+    "date": "2026-11-14",
+    "time": "15:00",
+    "repeat": {
+     "kind": "none"
+    },
+    "leadMinutes": 1440,
+    "stopWhenTaskDone": false,
+    "paused": false
+   },
+   "fromMs": 1794672000000,
+   "toMs": 1794700800000,
+   "output": []
+  },
+  {
+   "label": "once-past",
+   "schedule": {
+    "id": "s5",
+    "title": "once",
+    "date": "2026-11-14",
+    "time": "11:00",
+    "repeat": {
+     "kind": "none"
+    },
+    "leadMinutes": 0,
+    "stopWhenTaskDone": false,
+    "paused": false
+   },
+   "fromMs": 1794628740000,
+   "toMs": 1794632400000,
+   "output": []
+  },
+  {
+   "label": "once-before-window",
+   "schedule": {
+    "id": "s1",
+    "title": "once",
+    "date": "2026-11-14",
+    "time": "15:00",
+    "repeat": {
+     "kind": "none"
+    },
+    "leadMinutes": 0,
+    "stopWhenTaskDone": false,
+    "paused": false
+   },
+   "fromMs": 1794614400000,
+   "toMs": 1794625200000,
+   "output": []
+  },
+  {
+   "label": "daily-1h",
+   "schedule": {
+    "id": "sd",
+    "title": "daily",
+    "date": "2026-11-10",
+    "time": "09:00",
+    "repeat": {
+     "kind": "daily"
+    },
+    "leadMinutes": 0,
+    "stopWhenTaskDone": false,
+    "paused": false
+   },
+   "fromMs": 1794628740000,
+   "toMs": 1794632400000,
+   "output": []
+  },
+  {
+   "label": "daily-24h",
+   "schedule": {
+    "id": "sd",
+    "title": "daily",
+    "date": "2026-11-10",
+    "time": "09:00",
+    "repeat": {
+     "kind": "daily"
+    },
+    "leadMinutes": 0,
+    "stopWhenTaskDone": false,
+    "paused": false
+   },
+   "fromMs": 1794542400000,
+   "toMs": 1794628800000,
+   "output": [
+    {
+     "at": 1794618000000,
+     "date": "2026-11-14"
+    }
+   ]
+  },
+  {
+   "label": "daily-48h",
+   "schedule": {
+    "id": "sd",
+    "title": "daily",
+    "date": "2026-11-10",
+    "time": "09:00",
+    "repeat": {
+     "kind": "daily"
+    },
+    "leadMinutes": 0,
+    "stopWhenTaskDone": false,
+    "paused": false
+   },
+   "fromMs": 1794628800000,
+   "toMs": 1794801600000,
+   "output": [
+    {
+     "at": 1794704400000,
+     "date": "2026-11-15"
+    },
+    {
+     "at": 1794790800000,
+     "date": "2026-11-16"
+    }
+   ]
+  },
+  {
+   "label": "daily-lead-30",
+   "schedule": {
+    "id": "sl",
+    "title": "daily",
+    "date": "2026-11-10",
+    "time": "09:00",
+    "repeat": {
+     "kind": "daily"
+    },
+    "leadMinutes": 30,
+    "stopWhenTaskDone": false,
+    "paused": false
+   },
+   "fromMs": 1794628800000,
+   "toMs": 1794801600000,
+   "output": [
+    {
+     "at": 1794704400000,
+     "date": "2026-11-15"
+    },
+    {
+     "at": 1794790800000,
+     "date": "2026-11-16"
+    }
+   ]
+  },
+  {
+   "label": "daily-lead-1440",
+   "schedule": {
+    "id": "sl1440",
+    "title": "daily",
+    "date": "2026-11-10",
+    "time": "09:00",
+    "repeat": {
+     "kind": "daily"
+    },
+    "leadMinutes": 1440,
+    "stopWhenTaskDone": false,
+    "paused": false
+   },
+   "fromMs": 1794628800000,
+   "toMs": 1794801600000,
+   "output": [
+    {
+     "at": 1794790800000,
+     "date": "2026-11-16"
+    },
+    {
+     "at": 1794877200000,
+     "date": "2026-11-17"
+    }
+   ]
+  },
+  {
+   "label": "workdays-7d",
+   "schedule": {
+    "id": "sw",
+    "title": "daily",
+    "date": "2026-11-10",
+    "time": "09:00",
+    "repeat": {
+     "kind": "workdays"
+    },
+    "leadMinutes": 0,
+    "stopWhenTaskDone": false,
+    "paused": false
+   },
+   "fromMs": 1794628800000,
+   "toMs": 1795233600000,
+   "output": [
+    {
+     "at": 1794790800000,
+     "date": "2026-11-16"
+    },
+    {
+     "at": 1794877200000,
+     "date": "2026-11-17"
+    },
+    {
+     "at": 1794963600000,
+     "date": "2026-11-18"
+    },
+    {
+     "at": 1795050000000,
+     "date": "2026-11-19"
+    },
+    {
+     "at": 1795136400000,
+     "date": "2026-11-20"
+    }
+   ]
+  },
+  {
+   "label": "weekly-7d",
+   "schedule": {
+    "id": "swk",
+    "title": "daily",
+    "date": "2026-11-10",
+    "time": "09:00",
+    "repeat": {
+     "kind": "weekly",
+     "days": [
+      1,
+      4
+     ]
+    },
+    "leadMinutes": 0,
+    "stopWhenTaskDone": false,
+    "paused": false
+   },
+   "fromMs": 1794628800000,
+   "toMs": 1795233600000,
+   "output": [
+    {
+     "at": 1794790800000,
+     "date": "2026-11-16"
+    },
+    {
+     "at": 1795050000000,
+     "date": "2026-11-19"
+    }
+   ]
+  },
+  {
+   "label": "monthly-35d",
+   "schedule": {
+    "id": "sm",
+    "title": "daily",
+    "date": "2026-11-10",
+    "time": "09:00",
+    "repeat": {
+     "kind": "monthly",
+     "day": 14
+    },
+    "leadMinutes": 0,
+    "stopWhenTaskDone": false,
+    "paused": false
+   },
+   "fromMs": 1794628800000,
+   "toMs": 1797652800000,
+   "output": [
+    {
+     "at": 1797210000000,
+     "date": "2026-12-14"
+    }
+   ]
+  },
+  {
+   "label": "monthly-31-35d",
+   "schedule": {
+    "id": "sm31",
+    "title": "daily",
+    "date": "2026-11-10",
+    "time": "09:00",
+    "repeat": {
+     "kind": "monthly",
+     "day": 31
+    },
+    "leadMinutes": 0,
+    "stopWhenTaskDone": false,
+    "paused": false
+   },
+   "fromMs": 1794628800000,
+   "toMs": 1797652800000,
+   "output": [
+    {
+     "at": 1796000400000,
+     "date": "2026-11-30"
+    }
+   ]
+  },
+  {
+   "label": "daily-until-11-15",
+   "schedule": {
+    "id": "su",
+    "title": "daily",
+    "date": "2026-11-10",
+    "time": "09:00",
+    "repeat": {
+     "kind": "daily"
+    },
+    "leadMinutes": 0,
+    "stopWhenTaskDone": false,
+    "paused": false,
+    "until": "2026-11-15"
+   },
+   "fromMs": 1794628800000,
+   "toMs": 1795233600000,
+   "output": [
+    {
+     "at": 1794704400000,
+     "date": "2026-11-15"
+    }
+   ]
+  },
+  {
+   "label": "daily-until-bad",
+   "schedule": {
+    "id": "sub",
+    "title": "daily",
+    "date": "2026-11-10",
+    "time": "09:00",
+    "repeat": {
+     "kind": "daily"
+    },
+    "leadMinutes": 0,
+    "stopWhenTaskDone": false,
+    "paused": false,
+    "until": "bad"
+   },
+   "fromMs": 1794628800000,
+   "toMs": 1794801600000,
+   "output": [
+    {
+     "at": 1794704400000,
+     "date": "2026-11-15"
+    },
+    {
+     "at": 1794790800000,
+     "date": "2026-11-16"
+    }
+   ]
+  },
+  {
+   "label": "daily-newyear",
+   "schedule": {
+    "id": "ny",
+    "title": "daily",
+    "date": "2025-12-30",
+    "time": "00:30",
+    "repeat": {
+     "kind": "daily"
+    },
+    "leadMinutes": 0,
+    "stopWhenTaskDone": false,
+    "paused": false
+   },
+   "fromMs": 1767193200000,
+   "toMs": 1767204000000,
+   "output": [
+    {
+     "at": 1767198600000,
+     "date": "2026-01-01"
+    }
+   ]
+  }
+ ],
+ "nextFireAt": [
+  {
+   "label": "once-future",
+   "schedule": {
+    "id": "s1",
+    "title": "once",
+    "date": "2026-11-14",
+    "time": "15:00",
+    "repeat": {
+     "kind": "none"
+    },
+    "leadMinutes": 0,
+    "stopWhenTaskDone": false,
+    "paused": false
+   },
+   "now": 1794628800000,
+   "output": 1794639600000
+  },
+  {
+   "label": "once-past",
+   "schedule": {
+    "id": "s5",
+    "title": "once",
+    "date": "2026-11-14",
+    "time": "11:00",
+    "repeat": {
+     "kind": "none"
+    },
+    "leadMinutes": 0,
+    "stopWhenTaskDone": false,
+    "paused": false
+   },
+   "now": 1794628800000,
+   "output": null
+  },
+  {
+   "label": "once-paused",
+   "schedule": {
+    "id": "s4",
+    "title": "once",
+    "date": "2026-11-14",
+    "time": "15:00",
+    "repeat": {
+     "kind": "none"
+    },
+    "leadMinutes": 0,
+    "stopWhenTaskDone": false,
+    "paused": true
+   },
+   "now": 1794628800000,
+   "output": null
+  },
+  {
+   "label": "daily",
+   "schedule": {
+    "id": "sd",
+    "title": "daily",
+    "date": "2026-11-10",
+    "time": "09:00",
+    "repeat": {
+     "kind": "daily"
+    },
+    "leadMinutes": 0,
+    "stopWhenTaskDone": false,
+    "paused": false
+   },
+   "now": 1794628800000,
+   "output": 1794704400000
+  },
+  {
+   "label": "workdays",
+   "schedule": {
+    "id": "sw",
+    "title": "daily",
+    "date": "2026-11-10",
+    "time": "09:00",
+    "repeat": {
+     "kind": "workdays"
+    },
+    "leadMinutes": 0,
+    "stopWhenTaskDone": false,
+    "paused": false
+   },
+   "now": 1794628800000,
+   "output": 1794790800000
+  },
+  {
+   "label": "monthly",
+   "schedule": {
+    "id": "sm",
+    "title": "daily",
+    "date": "2026-11-10",
+    "time": "09:00",
+    "repeat": {
+     "kind": "monthly",
+     "day": 14
+    },
+    "leadMinutes": 0,
+    "stopWhenTaskDone": false,
+    "paused": false
+   },
+   "now": 1794628800000,
+   "output": 1797210000000
+  },
+  {
+   "label": "until-passed",
+   "schedule": {
+    "id": "su",
+    "title": "daily",
+    "date": "2026-11-10",
+    "time": "09:00",
+    "repeat": {
+     "kind": "daily"
+    },
+    "leadMinutes": 0,
+    "stopWhenTaskDone": false,
+    "paused": false,
+    "until": "2026-11-12"
+   },
+   "now": 1794628800000,
+   "output": null
+  },
+  {
+   "label": "lead-30",
+   "schedule": {
+    "id": "sl",
+    "title": "daily",
+    "date": "2026-11-10",
+    "time": "09:00",
+    "repeat": {
+     "kind": "daily"
+    },
+    "leadMinutes": 30,
+    "stopWhenTaskDone": false,
+    "paused": false
+   },
+   "now": 1794628800000,
+   "output": 1794704400000
+  }
+ ]
+}

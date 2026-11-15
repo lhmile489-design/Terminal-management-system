@@ -1,0 +1,7 @@
+node_modules/
+/dist/
+/build/
+/.mygo/
+mygo_windows_*.syso
+# `go build ./...` 会把可执行文件写到当前目录
+/*.exe

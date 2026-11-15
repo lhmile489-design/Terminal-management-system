@@ -1,0 +1,2712 @@
+{
+ "generatedFrom": "mile-terminal-management/src/main/services/OwnershipService.ts + node v22.23.4",
+ "tokenSample": "2b944a7d-72e1-40c7-ab1d-84beb333065c",
+ "cases": [
+  {
+   "name": "review-1-root-unchanged",
+   "clock": 1700000000000,
+   "steps": [
+    {
+     "op": "register",
+     "args": [
+      "s1",
+      5000,
+      "tok"
+     ]
+    },
+    {
+     "op": "verify",
+     "pid": 5000,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1699999999800
+       ],
+       [
+        5100,
+        5000,
+        1700000000500
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5000,
+      "ownership": "owned",
+      "token": "hit",
+      "processGroup": "hit",
+      "sameUser": "hit",
+      "sessionId": "s1"
+     }
+    },
+    {
+     "op": "verify",
+     "pid": 5100,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1699999999800
+       ],
+       [
+        5100,
+        5000,
+        1700000000500
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5100,
+      "ownership": "owned",
+      "token": "unknown",
+      "processGroup": "hit",
+      "sameUser": "hit",
+      "sessionId": "s1"
+     }
+    }
+   ]
+  },
+  {
+   "name": "review-2-root-pid-reused",
+   "clock": 1700000000000,
+   "steps": [
+    {
+     "op": "register",
+     "args": [
+      "s1",
+      5000,
+      "tok"
+     ]
+    },
+    {
+     "op": "verify",
+     "pid": 5000,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1699999999800
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5000,
+      "ownership": "owned",
+      "token": "hit",
+      "processGroup": "hit",
+      "sameUser": "hit",
+      "sessionId": "s1"
+     }
+    },
+    {
+     "op": "verify",
+     "pid": 5000,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1700000030000
+       ],
+       [
+        5100,
+        5000,
+        1700000031000
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5000,
+      "ownership": "external",
+      "token": "unknown",
+      "processGroup": "miss",
+      "sameUser": "hit"
+     }
+    },
+    {
+     "op": "verify",
+     "pid": 5100,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1700000030000
+       ],
+       [
+        5100,
+        5000,
+        1700000031000
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5100,
+      "ownership": "external",
+      "token": "unknown",
+      "processGroup": "miss",
+      "sameUser": "hit"
+     }
+    },
+    {
+     "op": "assertKillable",
+     "pid": 5000,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1700000030000
+       ]
+      ]
+     },
+     "sessionId": "s1",
+     "error": "\u62d2\u7edd\u7ec8\u6b62 PID 5000\uff1a\u5f52\u5c5e\u5224\u5b9a\u4e3a external\uff0c\u975e\u672c\u5e94\u7528\u542f\u52a8"
+    }
+   ]
+  },
+  {
+   "name": "review-3-first-seen-after-reuse",
+   "clock": 1700000000000,
+   "steps": [
+    {
+     "op": "register",
+     "args": [
+      "s1",
+      5000,
+      "tok"
+     ]
+    },
+    {
+     "op": "verify",
+     "pid": 5000,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1700000030000
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5000,
+      "ownership": "external",
+      "token": "unknown",
+      "processGroup": "miss",
+      "sameUser": "hit"
+     }
+    }
+   ]
+  },
+  {
+   "name": "review-4-child-older-than-root",
+   "clock": 1700000000000,
+   "steps": [
+    {
+     "op": "register",
+     "args": [
+      "s1",
+      5000,
+      "tok"
+     ]
+    },
+    {
+     "op": "verify",
+     "pid": 5100,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1699999999800
+       ],
+       [
+        5100,
+        5000,
+        1699999990000
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5100,
+      "ownership": "external",
+      "token": "unknown",
+      "processGroup": "miss",
+      "sameUser": "hit"
+     }
+    }
+   ]
+  },
+  {
+   "name": "review-5-assert-session",
+   "clock": 1700000000000,
+   "steps": [
+    {
+     "op": "register",
+     "args": [
+      "s1",
+      5000,
+      "tok"
+     ]
+    },
+    {
+     "op": "register",
+     "args": [
+      "s2",
+      6000,
+      "tok2"
+     ]
+    },
+    {
+     "op": "assertKillable",
+     "pid": 5000,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1699999999800
+       ],
+       [
+        6000,
+        1000,
+        1699999999900
+       ]
+      ]
+     },
+     "sessionId": "s1",
+     "result": {
+      "pid": 5000,
+      "ownership": "owned",
+      "token": "hit",
+      "processGroup": "hit",
+      "sameUser": "hit",
+      "sessionId": "s1"
+     }
+    },
+    {
+     "op": "assertKillable",
+     "pid": 6000,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1699999999800
+       ],
+       [
+        6000,
+        1000,
+        1699999999900
+       ]
+      ]
+     },
+     "sessionId": "s1",
+     "error": "\u62d2\u7edd\u7ec8\u6b62 PID 6000\uff1a\u5b83\u5c5e\u4e8e\u4f1a\u8bdd s2\uff0c\u4e0d\u662f\u8981\u505c\u7684\u4f1a\u8bdd s1"
+    },
+    {
+     "op": "assertKillable",
+     "pid": 5100,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1699999999800
+       ],
+       [
+        5100,
+        5000,
+        1700000000000
+       ],
+       [
+        6000,
+        1000,
+        1699999999900
+       ]
+      ]
+     },
+     "sessionId": "s2",
+     "error": "\u62d2\u7edd\u7ec8\u6b62 PID 5100\uff1a\u5b83\u5c5e\u4e8e\u4f1a\u8bdd s1\uff0c\u4e0d\u662f\u8981\u505c\u7684\u4f1a\u8bdd s2"
+    },
+    {
+     "op": "assertKillable",
+     "pid": 9999,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1699999999800
+       ],
+       [
+        9999,
+        1000,
+        1700000000000
+       ]
+      ]
+     },
+     "sessionId": "s1",
+     "error": "\u62d2\u7edd\u7ec8\u6b62 PID 9999\uff1a\u5f52\u5c5e\u5224\u5b9a\u4e3a external\uff0c\u975e\u672c\u5e94\u7528\u542f\u52a8"
+    },
+    {
+     "op": "assertKillable",
+     "pid": 5000,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1699999999800
+       ]
+      ],
+      "mine": []
+     },
+     "sessionId": "s1",
+     "error": "\u62d2\u7edd\u7ec8\u6b62 PID 5000\uff1a\u5f52\u5c5e\u5224\u5b9a\u4e3a foreign\uff0c\u975e\u672c\u5e94\u7528\u542f\u52a8"
+    }
+   ]
+  },
+  {
+   "name": "empty-registry",
+   "clock": 1700000000000,
+   "steps": [
+    {
+     "op": "hasTracked",
+     "result": false
+    },
+    {
+     "op": "verify",
+     "pid": 5000,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1700000000000
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5000,
+      "ownership": "external",
+      "token": "unknown",
+      "processGroup": "miss",
+      "sameUser": "hit"
+     }
+    },
+    {
+     "op": "verify",
+     "pid": 5000,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1700000000000
+       ]
+      ],
+      "mine": []
+     },
+     "result": {
+      "pid": 5000,
+      "ownership": "foreign",
+      "token": "unknown",
+      "processGroup": "miss",
+      "sameUser": "miss"
+     }
+    },
+    {
+     "op": "assertKillable",
+     "pid": 5000,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1700000000000
+       ]
+      ]
+     },
+     "sessionId": "s1",
+     "error": "\u62d2\u7edd\u7ec8\u6b62 PID 5000\uff1a\u5f52\u5c5e\u5224\u5b9a\u4e3a external\uff0c\u975e\u672c\u5e94\u7528\u542f\u52a8"
+    },
+    {
+     "op": "assertKillable",
+     "pid": 5000,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1700000000000
+       ]
+      ],
+      "mine": []
+     },
+     "sessionId": "s1",
+     "error": "\u62d2\u7edd\u7ec8\u6b62 PID 5000\uff1a\u5f52\u5c5e\u5224\u5b9a\u4e3a foreign\uff0c\u975e\u672c\u5e94\u7528\u542f\u52a8"
+    },
+    {
+     "op": "unregister",
+     "args": [
+      "nope"
+     ]
+    },
+    {
+     "op": "hasTracked",
+     "result": false
+    }
+   ]
+  },
+  {
+   "name": "foreign-beats-group",
+   "clock": 1700000000000,
+   "steps": [
+    {
+     "op": "register",
+     "args": [
+      "s1",
+      5000,
+      "tok"
+     ]
+    },
+    {
+     "op": "verify",
+     "pid": 5100,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1699999999800
+       ],
+       [
+        5100,
+        5000,
+        1700000000000
+       ]
+      ],
+      "mine": [
+       5000
+      ]
+     },
+     "result": {
+      "pid": 5100,
+      "ownership": "foreign",
+      "token": "unknown",
+      "processGroup": "hit",
+      "sameUser": "miss",
+      "sessionId": "s1"
+     }
+    },
+    {
+     "op": "verify",
+     "pid": 5000,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1699999999800
+       ],
+       [
+        5100,
+        5000,
+        1700000000000
+       ]
+      ],
+      "mine": [
+       5100
+      ]
+     },
+     "result": {
+      "pid": 5000,
+      "ownership": "foreign",
+      "token": "hit",
+      "processGroup": "hit",
+      "sameUser": "miss",
+      "sessionId": "s1"
+     }
+    },
+    {
+     "op": "assertKillable",
+     "pid": 5100,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1699999999800
+       ],
+       [
+        5100,
+        5000,
+        1700000000000
+       ]
+      ],
+      "mine": [
+       5000
+      ]
+     },
+     "sessionId": "s1",
+     "error": "\u62d2\u7edd\u7ec8\u6b62 PID 5100\uff1a\u5f52\u5c5e\u5224\u5b9a\u4e3a foreign\uff0c\u975e\u672c\u5e94\u7528\u542f\u52a8"
+    }
+   ]
+  },
+  {
+   "name": "chain-stops",
+   "clock": 1700000000000,
+   "steps": [
+    {
+     "op": "register",
+     "args": [
+      "s1",
+      4,
+      "tok"
+     ]
+    },
+    {
+     "op": "register",
+     "args": [
+      "s2",
+      5000,
+      "tok"
+     ]
+    },
+    {
+     "op": "verify",
+     "pid": 7000,
+     "table": {
+      "rows": [
+       [
+        7000,
+        4,
+        1700000000000
+       ],
+       [
+        4,
+        0,
+        1699999999900
+       ]
+      ]
+     },
+     "result": {
+      "pid": 7000,
+      "ownership": "external",
+      "token": "unknown",
+      "processGroup": "miss",
+      "sameUser": "hit"
+     }
+    },
+    {
+     "op": "verify",
+     "pid": 7001,
+     "table": {
+      "rows": [
+       [
+        7001,
+        3,
+        1700000000000
+       ]
+      ]
+     },
+     "result": {
+      "pid": 7001,
+      "ownership": "external",
+      "token": "unknown",
+      "processGroup": "miss",
+      "sameUser": "hit"
+     }
+    },
+    {
+     "op": "verify",
+     "pid": 7002,
+     "table": {
+      "rows": [
+       [
+        7002,
+        0,
+        1700000000000
+       ]
+      ]
+     },
+     "result": {
+      "pid": 7002,
+      "ownership": "external",
+      "token": "unknown",
+      "processGroup": "miss",
+      "sameUser": "hit"
+     }
+    },
+    {
+     "op": "verify",
+     "pid": 7003,
+     "table": {
+      "rows": [
+       [
+        7003,
+        -1,
+        1700000000000
+       ]
+      ]
+     },
+     "result": {
+      "pid": 7003,
+      "ownership": "external",
+      "token": "unknown",
+      "processGroup": "miss",
+      "sameUser": "hit"
+     }
+    },
+    {
+     "op": "verify",
+     "pid": 7004,
+     "table": {
+      "rows": [
+       [
+        7004,
+        5,
+        1700000000000
+       ]
+      ]
+     },
+     "result": {
+      "pid": 7004,
+      "ownership": "external",
+      "token": "unknown",
+      "processGroup": "miss",
+      "sameUser": "hit"
+     }
+    },
+    {
+     "op": "verify",
+     "pid": 7005,
+     "table": {
+      "rows": [
+       [
+        7005,
+        7005,
+        1700000000000
+       ]
+      ]
+     },
+     "result": {
+      "pid": 7005,
+      "ownership": "external",
+      "token": "unknown",
+      "processGroup": "miss",
+      "sameUser": "hit"
+     }
+    },
+    {
+     "op": "verify",
+     "pid": 7006,
+     "table": {
+      "rows": [
+       [
+        7006,
+        7007,
+        1700000000000
+       ],
+       [
+        5000,
+        1000,
+        1699999999800
+       ]
+      ]
+     },
+     "result": {
+      "pid": 7006,
+      "ownership": "external",
+      "token": "unknown",
+      "processGroup": "miss",
+      "sameUser": "hit"
+     }
+    },
+    {
+     "op": "verify",
+     "pid": 7006,
+     "table": {
+      "rows": [
+       [
+        7006,
+        7007,
+        1700000000000
+       ],
+       [
+        7007,
+        5000,
+        1700000000000
+       ],
+       [
+        5000,
+        1000,
+        1699999999800
+       ]
+      ]
+     },
+     "result": {
+      "pid": 7006,
+      "ownership": "owned",
+      "token": "unknown",
+      "processGroup": "hit",
+      "sameUser": "hit",
+      "sessionId": "s2"
+     }
+    },
+    {
+     "op": "verify",
+     "pid": 4,
+     "table": {
+      "rows": [
+       [
+        4,
+        0,
+        1699999999900
+       ]
+      ]
+     },
+     "result": {
+      "pid": 4,
+      "ownership": "owned",
+      "token": "hit",
+      "processGroup": "hit",
+      "sameUser": "hit",
+      "sessionId": "s1"
+     }
+    },
+    {
+     "op": "verify",
+     "pid": 8888,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1699999999800
+       ]
+      ]
+     },
+     "result": {
+      "pid": 8888,
+      "ownership": "foreign",
+      "token": "unknown",
+      "processGroup": "miss",
+      "sameUser": "miss"
+     }
+    },
+    {
+     "op": "verify",
+     "pid": 7010,
+     "table": {
+      "rows": [
+       [
+        7010,
+        7011,
+        1700000000000
+       ],
+       [
+        7011,
+        7010,
+        1700000000000
+       ]
+      ]
+     },
+     "result": {
+      "pid": 7010,
+      "ownership": "external",
+      "token": "unknown",
+      "processGroup": "miss",
+      "sameUser": "hit"
+     }
+    }
+   ]
+  },
+  {
+   "name": "max-ascent",
+   "clock": 1700000000000,
+   "steps": [
+    {
+     "op": "register",
+     "args": [
+      "s1",
+      5000,
+      "tok"
+     ]
+    },
+    {
+     "op": "verify",
+     "pid": 21001,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1699999999800
+       ],
+       [
+        21010,
+        5000,
+        1700000000010
+       ],
+       [
+        21009,
+        21010,
+        1700000000009
+       ],
+       [
+        21008,
+        21009,
+        1700000000008
+       ],
+       [
+        21007,
+        21008,
+        1700000000007
+       ],
+       [
+        21006,
+        21007,
+        1700000000006
+       ],
+       [
+        21005,
+        21006,
+        1700000000005
+       ],
+       [
+        21004,
+        21005,
+        1700000000004
+       ],
+       [
+        21003,
+        21004,
+        1700000000003
+       ],
+       [
+        21002,
+        21003,
+        1700000000002
+       ],
+       [
+        21001,
+        21002,
+        1700000000001
+       ]
+      ]
+     },
+     "result": {
+      "pid": 21001,
+      "ownership": "owned",
+      "token": "unknown",
+      "processGroup": "hit",
+      "sameUser": "hit",
+      "sessionId": "s1"
+     }
+    },
+    {
+     "op": "verify",
+     "pid": 21101,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1699999999800
+       ],
+       [
+        21111,
+        5000,
+        1700000000011
+       ],
+       [
+        21110,
+        21111,
+        1700000000010
+       ],
+       [
+        21109,
+        21110,
+        1700000000009
+       ],
+       [
+        21108,
+        21109,
+        1700000000008
+       ],
+       [
+        21107,
+        21108,
+        1700000000007
+       ],
+       [
+        21106,
+        21107,
+        1700000000006
+       ],
+       [
+        21105,
+        21106,
+        1700000000005
+       ],
+       [
+        21104,
+        21105,
+        1700000000004
+       ],
+       [
+        21103,
+        21104,
+        1700000000003
+       ],
+       [
+        21102,
+        21103,
+        1700000000002
+       ],
+       [
+        21101,
+        21102,
+        1700000000001
+       ]
+      ]
+     },
+     "result": {
+      "pid": 21101,
+      "ownership": "owned",
+      "token": "unknown",
+      "processGroup": "hit",
+      "sameUser": "hit",
+      "sessionId": "s1"
+     }
+    },
+    {
+     "op": "verify",
+     "pid": 21201,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1699999999800
+       ],
+       [
+        21212,
+        5000,
+        1700000000012
+       ],
+       [
+        21211,
+        21212,
+        1700000000011
+       ],
+       [
+        21210,
+        21211,
+        1700000000010
+       ],
+       [
+        21209,
+        21210,
+        1700000000009
+       ],
+       [
+        21208,
+        21209,
+        1700000000008
+       ],
+       [
+        21207,
+        21208,
+        1700000000007
+       ],
+       [
+        21206,
+        21207,
+        1700000000006
+       ],
+       [
+        21205,
+        21206,
+        1700000000005
+       ],
+       [
+        21204,
+        21205,
+        1700000000004
+       ],
+       [
+        21203,
+        21204,
+        1700000000003
+       ],
+       [
+        21202,
+        21203,
+        1700000000002
+       ],
+       [
+        21201,
+        21202,
+        1700000000001
+       ]
+      ]
+     },
+     "result": {
+      "pid": 21201,
+      "ownership": "external",
+      "token": "unknown",
+      "processGroup": "miss",
+      "sameUser": "hit"
+     }
+    },
+    {
+     "op": "verify",
+     "pid": 21301,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1699999999800
+       ],
+       [
+        21313,
+        5000,
+        1700000000013
+       ],
+       [
+        21312,
+        21313,
+        1700000000012
+       ],
+       [
+        21311,
+        21312,
+        1700000000011
+       ],
+       [
+        21310,
+        21311,
+        1700000000010
+       ],
+       [
+        21309,
+        21310,
+        1700000000009
+       ],
+       [
+        21308,
+        21309,
+        1700000000008
+       ],
+       [
+        21307,
+        21308,
+        1700000000007
+       ],
+       [
+        21306,
+        21307,
+        1700000000006
+       ],
+       [
+        21305,
+        21306,
+        1700000000005
+       ],
+       [
+        21304,
+        21305,
+        1700000000004
+       ],
+       [
+        21303,
+        21304,
+        1700000000003
+       ],
+       [
+        21302,
+        21303,
+        1700000000002
+       ],
+       [
+        21301,
+        21302,
+        1700000000001
+       ]
+      ]
+     },
+     "result": {
+      "pid": 21301,
+      "ownership": "external",
+      "token": "unknown",
+      "processGroup": "miss",
+      "sameUser": "hit"
+     }
+    }
+   ]
+  },
+  {
+   "name": "started-at-missing-or-zero",
+   "clock": 1700000000000,
+   "steps": [
+    {
+     "op": "register",
+     "args": [
+      "s1",
+      5000,
+      "tok"
+     ]
+    },
+    {
+     "op": "verify",
+     "pid": 5000,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        null
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5000,
+      "ownership": "external",
+      "token": "unknown",
+      "processGroup": "miss",
+      "sameUser": "hit"
+     }
+    },
+    {
+     "op": "verify",
+     "pid": 5000,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        0
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5000,
+      "ownership": "external",
+      "token": "unknown",
+      "processGroup": "miss",
+      "sameUser": "hit"
+     }
+    },
+    {
+     "op": "verify",
+     "pid": 5100,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        null
+       ],
+       [
+        5100,
+        5000,
+        1700000000000
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5100,
+      "ownership": "external",
+      "token": "unknown",
+      "processGroup": "miss",
+      "sameUser": "hit"
+     }
+    },
+    {
+     "op": "verify",
+     "pid": 5100,
+     "table": {
+      "rows": [
+       [
+        5100,
+        5000,
+        1700000000000
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5100,
+      "ownership": "external",
+      "token": "unknown",
+      "processGroup": "miss",
+      "sameUser": "hit"
+     }
+    },
+    {
+     "op": "verify",
+     "pid": 5100,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1699999999800
+       ],
+       [
+        5100,
+        5000,
+        null
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5100,
+      "ownership": "external",
+      "token": "unknown",
+      "processGroup": "miss",
+      "sameUser": "hit"
+     }
+    },
+    {
+     "op": "verify",
+     "pid": 5100,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1699999999800
+       ],
+       [
+        5100,
+        5000,
+        0
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5100,
+      "ownership": "external",
+      "token": "unknown",
+      "processGroup": "miss",
+      "sameUser": "hit"
+     }
+    },
+    {
+     "op": "verify",
+     "pid": 5100,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1699999999800
+       ],
+       [
+        5100,
+        5000,
+        -5
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5100,
+      "ownership": "external",
+      "token": "unknown",
+      "processGroup": "miss",
+      "sameUser": "hit"
+     }
+    }
+   ]
+  },
+  {
+   "name": "register-slack-boundary",
+   "clock": 1700000000000,
+   "steps": [
+    {
+     "op": "register",
+     "args": [
+      "a",
+      5001,
+      "tok"
+     ]
+    },
+    {
+     "op": "register",
+     "args": [
+      "b",
+      5002,
+      "tok"
+     ]
+    },
+    {
+     "op": "register",
+     "args": [
+      "c",
+      5003,
+      "tok"
+     ]
+    },
+    {
+     "op": "verify",
+     "pid": 5001,
+     "table": {
+      "rows": [
+       [
+        5001,
+        1000,
+        1700000005000
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5001,
+      "ownership": "owned",
+      "token": "hit",
+      "processGroup": "hit",
+      "sameUser": "hit",
+      "sessionId": "a"
+     }
+    },
+    {
+     "op": "verify",
+     "pid": 5002,
+     "table": {
+      "rows": [
+       [
+        5002,
+        1000,
+        1700000005001
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5002,
+      "ownership": "external",
+      "token": "unknown",
+      "processGroup": "miss",
+      "sameUser": "hit"
+     }
+    },
+    {
+     "op": "verify",
+     "pid": 5003,
+     "table": {
+      "rows": [
+       [
+        5003,
+        1000,
+        1699996400000
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5003,
+      "ownership": "owned",
+      "token": "hit",
+      "processGroup": "hit",
+      "sameUser": "hit",
+      "sessionId": "c"
+     }
+    },
+    {
+     "op": "verify",
+     "pid": 5002,
+     "table": {
+      "rows": [
+       [
+        5002,
+        1000,
+        1700000004000
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5002,
+      "ownership": "owned",
+      "token": "hit",
+      "processGroup": "hit",
+      "sameUser": "hit",
+      "sessionId": "b"
+     }
+    },
+    {
+     "op": "verify",
+     "pid": 5002,
+     "table": {
+      "rows": [
+       [
+        5002,
+        1000,
+        1700000005000
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5002,
+      "ownership": "owned",
+      "token": "hit",
+      "processGroup": "hit",
+      "sameUser": "hit",
+      "sessionId": "b"
+     }
+    },
+    {
+     "op": "verify",
+     "pid": 5002,
+     "table": {
+      "rows": [
+       [
+        5002,
+        1000,
+        1700000005001
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5002,
+      "ownership": "external",
+      "token": "unknown",
+      "processGroup": "miss",
+      "sameUser": "hit"
+     }
+    },
+    {
+     "clock": 1700000060000
+    },
+    {
+     "op": "register",
+     "args": [
+      "d",
+      5004,
+      "tok"
+     ]
+    },
+    {
+     "op": "verify",
+     "pid": 5004,
+     "table": {
+      "rows": [
+       [
+        5004,
+        1000,
+        1700000065000
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5004,
+      "ownership": "owned",
+      "token": "hit",
+      "processGroup": "hit",
+      "sameUser": "hit",
+      "sessionId": "d"
+     }
+    }
+   ]
+  },
+  {
+   "name": "same-process-boundary",
+   "clock": 1700000000000,
+   "steps": [
+    {
+     "op": "register",
+     "args": [
+      "s1",
+      5000,
+      "tok"
+     ]
+    },
+    {
+     "op": "verify",
+     "pid": 5100,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1699999999800
+       ],
+       [
+        5100,
+        5000,
+        1700000000000
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5100,
+      "ownership": "owned",
+      "token": "unknown",
+      "processGroup": "hit",
+      "sameUser": "hit",
+      "sessionId": "s1"
+     }
+    },
+    {
+     "op": "verify",
+     "pid": 5000,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1700000000800
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5000,
+      "ownership": "owned",
+      "token": "hit",
+      "processGroup": "hit",
+      "sameUser": "hit",
+      "sessionId": "s1"
+     }
+    },
+    {
+     "op": "verify",
+     "pid": 5000,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1699999998800
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5000,
+      "ownership": "owned",
+      "token": "hit",
+      "processGroup": "hit",
+      "sameUser": "hit",
+      "sessionId": "s1"
+     }
+    },
+    {
+     "op": "verify",
+     "pid": 5000,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1700000000801
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5000,
+      "ownership": "external",
+      "token": "unknown",
+      "processGroup": "miss",
+      "sameUser": "hit"
+     }
+    },
+    {
+     "op": "verify",
+     "pid": 5000,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1699999998799
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5000,
+      "ownership": "external",
+      "token": "unknown",
+      "processGroup": "miss",
+      "sameUser": "hit"
+     }
+    },
+    {
+     "op": "verify",
+     "pid": 5000,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1699999999800
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5000,
+      "ownership": "owned",
+      "token": "hit",
+      "processGroup": "hit",
+      "sameUser": "hit",
+      "sessionId": "s1"
+     }
+    },
+    {
+     "op": "verify",
+     "pid": 5100,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1699999999800
+       ],
+       [
+        5100,
+        5000,
+        1699999998800
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5100,
+      "ownership": "owned",
+      "token": "unknown",
+      "processGroup": "hit",
+      "sameUser": "hit",
+      "sessionId": "s1"
+     }
+    },
+    {
+     "op": "verify",
+     "pid": 5100,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1699999999800
+       ],
+       [
+        5100,
+        5000,
+        1699999998799
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5100,
+      "ownership": "external",
+      "token": "unknown",
+      "processGroup": "miss",
+      "sameUser": "hit"
+     }
+    },
+    {
+     "op": "verify",
+     "pid": 5100,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1700000000700
+       ],
+       [
+        5100,
+        5000,
+        1699999998800
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5100,
+      "ownership": "owned",
+      "token": "unknown",
+      "processGroup": "hit",
+      "sameUser": "hit",
+      "sessionId": "s1"
+     }
+    },
+    {
+     "op": "verify",
+     "pid": 5100,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1700000000700
+       ],
+       [
+        5100,
+        5000,
+        1699999998799
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5100,
+      "ownership": "external",
+      "token": "unknown",
+      "processGroup": "miss",
+      "sameUser": "hit"
+     }
+    }
+   ]
+  },
+  {
+   "name": "duplicate-root-and-reregister",
+   "clock": 1700000000000,
+   "steps": [
+    {
+     "op": "register",
+     "args": [
+      "s1",
+      5000,
+      "tok"
+     ]
+    },
+    {
+     "op": "register",
+     "args": [
+      "s2",
+      5000,
+      "tok"
+     ]
+    },
+    {
+     "op": "verify",
+     "pid": 5000,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1699999999800
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5000,
+      "ownership": "owned",
+      "token": "hit",
+      "processGroup": "hit",
+      "sameUser": "hit",
+      "sessionId": "s2"
+     }
+    },
+    {
+     "op": "assertKillable",
+     "pid": 5000,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1699999999800
+       ]
+      ]
+     },
+     "sessionId": "s1",
+     "error": "\u62d2\u7edd\u7ec8\u6b62 PID 5000\uff1a\u5b83\u5c5e\u4e8e\u4f1a\u8bdd s2\uff0c\u4e0d\u662f\u8981\u505c\u7684\u4f1a\u8bdd s1"
+    },
+    {
+     "op": "assertKillable",
+     "pid": 5000,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1699999999800
+       ]
+      ]
+     },
+     "sessionId": "s2",
+     "result": {
+      "pid": 5000,
+      "ownership": "owned",
+      "token": "hit",
+      "processGroup": "hit",
+      "sameUser": "hit",
+      "sessionId": "s2"
+     }
+    },
+    {
+     "clock": 1700000000010
+    },
+    {
+     "op": "register",
+     "args": [
+      "s1",
+      5000,
+      "tok3"
+     ]
+    },
+    {
+     "op": "verify",
+     "pid": 5000,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1699999999800
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5000,
+      "ownership": "owned",
+      "token": "hit",
+      "processGroup": "hit",
+      "sameUser": "hit",
+      "sessionId": "s2"
+     }
+    },
+    {
+     "op": "unregister",
+     "args": [
+      "s2"
+     ]
+    },
+    {
+     "op": "verify",
+     "pid": 5000,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1699999999800
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5000,
+      "ownership": "owned",
+      "token": "hit",
+      "processGroup": "hit",
+      "sameUser": "hit",
+      "sessionId": "s1"
+     }
+    },
+    {
+     "op": "hasTracked",
+     "result": true
+    },
+    {
+     "op": "register",
+     "args": [
+      "s1",
+      6000,
+      "tok"
+     ]
+    },
+    {
+     "op": "verify",
+     "pid": 5000,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1699999999800
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5000,
+      "ownership": "external",
+      "token": "unknown",
+      "processGroup": "miss",
+      "sameUser": "hit"
+     }
+    },
+    {
+     "op": "verify",
+     "pid": 6000,
+     "table": {
+      "rows": [
+       [
+        6000,
+        1000,
+        1700000000000
+       ]
+      ]
+     },
+     "result": {
+      "pid": 6000,
+      "ownership": "owned",
+      "token": "hit",
+      "processGroup": "hit",
+      "sameUser": "hit",
+      "sessionId": "s1"
+     }
+    },
+    {
+     "op": "unregister",
+     "args": [
+      "s1"
+     ]
+    },
+    {
+     "op": "hasTracked",
+     "result": false
+    },
+    {
+     "op": "verify",
+     "pid": 6000,
+     "table": {
+      "rows": [
+       [
+        6000,
+        1000,
+        1700000000000
+       ]
+      ]
+     },
+     "result": {
+      "pid": 6000,
+      "ownership": "external",
+      "token": "unknown",
+      "processGroup": "miss",
+      "sameUser": "hit"
+     }
+    }
+   ]
+  },
+  {
+   "name": "reregister-resets-pin",
+   "clock": 1700000000000,
+   "steps": [
+    {
+     "op": "register",
+     "args": [
+      "s1",
+      5000,
+      "tok"
+     ]
+    },
+    {
+     "op": "verify",
+     "pid": 5000,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1699999999800
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5000,
+      "ownership": "owned",
+      "token": "hit",
+      "processGroup": "hit",
+      "sameUser": "hit",
+      "sessionId": "s1"
+     }
+    },
+    {
+     "op": "verify",
+     "pid": 5000,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1700000003000
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5000,
+      "ownership": "external",
+      "token": "unknown",
+      "processGroup": "miss",
+      "sameUser": "hit"
+     }
+    },
+    {
+     "op": "register",
+     "args": [
+      "s1",
+      5000,
+      "tok"
+     ]
+    },
+    {
+     "op": "verify",
+     "pid": 5000,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1700000003000
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5000,
+      "ownership": "owned",
+      "token": "hit",
+      "processGroup": "hit",
+      "sameUser": "hit",
+      "sessionId": "s1"
+     }
+    },
+    {
+     "op": "verify",
+     "pid": 5000,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1699999999800
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5000,
+      "ownership": "external",
+      "token": "unknown",
+      "processGroup": "miss",
+      "sameUser": "hit"
+     }
+    }
+   ]
+  },
+  {
+   "name": "nested-sessions",
+   "clock": 1700000000000,
+   "steps": [
+    {
+     "op": "register",
+     "args": [
+      "outer",
+      5000,
+      "tok"
+     ]
+    },
+    {
+     "op": "register",
+     "args": [
+      "inner",
+      5100,
+      "tok"
+     ]
+    },
+    {
+     "op": "verify",
+     "pid": 5200,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1699999999800
+       ],
+       [
+        5100,
+        5000,
+        1700000000000
+       ],
+       [
+        5200,
+        5100,
+        1700000000010
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5200,
+      "ownership": "owned",
+      "token": "unknown",
+      "processGroup": "hit",
+      "sameUser": "hit",
+      "sessionId": "inner"
+     }
+    },
+    {
+     "op": "assertKillable",
+     "pid": 5200,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1699999999800
+       ],
+       [
+        5100,
+        5000,
+        1700000000000
+       ],
+       [
+        5200,
+        5100,
+        1700000000010
+       ]
+      ]
+     },
+     "sessionId": "outer",
+     "error": "\u62d2\u7edd\u7ec8\u6b62 PID 5200\uff1a\u5b83\u5c5e\u4e8e\u4f1a\u8bdd inner\uff0c\u4e0d\u662f\u8981\u505c\u7684\u4f1a\u8bdd outer"
+    },
+    {
+     "op": "verify",
+     "pid": 5200,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1699999999800
+       ],
+       [
+        5100,
+        5000,
+        1700000009000
+       ],
+       [
+        5200,
+        5100,
+        1700000009010
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5200,
+      "ownership": "external",
+      "token": "unknown",
+      "processGroup": "miss",
+      "sameUser": "hit"
+     }
+    },
+    {
+     "op": "verify",
+     "pid": 5100,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1699999999800
+       ],
+       [
+        5100,
+        5000,
+        1700000009000
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5100,
+      "ownership": "external",
+      "token": "unknown",
+      "processGroup": "miss",
+      "sameUser": "hit"
+     }
+    },
+    {
+     "op": "unregister",
+     "args": [
+      "inner"
+     ]
+    },
+    {
+     "op": "verify",
+     "pid": 5200,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1699999999800
+       ],
+       [
+        5100,
+        5000,
+        1700000009000
+       ],
+       [
+        5200,
+        5100,
+        1700000009010
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5200,
+      "ownership": "owned",
+      "token": "unknown",
+      "processGroup": "hit",
+      "sameUser": "hit",
+      "sessionId": "outer"
+     }
+    }
+   ]
+  },
+  {
+   "name": "ppid-5-continues",
+   "clock": 1700000000000,
+   "steps": [
+    {
+     "op": "register",
+     "args": [
+      "s5",
+      5,
+      "tok"
+     ]
+    },
+    {
+     "op": "verify",
+     "pid": 7004,
+     "table": {
+      "rows": [
+       [
+        7004,
+        5,
+        1700000000000
+       ],
+       [
+        5,
+        0,
+        1699999999900
+       ]
+      ]
+     },
+     "result": {
+      "pid": 7004,
+      "ownership": "owned",
+      "token": "unknown",
+      "processGroup": "hit",
+      "sameUser": "hit",
+      "sessionId": "s5"
+     }
+    }
+   ]
+  },
+  {
+   "name": "small-root-time-child-missing",
+   "clock": 2000,
+   "steps": [
+    {
+     "op": "register",
+     "args": [
+      "s1",
+      5000,
+      "tok"
+     ]
+    },
+    {
+     "op": "verify",
+     "pid": 5100,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        500
+       ],
+       [
+        5100,
+        5000,
+        null
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5100,
+      "ownership": "external",
+      "token": "unknown",
+      "processGroup": "miss",
+      "sameUser": "hit"
+     }
+    },
+    {
+     "op": "verify",
+     "pid": 5100,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        500
+       ],
+       [
+        5100,
+        5000,
+        0
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5100,
+      "ownership": "external",
+      "token": "unknown",
+      "processGroup": "miss",
+      "sameUser": "hit"
+     }
+    },
+    {
+     "op": "verify",
+     "pid": 5100,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        500
+       ],
+       [
+        5100,
+        5000,
+        1
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5100,
+      "ownership": "owned",
+      "token": "unknown",
+      "processGroup": "hit",
+      "sameUser": "hit",
+      "sessionId": "s1"
+     }
+    },
+    {
+     "op": "verify",
+     "pid": 5100,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        -100
+       ],
+       [
+        5100,
+        5000,
+        -1100
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5100,
+      "ownership": "external",
+      "token": "unknown",
+      "processGroup": "miss",
+      "sameUser": "hit"
+     }
+    },
+    {
+     "op": "verify",
+     "pid": 5100,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        -100
+       ],
+       [
+        5100,
+        5000,
+        -1101
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5100,
+      "ownership": "external",
+      "token": "unknown",
+      "processGroup": "miss",
+      "sameUser": "hit"
+     }
+    }
+   ]
+  },
+  {
+   "name": "unregister-then-register",
+   "clock": 1700000000000,
+   "steps": [
+    {
+     "op": "register",
+     "args": [
+      "s1",
+      5000,
+      "tok"
+     ]
+    },
+    {
+     "op": "unregister",
+     "args": [
+      "s1"
+     ]
+    },
+    {
+     "op": "hasTracked",
+     "result": false
+    },
+    {
+     "op": "register",
+     "args": [
+      "s1",
+      5000,
+      "tok"
+     ]
+    },
+    {
+     "op": "hasTracked",
+     "result": true
+    },
+    {
+     "op": "verify",
+     "pid": 5000,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1699999999800
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5000,
+      "ownership": "owned",
+      "token": "hit",
+      "processGroup": "hit",
+      "sameUser": "hit",
+      "sessionId": "s1"
+     }
+    },
+    {
+     "op": "register",
+     "args": [
+      "s2",
+      6000,
+      "tok"
+     ]
+    },
+    {
+     "op": "unregister",
+     "args": [
+      "s1"
+     ]
+    },
+    {
+     "op": "register",
+     "args": [
+      "s1",
+      5000,
+      "tok"
+     ]
+    },
+    {
+     "op": "verify",
+     "pid": 6000,
+     "table": {
+      "rows": [
+       [
+        6000,
+        1000,
+        1700000000000
+       ]
+      ]
+     },
+     "result": {
+      "pid": 6000,
+      "ownership": "owned",
+      "token": "hit",
+      "processGroup": "hit",
+      "sameUser": "hit",
+      "sessionId": "s2"
+     }
+    },
+    {
+     "op": "unregister",
+     "args": [
+      "s2"
+     ]
+    },
+    {
+     "op": "verify",
+     "pid": 6000,
+     "table": {
+      "rows": [
+       [
+        6000,
+        1000,
+        1700000000000
+       ]
+      ]
+     },
+     "result": {
+      "pid": 6000,
+      "ownership": "external",
+      "token": "unknown",
+      "processGroup": "miss",
+      "sameUser": "hit"
+     }
+    },
+    {
+     "op": "verify",
+     "pid": 5000,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1699999999800
+       ]
+      ]
+     },
+     "result": {
+      "pid": 5000,
+      "ownership": "owned",
+      "token": "hit",
+      "processGroup": "hit",
+      "sameUser": "hit",
+      "sessionId": "s1"
+     }
+    }
+   ]
+  },
+  {
+   "name": "assert-messages",
+   "clock": 1700000000000,
+   "steps": [
+    {
+     "op": "register",
+     "args": [
+      "s1",
+      5000,
+      "tok"
+     ]
+    },
+    {
+     "op": "assertKillable",
+     "pid": 5100,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1699999999800
+       ],
+       [
+        5100,
+        5000,
+        1700000000000
+       ]
+      ]
+     },
+     "sessionId": "s1",
+     "result": {
+      "pid": 5100,
+      "ownership": "owned",
+      "token": "unknown",
+      "processGroup": "hit",
+      "sameUser": "hit",
+      "sessionId": "s1"
+     }
+    },
+    {
+     "op": "assertKillable",
+     "pid": 5100,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1699999999800
+       ],
+       [
+        5100,
+        5000,
+        1700000000000
+       ]
+      ]
+     },
+     "sessionId": "",
+     "error": "\u62d2\u7edd\u7ec8\u6b62 PID 5100\uff1a\u5b83\u5c5e\u4e8e\u4f1a\u8bdd s1\uff0c\u4e0d\u662f\u8981\u505c\u7684\u4f1a\u8bdd "
+    },
+    {
+     "op": "assertKillable",
+     "pid": 5100,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1699999999800
+       ],
+       [
+        5100,
+        5000,
+        1700000000000
+       ]
+      ]
+     },
+     "sessionId": "\u4f1a\u8bdd\u7532",
+     "error": "\u62d2\u7edd\u7ec8\u6b62 PID 5100\uff1a\u5b83\u5c5e\u4e8e\u4f1a\u8bdd s1\uff0c\u4e0d\u662f\u8981\u505c\u7684\u4f1a\u8bdd \u4f1a\u8bdd\u7532"
+    },
+    {
+     "op": "assertKillable",
+     "pid": 9000,
+     "table": {
+      "rows": [
+       [
+        9000,
+        1000,
+        1700000000000
+       ]
+      ]
+     },
+     "sessionId": "s1",
+     "error": "\u62d2\u7edd\u7ec8\u6b62 PID 9000\uff1a\u5f52\u5c5e\u5224\u5b9a\u4e3a external\uff0c\u975e\u672c\u5e94\u7528\u542f\u52a8"
+    },
+    {
+     "op": "assertKillable",
+     "pid": 9000,
+     "table": {
+      "rows": [
+       [
+        9000,
+        1000,
+        1700000000000
+       ]
+      ],
+      "mine": []
+     },
+     "sessionId": "s1",
+     "error": "\u62d2\u7edd\u7ec8\u6b62 PID 9000\uff1a\u5f52\u5c5e\u5224\u5b9a\u4e3a foreign\uff0c\u975e\u672c\u5e94\u7528\u542f\u52a8"
+    },
+    {
+     "op": "assertKillable",
+     "pid": 5000,
+     "table": {
+      "rows": [
+       [
+        5000,
+        1000,
+        1700000009000
+       ]
+      ]
+     },
+     "sessionId": "s1",
+     "error": "\u62d2\u7edd\u7ec8\u6b62 PID 5000\uff1a\u5f52\u5c5e\u5224\u5b9a\u4e3a external\uff0c\u975e\u672c\u5e94\u7528\u542f\u52a8"
+    }
+   ]
+  }
+ ]
+}
