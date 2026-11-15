@@ -62,7 +62,7 @@ const SHORTCUTS: { keys: string; desc: string }[] = [
   { keys: '?', desc: '快捷键一览' }
 ]
 
-const STACK = ['Electron 43', 'React 19', 'TypeScript', 'Vite 7', 'Tailwind 4', 'node-pty', 'xterm.js 6', 'Zustand']
+const STACK = ['Go 1.27', 'mygo 0.8.3', 'WebView2', 'React 19', 'TypeScript', 'Vite 8', 'Tailwind 4', 'ConPTY', 'xterm.js 6', 'Zustand']
 
 export function About(): React.JSX.Element {
   const [version, setVersion] = useState<string>('')
